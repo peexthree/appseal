@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1240px; font-family: 'DejaVu Sans', 'Liberation Sans', sans-serif; background: #ffffff; padding: 26px 30px; }
+  .row { display: flex; align-items: stretch; justify-content: center; gap: 0; }
+  .node {
+    background: #e4ecf5; border: 2px solid #2d7ab3; border-radius: 10px;
+    padding: 14px 16px; text-align: center; min-width: 150px;
+  }
+  .node .t { font-size: 17px; font-weight: bold; color: #142840; }
+  .node .d { font-size: 12.5px; color: #5a7a96; margin-top: 5px; line-height: 1.45; }
+  .node.engine { background: #1a4a7a; border-color: #1a4a7a; }
+  .node.engine .t { color: #ffffff; }
+  .node.engine .d { color: #c0d0e2; }
+  .node.target { background: #ffffff; border: 2px dashed #2d7ab3; }
+  .arrow { display: flex; align-items: center; color: #2d7ab3; font-size: 26px; padding: 0 10px; flex-shrink: 0; }
+  .col { display: flex; flex-direction: column; gap: 14px; }
+  .grp { display: flex; flex-direction: column; gap: 8px; }
+  .grp-title { font-size: 12px; font-weight: bold; letter-spacing: 2px; color: #5a7a96; text-transform: uppercase; text-align: center; }
+  .stack { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .legend { margin-top: 24px; text-align: center; font-size: 12.5px; color: #5a7a96; }
+  .legend b { color: #142840; }
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="col">
+      <div class="grp">
+        <div class="grp-title">Клиент</div>
+        <div class="node" style="min-width:190px">
+          <div class="t">Single-page UI</div>
+          <div class="d">Лендинг + ввод URL<br>опрос статуса скана</div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow">&#8594;</div>
+    <div class="col">
+      <div class="grp">
+        <div class="grp-title">Next.js 16 API-роуты</div>
+        <div class="stack">
+          <div class="node" style="min-width:200px"><div class="t">POST /api/scan</div><div class="d">старт скана, возвращает id</div></div>
+          <div class="node" style="min-width:200px"><div class="t">GET /api/scan/[id]</div><div class="d">прогресс и результат</div></div>
+          <div class="node" style="min-width:200px"><div class="t">GET /api/report, /api/badge</div><div class="d">PDF-отчёт и SVG-бейдж</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow">&#8594;</div>
+    <div class="col">
+      <div class="grp">
+        <div class="grp-title">Движок сканера</div>
+        <div class="node engine" style="min-width:250px">
+          <div class="t">Оркестратор + 4 модуля</div>
+          <div class="d">секреты и утечки · заголовки/TLS<br>админки/авторизация · живость/контент<br>конкурентность 4, таймауты 5-12 с</div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow">&#8594;</div>
+    <div class="col">
+      <div class="grp">
+        <div class="grp-title">Цели скана</div>
+        <div class="stack">
+          <div class="node target" style="min-width:210px"><div class="t">Целевой сайт</div><div class="d">только публичные страницы, черный ящик</div></div>
+          <div class="node target" style="min-width:210px"><div class="t">Демо-приложение :3210</div><div class="d">намеренно дырявый мини-сервис</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="legend">
+    Хранилище: JSON-файл на скан (путь <b>db/scans</b>), заменяется на Postgres/Redis при росте &nbsp;·&nbsp; Результат: оценка A-D, отчёт, бейдж, PDF
+  </div>
+</body>
+</html>

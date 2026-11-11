@@ -1,0 +1,146 @@
+import type { Lang } from "./scanner/types";
+
+export const DICT = {
+  brand: { ru: "AppMOT", en: "AppMOT" },
+  tagline: {
+    ru: "Техосмотр для приложений, собранных с ИИ",
+    en: "The MOT test for AI-built apps",
+  },
+  heroTitle: {
+    ru: "Собрал приложение за вечер?",
+    en: "Built an app in an evening?",
+  },
+  heroTitleAccent: {
+    ru: "Проверь его за минуту.",
+    en: "Check it in a minute.",
+  },
+  heroSub: {
+    ru: "ИИ-сборка создала миллионы приложений, которые никто не проверял. AppMOT сканирует ваш живой сайт на утечки секретов, открытые базы, дырявые админки и признаки заброшенности — и выдаёт оценку A–D с бейджем для сайта.",
+    en: "AI builders created millions of apps nobody ever checked. AppMOT scans your live site for leaked secrets, open databases, exposed admin panels and signs of abandonment — and issues an A–D grade with a badge for your site.",
+  },
+  inputPlaceholder: {
+    ru: "ваше-приложение.com",
+    en: "your-app.com",
+  },
+  scanBtn: { ru: "Проверить бесплатно", en: "Scan for free" },
+  demoBtn: { ru: "Скан демо-приложения", en: "Scan the demo app" },
+  scanning: { ru: "Идёт техосмотр", en: "MOT in progress" },
+  errTitle: { ru: "Не получилось", en: "Something went wrong" },
+  rescan: { ru: "Проверить другое приложение", en: "Scan another app" },
+  downloadPdf: { ru: "Скачать PDF-отчёт", en: "Download PDF report" },
+  badgeTitle: { ru: "Бейдж для вашего сайта", en: "Badge for your site" },
+  badgeCopy: { ru: "Вставьте этот код на свой сайт:", en: "Embed this code on your site:" },
+  copyBtn: { ru: "Копировать", en: "Copy" },
+  copied: { ru: "Скопировано!", en: "Copied!" },
+  summaryChecks: { ru: "пунктов проверено", en: "checks completed" },
+  summaryFailed: { ru: "провалено", en: "failed" },
+  summaryWarns: { ru: "с замечаниями", en: "warnings" },
+  summaryPassed: { ru: "в порядке", en: "passed" },
+  platform: { ru: "платформа", en: "platform" },
+  evidence: { ru: "Доказательства", en: "Evidence" },
+  demoNote: {
+    ru: "Демо-скан: намеренно дырявое приложение, чтобы показать все проверки в действии.",
+    en: "Demo scan: a deliberately vulnerable app showing every check firing.",
+  },
+  statsTitle: { ru: "Проблема уже здесь", en: "The problem is already here" },
+  stat1: {
+    ru: "сгенерированного ИИ кода не проходит проверку безопасности (Veracode, 2026)",
+    en: "of AI-generated code fails security testing (Veracode, 2026)",
+  },
+  stat2: {
+    ru: "просканированных вайб-кодед приложений сливают чувствительные данные",
+    en: "of scanned vibe-coded apps expose sensitive data",
+  },
+  stat3: {
+    ru: "новых приложений вышло в сторах за первое полугодие 2026",
+    en: "new apps hit the stores in H1 2026 alone",
+  },
+  howTitle: { ru: "Как это работает", en: "How it works" },
+  how1Title: { ru: "Вводите адрес", en: "Enter the URL" },
+  how1Text: {
+    ru: "Только живой адрес приложения. Ничего не нужно устанавливать, доступ к коду не нужен — скан внешний.",
+    en: "Just the live URL. Nothing to install, no code access needed — the scan is external.",
+  },
+  how2Title: { ru: "Движок гоняет 16 проверок", en: "The engine runs 16 checks" },
+  how2Text: {
+    ru: "Секреты в клиентском коде, открытые .env и .git, дырявые правила Firebase, CORS, админки, бэкапы, заголовки, TLS, битые ссылки и заглушки.",
+    en: "Secrets in client code, open .env and .git, misconfigured Firebase rules, CORS, admin panels, backups, headers, TLS, broken links and placeholders.",
+  },
+  how3Title: { ru: "Получаете оценку и план", en: "Get a grade and a plan" },
+  how3Text: {
+    ru: "Оценка A–D, объяснение каждой проблемы человеческим языком, доказательства и бейдж, который показывает пользователям, что приложению можно доверять.",
+    en: "An A–D grade, every issue explained in plain language, evidence attached, and a badge telling users your app can be trusted.",
+  },
+  checksTitle: { ru: "Что проверяем", en: "What we check" },
+  checksSub: {
+    ru: "Четыре категории, от которых реально болит голова у вайб-кодеров.",
+    en: "Four categories that actually hurt vibe coders.",
+  },
+  pricingTitle: { ru: "Тарифы", en: "Pricing" },
+  pricingSub: {
+    ru: "Начните бесплатно. Платите, когда приложение начнёт зарабатывать.",
+    en: "Start free. Pay when your app starts earning.",
+  },
+  planFree: { ru: "Free", en: "Free" },
+  planFreePrice: { ru: "$0", en: "$0" },
+  planFreeFeats: {
+    ru: "1 полный скан в день|Оценка A–D и отчёт|Бейдж для сайта|PDF-экспорт",
+    en: "1 full scan per day|A–D grade and report|Site badge|PDF export",
+  },
+  planPro: { ru: "Pro", en: "Pro" },
+  planProPrice: { ru: "$19/мес", en: "$19/mo" },
+  planProFeats: {
+    ru: "Безлимит сканов|Недельный мониторинг изменений|Автопроверка после каждого релиза|Бейдж со свежей датой|Приоритетные проверки",
+    en: "Unlimited scans|Weekly change monitoring|Post-release auto rescan|Badge with fresh date|Priority queue",
+  },
+  planPlatform: { ru: "Platform", en: "Platform" },
+  planPlatformPrice: { ru: "по договорённости", en: "custom" },
+  planPlatformFeats: {
+    ru: "API для платформ-конструкторов|White-label бейджи|Массовый скан каталога приложений|SLA и партнёрская интеграция",
+    en: "API for app builders|White-label badges|Bulk catalog scans|SLA and partner integration",
+  },
+  faqTitle: { ru: "Частые вопросы", en: "FAQ" },
+  faq1Q: { ru: "Это безопасно? Вы не взламываете сайт?", en: "Is this safe? Are you hacking my site?" },
+  faq1A: {
+    ru: "Нет. Скан идёт только по публично доступным страницам — ровно то, что видит любой посетитель: заголовки ответов, HTML, общедоступные файлы. Никаких эксплойтов, никакой нагрузки сверх нескольких десятков запросов.",
+    en: "No. The scan only touches publicly accessible pages — exactly what any visitor sees: response headers, HTML, public files. No exploits, no load beyond a few dozen requests.",
+  },
+  faq2Q: { ru: "Зачем приложению бейдж?", en: "Why does my app need a badge?" },
+  faq2A: {
+    ru: "Пользователи не отличают хорошее приложение от дырявого. Оценка A–D — короткий сигнал доверия, как значок SSL-замка: конверсия растёт, а вам не нужно объяснять словами, что вы следите за безопасностью.",
+    en: "Users can't tell a well-built app from a leaky one. An A–D grade is a short trust signal, like the SSL padlock: conversion grows and you don't have to explain in words that you care about security.",
+  },
+  faq3Q: { ru: "Что делать, если оценка D?", en: "What if my grade is D?" },
+  faq3A: {
+    ru: "Каждый проваленный пункт содержит объяснение и доказательства — большинство закрывается за вечер: убрать секреты из клиента, закрыть .env, поправить правила Firebase. Отчёт можно отдать ИИ-агенту и починить силами той же вайб-кодинг-сессии.",
+    en: "Every failed check explains the issue and shows evidence — most fixes take an evening: remove secrets from the client, lock .env, tighten Firebase rules. Hand the report to an AI agent and fix it in the same vibe-coding session.",
+  },
+  faq4Q: { ru: "Вы храните результаты сканов?", en: "Do you store scan results?" },
+  faq4A: {
+    ru: "Отчёт доступен по ссылке и не содержит самих секретов — только факты находок и маскированные фрагменты. Полные ключи мы никогда не сохраняем и не показываем даже вам.",
+    en: "The report is available via a link and contains no raw secrets — only findings and masked fragments. Full key values are never stored or shown, even to you.",
+  },
+  footerText: {
+    ru: "AppMOT — независимый слой доверия для эпохи, когда софт пишут все. Прототип MVP.",
+    en: "AppMOT — an independent trust layer for the era when everyone writes software. MVP prototype.",
+  },
+  gradeTitle: { ru: "Оценка техосмотра", en: "MOT grade" },
+  findingsTitle: { ru: "Находки по категориям", en: "Findings by category" },
+  allGood: {
+    ru: "Критичных проблем не найдено. Но один скан — не навсегда: приложение меняется, и проверки стоит повторять после каждого релиза.",
+    en: "No critical issues found. But one scan is not forever: apps change, and checks should be repeated after every release.",
+  },
+} as const;
+
+export type DictKey = keyof typeof DICT;
+
+export function t(lang: Lang, key: DictKey): string {
+  return DICT[key][lang];
+}
+
+export function list(lang: Lang, key: DictKey): string[] {
+  const v = DICT[key][lang];
+  return v.split("|");
+}
+
+/** Localized category/check helpers live in components */
