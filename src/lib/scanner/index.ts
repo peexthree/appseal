@@ -33,8 +33,9 @@ export function normalizeInputUrl(input: string): { url: string; isDemo: boolean
 /**
  * Runs a full scan for the given scan id (already saved as "queued").
  * Never throws: errors are recorded into the scan record.
+ * Returns the final outcome on success (for the registry feed) or null.
  */
-export async function runScan(scan: ScanResult): Promise<void> {
+export async function runScan(scan: ScanResult): Promise<{ host: string; grade: string; score: number } | null> {
   try {
     await setProgress(scan.id, {
       stage: { ru: "Загружаем главную страницу…", en: "Loading the homepage…" },
@@ -208,6 +209,7 @@ export async function runScan(scan: ScanResult): Promise<void> {
       platform: platform ?? undefined,
       host: scan.isDemo ? "demo-app" : host,
     });
+    return { host: scan.isDemo ? "demo-app" : host, grade, score };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await updateScan(scan.id, {
@@ -220,5 +222,6 @@ export async function runScan(scan: ScanResult): Promise<void> {
         en: "Scan failed: " + truncate(msg, 140),
       },
     });
+    return null;
   }
 }
