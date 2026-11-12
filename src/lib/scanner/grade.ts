@@ -19,7 +19,7 @@ export function computeScore(results: CheckResult[]): { score: number; grade: Sc
 }
 
 export const GRADE_META: Record<ScanResult["grade"], { color: string; label: { ru: string; en: string } }> = {
-  A: { color: "#10b981", label: { ru: "Отлично", en: "Excellent" } },
+  A: { color: "#34d399", label: { ru: "Отлично", en: "Excellent" } },
   B: { color: "#84cc16", label: { ru: "Хорошо", en: "Good" } },
   C: { color: "#f59e0b", label: { ru: "Требует доработки", en: "Needs work" } },
   D: { color: "#ef4444", label: { ru: "Опасно", en: "Unsafe" } },

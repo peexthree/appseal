@@ -15,23 +15,23 @@ import {
 } from "@/components/ui/collapsible";
 import {
   CheckCircle2, XCircle, AlertTriangle, Info, MinusCircle,
-  Download, RotateCcw, Copy, Check, ChevronDown, KeyRound, ShieldCheck, Lock, Activity,
-} from "lucide-react";
+  Download, RotateCcw, Copy, Check, ChevronDown, KeyRound, ShieldHeaders, Lock, Activity,
+} from "@/components/icons/appseal-icons";
 
 const CAT_ICONS: Record<CategoryId, React.ReactNode> = {
   secrets: <KeyRound className="h-4 w-4" />,
-  headers: <ShieldCheck className="h-4 w-4" />,
+  headers: <ShieldHeaders className="h-4 w-4" />,
   admin: <Lock className="h-4 w-4" />,
   liveness: <Activity className="h-4 w-4" />,
 };
 
 function StatusIcon({ s }: { s: CheckResult["status"] }) {
   const cls = "h-4 w-4 shrink-0";
-  if (s === "pass") return <CheckCircle2 className={`${cls} text-emerald-500`} />;
+  if (s === "pass") return <CheckCircle2 className={`${cls} text-emerald-400`} />;
   if (s === "fail") return <XCircle className={`${cls} text-red-500`} />;
   if (s === "warn") return <AlertTriangle className={`${cls} text-amber-500`} />;
-  if (s === "info") return <Info className={`${cls} text-zinc-500`} />;
-  return <MinusCircle className={`${cls} text-zinc-600`} />;
+  if (s === "info") return <Info className={`${cls} text-slate-500`} />;
+  return <MinusCircle className={`${cls} text-slate-600`} />;
 }
 
 function GradeRing({ grade, score }: { grade: string; score: number }) {
@@ -51,7 +51,7 @@ function GradeRing({ grade, score }: { grade: string; score: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="font-display text-4xl font-extrabold" style={{ color }}>{grade}</span>
-        <span className="text-xs text-zinc-400">{score}/100</span>
+        <span className="text-xs text-slate-400">{score}/100</span>
       </div>
     </div>
   );
@@ -63,13 +63,13 @@ function CheckRow({ r, lang }: { r: CheckResult; lang: Lang }) {
   const showFinding = r.finding && (r.status === "fail" || r.status === "warn" || r.status === "info");
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="rounded-lg border border-zinc-800 bg-[#101318]">
+      <div className="rounded-lg border border-slate-800 bg-[#111827]">
         <CollapsibleTrigger
           className="flex w-full items-center gap-3 px-4 py-3 text-left"
           aria-expanded={open}
         >
           <StatusIcon s={r.status} />
-          <span className="flex-1 text-sm font-medium text-zinc-100">
+          <span className="flex-1 text-sm font-medium text-slate-100">
             {r.title[lang]}
           </span>
           {(r.status === "fail" || r.status === "warn") && (
@@ -82,24 +82,24 @@ function CheckRow({ r, lang }: { r: CheckResult; lang: Lang }) {
             </Badge>
           )}
           {r.status !== "fail" && r.status !== "warn" && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
               {STATUS_LABEL[r.status][lang]}
             </span>
           )}
-          <ChevronDown className={`h-4 w-4 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} />
         </CollapsibleTrigger>
         {showFinding && (
           <CollapsibleContent>
-            <div className="border-t border-zinc-800 px-4 py-3">
-              <p className="text-[13px] leading-relaxed text-zinc-300">
+            <div className="border-t border-slate-800 px-4 py-3">
+              <p className="text-[13px] leading-relaxed text-slate-300">
                 {r.finding!.detail[lang]}
               </p>
               {r.finding!.evidence.length > 0 && (
                 <div className="mt-3">
-                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                     {t(lang, "evidence")}
                   </p>
-                  <pre className="appmot-scroll max-h-40 overflow-auto rounded-md bg-[#0a0c10] p-3 font-mono text-[11px] leading-relaxed text-zinc-300">
+                  <pre className="appseal-scroll max-h-40 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-300">
                     {r.finding!.evidence.join("\n")}
                   </pre>
                 </div>
@@ -175,13 +175,13 @@ export function ReportView({
   return (
     <div className="w-full">
       {/* header card */}
-      <div className="flex flex-col items-start gap-6 rounded-2xl border border-zinc-800 bg-[#0f1216] p-6 sm:flex-row sm:items-center sm:p-8">
+      <div className="flex flex-col items-start gap-6 rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:flex-row sm:items-center sm:p-8">
         <GradeRing grade={scan.grade} score={scan.score} />
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
             {t(lang, "gradeTitle")}
           </p>
-          <h2 className="font-display mt-1 truncate text-2xl font-bold text-zinc-50">
+          <h2 className="font-display mt-1 truncate text-2xl font-bold text-slate-50">
             {scan.host}
           </h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -189,7 +189,7 @@ export function ReportView({
               {gm.label[lang]}
             </span>
             {scan.platform && (
-              <Badge variant="secondary" className="bg-zinc-800 text-zinc-300">
+              <Badge variant="secondary" className="bg-slate-800 text-slate-300">
                 {t(lang, "platform")}: {scan.platform}
               </Badge>
             )}
@@ -199,7 +199,7 @@ export function ReportView({
               </Badge>
             )}
           </div>
-          <p className="mt-3 text-[13px] text-zinc-400">
+          <p className="mt-3 text-[13px] text-slate-400">
             {t(lang, "summaryChecks")} {scan.results.length} ·{" "}
             <span className="text-red-400">{fails} {t(lang, "summaryFailed")}</span> ·{" "}
             <span className="text-amber-400">{warns} {t(lang, "summaryWarns")}</span> ·{" "}
@@ -212,20 +212,20 @@ export function ReportView({
       </div>
 
       {fails === 0 && warns === 0 && (
-        <div className="mt-6 rounded-xl border border-emerald-900/50 bg-emerald-500/5 p-5 text-sm leading-relaxed text-emerald-300">
+        <div className="mt-6 rounded-xl border border-emerald-900/50 bg-emerald-400/5 p-5 text-sm leading-relaxed text-emerald-300">
           {t(lang, "allGood")}
         </div>
       )}
 
       {/* actions */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Button asChild className="bg-emerald-500 text-zinc-950 hover:bg-emerald-400">
+        <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300">
           <a href={`/api/report?id=${scan.id}`} download>
             <Download className="h-4 w-4" />
             {t(lang, "downloadPdf")}
           </a>
         </Button>
-        <Button variant="outline" onClick={onReset} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+        <Button variant="outline" onClick={onReset} className="border-slate-700 text-slate-300 hover:bg-slate-800">
           <RotateCcw className="h-4 w-4" />
           {t(lang, "rescan")}
         </Button>
@@ -238,7 +238,7 @@ export function ReportView({
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-sky-300">{t(lang, "fixPromptTitle")}</p>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-500">{t(lang, "fixPromptCopy")}</p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">{t(lang, "fixPromptCopy")}</p>
               </div>
               <Button
                 size="sm"
@@ -251,7 +251,7 @@ export function ReportView({
               </Button>
             </div>
             <CollapsibleContent>
-              <pre className="appmot-scroll mt-3 max-h-96 overflow-auto rounded-md bg-[#0a0c10] p-3 font-mono text-[11px] leading-relaxed text-zinc-400">
+              <pre className="appseal-scroll mt-3 max-h-96 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-400">
                 {fixPrompt}
               </pre>
             </CollapsibleContent>
@@ -260,7 +260,7 @@ export function ReportView({
       )}
 
       {/* badge embed */}
-      <div className="mt-6 rounded-xl border border-zinc-800 bg-[#0f1216] p-5">
+      <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
         <div className="flex items-center gap-3">
           <img
             src={`/api/badge?id=${scan.id}`}
@@ -270,34 +270,34 @@ export function ReportView({
             className="rounded"
           />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-zinc-200">{t(lang, "badgeTitle")}</p>
-            <p className="text-xs text-zinc-500">{t(lang, "badgeCopy")}</p>
+            <p className="text-sm font-semibold text-slate-200">{t(lang, "badgeTitle")}</p>
+            <p className="text-xs text-slate-500">{t(lang, "badgeCopy")}</p>
           </div>
-          <Button size="sm" variant="outline" onClick={copy} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+          <Button size="sm" variant="outline" onClick={copy} className="border-slate-700 text-slate-300 hover:bg-slate-800">
             {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
             {copied ? t(lang, "copied") : t(lang, "copyBtn")}
           </Button>
         </div>
-        <pre className="appmot-scroll mt-3 overflow-x-auto rounded-md bg-[#0a0c10] p-3 font-mono text-[11px] text-zinc-400">
+        <pre className="appseal-scroll mt-3 overflow-x-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] text-slate-400">
           {embedCode}
         </pre>
       </div>
 
       {/* findings by category */}
-      <h3 className="font-display mt-8 text-lg font-bold text-zinc-100">
+      <h3 className="font-display mt-8 text-lg font-bold text-slate-100">
         {t(lang, "findingsTitle")}
       </h3>
       <div className="mt-4 space-y-8">
         {byCategory.map(({ cat, items }) => (
           <section key={cat} aria-label={CATEGORY_META[cat].title[lang]}>
-            <div className="mb-3 flex items-center gap-2 text-zinc-300">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-800">
+            <div className="mb-3 flex items-center gap-2 text-slate-300">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-800">
                 {CAT_ICONS[cat]}
               </span>
               <h4 className="text-sm font-bold uppercase tracking-wider">
                 {CATEGORY_META[cat].title[lang]}
               </h4>
-              <span className="text-xs text-zinc-600">
+              <span className="text-xs text-slate-600">
                 {items.filter((i) => i.status === "pass").length}/{items.length}
               </span>
             </div>

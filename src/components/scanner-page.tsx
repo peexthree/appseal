@@ -8,7 +8,7 @@ import { t, list } from "@/lib/i18n";
 import { ReportView } from "@/components/report-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check } from "lucide-react";
+import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check } from "@/components/icons/appseal-icons";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
@@ -22,7 +22,7 @@ const CHECK_CATEGORIES = [
     },
   },
   {
-    icon: <ShieldCheck className="h-5 w-5" />,
+    icon: <ShieldHeaders className="h-5 w-5" />,
     key: "headers" as const,
     items: {
       ru: "CSP, HSTS, X-Frame-Options|CORS «для всех»|Протухший TLS-сертификат|Cookie без защитных флагов",
@@ -138,24 +138,24 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0a0c10] text-zinc-100">
+    <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
       {/* header */}
-      <header className="sticky top-0 z-40 border-b border-zinc-800/70 bg-[#0a0c10]/90 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-slate-800/70 bg-[#090d16]/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
           <a href="/" className="flex items-center gap-2" aria-label="AppSeal home">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500 text-zinc-950">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-sky-400 text-[#090d16]">
               <ShieldCheck className="h-4.5 w-4.5" strokeWidth={2.4} />
             </span>
             <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
           </a>
           <nav className="flex items-center gap-1" aria-label="Language">
-            <Globe className="mr-1 h-3.5 w-3.5 text-zinc-600" />
+            <Globe className="mr-1 h-3.5 w-3.5 text-slate-600" />
             {(["ru", "en"] as Lang[]).map((l) => (
               <button
                 key={l}
                 onClick={() => switchLang(l)}
                 className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase transition ${
-                  lang === l ? "bg-zinc-800 text-emerald-400" : "text-zinc-500 hover:text-zinc-300"
+                  lang === l ? "bg-slate-800 text-sky-400" : "text-slate-500 hover:text-slate-300"
                 }`}
                 aria-pressed={lang === l}
               >
@@ -173,18 +173,18 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
           aria-label="Scanner"
           style={{
             backgroundImage:
-              "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(16,185,129,0.10), transparent 70%)",
+              "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(56,189,248,0.12), transparent 70%)",
           }}
         >
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-400">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-400">
               {t(lang, "tagline")}
             </p>
-            <h1 className="font-display mt-4 text-4xl font-extrabold leading-tight tracking-tight text-zinc-50 sm:text-5xl">
+            <h1 className="font-display mt-4 text-4xl font-extrabold leading-tight tracking-tight text-slate-50 sm:text-5xl">
               {t(lang, "heroTitle")}{" "}
-              <span className="text-emerald-400">{t(lang, "heroTitleAccent")}</span>
+              <span className="text-sky-400">{t(lang, "heroTitleAccent")}</span>
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-zinc-400">
+            <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-slate-400">
               {t(lang, "heroSub")}
             </p>
           </div>
@@ -192,7 +192,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
           {phase === "form" && (
             <form
               className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row"
-              style={{ filter: "drop-shadow(0 0 24px rgba(16,185,129,0.18))" }}
+              style={{ filter: "drop-shadow(0 0 24px rgba(56,189,248,0.22))" }}
               onSubmit={(e) => {
                 e.preventDefault();
                 if (url.trim()) void startScan(url.trim());
@@ -202,12 +202,12 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder={t(lang, "inputPlaceholder")}
-                className="h-12 flex-1 border-zinc-700 bg-[#101318] text-base text-zinc-100 placeholder:text-zinc-600"
+                className="h-12 flex-1 border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
                 inputMode="url"
                 aria-label="App URL"
                 required
               />
-              <Button type="submit" className="h-12 bg-emerald-500 px-6 text-base font-bold text-zinc-950 shadow-[0_0_30px_-5px_rgba(16,185,129,0.45)] hover:bg-emerald-400">
+              <Button type="submit" className="h-12 bg-sky-400 px-6 text-base font-bold text-[#090d16] shadow-[0_0_30px_-5px_rgba(56,189,248,0.5)] hover:bg-sky-300">
                 <Zap className="h-4 w-4" />
                 {t(lang, "scanBtn")}
               </Button>
@@ -218,7 +218,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
             <div className="mt-3 text-center">
               <button
                 onClick={() => void startScan("demo://app")}
-                className="text-sm text-zinc-500 underline decoration-dotted underline-offset-4 transition hover:text-emerald-400"
+                className="text-sm text-slate-500 underline decoration-dotted underline-offset-4 transition hover:text-sky-400"
               >
                 {t(lang, "demoBtn")} →
               </button>
@@ -226,29 +226,29 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
           )}
 
           {phase === "scanning" && (
-            <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-zinc-800 bg-[#0f1216] p-6 sm:p-8">
+            <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:p-8">
               <div className="flex items-center gap-3">
-                <span className="appmot-pulse flex h-3 w-3 rounded-full bg-emerald-400" />
-                <p className="font-semibold text-zinc-100">{t(lang, "scanning")}</p>
-                <span className="ml-auto font-mono text-sm text-emerald-400">{scan?.progress ?? 0}%</span>
+                <span className="appseal-pulse flex h-3 w-3 rounded-full bg-sky-400" />
+                <p className="font-semibold text-slate-100">{t(lang, "scanning")}</p>
+                <span className="ml-auto font-mono text-sm text-sky-400">{scan?.progress ?? 0}%</span>
               </div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-zinc-800">
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
                 <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  className="h-full rounded-full bg-sky-400 transition-all duration-500"
                   style={{ width: `${scan?.progress ?? 4}%` }}
                 />
               </div>
-              <p className="mt-3 text-sm text-zinc-400">
+              <p className="mt-3 text-sm text-slate-400">
                 {scan?.stage?.[lang] ?? "…"}{" "}
-                <span className="font-mono text-zinc-500">{url ? url.replace(/^https?:\/\//, "") : "demo-app"}</span>
+                <span className="font-mono text-slate-500">{url ? url.replace(/^https?:\/\//, "") : "demo-app"}</span>
               </p>
               {/* live radar: categories click through as the scan advances */}
               <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[
-                  { key: "secrets" as const, from: 8, to: 34, icon: <KeyRound className="h-3.5 w-3.5" /> },
-                  { key: "headers" as const, from: 34, to: 56, icon: <ShieldCheck className="h-3.5 w-3.5" /> },
-                  { key: "admin" as const, from: 56, to: 78, icon: <Lock className="h-3.5 w-3.5" /> },
-                  { key: "liveness" as const, from: 78, to: 100, icon: <Activity className="h-3.5 w-3.5" /> },
+                  { key: "secrets" as const, from: 8, to: 34, Icon: KeyRound },
+                  { key: "headers" as const, from: 34, to: 56, Icon: ShieldHeaders },
+                  { key: "admin" as const, from: 56, to: 78, Icon: Lock },
+                  { key: "liveness" as const, from: 78, to: 100, Icon: Activity },
                 ].map((c) => {
                   const p = scan?.progress ?? 0;
                   const state = p >= c.to ? "done" : p >= c.from ? "active" : "wait";
@@ -256,16 +256,16 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
                     <motion.div
                       key={c.key}
                       animate={{
-                        borderColor: state === "done" ? "rgba(16,185,129,0.6)" : state === "active" ? "rgba(16,185,129,0.35)" : "rgba(39,39,42,0.6)",
-                        backgroundColor: state === "done" ? "rgba(16,185,129,0.06)" : "rgba(16,18,24,1)",
+                        borderColor: state === "done" ? "rgba(52,211,153,0.6)" : state === "active" ? "rgba(56,189,248,0.45)" : "rgba(30,41,59,0.8)",
+                        backgroundColor: state === "done" ? "rgba(52,211,153,0.06)" : "rgba(17,24,39,1)",
                       }}
                       className="flex items-center gap-2 rounded-lg border px-3 py-2.5"
                       aria-label={CATEGORY_META[c.key].title[lang]}
                     >
-                      <span className={state === "done" ? "text-emerald-400" : state === "active" ? "text-emerald-400 appmot-pulse" : "text-zinc-600"}>
-                        {state === "done" ? <Check className="h-3.5 w-3.5" /> : c.icon}
+                      <span className={state === "done" ? "text-emerald-400" : state === "active" ? "text-sky-400 appseal-pulse" : "text-slate-600"}>
+                        <c.Icon size={14} radarState={state} />
                       </span>
-                      <span className={`truncate text-[11px] font-semibold ${state === "wait" ? "text-zinc-600" : "text-zinc-200"}`}>
+                      <span className={`truncate text-[11px] font-semibold ${state === "wait" ? "text-slate-600" : "text-slate-200"}`}>
                         {CATEGORY_META[c.key].title[lang]}
                       </span>
                     </motion.div>
@@ -279,8 +279,8 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
             <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-red-900/60 bg-red-500/5 p-6 text-center">
               <ShieldAlert className="mx-auto h-8 w-8 text-red-400" />
               <p className="mt-3 font-semibold text-red-300">{t(lang, "errTitle")}</p>
-              <p className="mt-1 break-words text-sm text-zinc-400">{error}</p>
-              <Button variant="outline" onClick={reset} className="mt-4 border-zinc-700 text-zinc-300 hover:bg-zinc-800">
+              <p className="mt-1 break-words text-sm text-slate-400">{error}</p>
+              <Button variant="outline" onClick={reset} className="mt-4 border-slate-700 text-slate-300 hover:bg-slate-800">
                 {t(lang, "rescan")}
               </Button>
             </div>
@@ -294,8 +294,8 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
         </section>
 
         {/* stats */}
-        <section className="border-t border-zinc-800/70 py-14" aria-label={t(lang, "statsTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-zinc-100">
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "statsTitle")}>
+          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
             {t(lang, "statsTitle")}
           </h2>
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -304,17 +304,17 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
               { n: "40%", s: t(lang, "stat2") },
               { n: "1.3M", s: t(lang, "stat3") },
             ].map((x) => (
-              <div key={x.n} className="rounded-2xl border border-zinc-800 bg-[#0f1216] p-6 text-center">
-                <p className="font-display text-4xl font-extrabold text-emerald-400">{x.n}</p>
-                <p className="mt-2 text-[13px] leading-relaxed text-zinc-400">{x.s}</p>
+              <div key={x.n} className="rounded-2xl border border-slate-800 bg-[#111827] p-6 text-center">
+                <p className="font-display text-4xl font-extrabold text-sky-400">{x.n}</p>
+                <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{x.s}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* how it works */}
-        <section className="border-t border-zinc-800/70 py-14" aria-label={t(lang, "howTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-zinc-100">
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "howTitle")}>
+          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
             {t(lang, "howTitle")}
           </h2>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -323,66 +323,66 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
               { icon: <Zap className="h-5 w-5" />, n: "02", ti: t(lang, "how2Title"), tx: t(lang, "how2Text") },
               { icon: <FileCheck2 className="h-5 w-5" />, n: "03", ti: t(lang, "how3Title"), tx: t(lang, "how3Text") },
             ].map((x) => (
-              <div key={x.n} className="rounded-2xl border border-zinc-800 bg-[#0f1216] p-6">
+              <div key={x.n} className="rounded-2xl border border-slate-800 bg-[#111827] p-6">
                 <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-400/10 text-sky-400">
                     {x.icon}
                   </span>
-                  <span className="font-mono text-xs text-zinc-600">{x.n}</span>
+                  <span className="font-mono text-xs text-slate-600">{x.n}</span>
                 </div>
-                <h3 className="font-display mt-4 text-base font-bold text-zinc-100">{x.ti}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-zinc-400">{x.tx}</p>
+                <h3 className="font-display mt-4 text-base font-bold text-slate-100">{x.ti}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{x.tx}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* first real case */}
-        <section className="border-t border-zinc-800/70 py-14" aria-label={t(lang, "caseTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-zinc-100">
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "caseTitle")}>
+          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
             {t(lang, "caseTitle")}
           </h2>
-          <p className="mt-2 text-center text-sm text-zinc-500">{t(lang, "caseSub")}</p>
-          <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-emerald-900/40 bg-emerald-500/[0.03] p-6 sm:p-8">
+          <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "caseSub")}</p>
+          <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-sky-900/40 bg-sky-400/[0.04] p-6 sm:p-8">
             <div className="grid gap-3 sm:grid-cols-3">
               {[
                 { ti: t(lang, "caseStep1t"), n: t(lang, "caseStep1n"), d: t(lang, "caseStep1d") },
                 { ti: t(lang, "caseStep2t"), n: t(lang, "caseStep2n"), d: t(lang, "caseStep2d") },
                 { ti: t(lang, "caseStep3t"), n: t(lang, "caseStep3n"), d: t(lang, "caseStep3d") },
               ].map((s, i) => (
-                <div key={i} className="rounded-xl border border-zinc-800 bg-[#0f1216] p-5 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{s.ti}</p>
-                  <p className="font-display mt-2 text-2xl font-extrabold text-emerald-400">{s.n}</p>
-                  <p className="mt-2 text-[12px] leading-relaxed text-zinc-400">{s.d}</p>
+                <div key={i} className="rounded-xl border border-slate-800 bg-[#111827] p-5 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{s.ti}</p>
+                  <p className="font-display mt-2 text-2xl font-extrabold text-sky-400">{s.n}</p>
+                  <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{s.d}</p>
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-[13px] leading-relaxed text-zinc-400">{t(lang, "caseBody")}</p>
-            <p className="font-display mt-4 text-sm font-bold text-emerald-300">{t(lang, "caseQuote")}</p>
+            <p className="mt-6 text-[13px] leading-relaxed text-slate-400">{t(lang, "caseBody")}</p>
+            <p className="font-display mt-4 text-sm font-bold text-sky-300">{t(lang, "caseQuote")}</p>
           </div>
         </section>
 
         {/* what we check */}
-        <section className="border-t border-zinc-800/70 py-14" aria-label={t(lang, "checksTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-zinc-100">
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "checksTitle")}>
+          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
             {t(lang, "checksTitle")}
           </h2>
-          <p className="mt-2 text-center text-sm text-zinc-500">{t(lang, "checksSub")}</p>
+          <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "checksSub")}</p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {CHECK_CATEGORIES.map((c) => (
-              <div key={c.key} className="rounded-2xl border border-zinc-800 bg-[#0f1216] p-6">
+              <div key={c.key} className="rounded-2xl border border-slate-800 bg-[#111827] p-6">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-400/10 text-sky-400">
                     {c.icon}
                   </span>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-200">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
                     {CATEGORY_META[c.key].title[lang]}
                   </h3>
                 </div>
                 <ul className="mt-4 space-y-2">
                   {c.items[lang].split("|").map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-[13px] text-zinc-400">
-                      <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500/70" />
+                    <li key={item} className="flex items-start gap-2 text-[13px] text-slate-400">
+                      <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400/70" />
                       {item}
                     </li>
                   ))}
@@ -393,11 +393,11 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
         </section>
 
         {/* pricing */}
-        <section className="border-t border-zinc-800/70 py-14" aria-label={t(lang, "pricingTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-zinc-100">
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "pricingTitle")}>
+          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
             {t(lang, "pricingTitle")}
           </h2>
-          <p className="mt-2 text-center text-sm text-zinc-500">{t(lang, "pricingSub")}</p>
+          <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "pricingSub")}</p>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {[
               { name: t(lang, "planFree"), price: t(lang, "planFreePrice"), feats: list(lang, "planFreeFeats"), hi: false, cta: t(lang, "planFreeCta"), soon: false },
@@ -407,28 +407,28 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
               <div
                 key={p.name}
                 className={`flex flex-col rounded-2xl border p-6 ${
-                  p.hi ? "border-emerald-500/60 bg-emerald-500/5" : "border-zinc-800 bg-[#0f1216]"
+                  p.hi ? "border-indigo-500/60 bg-indigo-500/5" : "border-slate-800 bg-[#111827]"
                 }`}
               >
-                <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">{p.name}</p>
-                <p className={`font-display mt-2 text-3xl font-extrabold ${p.hi ? "text-emerald-400" : "text-zinc-100"}`}>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{p.name}</p>
+                <p className={`font-display mt-2 text-3xl font-extrabold ${p.hi ? "text-indigo-400" : "text-slate-100"}`}>
                   {p.price}
                 </p>
                 <ul className="mt-4 flex-1 space-y-2">
                   {p.feats.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-[13px] text-zinc-300">
-                      <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    <li key={f} className="flex items-start gap-2 text-[13px] text-slate-300">
+                      <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400" />
                       {f}
                     </li>
                   ))}
                 </ul>
                 {p.soon ? (
-                  <Button variant="outline" disabled className="mt-5 w-full border-zinc-700 text-zinc-500">
+                  <Button variant="outline" disabled className="mt-5 w-full border-slate-700 text-slate-500">
                     {p.cta}
                   </Button>
                 ) : (
                   <Button
-                    className="mt-5 w-full bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
+                    className="mt-5 w-full bg-sky-400 text-[#090d16] hover:bg-sky-300"
                     onClick={() => {
                       window.scrollTo({ top: 0, behavior: "smooth" });
                       document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
@@ -444,17 +444,17 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
         </section>
 
         {/* issue #2 CTA: bring your URL (GTM) */}
-        <section className="border-t border-zinc-800/70 py-14" aria-label={t(lang, "issue2Title")}>
-          <div className="mx-auto max-w-3xl rounded-2xl border border-emerald-900/40 bg-emerald-500/[0.03] p-6 text-center sm:p-10">
-            <h2 className="font-display text-2xl font-bold text-zinc-100">
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "issue2Title")}>
+          <div className="mx-auto max-w-3xl rounded-2xl border border-sky-900/40 bg-sky-400/[0.04] p-6 text-center sm:p-10">
+            <h2 className="font-display text-2xl font-bold text-slate-100">
               {t(lang, "issue2Title")}
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-[13px] leading-relaxed text-zinc-400">
+            <p className="mx-auto mt-3 max-w-xl text-[13px] leading-relaxed text-slate-400">
               {t(lang, "issue2Sub")}
             </p>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button
-                className="bg-emerald-500 px-5 text-sm font-bold text-zinc-950 hover:bg-emerald-400"
+                className="bg-sky-400 px-5 text-sm font-bold text-[#090d16] hover:bg-sky-300"
                 onClick={() => {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                   document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
@@ -465,7 +465,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
               </Button>
               <a
                 href="/registry"
-                className="rounded-md border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-emerald-500/50 hover:text-emerald-400"
+                className="rounded-md border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
               >
                 {t(lang, "issue2CtaRegistry")} →
               </a>
@@ -474,19 +474,19 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
         </section>
 
         {/* FAQ */}
-        <section className="border-t border-zinc-800/70 py-14" aria-label={t(lang, "faqTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-zinc-100">
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "faqTitle")}>
+          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
             {t(lang, "faqTitle")}
           </h2>
           <div className="mx-auto mt-8 max-w-3xl space-y-3">
             {([["faq1Q", "faq1A"], ["faq2Q", "faq2A"], ["faq3Q", "faq3A"], ["faq4Q", "faq4A"]] as const).map(
               ([q, a]) => (
-                <details key={q} className="group rounded-xl border border-zinc-800 bg-[#0f1216] p-5">
-                  <summary className="cursor-pointer list-none text-sm font-semibold text-zinc-100 marker:hidden">
-                    <span className="mr-2 text-emerald-400 transition group-open:rotate-90 inline-block">▸</span>
+                <details key={q} className="group rounded-xl border border-slate-800 bg-[#111827] p-5">
+                  <summary className="cursor-pointer list-none text-sm font-semibold text-slate-100 marker:hidden">
+                    <span className="mr-2 text-sky-400 transition group-open:rotate-90 inline-block">▸</span>
                     {t(lang, q)}
                   </summary>
-                  <p className="mt-3 pl-6 text-[13px] leading-relaxed text-zinc-400">{t(lang, a)}</p>
+                  <p className="mt-3 pl-6 text-[13px] leading-relaxed text-slate-400">{t(lang, a)}</p>
                 </details>
               ),
             )}
@@ -495,13 +495,13 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
       </main>
 
       {/* footer */}
-      <footer className="mt-auto border-t border-zinc-800/70 bg-[#080a0d]">
+      <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-4 py-6 text-center sm:flex-row sm:px-6 sm:text-left">
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-slate-500">
             © {new Date().getFullYear()} AppSeal · {t(lang, "footerText")}
           </p>
-          <p className="font-mono text-[10px] text-zinc-700">
-            MVP v0.2 · <a href="/registry" className="transition hover:text-zinc-500">реестр</a> · Next.js · external black-box scanner
+          <p className="font-mono text-[10px] text-slate-700">
+            MVP v0.2 · <a href="/registry" className="transition hover:text-slate-500">реестр</a> · Next.js · external black-box scanner
           </p>
         </div>
       </footer>
