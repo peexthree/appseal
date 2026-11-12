@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { runScan, normalizeInputUrl } from "@/lib/scanner";
 import { newId, saveScan } from "@/lib/scanner/store";
+import { assertPublicTarget } from "@/lib/scanner/guard";
 import type { Lang, ScanResult } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// scan takes 15-40s; keep the function alive for the background work
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,10 +20,16 @@ export async function POST(req: NextRequest) {
     let norm;
     try {
       norm = normalizeInputUrl(raw);
-    } catch {
+      if (!norm.isDemo) {
+        // SSRF guard: scanner only talks to public hosts (demo fixture is first-party)
+        await assertPublicTarget(new URL(norm.url).hostname);
+      }
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : "invalid url";
+      const isGuard = reason.includes("public") || reason.includes("resolve");
       return NextResponse.json(
-        { error: "invalid url" },
-        { status: 400 },
+        { error: isGuard ? reason : "invalid url" },
+        { status: isGuard ? 403 : 400 },
       );
     }
 
@@ -40,9 +50,13 @@ export async function POST(req: NextRequest) {
       grade: "D",
       results: [],
     };
+
     await saveScan(scan);
-    // fire and forget; polls read state from the store
-    void runScan(scan);
+    // run the scan after the response is sent; on Vercel this keeps the
+    // function alive (waitUntil) within maxDuration, locally it just works
+    after(async () => {
+      await runScan(scan);
+    });
     return NextResponse.json({ id });
   } catch (e) {
     return NextResponse.json(
