@@ -100,7 +100,13 @@ export async function safeFetch(
     }
     const headers: Record<string, string> = {};
     res.headers.forEach((v, k) => {
-      headers[k.toLowerCase()] = v;
+      const key = k.toLowerCase();
+      // undici yields every Set-Cookie separately; join so none are lost
+      if (key === "set-cookie") {
+        headers[key] = headers[key] ? headers[key] + "\n" + v : v;
+      } else {
+        headers[key] = v;
+      }
     });
     return {
       ok: res.ok,

@@ -66,7 +66,9 @@ export async function checkAdminExposure(ctx: Ctx): Promise<CheckResult> {
       } catch {
         /* keep default */
       }
-      const looksAdmin = ADMIN_MARKERS.some((re) => re.test(r.body)) || /login/i.test(r.body);
+      // looksAdmin via panel markers only; the bare word "login" alone is not
+      // evidence (banal word on catch-all pages) - form evidence below decides
+      const looksAdmin = ADMIN_MARKERS.some((re) => re.test(r.body));
       // v0.2: a 200 page alone proves nothing (catch-all routing, entity
       // pages) - require actual login-form evidence: a password input or a
       // form with login/sign-in wording
