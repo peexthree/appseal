@@ -78,6 +78,8 @@ export async function runScan(scan: ScanResult): Promise<void> {
       homeHeaders: home.headers,
       isHttp: (home.url || url).startsWith("http://"),
       csr: isClientRenderShell(home.body),
+      // path probes are relative to the demo base when scanning the fixture
+      basePath: scan.isDemo ? new URL(url).pathname.replace(/\/+$/, "") : "",
     };
 
     if (ctx.csr) {

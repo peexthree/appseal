@@ -8,6 +8,8 @@ interface Ctx {
   homeBody: string;
   homeHeaders: Record<string, string>;
   isHttp: boolean;
+  /** prefix for path probes (the built-in demo target lives under /api/demo-target) */
+  basePath?: string;
 }
 
 const done = (
@@ -43,11 +45,11 @@ export async function checkAdminExposure(ctx: Ctx): Promise<CheckResult> {
   // v0.2 soft-404 detector: probe a random path to reveal catch-all routing
   // (any URL returns a page instead of 404, e.g. entity-based sites)
   const probePath = "/appmot-probe-" + randomBytes(4).toString("hex");
-  const probe = await safeFetch(ctx.origin + probePath, { timeoutMs: 5000, maxBody: 200 * 1024 });
+  const probe = await safeFetch(ctx.origin + (ctx.basePath ?? "") + probePath, { timeoutMs: 5000, maxBody: 200 * 1024 });
   const catchAll = probe.status === 200 && !bodiesEquivalent(probe.body, ctx.homeBody);
 
   for (const p of ADMIN_PATHS) {
-    const r = await safeFetch(ctx.origin + p, { timeoutMs: 5000, maxBody: 200 * 1024 });
+    const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + p, { timeoutMs: 5000, maxBody: 200 * 1024 });
     if (r.status === 200 && r.body) {
       // 200 with the homepage body is a soft-404, not a real admin page
       if (bodiesEquivalent(r.body, ctx.homeBody)) {
@@ -59,7 +61,7 @@ export async function checkAdminExposure(ctx: Ctx): Promise<CheckResult> {
       let redirected = false;
       try {
         const finalPath = new URL(r.url).pathname.replace(/\/+$/, "") || "/";
-        const askedPath = p.replace(/\/+$/, "") || "/";
+        const askedPath = ((ctx.basePath ?? "") + p).replace(/\/+$/, "") || "/";
         redirected = finalPath !== askedPath;
       } catch {
         /* keep default */
@@ -129,7 +131,7 @@ export async function checkBackups(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
   const found: string[] = [];
   for (const p of BACKUP_PATHS) {
-    const r = await safeFetch(ctx.origin + p, { method: "GET", timeoutMs: 5000, maxBody: 512 });
+    const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + p, { method: "GET", timeoutMs: 5000, maxBody: 512 });
     if (r.status === 200 && (r.bodyBytes > 64 || r.body.length > 32)) {
       // v0.2: catch-all sites answer 200 with an HTML page for any path -
       // a real dump is binary/structured, not the site's own HTML template
@@ -173,7 +175,7 @@ export async function checkDebugEndpoints(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
   const found: string[] = [];
   for (const p of DEBUG_PATHS) {
-    const r = await safeFetch(ctx.origin + p, { timeoutMs: 5000, maxBody: 100 * 1024 });
+    const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + p, { timeoutMs: 5000, maxBody: 100 * 1024 });
     if (r.status === 200 && /application\/json/i.test(r.contentType) && r.body.length > 2) {
       found.push(`${p} → ${truncate(r.body, 100)}`);
     }

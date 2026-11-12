@@ -7,6 +7,8 @@ interface Ctx {
   homeBody: string;
   homeHeaders: Record<string, string>;
   isHttp: boolean;
+  /** prefix for path probes (the built-in demo target lives under /api/demo-target) */
+  basePath?: string;
   /** v0.2: the page is a client-side render shell - liveness text checks
    *  cannot judge it from static HTML and are reported as info */
   csr?: boolean;
@@ -162,7 +164,9 @@ export async function checkRenderedErrors(ctx: Ctx): Promise<CheckResult> {
 
 export async function checkBrokenLinks(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
-  const links = extractLinks(ctx.homeBody, ctx.origin, 8);
+  const all = extractLinks(ctx.homeBody, ctx.origin, 8);
+  const self = (ctx.origin + (ctx.basePath ?? "")).replace(/\/+$/, "");
+  const links = all.filter((u) => u.replace(/\/+$/, "") !== self);
   if (!links.length) {
     return done("broken_links", "info", "medium", 0, {
       ru: "Внутренних ссылок для проверки не найдено",
