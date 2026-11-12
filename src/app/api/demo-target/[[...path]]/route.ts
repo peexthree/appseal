@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Public demo target served by AppMOT itself: a deliberately vulnerable
+ * Public demo target served by AppSeal itself: a deliberately vulnerable
  * vibe-coded app used by the "scan the demo app" button in production.
  * Local dev keeps the identical standalone fixture on 127.0.0.1:3210.
  */

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Merge cover + body into the final report PDF (normalize pages to A4).
 
-Run from the repo root: python3 scripts/appmot_report_merge.py
+Run from the repo root: python3 scripts/appseal_report_merge.py
 """
 import os
 
@@ -20,16 +20,16 @@ def normalize_page_to_a4(page):
 
 COVER = "scripts/report_assets/cover.pdf"
 BODY = "scripts/report_assets/body.pdf"
-OUT = "download/AppMOT_Security_Report_1.pdf"
+OUT = "download/AppSeal_Security_Report_1.pdf"
 
 writer = PdfWriter()
 writer.add_page(normalize_page_to_a4(PdfReader(COVER).pages[0]))
 for page in PdfReader(BODY).pages:
     writer.add_page(normalize_page_to_a4(page))
 writer.add_metadata({
-    "/Title": "AppMOT - Состояние безопасности vibe-coded приложений. Выпуск 1",
-    "/Author": "AppMOT",
-    "/Creator": "AppMOT",
+    "/Title": "AppSeal - Состояние безопасности vibe-coded приложений. Выпуск 1",
+    "/Author": "AppSeal",
+    "/Creator": "AppSeal",
     "/Subject": "Бенчмарк-отчёт: состояние безопасности vibe-coded приложений, выпуск 1",
 })
 writer.write(OUT)

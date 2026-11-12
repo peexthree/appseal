@@ -44,7 +44,7 @@ export async function checkAdminExposure(ctx: Ctx): Promise<CheckResult> {
 
   // v0.2 soft-404 detector: probe a random path to reveal catch-all routing
   // (any URL returns a page instead of 404, e.g. entity-based sites)
-  const probePath = "/appmot-probe-" + randomBytes(4).toString("hex");
+  const probePath = "/appseal-probe-" + randomBytes(4).toString("hex");
   const probe = await safeFetch(ctx.origin + (ctx.basePath ?? "") + probePath, { timeoutMs: 5000, maxBody: 200 * 1024 });
   const catchAll = probe.status === 200 && !bodiesEquivalent(probe.body, ctx.homeBody);
 

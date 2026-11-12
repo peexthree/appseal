@@ -12,12 +12,12 @@ describe("shouldRender", () => {
   it("never renders the demo fixture", () => {
     assert.equal(shouldRender(true, true), false);
   });
-  it("respects the APPMOT_RENDER=off kill switch", () => {
-    process.env.APPMOT_RENDER = "off";
+  it("respects the APPSEAL_RENDER=off kill switch", () => {
+    process.env.APPSEAL_RENDER = "off";
     try {
       assert.equal(shouldRender(true, false), false);
     } finally {
-      delete process.env.APPMOT_RENDER;
+      delete process.env.APPSEAL_RENDER;
     }
     assert.equal(shouldRender(true, false), true);
   });

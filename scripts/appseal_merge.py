@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Merge cover + body into the final AppMOT spec PDF (normalize to A4).
+"""Merge cover + body into the final AppSeal spec PDF (normalize to A4).
 
-Run from the repo root: python3 scripts/appmot_merge.py
+Run from the repo root: python3 scripts/appseal_merge.py
 """
 import os
 
@@ -25,11 +25,11 @@ for page in PdfReader("scripts/pdf_assets/body.pdf").pages:
     writer.add_page(normalize(page))
 
 writer.add_metadata({
-    "/Title": "AppMOT - техосмотр для приложений, собранных с ИИ: концепция и спецификация MVP",
-    "/Author": "AppMOT",
-    "/Creator": "AppMOT",
+    "/Title": "AppSeal - техосмотр для приложений, собранных с ИИ: концепция и спецификация MVP",
+    "/Author": "AppSeal",
+    "/Creator": "AppSeal",
     "/Subject": "MVP: концепция, спецификация, юнит-экономика, план запуска",
 })
-out = "download/AppMOT_MVP_spec.pdf"
+out = "download/AppSeal_MVP_spec.pdf"
 writer.write(out)
 print("merged:", out, "| pages:", len(writer.pages))

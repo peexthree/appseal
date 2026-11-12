@@ -12,7 +12,7 @@ const RENDER_TIMEOUT_MS = 20000;
 
 export function shouldRender(csr: boolean, isDemo: boolean): boolean {
   if (!csr || isDemo) return false;
-  return process.env.APPMOT_RENDER !== "off";
+  return process.env.APPSEAL_RENDER !== "off";
 }
 
 interface Rendered {
@@ -29,7 +29,7 @@ export async function renderPage(url: string): Promise<Rendered | null> {
     ]);
     const executablePath = await chromium.executablePath();
     if (!executablePath) {
-      console.warn("[appmot-render] executablePath is empty");
+      console.warn("[appseal-render] executablePath is empty");
       return null;
     }
     const browser = await pw.chromium.launch({
@@ -43,13 +43,13 @@ export async function renderPage(url: string): Promise<Rendered | null> {
       // give the SPA a moment to hydrate and fill the DOM
       await page.waitForTimeout(2500);
       const html = await page.content();
-      console.warn("[appmot-render] ok, bytes:", html.length);
+      console.warn("[appseal-render] ok, bytes:", html.length);
       return { html, finalUrl: page.url() };
     } finally {
       await browser.close().catch(() => {});
     }
   } catch (e) {
-    console.warn("[appmot-render] failed:", e instanceof Error ? e.message : String(e));
+    console.warn("[appseal-render] failed:", e instanceof Error ? e.message : String(e));
     return null;
   }
 }
