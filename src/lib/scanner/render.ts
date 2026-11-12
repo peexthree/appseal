@@ -28,7 +28,10 @@ export async function renderPage(url: string): Promise<Rendered | null> {
       import("playwright-core"),
     ]);
     const executablePath = await chromium.executablePath();
-    if (!executablePath) return null;
+    if (!executablePath) {
+      console.warn("[appmot-render] executablePath is empty");
+      return null;
+    }
     const browser = await pw.chromium.launch({
       executablePath,
       args: chromium.args,
@@ -40,11 +43,13 @@ export async function renderPage(url: string): Promise<Rendered | null> {
       // give the SPA a moment to hydrate and fill the DOM
       await page.waitForTimeout(2500);
       const html = await page.content();
+      console.warn("[appmot-render] ok, bytes:", html.length);
       return { html, finalUrl: page.url() };
     } finally {
       await browser.close().catch(() => {});
     }
-  } catch {
+  } catch (e) {
+    console.warn("[appmot-render] failed:", e instanceof Error ? e.message : String(e));
     return null;
   }
 }
