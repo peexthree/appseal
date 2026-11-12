@@ -3,8 +3,8 @@ import type { Lang } from "./scanner/types";
 export const DICT = {
   brand: { ru: "AppSeal", en: "AppSeal" },
   tagline: {
-    ru: "Техосмотр для приложений, собранных с ИИ",
-    en: "The MOT test for AI-built apps",
+    ru: "Печать доверия для приложений, собранных с ИИ",
+    en: "The trust seal for AI-built apps",
   },
   heroTitle: {
     ru: "Собрал приложение за вечер?",
@@ -24,7 +24,7 @@ export const DICT = {
   },
   scanBtn: { ru: "Проверить бесплатно", en: "Scan for free" },
   demoBtn: { ru: "Скан демо-приложения", en: "Scan the demo app" },
-  scanning: { ru: "Идёт техосмотр", en: "MOT in progress" },
+  scanning: { ru: "Идёт техосмотр", en: "Inspection in progress" },
   errTitle: { ru: "Не получилось", en: "Something went wrong" },
   rescan: { ru: "Проверить другое приложение", en: "Scan another app" },
   downloadPdf: { ru: "Скачать PDF-отчёт", en: "Download PDF report" },
@@ -67,7 +67,7 @@ export const DICT = {
     ru: "Реальный домен, реальный деплой, реальный ИИ-агент · ноябрь 2026",
     en: "A real domain, a real deploy, a real AI agent · November 2026",
   },
-  caseStep1t: { ru: "Техосмотр", en: "MOT scan" },
+  caseStep1t: { ru: "Техосмотр", en: "Trust scan" },
   caseStep1n: { ru: "A · 86", en: "A · 86" },
   caseStep1d: {
     ru: "3 замечания: X-Frame-Options, CORS «для всех», пустой title",
@@ -170,7 +170,7 @@ export const DICT = {
     ru: "AppSeal — независимый слой доверия для эпохи, когда софт пишут все. Прототип MVP.",
     en: "AppSeal — an independent trust layer for the era when everyone writes software. MVP prototype.",
   },
-  gradeTitle: { ru: "Оценка техосмотра", en: "MOT grade" },
+  gradeTitle: { ru: "Оценка техосмотра", en: "Trust grade" },
   findingsTitle: { ru: "Находки по категориям", en: "Findings by category" },
   allGood: {
     ru: "Критичных проблем не найдено. Но один скан — не навсегда: приложение меняется, и проверки стоит повторять после каждого релиза.",
