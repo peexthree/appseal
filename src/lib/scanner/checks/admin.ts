@@ -1,5 +1,6 @@
 import type { CheckResult, Severity } from "../types";
-import { safeFetch, truncate } from "../fetcher";
+import { randomBytes } from "node:crypto";
+import { bodiesEquivalent, safeFetch, truncate } from "../fetcher";
 
 interface Ctx {
   origin: string;
@@ -37,14 +38,47 @@ export async function checkAdminExposure(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
   const open: string[] = [];
   const evidence: string[] = [];
+  const soft404: string[] = [];
+
+  // v0.2 soft-404 detector: probe a random path to reveal catch-all routing
+  // (any URL returns a page instead of 404, e.g. entity-based sites)
+  const probePath = "/appmot-probe-" + randomBytes(4).toString("hex");
+  const probe = await safeFetch(ctx.origin + probePath, { timeoutMs: 5000, maxBody: 200 * 1024 });
+  const catchAll = probe.status === 200 && !bodiesEquivalent(probe.body, ctx.homeBody);
+
   for (const p of ADMIN_PATHS) {
     const r = await safeFetch(ctx.origin + p, { timeoutMs: 5000, maxBody: 200 * 1024 });
     if (r.status === 200 && r.body) {
+      // 200 with the homepage body is a soft-404, not a real admin page
+      if (bodiesEquivalent(r.body, ctx.homeBody)) {
+        soft404.push(p);
+        continue;
+      }
+      // a redirect to a different path means the content belongs to another
+      // page (catch-all routing), not to an admin panel at this path
+      let redirected = false;
+      try {
+        const finalPath = new URL(r.url).pathname.replace(/\/+$/, "") || "/";
+        const askedPath = p.replace(/\/+$/, "") || "/";
+        redirected = finalPath !== askedPath;
+      } catch {
+        /* keep default */
+      }
       const looksAdmin = ADMIN_MARKERS.some((re) => re.test(r.body)) || /login/i.test(r.body);
-      if (looksAdmin) {
+      // v0.2: a 200 page alone proves nothing (catch-all routing, entity
+      // pages) - require actual login-form evidence: a password input or a
+      // form with login/sign-in wording
+      const hasPasswordInput = /<input[^>]+type=["']password["']/i.test(r.body);
+      const hasLoginForm =
+        /<form[\s\S]{0,600}?(?:log[io]n|sign[\s-]?in|войти|логин)/i.test(r.body) ||
+        /(?:log[io]n|sign[\s-]?in|войти)[\s\S]{0,200}?<form/i.test(r.body);
+      const real = looksAdmin && !redirected && (hasPasswordInput || hasLoginForm);
+      if (real) {
         open.push(p);
         const title = r.body.match(/<title>([^<]*)<\/title>/i)?.[1] ?? "";
         evidence.push(`${p} → 200, title: "${truncate(title, 60)}"`);
+      } else if (looksAdmin) {
+        soft404.push(p);
       }
     }
     // 401/403 = protected (good), 404 = absent (good)
@@ -68,8 +102,12 @@ export async function checkAdminExposure(ctx: Ctx): Promise<CheckResult> {
     );
   }
   return done("admin_exposure", "pass", "high", 0, {
-    ru: "Стандартные пути админок не открыты",
-    en: "Standard admin paths are not exposed",
+    ru: soft404.length
+      ? `Стандартные пути админок не открыты (soft-404 отфильтровано: ${soft404.length})`
+      : "Стандартные пути админок не открыты",
+    en: soft404.length
+      ? `Standard admin paths are not exposed (soft-404 filtered: ${soft404.length})`
+      : "Standard admin paths are not exposed",
   }, undefined, Date.now() - t0);
 }
 
@@ -93,6 +131,11 @@ export async function checkBackups(ctx: Ctx): Promise<CheckResult> {
   for (const p of BACKUP_PATHS) {
     const r = await safeFetch(ctx.origin + p, { method: "GET", timeoutMs: 5000, maxBody: 512 });
     if (r.status === 200 && (r.bodyBytes > 64 || r.body.length > 32)) {
+      // v0.2: catch-all sites answer 200 with an HTML page for any path -
+      // a real dump is binary/structured, not the site's own HTML template
+      const isHtmlTemplate =
+        /text\/html/i.test(r.contentType) && /<html|<!doctype/i.test(r.body);
+      if (isHtmlTemplate || bodiesEquivalent(r.body, ctx.homeBody)) continue;
       found.push(`${p} (${r.bodyBytes || r.body.length}+ bytes)`);
     }
   }

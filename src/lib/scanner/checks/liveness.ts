@@ -37,9 +37,20 @@ const PLACEHOLDERS: { re: RegExp; label: string }[] = [
 export async function checkPlaceholder(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
   const hits: string[] = [];
+  // v0.2 context filter: matches inside code samples and check descriptions
+  // are meta-references, not real placeholder content (e.g. our own landing
+  // listing the patterns it searches for)
+  const visible = ctx.homeBody
+    .replace(/<(?:code|pre|script|style)[\s\S]*?<\/(?:code|pre|script|style)>/gi, " ");
   for (const p of PLACEHOLDERS) {
-    const m = ctx.homeBody.match(p.re);
-    if (m) hits.push(`"${truncate(m[0], 40)}"`);
+    const m = visible.match(p.re);
+    if (!m) continue;
+    const idx = visible.indexOf(m[0]);
+    const around = visible.slice(Math.max(0, idx - 100), idx + 100);
+    if (/(?:заглуш|placeholder text|placeholder content|иском|паттерн|проверк|сканер|scanner|детект|detect)/i.test(around)) {
+      continue; // meta-mention: the page talks about the check, not the content
+    }
+    hits.push(`"${truncate(m[0], 40)}"`);
   }
   if (hits.length) {
     return done(
@@ -163,7 +174,7 @@ export async function checkMetaHealth(ctx: Ctx): Promise<CheckResult> {
   const title = ctx.homeBody.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim() ?? "";
   const desc = ctx.homeBody.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i)?.[1]?.trim() ?? "";
   const missing: string[] = [];
-  if (!title || title.length < 3) missing.push("ru" === "ru" ? "<title>" : "<title>");
+  if (!title || title.length < 3) missing.push("<title>");
   if (!desc || desc.length < 10) missing.push("<meta description>");
   if (missing.length) {
     return done(

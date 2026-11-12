@@ -223,3 +223,52 @@ export function maskSecret(s: string, keep = 4): string {
   if (t.length <= keep * 2) return "*".repeat(t.length);
   return t.slice(0, keep) + "…" + "*".repeat(Math.min(12, t.length - keep * 2)) + t.slice(-keep);
 }
+
+/* ------------------------------------------------------------------ */
+/* v0.2 heuristics                                                     */
+/* ------------------------------------------------------------------ */
+
+/** Shannon entropy in bits per character - a random key looks high, a
+ *  marketing word or doc example looks low. */
+export function shannonEntropy(s: string): number {
+  if (!s.length) return 0;
+  const freq = new Map<string, number>();
+  for (const ch of s) freq.set(ch, (freq.get(ch) ?? 0) + 1);
+  let h = 0;
+  for (const count of freq.values()) {
+    const p = count / s.length;
+    h -= p * Math.log2(p);
+  }
+  return h;
+}
+
+/** Collapse whitespace and take a bounded prefix for body-to-body compares. */
+function normalizedBody(body: string): string {
+  return body.replace(/\s+/g, " ").trim().slice(0, 4000);
+}
+
+/** Two 200-bodies that are essentially the same page (soft-404 detection). */
+export function bodiesEquivalent(a: string, b: string): boolean {
+  const na = normalizedBody(a);
+  const nb = normalizedBody(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  // allow minor template noise: compare the first 300 chars both ways
+  return na.slice(0, 300) === nb.slice(0, 300) || na.slice(-300) === nb.slice(-300);
+}
+
+/** A value that reads like a documentation example rather than a real key. */
+export function looksLikeDocExample(s: string, context: string): boolean {
+  if (/(?:your|example|sample|dummy|fake|test|demo|placeholder|xxx|abcd|123456|000000)/i.test(s)) {
+    return true;
+  }
+  // context smells like docs, code samples, or the scanner's own copy
+  if (
+    /(?:your[_-]?(?:api[_-]?)?key|doc(?:umentation|s)?|example|sample code|<code|<pre|readme|getting started|документ|пример|докум)/i.test(
+      context,
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
