@@ -13,11 +13,16 @@ export async function GET(req: NextRequest) {
   }
   const bytes = await buildReportPdf(scan);
   const safeHost = scan.host.replace(/[^a-z0-9.-]/gi, "");
-  return new Response(Buffer.from(bytes), {
+  const body = new Uint8Array(bytes);
+  // Explicit Content-Length: proxies (preview gateways) mishandle chunked
+  // downloads without a known size and interrupt the transfer.
+  return new Response(body, {
     headers: {
       "content-type": "application/pdf",
+      "content-length": String(body.byteLength),
       "content-disposition": `attachment; filename="appmot-report-${safeHost}-${scan.id}.pdf"`,
       "cache-control": "no-store",
+      "x-content-type-options": "nosniff",
     },
   });
 }
