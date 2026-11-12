@@ -12,10 +12,21 @@
 
 ## Вариант А: Vercel (серверлесс, бесплатно на старте)
 
-1. Залей репо на GitHub (см. TRANSFER.md) или деплой напрямую из CLI: `npx vercel`
-2. Файлы шрифтов едут в функцию `/api/report` автоматически (tracing includes)
-3. Ограничения: scans store на файловой системе серверлесс-функции эфемерен -
-   история сканов не сохранится между вызовами. Для старта ок; позже - S3/Postgres.
+Архитектура под серверлесс уже готова: сканы хранятся в Redis (Upstash REST), фоновая
+работа идёт через `after()` + `maxDuration=60`, цели скана проверяются на публичность
+(SSRF-guard).
+
+1. Аккаунт Vercel (vercel.com) - логин по email через `npx vercel login`
+2. Аккаунт Upstash (upstash.com, бесплатный тариф без карты):
+   - Console → Create Database → любая облако/reg ion → REST API включён по умолчанию
+   - Скопируй `UPSTASH_REDIS_REST_URL` и `UPSTASH_REDIS_REST_TOKEN`
+3. Переменные окружения (dashboard → Settings → Environment Variables или CLI):
+   ```
+   UPSTASH_REDIS_REST_URL=...
+   UPSTASH_REDIS_REST_TOKEN=...
+   ```
+4. Деплой: `npx vercel` (из корня проекта) → превью-URL → `npx vercel --prod`
+5. Бесплатный тариф Upstash: 10k команд/день - хватает на ~150 сканов в день; дальше - апгрейд
 
 > Важно для РФ: у Vercel есть ограничения на оплату из России. Если аккаунт уже есть -
 > ок; если нет - смотри вариант Б.
