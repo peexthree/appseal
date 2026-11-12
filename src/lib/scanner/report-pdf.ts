@@ -5,35 +5,37 @@ import path from "node:path";
 import type { ScanResult, CheckResult, Localized } from "./types";
 import { GRADE_META, SEVERITY_META, STATUS_LABEL } from "./grade";
 
-// DejaVu fonts ship with the repo (assets/fonts); system paths are a fallback.
-const FONT_CANDIDATES = {
-  reg: [
-    "assets/fonts/DejaVuSans.ttf",
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-    "C:/Windows/Fonts/DejaVuSans.ttf",
-  ],
-  bold: [
-    "assets/fonts/DejaVuSans-Bold.ttf",
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-    "C:/Windows/Fonts/DejaVuSans-Bold.ttf",
-  ],
-  mono: [
-    "assets/fonts/DejaVuSansMono.ttf",
-    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-    "C:/Windows/Fonts/DejaVuSansMono.ttf",
-  ],
+// DejaVu fonts ship with the repo under assets/fonts (statically scoped so
+// Next.js traces only this folder); system paths are a dev fallback.
+const FONT_NAMES = {
+  reg: "DejaVuSans.ttf",
+  bold: "DejaVuSans-Bold.ttf",
+  mono: "DejaVuSansMono.ttf",
 } as const;
 
-async function resolveFont(file: string): Promise<string> {
-  for (const candidate of FONT_CANDIDATES[file]) {
-    try {
-      await fs.access(candidate);
-      return candidate;
-    } catch {
-      // try next candidate
+const SYSTEM_FONT_FILES = {
+  reg: ["/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "C:/Windows/Fonts/DejaVuSans.ttf"],
+  bold: ["/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "C:/Windows/Fonts/DejaVuSans-Bold.ttf"],
+  mono: ["/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", "C:/Windows/Fonts/DejaVuSansMono.ttf"],
+} as const;
+
+async function resolveFont(which: keyof typeof FONT_NAMES): Promise<string> {
+  const bundled = path.join(process.cwd(), "assets", "fonts", FONT_NAMES[which]);
+  try {
+    await fs.access(bundled);
+    return bundled;
+  } catch {
+    // dev fallback: probe literal system paths (same filenames)
+    for (const candidate of SYSTEM_FONT_FILES[which]) {
+      try {
+        await fs.access(candidate);
+        return candidate;
+      } catch {
+        // try next candidate
+      }
     }
+    throw new Error(`Font not found: ${FONT_NAMES[which]} (assets/fonts or system dirs)`);
   }
-  throw new Error(`Font not found: ${file}. Expected assets/fonts/DejaVu*.ttf in the repo.`);
 }
 
 const A4: [number, number] = [595.28, 841.89];
@@ -108,9 +110,11 @@ function newPage(pdf: PDFDocument, fonts: { reg: PDFFont; bold: PDFFont; mono: P
 export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
-  const reg = await pdf.embedFont(await fs.readFile(await resolveFont("reg")), { subset: true });
-  const bold = await pdf.embedFont(await fs.readFile(await resolveFont("bold")), { subset: true });
-  const mono = await pdf.embedFont(await fs.readFile(await resolveFont("mono")), { subset: true });
+  // turbopackIgnore: font lookup is runtime-probed; the files are bundled via
+  // outputFileTracingIncludes in next.config.ts
+  const reg = await pdf.embedFont(await fs.readFile(/* turbopackIgnore: true */ await resolveFont("reg")), { subset: true });
+  const bold = await pdf.embedFont(await fs.readFile(/* turbopackIgnore: true */ await resolveFont("bold")), { subset: true });
+  const mono = await pdf.embedFont(await fs.readFile(/* turbopackIgnore: true */ await resolveFont("mono")), { subset: true });
   const lang = scan.lang;
   pdf.setTitle(`AppMOT report — ${scan.host}`);
   pdf.setAuthor("AppMOT");
