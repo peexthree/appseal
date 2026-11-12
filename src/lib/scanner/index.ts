@@ -68,6 +68,20 @@ export async function runScan(scan: ScanResult): Promise<void> {
       throw new Error("site unreachable: " + (home.error ?? home.status));
     }
     if (home.status >= 400) {
+      // bot-mitigation is the most common 403 from hosting firewalls - name it
+      // and tell the owner the exact opt-out (openai.com lesson from report #1)
+      const mitigated = (home.headers["x-vercel-mitigated"] ?? "").toLowerCase();
+      if (mitigated.includes("challenge") || home.headers["x-vercel-challenge-token"]) {
+        throw new Error(
+          "сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): " +
+            "владельцу нужно добавить bypass-правило для User-Agent AppMOT-Scanner или отключить challenge",
+        );
+      }
+      if (home.status === 403) {
+        throw new Error(
+          "site responded 403 (WAF/bot protection) @ " + (home.url || url),
+        );
+      }
       throw new Error(`site responded ${home.status}`);
     }
 
