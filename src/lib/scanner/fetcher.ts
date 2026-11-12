@@ -139,12 +139,12 @@ export interface TlsInfo {
   error?: string;
 }
 
-export async function tlsInfo(host: string): Promise<TlsInfo> {
+export async function tlsInfo(host: string, port = 443): Promise<TlsInfo> {
   const tls = await import("node:tls");
   return new Promise<TlsInfo>((resolve) => {
     try {
       const socket = tls.connect(
-        { host, port: 443, servername: host, rejectUnauthorized: false, timeout: 6000 },
+        { host, port, servername: host, rejectUnauthorized: false, timeout: 6000 },
         () => {
           try {
             const cert = socket.getPeerCertificate();

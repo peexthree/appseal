@@ -1,0 +1,2233 @@
+{
+  "meta": {
+    "title": "AppMOT Benchmark — State of Vibe-Coded App Security, выпуск №1",
+    "scanner": "AppMOT v0.1 (16 чёрно-ящичных проверок, 4 категории)",
+    "date": "2026-11-12",
+    "note": "Оценки внешних сайтов — предварительные; перед публикацией по именам требуется ручная верификация (см. отчёт, раздел «Методология»)."
+  },
+  "stats": {
+    "scanned_at": "2026-11-12",
+    "panel_size": 13,
+    "done": 12,
+    "blocked": [
+      "openai"
+    ],
+    "market": {
+      "n": 9,
+      "mean_score": 76.1,
+      "median_score": 80,
+      "min": 44,
+      "max": 100,
+      "grades": {
+        "A": 4,
+        "B": 2,
+        "C": 1,
+        "D": 2
+      }
+    },
+    "twins": {
+      "before": 0,
+      "after": 100
+    },
+    "self": 62
+  },
+  "panel": [
+    {
+      "key": "demo",
+      "label": "FreshBite — уязвимый двойник (модель vibe-кода)",
+      "group": "модель",
+      "url": "http://127.0.0.1:3210",
+      "status": "done",
+      "score": 0,
+      "grade": "D",
+      "platform": "Lovable",
+      "started_at": "2026-11-12T07:24:14.447Z",
+      "results": [
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git открыта для скачивания",
+          "status": "fail",
+          "severity": "critical",
+          "penalty": 35,
+          "code": "GIT_EXPOSED",
+          "evidence": [
+            "/.git/HEAD → ref: refs/heads/main"
+          ]
+        },
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секреты в клиентском коде",
+          "status": "fail",
+          "severity": "critical",
+          "penalty": 40,
+          "code": "SECRETS_IN_SOURCE",
+          "evidence": [
+            "OpenAI API key @ index.html → sk-p…************eR8t",
+            "Stripe live secret key @ index.html → sk_l…************7890",
+            "Generic hardcoded secret @ index.html → API_…************R8t\""
+          ]
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файл .env доступен из интернета",
+          "status": "fail",
+          "severity": "critical",
+          "penalty": 40,
+          "code": "ENV_EXPOSED",
+          "evidence": [
+            "/.env → DATABASE_URL=postgres://admin:SuperSecret99@db.internal:5432/freshbite",
+            "/.env.local → DATABASE_URL=postgres://admin:SuperSecret99@db.internal:5432/freshbite"
+          ]
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Source maps закрыты",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "Нет HTTPS",
+          "status": "fail",
+          "severity": "high",
+          "penalty": 15,
+          "code": "NO_HTTPS",
+          "evidence": [
+            "target: http://127.0.0.1:3210"
+          ]
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Cookie без защитных флагов",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 6,
+          "code": "COOKIE_FLAGS",
+          "evidence": [
+            "Set-Cookie: session=abc123; Path=/"
+          ]
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "Разрешён CORS для любого источника",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 8,
+          "code": "CORS_WILDCARD",
+          "evidence": [
+            "Access-Control-Allow-Origin: *"
+          ]
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Не хватает защитных заголовков",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 16,
+          "code": "HEADERS_MISSING",
+          "evidence": [
+            "missing: CSP",
+            "missing: X-Content-Type-Options",
+            "missing: X-Frame-Options",
+            "missing: Referrer-Policy"
+          ]
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы/дампы БД доступны по прямым ссылкам",
+          "status": "fail",
+          "severity": "critical",
+          "penalty": 40,
+          "code": "BACKUP_EXPOSED",
+          "evidence": [
+            "/backup.zip (99+ bytes)"
+          ]
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Открыты отладочные эндпоинты",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 8,
+          "code": "DEBUG_EXPOSED",
+          "evidence": [
+            "/api/debug → {\"debug\":true,\"env\":\"production\",\"db\":\"reachable\",\"uptime\":4211}"
+          ]
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Панель администратора доступна без VPN/IP-ограничений",
+          "status": "warn",
+          "severity": "high",
+          "penalty": 15,
+          "code": "ADMIN_EXPOSED",
+          "evidence": [
+            "/admin → 200, title: \"Admin panel — FreshBite\"",
+            "/admin/ → 200, title: \"Admin panel — FreshBite\""
+          ]
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Битые внутренние ссылки",
+          "status": "fail",
+          "severity": "medium",
+          "penalty": 8,
+          "code": "BROKEN_LINKS",
+          "evidence": [
+            "/pricing → 404"
+          ]
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Не заполнены базовые meta-теги",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 3,
+          "code": "META_MISSING",
+          "evidence": [
+            "title: \"FreshBite — food delivery for night owls\"",
+            "description: \"\""
+          ]
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "На сайте остались заглушки",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 4,
+          "code": "PLACEHOLDER_CONTENT",
+          "evidence": [
+            "\"Lorem ipsum\"",
+            "\"Coming soon\""
+          ]
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "На страницу просачиваются ошибки JS",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 5,
+          "code": "RENDERED_ERRORS",
+          "evidence": [
+            "\"undefined\" rendered 1× in markup",
+            "\"NaN\" rendered 1× in markup"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "secure",
+      "label": "FreshBite hardened — эталон после лечения",
+      "group": "модель",
+      "url": "https://127.0.0.1:3211/",
+      "status": "done",
+      "score": 100,
+      "grade": "A",
+      "platform": null,
+      "started_at": "2026-11-12T07:26:30.577Z",
+      "results": [
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секретов в клиентском коде не найдено",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Source maps закрыты",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Защитные заголовки на месте",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Флаги cookie в порядке",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (900 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Стандартные пути админок не открыты",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "Заглушек не найдено",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 4)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "self",
+      "label": "AppMOT — самопроверка (dev-инстанс)",
+      "group": "модель",
+      "url": "http://127.0.0.1:3000/",
+      "status": "done",
+      "score": 62,
+      "grade": "C",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:14.451Z",
+      "results": [
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Открыты source maps",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 3,
+          "code": "SOURCEMAPS_EXPOSED",
+          "evidence": [
+            "/_next/static/chunks/node_modules_next_dist_compiled_next-devtools_index_1dd7fb59.js.map",
+            "/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js.map",
+            "/_next/static/chunks/node_modules_next_dist_compiled_react-server-dom-turbopack_9212ccad._.js.map"
+          ]
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секретов в клиентском коде не найдено",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "Нет HTTPS",
+          "status": "fail",
+          "severity": "high",
+          "penalty": 15,
+          "code": "NO_HTTPS",
+          "evidence": [
+            "target: http://127.0.0.1:3000"
+          ]
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Не хватает защитных заголовков",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 16,
+          "code": "HEADERS_MISSING",
+          "evidence": [
+            "missing: CSP",
+            "missing: X-Content-Type-Options",
+            "missing: X-Frame-Options",
+            "missing: Referrer-Policy"
+          ]
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Cookies не установлены на главной",
+          "status": "info",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Стандартные пути админок не открыты",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "На сайте остались заглушки",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 4,
+          "code": "PLACEHOLDER_CONTENT",
+          "evidence": [
+            "\"lorem ipsum\""
+          ]
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренних ссылок для проверки не найдено",
+          "status": "info",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "vercel",
+      "label": "vercel.com",
+      "group": "рынок",
+      "url": "https://vercel.com/",
+      "status": "done",
+      "score": 74,
+      "grade": "B",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:17.529Z",
+      "results": [
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секретов в клиентском коде не найдено",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Source maps закрыты",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Cookie без защитных флагов",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 3,
+          "code": "COOKIE_FLAGS",
+          "evidence": [
+            "Set-Cookie: _v-visitor-id-renewed=1; Path=/; Expires=Fri, 13 Nov 2026 07:24:17 GMT; Max-Age=86400; Domain=.vercel.com; Secure; SameS…"
+          ]
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "Разрешён CORS для любого источника",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 8,
+          "code": "CORS_WILDCARD",
+          "evidence": [
+            "Access-Control-Allow-Origin: *"
+          ]
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Защитные заголовки на месте",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (42 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Панель администратора доступна без VPN/IP-ограничений",
+          "status": "warn",
+          "severity": "high",
+          "penalty": 15,
+          "code": "ADMIN_EXPOSED",
+          "evidence": [
+            "/admin → 200, title: \"\""
+          ]
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "Заглушек не найдено",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 8)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "netlify",
+      "label": "netlify.com",
+      "group": "рынок",
+      "url": "https://netlify.com/",
+      "status": "done",
+      "score": 44,
+      "grade": "D",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:17.673Z",
+      "results": [
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секреты в клиентском коде",
+          "status": "fail",
+          "severity": "critical",
+          "penalty": 40,
+          "code": "SECRETS_IN_SOURCE",
+          "evidence": [
+            "OpenAI API key @ index.html → sk-n…************inel",
+            "OpenAI API key @ index.html → sk-n…************rget",
+            "Generic hardcoded secret @ index.html → toke…************1b1\""
+          ]
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Source maps закрыты",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Не хватает защитных заголовков",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 16,
+          "code": "HEADERS_MISSING",
+          "evidence": [
+            "missing: CSP",
+            "missing: X-Content-Type-Options",
+            "missing: X-Frame-Options",
+            "missing: Referrer-Policy"
+          ]
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Cookies не установлены на главной",
+          "status": "info",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (86 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Стандартные пути админок не открыты",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "Заглушек не найдено",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 8)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "render",
+      "label": "render.com",
+      "group": "рынок",
+      "url": "https://render.com/",
+      "status": "done",
+      "score": 87,
+      "grade": "A",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:17.850Z",
+      "results": [
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Открыты source maps",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 3,
+          "code": "SOURCEMAPS_EXPOSED",
+          "evidence": [
+            "/_next/static/chunks/005uc43_4hqm9.js?dpl=5db2c6d9dd01.map",
+            "/_next/static/chunks/28adkb1n-2uem.js?dpl=5db2c6d9dd01.map",
+            "/_next/static/chunks/30m38nybvs_tm.js?dpl=5db2c6d9dd01.map"
+          ]
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секретов в клиентском коде не найдено",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Cookie без защитных флагов",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 6,
+          "code": "COOKIE_FLAGS",
+          "evidence": [
+            "Set-Cookie: ajs_anonymous_id=d8a2044d-8487-41c6-a824-e16c049d1b9a; Path=/; SameSite=lax"
+          ]
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Защитные заголовки на месте",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (36 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Стандартные пути админок не открыты",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "На сайте остались заглушки",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 4,
+          "code": "PLACEHOLDER_CONTENT",
+          "evidence": [
+            "\"Coming soon\""
+          ]
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 8)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "railway",
+      "label": "railway.app",
+      "group": "рынок",
+      "url": "https://railway.app/",
+      "status": "done",
+      "score": 92,
+      "grade": "A",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:20.607Z",
+      "results": [
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секретов в клиентском коде не найдено",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Source maps закрыты",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Не хватает защитных заголовков",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 8,
+          "code": "HEADERS_MISSING",
+          "evidence": [
+            "missing: HSTS",
+            "missing: X-Content-Type-Options",
+            "missing: Referrer-Policy"
+          ]
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Cookies не установлены на главной",
+          "status": "info",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (76 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Стандартные пути админок не открыты",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "Заглушек не найдено",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 8)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "flyio",
+      "label": "fly.io",
+      "group": "рынок",
+      "url": "https://fly.io/",
+      "status": "done",
+      "score": 80,
+      "grade": "B",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:20.767Z",
+      "results": [
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секреты в клиентском коде",
+          "status": "fail",
+          "severity": "medium",
+          "penalty": 8,
+          "code": "SECRETS_IN_SOURCE",
+          "evidence": [
+            "Generic hardcoded secret @ index.html → api_…************AVY\""
+          ]
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Открыты source maps",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 3,
+          "code": "SOURCEMAPS_EXPOSED",
+          "evidence": [
+            "/phx/assets/js/app-a38c7b74cdab2ef5af576d77ff494805.js?vsn=d.map",
+            "/phx/assets/js/webmcp-b5d77663c19eacfff5a6dc69d2b8dc2f.js?vsn=d.map"
+          ]
+        },
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Не хватает защитных заголовков",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 6,
+          "code": "HEADERS_MISSING",
+          "evidence": [
+            "missing: HSTS",
+            "missing: X-Frame-Options"
+          ]
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Флаги cookie в порядке",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (80 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Стандартные пути админок не открыты",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Не заполнены базовые meta-теги",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 3,
+          "code": "META_MISSING",
+          "evidence": [
+            "title: \"\"",
+            "description: \"Deploy apps, agents, and databases on hardware-isolated VMs.…\""
+          ]
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "Заглушек не найдено",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 8)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "openai",
+      "label": "openai.com",
+      "group": "рынок",
+      "url": "https://openai.com/",
+      "status": "error",
+      "score": 0,
+      "grade": "D",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:20.915Z",
+      "results": []
+    },
+    {
+      "key": "anthropic",
+      "label": "anthropic.com",
+      "group": "рынок",
+      "url": "https://anthropic.com/",
+      "status": "done",
+      "score": 98,
+      "grade": "A",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:23.680Z",
+      "results": [
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секретов в клиентском коде не найдено",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Source maps закрыты",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Не хватает защитных заголовков",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 2,
+          "code": "HEADERS_MISSING",
+          "evidence": [
+            "missing: Referrer-Policy"
+          ]
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Cookies не установлены на главной",
+          "status": "info",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (81 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Стандартные пути админок не открыты",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "Заглушек не найдено",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 8)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "mistral",
+      "label": "mistral.ai",
+      "group": "рынок",
+      "url": "https://mistral.ai/",
+      "status": "done",
+      "score": 44,
+      "grade": "D",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:23.971Z",
+      "results": [
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секреты в клиентском коде",
+          "status": "fail",
+          "severity": "critical",
+          "penalty": 40,
+          "code": "SECRETS_IN_SOURCE",
+          "evidence": [
+            "OpenAI API key @ /_astro/layout.astro_astro_type_script_index_0_lang.CVUfEFpi.js?dpl=6af4f825b2fab4b19835a5e8 → sk-i…************-pos",
+            "OpenAI API key @ /_astro/layout.astro_astro_type_script_index_0_lang.CVUfEFpi.js?dpl=6af4f825b2fab4b19835a5e8 → sk-i…************olor"
+          ]
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Открыты source maps",
+          "status": "warn",
+          "severity": "low",
+          "penalty": 3,
+          "code": "SOURCEMAPS_EXPOSED",
+          "evidence": [
+            "/_astro/ClientRouter.astro_astro_type_script_index_0_lang.DuyhEJUj.js?dpl=6af4f825b2fab4b19835a5e8.map",
+            "/_astro/layout.astro_astro_type_script_index_0_lang.CVUfEFpi.js?dpl=6af4f825b2fab4b19835a5e8.map"
+          ]
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Защитные заголовки на месте",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Флаги cookie в порядке",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (57 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Стандартные пути админок не открыты",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "Заглушек не найдено",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 8)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "huggingface",
+      "label": "huggingface.co",
+      "group": "рынок",
+      "url": "https://huggingface.co/",
+      "status": "done",
+      "score": 66,
+      "grade": "C",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:26.862Z",
+      "results": [
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секреты в клиентском коде",
+          "status": "fail",
+          "severity": "medium",
+          "penalty": 8,
+          "code": "SECRETS_IN_SOURCE",
+          "evidence": [
+            "Generic hardcoded secret @ index.html → ApiK…************d22\"",
+            "Generic hardcoded secret @ index.html → apiK…************d5w\""
+          ]
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Source maps закрыты",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Не хватает защитных заголовков",
+          "status": "warn",
+          "severity": "medium",
+          "penalty": 11,
+          "code": "HEADERS_MISSING",
+          "evidence": [
+            "missing: CSP",
+            "missing: X-Content-Type-Options"
+          ]
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Cookies не установлены на главной",
+          "status": "info",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (108 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Панель администратора доступна без VPN/IP-ограничений",
+          "status": "warn",
+          "severity": "high",
+          "penalty": 15,
+          "code": "ADMIN_EXPOSED",
+          "evidence": [
+            "/admin → 200, title: \"Hugging Face – The AI community building the future.\"",
+            "/admin/ → 200, title: \"Hugging Face – The AI community building the future.\"",
+            "/wp-admin/ → 200, title: \"wp-admin (chatgpt)\"",
+            "/administrator/ → 200, title: \"Administrator (Moo)\"",
+            "/dashboard → 200, title: \"Dashboard (sunaoran)\""
+          ]
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "Заглушек не найдено",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 8)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "key": "cloudflare",
+      "label": "cloudflare.com",
+      "group": "рынок",
+      "url": "https://cloudflare.com/",
+      "status": "done",
+      "score": 100,
+      "grade": "A",
+      "platform": null,
+      "started_at": "2026-11-12T07:24:29.772Z",
+      "results": [
+        {
+          "id": "git_exposure",
+          "category": "Секреты",
+          "title_ru": "Папка .git не доступна",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "secrets_in_source",
+          "category": "Секреты",
+          "title_ru": "Секретов в клиентском коде не найдено",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "baas_open_read",
+          "category": "Секреты",
+          "title_ru": "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "source_maps",
+          "category": "Секреты",
+          "title_ru": "Source maps закрыты",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "env_exposure",
+          "category": "Секреты",
+          "title_ru": "Файлы .env не доступны",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "security_headers",
+          "category": "Заголовки и TLS",
+          "title_ru": "Защитные заголовки на месте",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cookie_flags",
+          "category": "Заголовки и TLS",
+          "title_ru": "Флаги cookie в порядке",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "tls_cert",
+          "category": "Заголовки и TLS",
+          "title_ru": "TLS-сертификат валиден (82 дн.)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "cors_wildcard",
+          "category": "Заголовки и TLS",
+          "title_ru": "CORS не открыт для всех",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "debug_endpoints",
+          "category": "Админки",
+          "title_ru": "Отладочные эндпоинты закрыты",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "backup_files",
+          "category": "Админки",
+          "title_ru": "Бэкапы и дампы не найдены",
+          "status": "pass",
+          "severity": "critical",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "admin_exposure",
+          "category": "Админки",
+          "title_ru": "Стандартные пути админок не открыты",
+          "status": "pass",
+          "severity": "high",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "placeholder_content",
+          "category": "Живость",
+          "title_ru": "Заглушек не найдено",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "rendered_errors",
+          "category": "Живость",
+          "title_ru": "Ошибок в разметке не видно",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "meta_health",
+          "category": "Живость",
+          "title_ru": "Meta-теги заполнены",
+          "status": "pass",
+          "severity": "low",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        },
+        {
+          "id": "broken_links",
+          "category": "Живость",
+          "title_ru": "Внутренние ссылки живы (проверено 6)",
+          "status": "pass",
+          "severity": "medium",
+          "penalty": 0,
+          "code": null,
+          "evidence": []
+        }
+      ]
+    }
+  ]
+}

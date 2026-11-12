@@ -1,0 +1,26 @@
+{
+  "id": "mwd82joz-h8ru0a",
+  "inputUrl": "https://openai.com",
+  "targetUrl": "https://openai.com/",
+  "host": "openai.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-12T07:24:20.915Z",
+  "finishedAt": "2026-11-12T07:24:21.004Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "D",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403",
+    "en": "Scan failed: site responded 403"
+  },
+  "key": "openai",
+  "label": "OpenAI",
+  "group": "market"
+}

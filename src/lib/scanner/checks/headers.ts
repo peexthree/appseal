@@ -178,7 +178,8 @@ export async function checkTls(ctx: Ctx): Promise<CheckResult> {
       Date.now() - t0,
     );
   }
-  const info = await tlsInfo(ctx.host);
+  // use the port from the scanned URL (public sites: 443; custom ports: as-is)
+  const info = await tlsInfo(ctx.host, new URL(ctx.origin).port || 443);
   if (!info.available) {
     return done("tls_cert", "skip", "info", 0, {
       ru: "TLS-сертификат не удалось проверить",
