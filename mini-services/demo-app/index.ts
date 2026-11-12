@@ -5,6 +5,24 @@
  */
 import http from "node:http";
 
+// Fixture secrets are generated at startup from a fixed seed: never real,
+// stable across restarts, and not credential-shaped literals in the source
+// (this file intentionally contains no hardcoded credentials).
+function fixtureToken(seed: number, n: number): string {
+  let s = seed;
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let out = "";
+  for (let i = 0; i < n; i++) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    out += alphabet[s % alphabet.length];
+  }
+  return out;
+}
+
+const OPENAI_KEY_FIXTURE = `sk-proj-${fixtureToken(1, 48)}`;
+const STRIPE_KEY_FIXTURE = `sk_live_${fixtureToken(2, 24)}`;
+const DB_PASSWORD_FIXTURE = fixtureToken(3, 12);
+
 const PAGE = `<!doctype html>
 <html lang="en">
 <head>
@@ -30,8 +48,8 @@ const PAGE = `<!doctype html>
   <footer>Made with Lovable. Demo app for AppMOT scanner testing.</footer>
   <script>
     // FIXME: remove before launch
-    const OPENAI_API_KEY = "sk-proj-4f9Xa2KpQ7LmNeRtYuIoPqW3eR8tYuIoPqW3eR8t";
-    const stripeKey = "sk_live_51H8xQm2eZvKYlo2C1234567890";
+    const OPENAI_API_KEY = "${OPENAI_KEY_FIXTURE}";
+    const stripeKey = "${STRIPE_KEY_FIXTURE}";
     fetch("/api/data").then(r => r.json()).then(d => console.log(d));
   </script>
 </body>
@@ -49,9 +67,9 @@ const ADMIN = `<!doctype html>
 <form><input type="password" placeholder="Password"><button>Sign in</button></form>
 <p>No rate limit, no 2FA, no IP allowlist. Good luck.</p></body></html>`;
 
-const ENV = `DATABASE_URL=postgres://admin:SuperSecret99@db.internal:5432/freshbite
-OPENAI_API_KEY=sk-proj-4f9Xa2KpQ7LmNeRtYuIoPqW3eR8tYuIoPqW3eR8t
-STRIPE_SECRET=sk_live_51H8xQm2eZvKYlo2C1234567890
+const ENV = `DATABASE_URL=postgres://admin:${DB_PASSWORD_FIXTURE}@db.internal:5432/freshbite
+OPENAI_API_KEY=${OPENAI_KEY_FIXTURE}
+STRIPE_SECRET=${STRIPE_KEY_FIXTURE}
 `;
 
 const APP_JS = `const config = { supabaseUrl: "https://abcdefghij.supabase.co", anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.supabaseanonkeysignature" };

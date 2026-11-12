@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Merge cover + body into the final report PDF (normalize pages to A4)."""
+"""Merge cover + body into the final report PDF (normalize pages to A4).
+
+Run from the repo root: python3 scripts/appmot_report_merge.py
+"""
+import os
+
+os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
 from pypdf import PdfReader, PdfWriter
 
 A4_W, A4_H = 595.28, 841.89
@@ -11,20 +18,19 @@ def normalize_page_to_a4(page):
         page.scale_to(A4_W, A4_H)
     return page
 
-COVER = "/home/z/my-project/scripts/report_assets/cover.pdf"
-BODY = "/home/z/my-project/scripts/report_assets/body.pdf"
-OUT = "/home/z/my-project/download/AppMOT_Security_Report_1.pdf"
+COVER = "scripts/report_assets/cover.pdf"
+BODY = "scripts/report_assets/body.pdf"
+OUT = "download/AppMOT_Security_Report_1.pdf"
 
 writer = PdfWriter()
 writer.add_page(normalize_page_to_a4(PdfReader(COVER).pages[0]))
 for page in PdfReader(BODY).pages:
     writer.add_page(normalize_page_to_a4(page))
 writer.add_metadata({
-    "/Title": "AppMOT — Состояние безопасности vibe-coded приложений. Выпуск 1",
-    "/Author": "Z.ai",
-    "/Creator": "Z.ai",
+    "/Title": "AppMOT - Состояние безопасности vibe-coded приложений. Выпуск 1",
+    "/Author": "AppMOT",
+    "/Creator": "AppMOT",
     "/Subject": "Бенчмарк-отчёт: состояние безопасности vibe-coded приложений, выпуск 1",
 })
-with open(OUT, "wb") as f:
-    writer.write(f)
+writer.write(OUT)
 print("final:", OUT, "pages:", len(writer.pages))

@@ -36,10 +36,11 @@ plt.rcParams.update({
     "savefig.facecolor": "#ffffff",
 })
 
-OUT = pathlib.Path("/home/z/my-project/scripts/report_assets")
+HERE = pathlib.Path(__file__).resolve().parent
+OUT = HERE / "report_assets"
 OUT.mkdir(exist_ok=True)
 
-DS = json.loads(pathlib.Path("/home/z/my-project/download/appmot_benchmark/dataset.json").read_text(encoding="utf-8"))
+DS = json.loads((HERE.parent / "download" / "appmot_benchmark" / "dataset.json").read_text(encoding="utf-8"))
 PANEL = {p["key"]: p for p in DS["panel"]}
 
 # ------------------------------------------------------------------
@@ -151,7 +152,7 @@ plt.close(fig)
 CATS = ["Секреты и утечки", "Заголовки и TLS", "Админки и доступ", "Живость и контент"]
 
 # map check id -> category via raw scan json
-RAW = pathlib.Path("/home/z/my-project/scripts/benchmark_data")
+RAW = HERE / "benchmark_data"
 cat_by_id = {}
 for name in ("demo", "secure"):
     d = json.loads((RAW / f"{name}.json").read_text(encoding="utf-8"))

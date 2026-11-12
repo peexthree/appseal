@@ -3,7 +3,7 @@
 # The CA is trusted by the Next.js dev server via NODE_EXTRA_CA_CERTS,
 # so the scanner can fetch https://127.0.0.1:3211 like a real production site.
 set -e
-DIR=/home/z/my-project/mini-services/secure-app/certs
+DIR="$(cd "$(dirname "$0")/.." && pwd)/mini-services/secure-app/certs"
 mkdir -p "$DIR"
 cd "$DIR"
 
