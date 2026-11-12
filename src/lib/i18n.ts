@@ -139,6 +139,13 @@ export const DICT = {
     en: "API for app builders|White-label badges|Bulk catalog scans|SLA and partner integration",
   },
   faqTitle: { ru: "Частые вопросы", en: "FAQ" },
+  issue2Title: { ru: "Выпуск №2: соберём датасет вместе", en: "Issue #2: let's build the dataset together" },
+  issue2Sub: {
+    ru: "Готовим «State of Vibe-Coded App Security» - отчёт по реальным vibe-приложениям. Просканируйте свой проект бесплатно: оценка попадёт в анонимную статистику, а класс A открывает индексируемую ссылку из публичного реестра.",
+    en: "We're preparing \"State of Vibe-Coded App Security\" - a report based on real vibe-built apps. Scan yours for free: the grade feeds the anonymized stats, and an A grade unlocks an indexable link from the public registry.",
+  },
+  issue2CtaScan: { ru: "Пришли свой URL - просканировать", en: "Bring your URL - scan it" },
+  issue2CtaRegistry: { ru: "Смотреть реестр", en: "Browse the registry" },
   faq1Q: { ru: "Это безопасно? Вы не взламываете сайт?", en: "Is this safe? Are you hacking my site?" },
   faq1A: {
     ru: "Нет. Скан идёт только по публично доступным страницам — ровно то, что видит любой посетитель: заголовки ответов, HTML, общедоступные файлы. Никаких эксплойтов, никакой нагрузки сверх нескольких десятков запросов.",

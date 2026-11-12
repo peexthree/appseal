@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { runScan, normalizeInputUrl } from "@/lib/scanner";
-import { newId, saveScan, serializeScan } from "@/lib/scanner/store";
+import { newId, saveScan, serializeScan, pushRegistryEntry } from "@/lib/scanner/store";
 import { assertPublicTarget } from "@/lib/scanner/guard";
 import type { Lang, ScanResult } from "@/lib/scanner/types";
 
@@ -62,6 +62,16 @@ export async function POST(req: NextRequest) {
     // function alive (waitUntil) within maxDuration, locally it just works
     after(async () => {
       await runScan(scan);
+      // issue #2 GTM: finished non-demo scans feed the public /registry catalog
+      if (scan.status === "done" && !scan.isDemo) {
+        await pushRegistryEntry({
+          host: scan.host,
+          grade: scan.grade,
+          score: scan.score,
+          ts: Date.now(),
+          id: scan.id,
+        });
+      }
     });
     return NextResponse.json({ id });
   } catch (e) {

@@ -31,6 +31,9 @@ const nextConfig: NextConfig = {
   // ship the PDF fonts with the api/report serverless bundle
   outputFileTracingIncludes: {
     "/api/report": ["./assets/fonts/**"],
+    // @sparticuz/chromium resolves its binary via __dirname at runtime -
+    // output tracing cannot see that, so include it explicitly for the scanner
+    "/api/scan": ["./node_modules/@sparticuz/chromium/**"],
   },
   // practice what we scan: AppMOT itself serves the protective headers
   async headers() {
