@@ -8,6 +8,7 @@ Usage:
   python3 scripts/appmot_benchmark.py --only demo,secure,self
   python3 scripts/appmot_benchmark.py            # full panel
   python3 scripts/appmot_benchmark.py --list
+  python3 scripts/appmot_benchmark.py --file targets.txt --tag pilot2 --limit 20
 """
 import argparse
 import concurrent.futures as cf
@@ -78,10 +79,37 @@ def scan_target(key: str, group: str, label: str, url: str, timeout_s: int = 150
             "id": scan_id, "status": "timeout"}
 
 
+def load_targets(path: pathlib.Path, tag: str, limit: int) -> list:
+    """Read one URL per line ('#' comments and blanks allowed).
+
+    Returns (key, group, label, url) tuples; the key is derived from the
+    hostname so results map cleanly back to their source.
+    """
+    todo = []
+    seen = set()
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        url = line if line.startswith(("http://", "https://")) else "https://" + line
+        host = url.split("://", 1)[1].split("/", 1)[0].lower()
+        key = re.sub(r"[^a-z0-9-]+", "-", host).strip("-")[:40] or "target"
+        if key in seen:
+            key = key + "-" + str(len(seen) + 1)
+        seen.add(key)
+        todo.append((key, tag, host, url))
+        if limit and len(todo) >= limit:
+            break
+    return todo
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="", help="comma-separated keys")
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--file", default="", help="text file with one URL per line")
+    ap.add_argument("--tag", default="pilot", help="group label for --file targets")
+    ap.add_argument("--limit", type=int, default=0, help="max targets from --file")
     args = ap.parse_args()
 
     if args.list:
@@ -89,8 +117,14 @@ def main() -> None:
             print(f"{k:12} {g:7} {l:44} {u}")
         return
 
-    keys = [x.strip() for x in args.only.split(",") if x.strip()] or None
-    todo = [t for t in PANEL if not keys or t[0] in keys]
+    if args.file:
+        todo = load_targets(pathlib.Path(args.file), args.tag, args.limit)
+        if not todo:
+            print("no targets found in", args.file)
+            return
+    else:
+        keys = [x.strip() for x in args.only.split(",") if x.strip()] or None
+        todo = [t for t in PANEL if not keys or t[0] in keys]
     print(f"scanning {len(todo)} target(s)…")
 
     results = []
