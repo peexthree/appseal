@@ -19,7 +19,9 @@ const FORBIDDEN_V4: Array<[string, number]> = [
   ["192.0.2.0", 24],
   ["192.88.99.0", 24],
   ["192.168.0.0", 16],
-  ["198.18.0.0", 15],
+  // NOTE: 198.18.0.0/15 is deliberately NOT blocked - it is the fake-IP pool
+  // of local proxy clients (Clash/mihomo fake-ip DNS mode); blocking it would
+  // break every scan made through such a tunnel, with no real SSRF benefit
   ["198.51.100.0", 24],
   ["203.0.113.0", 24],
   ["224.0.0.0", 3], // multicast + reserved (224.0.0.0 - 255.255.255.255)

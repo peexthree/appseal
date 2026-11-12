@@ -1,5 +1,12 @@
 import type { CheckResult, Severity } from "../types";
-import { extractScripts, maskSecret, safeFetch, truncate } from "../fetcher";
+import {
+  extractScripts,
+  looksLikeDocExample,
+  maskSecret,
+  safeFetch,
+  shannonEntropy,
+  truncate,
+} from "../fetcher";
 
 interface Ctx {
   origin: string; // e.g. https://example.com
@@ -96,6 +103,8 @@ interface Sig {
   re: RegExp;
   sev: Severity;
   pen: number;
+  /** structural markers (private key headers) are checked for shape, not entropy */
+  structural?: boolean;
 }
 const SIGNATURES: Sig[] = [
   { name: "OpenAI API key", re: /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/g, sev: "critical", pen: 40 },
@@ -103,7 +112,7 @@ const SIGNATURES: Sig[] = [
   { name: "Stripe live secret key", re: /sk_live_[0-9a-zA-Z]{10,}/g, sev: "critical", pen: 40 },
   { name: "SendGrid API key", re: /SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/g, sev: "critical", pen: 40 },
   { name: "Google API key", re: /AIza[0-9A-Za-z_-]{35}/g, sev: "high", pen: 20 },
-  { name: "Private key block", re: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/g, sev: "critical", pen: 40 },
+  { name: "Private key block", re: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/g, sev: "critical", pen: 40, structural: true },
   {
     name: "Supabase service_role key",
     re: /eyJ[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{20,}/g,
@@ -142,6 +151,7 @@ export async function checkSecretsInSource(ctx: Ctx): Promise<CheckResult> {
     }),
   );
   const hits: { name: string; src: string; masked: string }[] = [];
+  let filtered = 0; // v0.2: candidates dropped by entropy/context filters
   for (const doc of docs) {
     for (const sig of SIGNATURES) {
       const m = doc.body.match(sig.re);
@@ -150,6 +160,28 @@ export async function checkSecretsInSource(ctx: Ctx): Promise<CheckResult> {
       for (const hit of uniq) {
         const idx = doc.body.indexOf(hit);
         const context = doc.body.slice(Math.max(0, idx - 120), idx + 160);
+        // v0.2 filter 0: values public by design - UUID-shaped identifiers
+        // (captcha sitekeys, correlation ids) and pk_-prefixed publishable keys
+        if (
+          sig.name === "Generic hardcoded secret" &&
+          (/\b(pk|pub|public)[_-]?key\b/i.test(hit) ||
+            /pk_[A-Za-z0-9_-]{10,}/.test(hit) ||
+            /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(hit))
+        ) {
+          filtered++;
+          continue;
+        }
+        // v0.2 filter 1: entropy threshold - a real key looks generated,
+        // a marketing/docs string looks like a word
+        if (!sig.structural && shannonEntropy(hit) < 3.0) {
+          filtered++;
+          continue;
+        }
+        // v0.2 filter 2: documentation / code-example context
+        if (!sig.structural && looksLikeDocExample(hit, context)) {
+          filtered++;
+          continue;
+        }
         const cls = classifyHit(sig, context);
         if (cls.sev === "info") continue;
         hits.push({ name: sig.name, src: doc.src, masked: maskSecret(hit) });
@@ -178,8 +210,12 @@ export async function checkSecretsInSource(ctx: Ctx): Promise<CheckResult> {
     );
   }
   return done("secrets_in_source", "pass", "high", 0, {
-    ru: "Секретов в клиентском коде не найдено",
-    en: "No secrets found in client-side code",
+    ru: filtered
+      ? `Секретов не найдено (отфильтровано ${filtered} кандидатов из документации/примеров)`
+      : "Секретов в клиентском коде не найдено",
+    en: filtered
+      ? `No secrets (filtered ${filtered} doc/example candidates)`
+      : "No secrets found in client-side code",
   }, undefined, Date.now() - t0);
 }
 
