@@ -1,14 +1,14 @@
-# AppMOT — перенос проекта на свой ПК / в новую сессию Z.ai
+# AppSeal — перенос проекта на свой ПК / в новую сессию Z.ai
 
 ## Что это
 
-AppMOT — «техосмотр» для приложений, собранных с ИИ. Next.js 16 + TypeScript.
+AppSeal — «техосмотр» для приложений, собранных с ИИ. Next.js 16 + TypeScript.
 Сканер (16 чёрных проверок), оценка A–D, PDF-отчёт, SVG-бейдж, демо-мишень.
 
 ## Что в архиве
 
 ```
-appmot/
+appseal/
 ├── src/                  # код приложения (страницы, API, движок сканера)
 │   └── lib/scanner/      # ядро: 16 проверок, оценка, хранилище, PDF
 ├── mini-services/        # демо-мишени
@@ -19,7 +19,7 @@ appmot/
 ├── public/               # статика
 ├── .env                  # локальная БД (SQLite-файл, секретов нет)
 ├── docs/                 # PDF-спецификация MVP, отчёты, обложки
-└── appmot.git.bundle     # полная git-история проекта (5 коммитов)
+└── appseal.git.bundle     # полная git-история проекта (5 коммитов)
 ```
 
 `node_modules` в архив не входят — ставятся одной командой (см. ниже).
@@ -29,7 +29,7 @@ appmot/
 Нужен один из вариантов: **Bun** (быстрее) или **Node.js 20+** + npm.
 
 ```bash
-cd appmot
+cd appseal
 
 # 1. Зависимости
 bun install            # или: npm install
@@ -54,20 +54,20 @@ Windows: вместо `bash scripts/...` запусти демо напряму�
 Вариант А — через GitHub (рекомендую):
 1. Распакуй архив, восстанови историю и запушь:
    ```bash
-   git clone appmot/docs/appmot.git.bundle appmot-repo
-   cd appmot-repo
+   git clone appseal/docs/appseal.git.bundle appseal-repo
+   cd appseal-repo
    # скопируй поверх содержимое распакованной папки (если менялось)
    git add -A && git commit -m "sync from sandbox"
    # создай пустой репозиторий на GitHub и:
-   git remote add origin https://github.com/ТВОЙ_ЛОГИН/appmot.git
+   git remote add origin https://github.com/ТВОЙ_ЛОГИН/appseal.git
    git push -u origin main
    ```
-2. В новом чате Z.ai (на ПК) напиши: «Склонируй https://github.com/.../appmot и продолжи работу над …»
+2. В новом чате Z.ai (на ПК) напиши: «Склонируй https://github.com/.../appseal и продолжи работу над …»
 
 Вариант Б — прямо в чате:
 1. Начни новый чат Z.ai на ПК.
-2. Прикрепи архив `appmot-project.zip` к сообщению.
-3. Напиши: «Распакуй и продолжи разработку AppMOT: …» (сессии не связаны между собой, поэтому архив и нужен).
+2. Прикрепи архив `appseal-project.zip` к сообщению.
+3. Напиши: «Распакуй и продолжи разработку AppSeal: …» (сессии не связаны между собой, поэтому архив и нужен).
 
 ## Что НЕ переносится
 

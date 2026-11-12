@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Charts for the AppMOT benchmark report (RU). Crystal Blue family, DejaVu Sans.
+"""Charts for the AppSeal benchmark report (RU). Crystal Blue family, DejaVu Sans.
 
 Rules applied (charts skill + typesetting/charts.md):
 - no internal chart titles (external captions live in the PDF)
@@ -40,7 +40,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 OUT = HERE / "report_assets"
 OUT.mkdir(exist_ok=True)
 
-DS = json.loads((HERE.parent / "download" / "appmot_benchmark" / "dataset.json").read_text(encoding="utf-8"))
+DS = json.loads((HERE.parent / "download" / "appseal_benchmark" / "dataset.json").read_text(encoding="utf-8"))
 PANEL = {p["key"]: p for p in DS["panel"]}
 
 # ------------------------------------------------------------------
@@ -49,7 +49,7 @@ PANEL = {p["key"]: p for p in DS["panel"]}
 rows = [
     ("FreshBite (модель vibe-кода)", "demo"),
     ("FreshBite hardened (эталон)", "secure"),
-    ("AppMOT (dev-инстанс)", "self"),
+    ("AppSeal (dev-инстанс)", "self"),
     ("cloudflare.com", "cloudflare"),
     ("anthropic.com", "anthropic"),
     ("railway.app", "railway"),
@@ -77,7 +77,7 @@ ax.set_yticks(list(ypos))
 ax.set_yticklabels(labels, fontsize=10.5)
 ax.set_xlim(0, 118)
 ax.set_xticks([0, 25, 50, 75, 100])
-ax.set_xlabel("Балл AppMOT (0–100)", fontsize=9.5, color=MUTED)
+ax.set_xlabel("Балл AppSeal (0–100)", fontsize=9.5, color=MUTED)
 for sp in ("top", "right", "left"):
     ax.spines[sp].set_visible(False)
 ax.spines["bottom"].set_color(BORDER)

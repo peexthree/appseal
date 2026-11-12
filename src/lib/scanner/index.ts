@@ -61,7 +61,7 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
       if (mitigated.includes("challenge") || home.headers["x-vercel-challenge-token"]) {
         throw new Error(
           "сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): " +
-            "владельцу нужно добавить bypass-правило для User-Agent AppMOT-Scanner или отключить challenge",
+            "владельцу нужно добавить bypass-правило для User-Agent AppSeal-Scanner или отключить challenge",
         );
       }
       if (home.status === 403) {

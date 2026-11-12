@@ -57,7 +57,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("appmot-lang") : null;
+    const saved = typeof window !== "undefined" ? localStorage.getItem("appseal-lang") : null;
     if (saved === "ru" || saved === "en") {
       setLang(saved);
     } else if (typeof navigator !== "undefined" && !navigator.language.toLowerCase().startsWith("ru")) {
@@ -68,7 +68,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
   const switchLang = (l: Lang) => {
     setLang(l);
     try {
-      localStorage.setItem("appmot-lang", l);
+      localStorage.setItem("appseal-lang", l);
     } catch {
       /* private mode */
     }
@@ -142,11 +142,11 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
       {/* header */}
       <header className="sticky top-0 z-40 border-b border-zinc-800/70 bg-[#0a0c10]/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <a href="/" className="flex items-center gap-2" aria-label="AppMOT home">
+          <a href="/" className="flex items-center gap-2" aria-label="AppSeal home">
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500 text-zinc-950">
               <ShieldCheck className="h-4.5 w-4.5" strokeWidth={2.4} />
             </span>
-            <span className="font-display text-lg font-extrabold tracking-tight">AppMOT</span>
+            <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
           </a>
           <nav className="flex items-center gap-1" aria-label="Language">
             <Globe className="mr-1 h-3.5 w-3.5 text-zinc-600" />
@@ -498,7 +498,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
       <footer className="mt-auto border-t border-zinc-800/70 bg-[#080a0d]">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-4 py-6 text-center sm:flex-row sm:px-6 sm:text-left">
           <p className="text-xs text-zinc-500">
-            © {new Date().getFullYear()} AppMOT · {t(lang, "footerText")}
+            © {new Date().getFullYear()} AppSeal · {t(lang, "footerText")}
           </p>
           <p className="font-mono text-[10px] text-zinc-700">
             MVP v0.2 · <a href="/registry" className="transition hover:text-zinc-500">реестр</a> · Next.js · external black-box scanner

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Assemble the AppMOT benchmark dataset from scripts/benchmark_data/*.json.
+"""Assemble the AppSeal benchmark dataset from scripts/benchmark_data/*.json.
 
 Outputs (public deliverables):
-  download/appmot_benchmark/dataset.json   - full panel with per-check results
-  download/appmot_benchmark/summary.csv    - one row per target
-  download/appmot_benchmark/checks.csv     - long format: one row per (target, check)
+  download/appseal_benchmark/dataset.json   - full panel with per-check results
+  download/appseal_benchmark/summary.csv    - one row per target
+  download/appseal_benchmark/checks.csv     - long format: one row per (target, check)
 
 Also refreshes scripts/benchmark_data/summary.json from individual files
 (secure was re-scanned after the TLS port fix, so the panel summary must be rebuilt).
@@ -18,14 +18,14 @@ import statistics
 
 HERE = pathlib.Path(__file__).parent
 DATA = HERE / "benchmark_data"
-OUT = HERE.parent / "download" / "appmot_benchmark"
+OUT = HERE.parent / "download" / "appseal_benchmark"
 OUT.mkdir(parents=True, exist_ok=True)
 
-# key -> (label ru, group) ; mirrors scripts/appmot_benchmark.py PANEL
+# key -> (label ru, group) ; mirrors scripts/appseal_benchmark.py PANEL
 META = {
     "demo":        ("FreshBite — уязвимый двойник (модель vibe-кода)", "модель"),
     "secure":      ("FreshBite hardened — эталон после лечения",       "модель"),
-    "self":        ("AppMOT — самопроверка (dev-инстанс)",             "модель"),
+    "self":        ("AppSeal — самопроверка (dev-инстанс)",             "модель"),
     "vercel":      ("vercel.com",        "рынок"),
     "netlify":     ("netlify.com",       "рынок"),
     "render":      ("render.com",        "рынок"),
@@ -98,8 +98,8 @@ stats = {
 
 dataset = {
     "meta": {
-        "title": "AppMOT Benchmark — State of Vibe-Coded App Security, выпуск №1",
-        "scanner": "AppMOT v0.1 (16 чёрно-ящичных проверок, 4 категории)",
+        "title": "AppSeal Benchmark — State of Vibe-Coded App Security, выпуск №1",
+        "scanner": "AppSeal v0.1 (16 чёрно-ящичных проверок, 4 категории)",
         "date": stats["scanned_at"],
         "note": "Оценки внешних сайтов — предварительные; перед публикацией по именам требуется ручная верификация (см. отчёт, раздел «Методология»).",
     },

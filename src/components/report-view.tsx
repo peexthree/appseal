@@ -149,7 +149,7 @@ export function ReportView({
 
   // absolute URLs: the embed lives on foreign sites, relative paths break there
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const embedCode = `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener"><img src="${origin}/api/badge?id=${scan.id}" alt="AppMOT ${scan.grade}" width="168" height="44"></a>`;
+  const embedCode = `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener"><img src="${origin}/api/badge?id=${scan.id}" alt="AppSeal ${scan.grade}" width="168" height="44"></a>`;
   const fixPrompt = useMemo(() => buildFixPrompt(scan, lang), [scan, lang]);
 
   const copy = async () => {
@@ -264,7 +264,7 @@ export function ReportView({
         <div className="flex items-center gap-3">
           <img
             src={`/api/badge?id=${scan.id}`}
-            alt={`AppMOT ${scan.grade}`}
+            alt={`AppSeal ${scan.grade}`}
             width={168}
             height={44}
             className="rounded"

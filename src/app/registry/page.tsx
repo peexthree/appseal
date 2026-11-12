@@ -7,9 +7,9 @@ import { dedupeRegistry, isDofollow, type RegistryEntry } from "@/lib/registry";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "AppMOT - реестр просканированных приложений",
+  title: "AppSeal - реестр просканированных приложений",
   description:
-    "Публичный каталог vibe-приложений, прошедших техосмотр AppMOT: оценка A-D, дата скана. Класс A получает индексируемую ссылку из реестра.",
+    "Публичный каталог vibe-приложений, прошедших техосмотр AppSeal: оценка A-D, дата скана. Класс A получает индексируемую ссылку из реестра.",
 };
 
 const GRADE_STYLES: Record<string, string> = {
@@ -39,11 +39,11 @@ export default async function RegistryPage() {
     <div className="flex min-h-screen flex-col bg-[#0a0c10] text-zinc-100">
       <header className="sticky top-0 z-40 border-b border-zinc-800/70 bg-[#0a0c10]/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2" aria-label="AppMOT home">
+          <Link href="/" className="flex items-center gap-2" aria-label="AppSeal home">
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-500 text-zinc-950">
               <ShieldCheck className="h-4.5 w-4.5" strokeWidth={2.4} />
             </span>
-            <span className="font-display text-lg font-extrabold tracking-tight">AppMOT</span>
+            <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
           </Link>
           <Link
             href="/"
@@ -59,7 +59,7 @@ export default async function RegistryPage() {
           Реестр техосмотра
         </h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-zinc-400">
-          Публичные приложения, прошедшие техосмотр AppMOT. Класс A получает
+          Публичные приложения, прошедшие техосмотр AppSeal. Класс A получает
           индексируемую ссылку из этого каталога - поставьте бейдж на сайт и{" "}
           <Link href="/" className="text-emerald-400 underline decoration-dotted underline-offset-4 hover:text-emerald-300">
             просканируйте свой проект
@@ -118,7 +118,7 @@ export default async function RegistryPage() {
 
       <footer className="mt-auto border-t border-zinc-800/70 bg-[#080a0d]">
         <div className="mx-auto px-4 py-6 text-center text-xs text-zinc-500 sm:px-6">
-          © {new Date().getFullYear()} AppMOT · независимый слой доверия для приложений, собранных с ИИ
+          © {new Date().getFullYear()} AppSeal · независимый слой доверия для приложений, собранных с ИИ
         </div>
       </footer>
     </div>

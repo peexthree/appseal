@@ -173,12 +173,12 @@ export function buildFixPrompt(scan: ScanResult, lang: "ru" | "en"): string {
 
   if (ru) {
     L.push(`Ты ИИ-агент, дорабатывающий веб-приложение. Сайт: ${scan.host}${scan.platform ? ` (платформа: ${scan.platform})` : ""}.`);
-    L.push(`Независимый сканер AppMOT поставил оценку ${scan.grade} (${scan.score}/100). Ниже - все найденные проблемы.`);
+    L.push(`Независимый сканер AppSeal поставил оценку ${scan.grade} (${scan.score}/100). Ниже - все найденные проблемы.`);
     L.push(`Исправь их по списку. Если правишь конфиги хостинга - используй готовые сниппеты. Отвечай патчами/диффами и краткими пояснениями.`);
     L.push("", `## Проблемы (${bad.length})`);
   } else {
     L.push(`You are an AI agent improving a web application. Site: ${scan.host}${scan.platform ? ` (platform: ${scan.platform})` : ""}.`);
-    L.push(`The independent AppMOT scanner graded it ${scan.grade} (${scan.score}/100). All findings follow.`);
+    L.push(`The independent AppSeal scanner graded it ${scan.grade} (${scan.score}/100). All findings follow.`);
     L.push(`Fix them one by one. When editing hosting configs, use the ready snippets. Reply with patches/diffs and short explanations.`);
     L.push("", `## Findings (${bad.length})`);
   }

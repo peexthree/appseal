@@ -43,7 +43,7 @@ export const DEMO_PAGE = `<!doctype html>
     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
     <p>Order total: <span>undefined</span> at <span>NaN</span> km/h delivery</p>
   </main>
-  <footer>Made with Lovable. Demo app for AppMOT scanner testing.</footer>
+  <footer>Made with Lovable. Demo app for AppSeal scanner testing.</footer>
   <script>
     // FIXME: remove before launch
     const OPENAI_API_KEY = "${OPENAI_KEY_FIXTURE}";

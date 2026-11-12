@@ -95,7 +95,7 @@ interface Cursor {
 
 function newPage(pdf: PDFDocument, fonts: { reg: PDFFont; bold: PDFFont; mono: PDFFont }, lang: "ru" | "en", pageNo: number): PDFPage {
   const page = pdf.addPage(A4);
-  page.drawText("AppMOT", { x: M, y: 26, size: 8, font: fonts.bold, color: C.mut });
+  page.drawText("AppSeal", { x: M, y: 26, size: 8, font: fonts.bold, color: C.mut });
   page.drawText(lang === "ru" ? "Отчёт техосмотра приложения" : "Application MOT report", {
     x: M + 46,
     y: 26,
@@ -116,8 +116,8 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   const bold = await pdf.embedFont(await fs.readFile(/* turbopackIgnore: true */ await resolveFont("bold")), { subset: true });
   const mono = await pdf.embedFont(await fs.readFile(/* turbopackIgnore: true */ await resolveFont("mono")), { subset: true });
   const lang = scan.lang;
-  pdf.setTitle(`AppMOT report — ${scan.host}`);
-  pdf.setAuthor("AppMOT");
+  pdf.setTitle(`AppSeal report — ${scan.host}`);
+  pdf.setAuthor("AppSeal");
   pdf.setSubject(lang === "ru" ? "Отчёт техосмотра ИИ-собранного приложения" : "MOT report for an AI-built application");
 
   let pageNo = 1;
@@ -245,8 +245,8 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   page.drawLine({ start: { x: M, y: y - 6 }, end: { x: A4[0] - M, y: y - 6 }, thickness: 0.7, color: C.line });
   text(
     lang === "ru"
-      ? "AppMOT — техосмотр для приложений, собранных с ИИ. Сканирование внешнее, чёрный ящик: мы видим только то, что видит посетитель. Полный отчёт доступен онлайн."
-      : "AppMOT — the MOT test for AI-built apps. The scan is external black-box: we only see what a visitor sees. The interactive report is available online.",
+      ? "AppSeal — техосмотр для приложений, собранных с ИИ. Сканирование внешнее, чёрный ящик: мы видим только то, что видит посетитель. Полный отчёт доступен онлайн."
+      : "AppSeal — the MOT test for AI-built apps. The scan is external black-box: we only see what a visitor sees. The interactive report is available online.",
     { size: 7.8, color: C.mut, gap: 2 },
   );
 

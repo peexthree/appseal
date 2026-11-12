@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""AppMOT benchmark runner.
+"""AppSeal benchmark runner.
 
-Scans a fixed panel of targets through the AppMOT API (POST /api/scan),
+Scans a fixed panel of targets through the AppSeal API (POST /api/scan),
 polls until done, and stores each full result JSON under scripts/benchmark_data/.
 
 Usage:
-  python3 scripts/appmot_benchmark.py --only demo,secure,self
-  python3 scripts/appmot_benchmark.py            # full panel
-  python3 scripts/appmot_benchmark.py --list
-  python3 scripts/appmot_benchmark.py --file targets.txt --tag pilot2 --limit 20
+  python3 scripts/appseal_benchmark.py --only demo,secure,self
+  python3 scripts/appseal_benchmark.py            # full panel
+  python3 scripts/appseal_benchmark.py --list
+  python3 scripts/appseal_benchmark.py --file targets.txt --tag pilot2 --limit 20
 """
 import argparse
 import concurrent.futures as cf
@@ -27,7 +27,7 @@ PANEL = [
     # key       group    label (ru)                                        url
     ("demo",    "own",    "FreshBite — уязвимый двойник (модель vibe-кода)",  "demo://"),
     ("secure",  "own",    "FreshBite hardened — эталон после лечения",        "https://127.0.0.1:3211"),
-    ("self",    "own",    "AppMOT — самопроверка (dev-инстанс)",              "http://127.0.0.1:3000"),
+    ("self",    "own",    "AppSeal — самопроверка (dev-инстанс)",             "http://127.0.0.1:3000"),
     ("vercel",  "market", "Vercel",            "https://vercel.com"),
     ("netlify", "market", "Netlify",           "https://netlify.com"),
     ("render",  "market", "Render",            "https://render.com"),

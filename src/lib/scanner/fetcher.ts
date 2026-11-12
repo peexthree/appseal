@@ -76,7 +76,7 @@ export async function safeFetch(
       redirect: "follow",
       signal: ctrl.signal,
       headers: {
-        "user-agent": "Mozilla/5.0 (compatible; AppMOT-Scanner/0.1; +https://appmot.io/bot)",
+        "user-agent": "Mozilla/5.0 (compatible; AppSeal-Scanner/0.3; +https://appseal.io/bot)",
         accept: "*/*",
         ...(opts.headers ?? {}),
       },

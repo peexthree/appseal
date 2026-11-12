@@ -127,31 +127,31 @@
 }
 
 /* custom scrollbar for evidence panes */
-.appmot-scroll::-webkit-scrollbar {
+.appseal-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-.appmot-scroll::-webkit-scrollbar-track {
+.appseal-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-.appmot-scroll::-webkit-scrollbar-thumb {
+.appseal-scroll::-webkit-scrollbar-thumb {
   background: #2c313a;
   border-radius: 8px;
 }
-.appmot-scroll::-webkit-scrollbar-thumb:hover {
+.appseal-scroll::-webkit-scrollbar-thumb:hover {
   background: #3d434d;
 }
 
-@keyframes appmot-pulse {
+@keyframes appseal-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
 }
-.appmot-pulse {
-  animation: appmot-pulse 1.6s ease-in-out infinite;
+.appseal-pulse {
+  animation: appseal-pulse 1.6s ease-in-out infinite;
 }
 
 /* faint techno grid for the hero background */
-.appmot-grid::before {
+.appseal-grid::before {
   content: "";
   position: absolute;
   inset: 0;

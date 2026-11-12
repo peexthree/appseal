@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Charts for AppMOT spec PDF. Russian labels, DejaVu Sans (Cyrillic-safe)."""
+"""Charts for AppSeal spec PDF. Russian labels, DejaVu Sans (Cyrillic-safe)."""
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import os
 
-# AppMOT Crystal Blue palette (Template 07 body subset)
+# AppSeal Crystal Blue palette (Template 07 body subset)
 ACCENT = "#2d7ab3"
 HEADER = "#1a4a7a"
 BORDER = "#c0d0e2"
@@ -59,7 +59,7 @@ plt.close(fig)
 # Chart 2: MRR projection months 1-12 (line, first/last/max labels)
 # ------------------------------------------------------------------
 months = list(range(1, 13))
-# Public beta m1-2 (free only), paid launch m3 at 20 Pro, +60 Pro/mo,
+# Public beta m1-2 (free scan), paid launch m3 at 20 Pro, +60 Pro/mo,
 # Platform tier: 1 deal x $499 from m8, 2 from m10
 pro = 0
 mrr = []

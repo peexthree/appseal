@@ -1,7 +1,7 @@
 import type { Lang } from "./scanner/types";
 
 export const DICT = {
-  brand: { ru: "AppMOT", en: "AppMOT" },
+  brand: { ru: "AppSeal", en: "AppSeal" },
   tagline: {
     ru: "Техосмотр для приложений, собранных с ИИ",
     en: "The MOT test for AI-built apps",
@@ -15,8 +15,8 @@ export const DICT = {
     en: "Check it in a minute.",
   },
   heroSub: {
-    ru: "ИИ-сборка создала миллионы приложений, которые никто не проверял. AppMOT сканирует ваш живой сайт на утечки секретов, открытые базы, дырявые админки и признаки заброшенности — и выдаёт оценку A–D с бейджем для сайта.",
-    en: "AI builders created millions of apps nobody ever checked. AppMOT scans your live site for leaked secrets, open databases, exposed admin panels and signs of abandonment — and issues an A–D grade with a badge for your site.",
+    ru: "ИИ-сборка создала миллионы приложений, которые никто не проверял. AppSeal сканирует ваш живой сайт на утечки секретов, открытые базы, дырявые админки и признаки заброшенности — и выдаёт оценку A–D с бейджем для сайта.",
+    en: "AI builders created millions of apps nobody ever checked. AppSeal scans your live site for leaked secrets, open databases, exposed admin panels and signs of abandonment — and issues an A–D grade with a badge for your site.",
   },
   inputPlaceholder: {
     ru: "ваше-приложение.com",
@@ -167,8 +167,8 @@ export const DICT = {
     en: "The report is available via a link and contains no raw secrets — only findings and masked fragments. Full key values are never stored or shown, even to you.",
   },
   footerText: {
-    ru: "AppMOT — независимый слой доверия для эпохи, когда софт пишут все. Прототип MVP.",
-    en: "AppMOT — an independent trust layer for the era when everyone writes software. MVP prototype.",
+    ru: "AppSeal — независимый слой доверия для эпохи, когда софт пишут все. Прототип MVP.",
+    en: "AppSeal — an independent trust layer for the era when everyone writes software. MVP prototype.",
   },
   gradeTitle: { ru: "Оценка техосмотра", en: "MOT grade" },
   findingsTitle: { ru: "Находки по категориям", en: "Findings by category" },

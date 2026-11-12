@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     headers: {
       "content-type": "application/pdf",
       "content-length": String(body.byteLength),
-      "content-disposition": `attachment; filename="appmot-report-${safeHost}-${scan.id}.pdf"`,
+      "content-disposition": `attachment; filename="appseal-report-${safeHost}-${scan.id}.pdf"`,
       "cache-control": "no-store",
       "x-content-type-options": "nosniff",
     },
