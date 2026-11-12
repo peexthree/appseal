@@ -179,6 +179,15 @@ export async function checkSecretsInSource(ctx: Ctx): Promise<CheckResult> {
           filtered++;
           continue;
         }
+        // v0.2 filter 1b: OpenAI keys are pure alphanumeric after the prefix;
+        // lowercase-hyphenated bodies are CSS/design tokens (sk-inline-block-color)
+        if (sig.name === "OpenAI API key") {
+          const body = hit.replace(/^sk-(?:proj-)?/, "");
+          if (/^[a-z]+-[a-z-]+$/.test(body)) {
+            filtered++;
+            continue;
+          }
+        }
         // v0.2 filter 2: documentation / code-example context
         if (!sig.structural && looksLikeDocExample(hit, context)) {
           filtered++;
