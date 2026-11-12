@@ -62,6 +62,37 @@ export const DICT = {
     en: "new apps hit the stores in H1 2026 alone",
   },
   howTitle: { ru: "Как это работает", en: "How it works" },
+  caseTitle: { ru: "Первый кейс: сайт аквацентра", en: "First case: an aqua center website" },
+  caseSub: {
+    ru: "Реальный домен, реальный деплой, реальный ИИ-агент · ноябрь 2026",
+    en: "A real domain, a real deploy, a real AI agent · November 2026",
+  },
+  caseStep1t: { ru: "Техосмотр", en: "MOT scan" },
+  caseStep1n: { ru: "A · 86", en: "A · 86" },
+  caseStep1d: {
+    ru: "3 замечания: X-Frame-Options, CORS «для всех», пустой title",
+    en: "3 findings: X-Frame-Options, wildcard CORS, empty title",
+  },
+  caseStep2t: { ru: "Промпт агенту", en: "Prompt to the agent" },
+  caseStep2n: { ru: "7 мин", en: "7 min" },
+  caseStep2d: {
+    ru: "агент закрыл два пункта одним конфиг-коммитом",
+    en: "the agent fixed two findings with one config commit",
+  },
+  caseStep3t: { ru: "Повторный осмотр", en: "Re-scan" },
+  caseStep3n: { ru: "A · 97", en: "A · 97" },
+  caseStep3d: {
+    ru: "заголовки на месте, CORS явный",
+    en: "headers in place, CORS explicit",
+  },
+  caseBody: {
+    ru: "Сайт семейного аквацентра собран с ИИ и живёт на Vercel. Внешний скан без доступа к коду нашёл типовые дыры деплоя. Кнопка «Промпт для ИИ-агента» скопировала отчёт, агент той же сессии внёс правки, повторный осмотр подтвердил результат.",
+    en: "A family aqua center site built with AI, hosted on Vercel. The external black-box scan found typical deploy holes. The built-in 'prompt for your AI agent' button copied the report, an agent applied the fixes, and the re-scan confirmed the result.",
+  },
+  caseQuote: {
+    ru: "Ни строчки бизнес-кода не переписано - только конфигурация деплоя.",
+    en: "Not a single line of business code rewritten - deploy configuration only.",
+  },
   how1Title: { ru: "Вводите адрес", en: "Enter the URL" },
   how1Text: {
     ru: "Только живой адрес приложения. Ничего не нужно устанавливать, доступ к коду не нужен — скан внешний.",

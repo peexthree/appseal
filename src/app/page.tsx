@@ -298,6 +298,31 @@ export default function Home() {
           </div>
         </section>
 
+        {/* first real case */}
+        <section className="border-t border-zinc-800/70 py-14" aria-label={t(lang, "caseTitle")}>
+          <h2 className="font-display text-center text-2xl font-bold text-zinc-100">
+            {t(lang, "caseTitle")}
+          </h2>
+          <p className="mt-2 text-center text-sm text-zinc-500">{t(lang, "caseSub")}</p>
+          <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-emerald-900/40 bg-emerald-500/[0.03] p-6 sm:p-8">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { ti: t(lang, "caseStep1t"), n: t(lang, "caseStep1n"), d: t(lang, "caseStep1d") },
+                { ti: t(lang, "caseStep2t"), n: t(lang, "caseStep2n"), d: t(lang, "caseStep2d") },
+                { ti: t(lang, "caseStep3t"), n: t(lang, "caseStep3n"), d: t(lang, "caseStep3d") },
+              ].map((s, i) => (
+                <div key={i} className="rounded-xl border border-zinc-800 bg-[#0f1216] p-5 text-center">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{s.ti}</p>
+                  <p className="font-display mt-2 text-2xl font-extrabold text-emerald-400">{s.n}</p>
+                  <p className="mt-2 text-[12px] leading-relaxed text-zinc-400">{s.d}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-[13px] leading-relaxed text-zinc-400">{t(lang, "caseBody")}</p>
+            <p className="font-display mt-4 text-sm font-bold text-emerald-300">{t(lang, "caseQuote")}</p>
+          </div>
+        </section>
+
         {/* what we check */}
         <section className="border-t border-zinc-800/70 py-14" aria-label={t(lang, "checksTitle")}>
           <h2 className="font-display text-center text-2xl font-bold text-zinc-100">
