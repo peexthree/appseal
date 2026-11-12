@@ -96,7 +96,7 @@ interface Cursor {
 function newPage(pdf: PDFDocument, fonts: { reg: PDFFont; bold: PDFFont; mono: PDFFont }, lang: "ru" | "en", pageNo: number): PDFPage {
   const page = pdf.addPage(A4);
   page.drawText("AppSeal", { x: M, y: 26, size: 8, font: fonts.bold, color: C.mut });
-  page.drawText(lang === "ru" ? "Отчёт техосмотра приложения" : "Application MOT report", {
+  page.drawText(lang === "ru" ? "Отчёт техосмотра приложения" : "Application trust report", {
     x: M + 46,
     y: 26,
     size: 8,
@@ -118,7 +118,7 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   const lang = scan.lang;
   pdf.setTitle(`AppSeal report — ${scan.host}`);
   pdf.setAuthor("AppSeal");
-  pdf.setSubject(lang === "ru" ? "Отчёт техосмотра ИИ-собранного приложения" : "MOT report for an AI-built application");
+  pdf.setSubject(lang === "ru" ? "Отчёт техосмотра ИИ-собранного приложения" : "Trust report for an AI-built application");
 
   let pageNo = 1;
   let page = newPage(pdf, { reg, bold, mono }, lang, pageNo);
@@ -159,7 +159,7 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     font: bold,
     color: rgb(1, 1, 1),
   });
-  page.drawText(lang === "ru" ? "ОЦЕНКА ТЕХОСМОТРА" : "MOT GRADE", {
+  page.drawText(lang === "ru" ? "ПЕЧАТЬ ДОВЕРИЯ ПРИЛОЖЕНИЯ" : "APP TRUST SEAL", {
     x: M + 118,
     y: A4[1] - M - 26,
     size: 8,
@@ -246,7 +246,7 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   text(
     lang === "ru"
       ? "AppSeal — техосмотр для приложений, собранных с ИИ. Сканирование внешнее, чёрный ящик: мы видим только то, что видит посетитель. Полный отчёт доступен онлайн."
-      : "AppSeal — the MOT test for AI-built apps. The scan is external black-box: we only see what a visitor sees. The interactive report is available online.",
+      : "AppSeal — the trust seal for AI-built apps. The scan is external black-box: we only see what a visitor sees. The interactive report is available online.",
     { size: 7.8, color: C.mut, gap: 2 },
   );
 
