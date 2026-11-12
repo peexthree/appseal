@@ -65,6 +65,29 @@ export const DEMO_ADMIN = `<!doctype html>
 <form><input type="password" placeholder="Password"><button>Sign in</button></form>
 <p>No rate limit, no 2FA, no IP allowlist. Good luck.</p></body></html>`;
 
+/**
+ * CSR-shell page (v0.3 rendering test target): the server sends an empty root
+ * div, a client script fills it - raw HTML is a shell, hydrated DOM has
+ * placeholder copy and a rendered "undefined". Scan it as a direct URL
+ * (https://.../api/demo-target/app), not via the demo:// shortcut.
+ */
+export const DEMO_CSR_PAGE = `<!doctype html>
+<html lang="en">
+<head>
+  <title>FreshBite Dashboard</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    document.getElementById('root').innerHTML = [
+      '<h1>FreshBite Dashboard</h1>',
+      '<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>',
+      '<p>Total orders: <span>undefined</span> today</p>'
+    ].join('');
+  </script>
+</body>
+</html>`;
+
 export const DEMO_ENV = `DATABASE_URL=postgres://admin:${DB_PASSWORD_FIXTURE}@db.internal:5432/freshbite
 OPENAI_API_KEY=${OPENAI_KEY_FIXTURE}
 STRIPE_SECRET=${STRIPE_KEY_FIXTURE}
@@ -84,6 +107,8 @@ export function demoFixtureResponse(urlPath: string): {
       return { status: 200, contentType: "text/html; charset=utf-8", body: DEMO_PAGE };
     case "/api/demo-target/about":
       return { status: 200, contentType: "text/html; charset=utf-8", body: DEMO_ABOUT };
+    case "/api/demo-target/app":
+      return { status: 200, contentType: "text/html; charset=utf-8", body: DEMO_CSR_PAGE };
     case "/api/demo-target/admin":
     case "/api/demo-target/admin/":
       return { status: 200, contentType: "text/html; charset=utf-8", body: DEMO_ADMIN };
