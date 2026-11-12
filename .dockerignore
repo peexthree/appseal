@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+*.log
+*.pid
+.env
+.mimosa
+db
+docs
+download
+scripts
+tests
+examples
+mini-services
+TRANSFER.md
+Caddyfile
