@@ -114,6 +114,8 @@ export const DICT = {
     en: "Four categories that actually hurt vibe coders.",
   },
   pricingTitle: { ru: "Тарифы", en: "Pricing" },
+  planFreeCta: { ru: "Проверить бесплатно", en: "Scan for free" },
+  planSoonCta: { ru: "Скоро", en: "Coming soon" },
   pricingSub: {
     ru: "Начните бесплатно. Платите, когда приложение начнёт зарабатывать.",
     en: "Start free. Pay when your app starts earning.",
