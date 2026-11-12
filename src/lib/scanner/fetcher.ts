@@ -157,7 +157,9 @@ export async function tlsInfo(host: string, port = 443): Promise<TlsInfo> {
               protocol: socket.getProtocol() ?? undefined,
               validTo,
               daysLeft,
-              issuer: cert?.issuer?.O ?? cert?.issuer?.CN ?? undefined,
+              issuer: (Array.isArray(cert?.issuer?.O) ? cert?.issuer?.O[0] : cert?.issuer?.O) ??
+                (Array.isArray(cert?.issuer?.CN) ? cert?.issuer?.CN[0] : cert?.issuer?.CN) ??
+                undefined,
             });
           } finally {
             socket.destroy();

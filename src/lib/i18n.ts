@@ -28,6 +28,12 @@ export const DICT = {
   errTitle: { ru: "Не получилось", en: "Something went wrong" },
   rescan: { ru: "Проверить другое приложение", en: "Scan another app" },
   downloadPdf: { ru: "Скачать PDF-отчёт", en: "Download PDF report" },
+  fixPromptTitle: { ru: "Промпт для ИИ-фикса", en: "AI-fix prompt" },
+  fixPromptCopy: {
+    ru: "Готовый промпт со всеми находками, доказательствами и сниппетами конфигов. Отдай его своему ИИ-агенту в той же сессии вайб-кодинга - и перезапусти скан.",
+    en: "A ready prompt with every finding, the evidence and config snippets. Hand it to your AI agent in the same vibe-coding session - then re-scan.",
+  },
+  fixPromptBtn: { ru: "Промпт для ИИ-агента", en: "Prompt for AI agent" },
   badgeTitle: { ru: "Бейдж для вашего сайта", en: "Badge for your site" },
   badgeCopy: { ru: "Вставьте этот код на свой сайт:", en: "Embed this code on your site:" },
   copyBtn: { ru: "Копировать", en: "Copy" },

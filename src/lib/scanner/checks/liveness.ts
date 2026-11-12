@@ -7,6 +7,9 @@ interface Ctx {
   homeBody: string;
   homeHeaders: Record<string, string>;
   isHttp: boolean;
+  /** v0.2: the page is a client-side render shell - liveness text checks
+   *  cannot judge it from static HTML and are reported as info */
+  csr?: boolean;
 }
 
 const done = (
@@ -36,6 +39,24 @@ const PLACEHOLDERS: { re: RegExp; label: string }[] = [
 
 export async function checkPlaceholder(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
+  if (ctx.csr) {
+    return done(
+      "placeholder_content",
+      "info",
+      "low",
+      0,
+      { ru: "Контент рендерится на клиенте - заглушки не оценивались", en: "Content is client-rendered - placeholders were not evaluated" },
+      {
+        code: "CSR_SKIPPED",
+        detail: {
+          ru: "Главная страница рендерится в браузере (пустой HTML-шелл): текстовые проверки требуют JS-рендеринга и будут добавлены в v0.3.",
+          en: "The homepage renders in the browser (empty HTML shell): text checks need JS rendering and arrive in v0.3.",
+        },
+        evidence: [],
+      },
+      Date.now() - t0,
+    );
+  }
   const hits: string[] = [];
   // v0.2 context filter: matches inside code samples and check descriptions
   // are meta-references, not real placeholder content (e.g. our own landing
@@ -82,6 +103,24 @@ export async function checkPlaceholder(ctx: Ctx): Promise<CheckResult> {
 
 export async function checkRenderedErrors(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
+  if (ctx.csr) {
+    return done(
+      "rendered_errors",
+      "info",
+      "low",
+      0,
+      { ru: "Контент рендерится на клиенте - ошибки разметки не оценивались", en: "Content is client-rendered - markup errors were not evaluated" },
+      {
+        code: "CSR_SKIPPED",
+        detail: {
+          ru: "Для страницы-шелла проверка ошибок рендеринга невозможна без JS-движка (план v0.3).",
+          en: "A shell page cannot be checked for render errors without a JS engine (planned for v0.3).",
+        },
+        evidence: [],
+      },
+      Date.now() - t0,
+    );
+  }
   const evidence: string[] = [];
   const title = ctx.homeBody.match(/<title>([^<]*)<\/title>/i)?.[1] ?? "";
   if (/^(undefined|null|nan)\b/i.test(title.trim())) {

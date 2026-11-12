@@ -58,3 +58,5 @@ server.log
 .mimosa
 tool-results/
 db/custom.db
+.vercel
+.env*
