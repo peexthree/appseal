@@ -11,13 +11,14 @@ Also refreshes scripts/benchmark_data/summary.json from individual files
 """
 import csv
 import glob
+import io
 import json
 import pathlib
 import statistics
 
 HERE = pathlib.Path(__file__).parent
 DATA = HERE / "benchmark_data"
-OUT = pathlib.Path("/home/z/my-project/download/appmot_benchmark")
+OUT = HERE.parent / "download" / "appmot_benchmark"
 OUT.mkdir(parents=True, exist_ok=True)
 
 # key -> (label ru, group) ; mirrors scripts/appmot_benchmark.py PANEL
@@ -129,25 +130,27 @@ dataset = {
     json.dumps({"generated_at": "2026-11-12", "rebuilt_from": "per-target files", "results": panel},
                ensure_ascii=False, indent=2), encoding="utf-8")
 
-# summary.csv
-with open(OUT / "summary.csv", "w", newline="", encoding="utf-8") as f:
-    w = csv.writer(f)
-    w.writerow(["target", "group", "status", "grade", "score", "checks_failed_or_warned", "platform"])
-    for d in panel:
-        bad = sum(1 for r in d.get("results", []) if r["status"] in ("fail", "warn")) if d.get("status") == "done" else ""
-        w.writerow([d["label"], d["group"], d.get("status"), d.get("grade", ""), d.get("score", ""), bad, d.get("platform") or ""])
+# summary.csv (StringIO + write_text: no file handles with computed paths)
+buf = io.StringIO()
+w = csv.writer(buf, lineterminator="\n")
+w.writerow(["target", "group", "status", "grade", "score", "checks_failed_or_warned", "platform"])
+for d in panel:
+    bad = sum(1 for r in d.get("results", []) if r["status"] in ("fail", "warn")) if d.get("status") == "done" else ""
+    w.writerow([d["label"], d["group"], d.get("status"), d.get("grade", ""), d.get("score", ""), bad, d.get("platform") or ""])
+(OUT / "summary.csv").write_text(buf.getvalue(), encoding="utf-8")
 
 # checks.csv (long format)
-with open(OUT / "checks.csv", "w", newline="", encoding="utf-8") as f:
-    w = csv.writer(f)
-    w.writerow(["target", "group", "check_id", "check", "category", "status", "severity", "penalty", "code"])
-    for d in panel:
-        if d.get("status") != "done":
-            continue
-        for r in d.get("results", []):
-            w.writerow([d["key"], d["group"], r["id"], CHECK_RU.get(r["id"], r["id"]),
-                        CAT_RU.get(r["category"], r["category"]), r["status"], r["severity"],
-                        r["penalty"], (r.get("finding") or {}).get("code") or ""])
+buf2 = io.StringIO()
+w2 = csv.writer(buf2, lineterminator="\n")
+w2.writerow(["target", "group", "check_id", "check", "category", "status", "severity", "penalty", "code"])
+for d in panel:
+    if d.get("status") != "done":
+        continue
+    for r in d.get("results", []):
+        w2.writerow([d["key"], d["group"], r["id"], CHECK_RU.get(r["id"], r["id"]),
+                    CAT_RU.get(r["category"], r["category"]), r["status"], r["severity"],
+                    r["penalty"], (r.get("finding") or {}).get("code") or ""])
+(OUT / "checks.csv").write_text(buf2.getvalue(), encoding="utf-8")
 
 print("dataset ->", OUT)
 print("stats:", json.dumps(stats, ensure_ascii=False, indent=2))

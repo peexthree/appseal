@@ -21,7 +21,7 @@ plt.rcParams["axes.labelcolor"] = MUTED
 plt.rcParams["xtick.color"] = MUTED
 plt.rcParams["ytick.color"] = TEXT
 
-OUT = "/home/z/my-project/scripts/pdf_assets"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pdf_assets")
 os.makedirs(OUT, exist_ok=True)
 
 # ------------------------------------------------------------------

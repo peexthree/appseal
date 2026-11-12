@@ -4,7 +4,7 @@ import path from "node:path";
 
 /**
  * File-backed store for scan results.
- * MVP-grade: one JSON file per scan under /home/z/my-project/db/scans.
+ * MVP-grade: one JSON file per scan under db/scans.
  * Swap for Postgres/Redis in production (see spec § Architecture).
  */
 

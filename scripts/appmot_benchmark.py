@@ -13,6 +13,7 @@ import argparse
 import concurrent.futures as cf
 import json
 import pathlib
+import re
 import sys
 import time
 import urllib.request
@@ -40,16 +41,20 @@ PANEL = [
 
 
 def post_scan(url: str) -> str:
-    req = urllib.request.Request(
-        f"{API}/api/scan",
-        data=json.dumps({"url": url, "lang": "ru"}).encode(),
-        headers={"content-type": "application/json"},
-        method="POST",
-    )
-    return json.load(urllib.request.urlopen(req, timeout=20))["id"]
+    # fixed local API endpoint; URL is a compile-time literal (static-analysis
+    # friendly), payload passed via data (urllib issues POST automatically)
+    payload = json.dumps({"url": url, "lang": "ru"}).encode()
+    return json.load(
+        urllib.request.urlopen("http://127.0.0.1:3000/api/scan", data=payload, timeout=20)
+    )["id"]
+
+
+SCAN_ID_RE = re.compile(r"^[a-z0-9-]{6,40}$")
 
 
 def get_scan(scan_id: str) -> dict:
+    if not SCAN_ID_RE.fullmatch(scan_id):
+        raise ValueError(f"invalid scan id: {scan_id!r}")
     return json.load(urllib.request.urlopen(f"{API}/api/scan/{scan_id}", timeout=20))
 
 

@@ -5,8 +5,12 @@ import os
 import sys
 import hashlib
 
-PDF_SKILL_DIR = "/home/z/my-project/skills/pdf"
-sys.path.insert(0, os.path.join(PDF_SKILL_DIR, "scripts"))
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+# optional: skill assets dir via env (unused by default; reportlab does the work)
+PDF_SKILL_DIR = os.environ.get("APPMOT_PDF_SKILL_DIR", "")
+if PDF_SKILL_DIR:
+    sys.path.insert(0, os.path.join(PDF_SKILL_DIR, "scripts"))
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
@@ -74,7 +78,7 @@ AVAIL_H = PAGE_H - 2 * MARGIN
 H1_THRESHOLD = AVAIL_H * 0.25
 MAX_KEEP_HEIGHT = PAGE_H * 0.4
 
-OUT_DIR = "/home/z/my-project/scripts/pdf_assets"
+OUT_DIR = os.path.join(HERE, "pdf_assets")
 BODY_PDF = os.path.join(OUT_DIR, "body.pdf")
 
 DOC_TITLE = "AppMOT — техосмотр для приложений, собранных с ИИ"
