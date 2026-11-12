@@ -190,7 +190,8 @@ export async function runScan(scan: ScanResult): Promise<void> {
       if (cat[a.category] !== cat[b.category]) return cat[a.category] - cat[b.category];
       const sevRank = (r: CheckResult) => (r.status === "fail" ? 0 : r.status === "warn" ? 1 : 2);
       if (sevRank(a) !== sevRank(b)) return sevRank(a) - sevRank(b);
-      return a.penalty - b.penalty;
+      // heavier penalty first within the same category+status group
+      return b.penalty - a.penalty;
     });
 
     await updateScan(scan.id, {

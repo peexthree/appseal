@@ -138,7 +138,11 @@ export function ReportView({
         .sort((a, b) => {
           const rank = (r: CheckResult) =>
             r.status === "fail" ? 0 : r.status === "warn" ? 1 : r.status === "info" ? 3 : 2;
-          return rank(a) - rank(b) || SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
+          return (
+            rank(a) - rank(b) ||
+            SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] ||
+            b.penalty - a.penalty
+          );
         }),
     }));
   }, [scan.results]);

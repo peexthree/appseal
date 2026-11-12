@@ -127,28 +127,53 @@ export async function checkCookies(ctx: Ctx): Promise<CheckResult> {
       en: "No cookies set on the homepage",
     }, undefined, Date.now() - t0);
   }
-  const problems: string[] = [];
-  if (!/httponly/i.test(raw)) problems.push("HttpOnly");
-  if (!/secure/i.test(raw) && !ctx.isHttp) problems.push("Secure");
-  if (!/samesite/i.test(raw)) problems.push("SameSite");
-  const name = raw.split("=")[0];
+
+  // only session-ish cookies are required to carry protective flags; client
+  // analytics cookies (ajs_anonymous_id, _v-visitor-id, ...) are script-
+  // readable by design and are reported as info
+  const SESSION_NAME = /(?:session|sess|sid|token|auth|jwt|login|csrf|remember)/i;
+  const cookies = raw
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const clientOnly = cookies.filter((c) => !SESSION_NAME.test(c.split("=")[0] ?? ""));
+
+  interface CookieProblem { name: string; missing: string[]; raw: string }
+  const problems: CookieProblem[] = [];
+  for (const c of cookies) {
+    const name = (c.split("=")[0] ?? "").trim();
+    if (!SESSION_NAME.test(name)) continue; // client-side cookie: info only
+    const missing: string[] = [];
+    if (!/httponly/i.test(c)) missing.push("HttpOnly");
+    if (!/secure/i.test(c) && !ctx.isHttp) missing.push("Secure");
+    if (!/samesite/i.test(c)) missing.push("SameSite");
+    if (missing.length) problems.push({ name, missing, raw: c });
+  }
+
   if (problems.length) {
+    const worst = problems.reduce((a, b) => (b.missing.length > a.missing.length ? b : a));
     return done(
       "cookie_flags",
       "warn",
       "medium",
-      problems.length * 3,
+      worst.missing.length * 3,
       { ru: "Cookie без защитных флагов", en: "Cookie without protective flags" },
       {
         code: "COOKIE_FLAGS",
         detail: {
-          ru: `Cookie «${name}» без: ${problems.join(", ")}. Cookie доступна скриптам, может уйти по http и не защищена от CSRF.`,
-          en: `Cookie "${name}" missing: ${problems.join(", ")}. The cookie is script-readable, may travel over http and is not CSRF-protected.`,
+          ru: `Сессионная cookie «${worst.name}» без: ${worst.missing.join(", ")}. Доступна скриптам, может уйти по http и не защищена от CSRF.`,
+          en: `Session cookie "${worst.name}" missing: ${worst.missing.join(", ")}. Script-readable, may travel over http and is not CSRF-protected.`,
         },
-        evidence: [`Set-Cookie: ${truncate(raw, 120)}`],
+        evidence: problems.slice(0, 3).map((p) => `Set-Cookie: ${truncate(p.raw, 120)}`),
       },
       Date.now() - t0,
     );
+  }
+  if (clientOnly.length && cookies.length === clientOnly.length) {
+    return done("cookie_flags", "info", "low", 0, {
+      ru: "Только клиентские cookie (аналитика) - защитные флаги не требуются",
+      en: "Only client-side cookies (analytics) - no protective flags required",
+    }, undefined, Date.now() - t0);
   }
   return done("cookie_flags", "pass", "medium", 0, {
     ru: "Флаги cookie в порядке",

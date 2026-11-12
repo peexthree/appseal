@@ -129,15 +129,32 @@ const SIGNATURES: Sig[] = [
   },
 ];
 
+/** Decode a JWT payload (middle segment, base64url) into a plain object. */
+function jwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const json = Buffer.from(parts[1], "base64url").toString("utf-8");
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 /** Google API keys in client JS are common; Firebase/Supabase anon keys are by design public.
  *  These contexts are flagged only as info. */
-function classifyHit(sig: Sig, context: string): { sev: Severity; pen: number } {
+function classifyHit(sig: Sig, context: string, hit: string): { sev: Severity; pen: number } {
   if (sig.name === "Google API key" && /firebase|maps|gstatic/i.test(context)) {
     return { sev: "info", pen: 0 };
   }
   if (sig.name === "Supabase service_role key" && /supabase/i.test(context)) {
-    // anon keys are JWT-shaped too; service_role is the dangerous one
-    return { sev: "high", pen: 25 };
+    // JWT-shaped: only an actual service_role token is dangerous; anon /
+    // authenticated tokens are public by design (real risk is tested by the
+    // live RLS check in baas_open_read)
+    const role = jwtPayload(hit)?.["role"];
+    if (role === "anon" || role === "authenticated") return { sev: "info", pen: 0 };
+    if (role === "service_role") return { sev: "critical", pen: 40 };
+    return { sev: "high", pen: 25 }; // undecodable JWT in supabase context
   }
   return { sev: sig.sev, pen: sig.pen };
 }
@@ -193,7 +210,7 @@ export async function checkSecretsInSource(ctx: Ctx): Promise<CheckResult> {
           filtered++;
           continue;
         }
-        const cls = classifyHit(sig, context);
+        const cls = classifyHit(sig, context, hit);
         if (cls.sev === "info") continue;
         hits.push({ name: sig.name, src: doc.src, masked: maskSecret(hit) });
       }
@@ -369,8 +386,22 @@ export async function checkSourceMaps(ctx: Ctx): Promise<CheckResult> {
   const found: string[] = [];
   await Promise.all(
     bundles.map(async (u) => {
-      const r = await safeFetch(u + ".map", { method: "HEAD", timeoutMs: 5000 });
-      if (r.ok && r.status === 200) found.push(u.replace(ctx.origin, "") + ".map");
+      // .map belongs to the pathname, not the tail of the URL: "chunk.js?dpl=1"
+      // + ".map" would fetch the JS file itself (query ignored) and 200
+      let mapUrl = u;
+      try {
+        const parsed = new URL(u);
+        parsed.pathname += ".map";
+        mapUrl = parsed.toString();
+      } catch {
+        mapUrl = u + ".map";
+      }
+      const r = await safeFetch(mapUrl, { timeoutMs: 5000, maxBody: 2048 });
+      // a real source map is JSON with a "mappings" field - a 200 HTML/JS
+      // body (soft-404 / catch-all) does not count
+      if (r.ok && r.status === 200 && r.body.includes('"mappings"')) {
+        found.push(mapUrl.replace(ctx.origin, ""));
+      }
     }),
   );
   if (found.length) {
