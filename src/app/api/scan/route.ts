@@ -61,13 +61,14 @@ export async function POST(req: NextRequest) {
     // run the scan after the response is sent; on Vercel this keeps the
     // function alive (waitUntil) within maxDuration, locally it just works
     after(async () => {
-      await runScan(scan);
-      // issue #2 GTM: finished non-demo scans feed the public /registry catalog
-      if (scan.status === "done" && !scan.isDemo) {
+      // runScan never throws: the final record lands in the store; its return
+      // value feeds the public registry (issue #2 GTM). Demo scans excluded.
+      const fin = await runScan(scan);
+      if (fin && !scan.isDemo) {
         await pushRegistryEntry({
-          host: scan.host,
-          grade: scan.grade,
-          score: scan.score,
+          host: fin.host,
+          grade: fin.grade,
+          score: fin.score,
           ts: Date.now(),
           id: scan.id,
         });
