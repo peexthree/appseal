@@ -2,6 +2,7 @@ import type { CheckResult, Localized, ScanResult } from "./types";
 import { computeScore } from "./grade";
 import { saveScan, updateScan } from "./store";
 import { isClientRenderShell, safeFetch, truncate } from "./fetcher";
+import { renderPage, shouldRender } from "./render";
 import { checkEnvExposure, checkGitExposure, checkSecretsInSource, checkBaaSOpenRead, checkSourceMaps } from "./checks/secrets";
 import { checkSecurityHeaders, checkCors, checkCookies, checkTls } from "./checks/headers";
 import { checkAdminExposure, checkBackups, checkDebugEndpoints } from "./checks/admin";
@@ -80,6 +81,23 @@ export async function runScan(scan: ScanResult): Promise<void> {
       // path probes are relative to the demo base when scanning the fixture
       basePath: scan.isDemo ? new URL(url).pathname.replace(/\/+$/, "") : "",
     };
+
+    if (shouldRender(ctx.csr, scan.isDemo)) {
+      // v0.3: CSR shell - render in headless chromium and re-run content
+      // checks against the hydrated DOM; on failure keep the raw body
+      await setProgress(scan.id, {
+        stage: {
+          ru: "Приложение рендерится на клиенте - загружаем через браузер…",
+          en: "App is client-rendered - loading it in a browser…",
+        },
+        progress: 9,
+      });
+      const rendered = await renderPage(url);
+      if (rendered) {
+        ctx.homeBody = rendered.html;
+        ctx.csr = false;
+      }
+    }
 
     if (ctx.csr) {
       await setProgress(scan.id, {

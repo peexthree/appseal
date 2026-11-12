@@ -123,3 +123,71 @@ export async function updateScan(
 export function newId(): string {
   return `${Date.now().toString(36)}-${randomBytes(5).toString("hex")}`;
 }
+
+/* ------------------------------------------------------------------ */
+/* Public registry (issue #2 GTM: dofollow catalog of scanned hosts)   */
+/* ------------------------------------------------------------------ */
+
+const REGISTRY_KEY = "appmot:registry";
+// literal relative dir, same scheme as scans
+const REGISTRY_FILE = "db/registry.json";
+
+export interface RegistryEntry {
+  host: string;
+  grade: string;
+  score: number;
+  ts: number;
+  id: string;
+}
+
+/**
+ * Append one finished, non-demo scan to the registry list (bounded).
+ * Failures are swallowed: the registry is a nice-to-have, a broken push
+ * must never break the scan flow.
+ */
+export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
+  try {
+    const cfg = redisConfig();
+    if (cfg) {
+      await redis(cfg, ["LPUSH", REGISTRY_KEY, JSON.stringify(entry)]);
+      await redis(cfg, ["LTRIM", REGISTRY_KEY, "0", "199"]);
+      return;
+    }
+    let list: RegistryEntry[] = [];
+    try {
+      list = JSON.parse(await fs.readFile(REGISTRY_FILE, "utf-8")) as RegistryEntry[];
+    } catch {
+      /* first entry */
+    }
+    list.unshift(entry);
+    await fs.writeFile(REGISTRY_FILE, JSON.stringify(list.slice(0, 200)), "utf-8");
+  } catch {
+    /* registry push is best-effort */
+  }
+}
+
+export async function getRegistryEntries(limit = 200): Promise<RegistryEntry[]> {
+  const cfg = redisConfig();
+  if (cfg) {
+    try {
+      const raw = (await redis(cfg, ["LRANGE", REGISTRY_KEY, "0", String(Math.max(0, limit - 1))])) as string[];
+      return raw
+        .map((s) => {
+          try {
+            return JSON.parse(s) as RegistryEntry;
+          } catch {
+            return null;
+          }
+        })
+        .filter((e): e is RegistryEntry => e !== null);
+    } catch {
+      return [];
+    }
+  }
+  try {
+    const list = JSON.parse(await fs.readFile(REGISTRY_FILE, "utf-8")) as RegistryEntry[];
+    return list.slice(0, limit);
+  } catch {
+    return [];
+  }
+}

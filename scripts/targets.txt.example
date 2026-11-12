@@ -1,0 +1,12 @@
+# AppMOT benchmark targets - one URL per line, # starts a comment.
+# Usage: python scripts/appmot_benchmark.py --file targets.txt --tag pilot2 --limit 30
+#
+# Rules from docs/issue2-plan.md:
+# - only scan apps you own or have the author's consent for;
+# - public galleries (lovable.app previews, bolt.new, Product Hunt) count as
+#   aggregate-only data: names are published after manual verification;
+# - scanner UA: AppMOT-Scanner/0.2 (+https://appmot.io/bot), opt-out on request.
+#
+# Examples:
+# https://my-vibe-app.vercel.app
+# https://freshbite.example.lovable.app
