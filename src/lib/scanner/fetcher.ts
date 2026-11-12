@@ -280,3 +280,18 @@ export function looksLikeDocExample(s: string, context: string): boolean {
   }
   return false;
 }
+
+/**
+ * Detects a client-side render shell: a known SPA mount node with almost no
+ * static content - the DOM the user sees is built by JS, which plain fetch
+ * cannot execute (v0.3: JS-rendering engine).
+ */
+export function isClientRenderShell(html: string): boolean {
+  const hasMount = /<div[^>]+id=["'](?:root|app|__next|__nuxt|q-app|__astro-root)["'][^>]*>/i.test(html);
+  const visible = html
+    .replace(/<(?:script|style|noscript|template)[\s\S]*?<\/(?:script|style|noscript|template)>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;?/g, " ")
+    .trim();
+  return hasMount && visible.length < 200;
+}
