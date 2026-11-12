@@ -7,6 +7,8 @@ interface Ctx {
   homeBody: string;
   homeHeaders: Record<string, string>;
   isHttp: boolean;
+  /** prefix for path probes (the built-in demo target lives under /api/demo-target) */
+  basePath?: string;
 }
 
 const done = (
@@ -77,7 +79,7 @@ export async function checkSecurityHeaders(ctx: Ctx): Promise<CheckResult> {
 export async function checkCors(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
   const evil = "https://evil.example";
-  const r = await safeFetch(ctx.origin + "/", {
+  const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + "/", {
     headers: { origin: evil },
     timeoutMs: 6000,
   });

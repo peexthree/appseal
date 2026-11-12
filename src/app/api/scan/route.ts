@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { runScan, normalizeInputUrl } from "@/lib/scanner";
-import { newId, saveScan } from "@/lib/scanner/store";
+import { newId, saveScan, serializeScan } from "@/lib/scanner/store";
 import { assertPublicTarget } from "@/lib/scanner/guard";
 import type { Lang, ScanResult } from "@/lib/scanner/types";
 
@@ -33,11 +33,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // the built-in demo target is served by this app itself (works in prod
+    // and locally without the standalone mini-service)
+    const fwdHost = req.headers.get("host") ?? new URL(req.url).host;
+    const fwdProto = req.headers.get("x-forwarded-proto")?.split(",")[0] ?? new URL(req.url).protocol.replace(":", "");
+    const demoTargetUrl = `${fwdProto}://${fwdHost}/api/demo-target`;
+
     const id = newId();
     const scan: ScanResult = {
       id,
       inputUrl: raw,
-      targetUrl: norm.url,
+      targetUrl: norm.isDemo ? demoTargetUrl : norm.url,
       host: norm.isDemo ? "demo-app" : new URL(norm.url).hostname,
       isDemo: norm.isDemo,
       lang: body.lang === "en" ? "en" : "ru",
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
       results: [],
     };
 
-    await saveScan(scan);
+    await saveScan(id, serializeScan(scan));
     // run the scan after the response is sent; on Vercel this keeps the
     // function alive (waitUntil) within maxDuration, locally it just works
     after(async () => {

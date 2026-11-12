@@ -13,6 +13,8 @@ interface Ctx {
   homeBody: string; // homepage HTML (already fetched)
   homeHeaders: Record<string, string>;
   isHttp: boolean;
+  /** prefix for path probes (the built-in demo target lives under /api/demo-target) */
+  basePath?: string;
 }
 
 const done = (
@@ -36,7 +38,7 @@ export async function checkEnvExposure(ctx: Ctx): Promise<CheckResult> {
   const found: string[] = [];
   const evidence: string[] = [];
   for (const p of ENV_PATHS) {
-    const r = await safeFetch(ctx.origin + p, { timeoutMs: 5000 });
+    const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + p, { timeoutMs: 5000 });
     if (r.ok && r.status === 200 && /^[A-Za-z0-9_]+\s*=/.test(r.body)) {
       found.push(p);
       const firstLine = r.body.split("\n").find((l) => /^[A-Za-z0-9_]+\s*=/.test(l)) ?? "";
@@ -69,7 +71,7 @@ export async function checkEnvExposure(ctx: Ctx): Promise<CheckResult> {
 
 export async function checkGitExposure(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
-  const r = await safeFetch(ctx.origin + "/.git/HEAD", { timeoutMs: 5000 });
+  const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + "/.git/HEAD", { timeoutMs: 5000 });
   if (r.ok && r.status === 200 && r.body.includes("ref: refs/")) {
     return done(
       "git_exposure",
