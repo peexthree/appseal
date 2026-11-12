@@ -2,7 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  /* config options here */
+  // ship the PDF fonts with the api/report serverless bundle
+  outputFileTracingIncludes: {
+    "/api/report": ["./assets/fonts/**"],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
