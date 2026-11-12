@@ -1,28 +1,13 @@
 import type { CheckResult, Localized, ScanResult } from "./types";
 import { computeScore } from "./grade";
 import { saveScan, updateScan } from "./store";
-import { safeFetch, truncate } from "./fetcher";
+import { isClientRenderShell, safeFetch, truncate } from "./fetcher";
 import { checkEnvExposure, checkGitExposure, checkSecretsInSource, checkBaaSOpenRead, checkSourceMaps } from "./checks/secrets";
 import { checkSecurityHeaders, checkCors, checkCookies, checkTls } from "./checks/headers";
 import { checkAdminExposure, checkBackups, checkDebugEndpoints } from "./checks/admin";
 import { checkPlaceholder, checkRenderedErrors, checkBrokenLinks, checkMetaHealth, detectPlatform } from "./checks/liveness";
 
 const DEMO_HOST = "http://127.0.0.1:3210";
-
-/**
- * Detects a client-side render shell: a known SPA mount node with almost no
- * static content - the DOM the user sees is built by JS, which plain fetch
- * cannot execute (v0.3: JS-rendering engine).
- */
-export function isClientRenderShell(html: string): boolean {
-  const hasMount = /<div[^>]+id=["'](?:root|app|__next|__nuxt|q-app|__astro-root)["'][^>]*>/i.test(html);
-  const visible = html
-    .replace(/<(?:script|style|noscript|template)[\s\S]*?<\/(?:script|style|noscript|template)>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;?/g, " ")
-    .trim();
-  return hasMount && visible.length < 200;
-}
 
 interface Progress {
   stage: Localized;
