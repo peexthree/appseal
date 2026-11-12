@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { CheckResult, ScanResult, CategoryId, Lang } from "@/lib/scanner/types";
 import { CATEGORY_META, SEVERITY_ORDER } from "@/lib/scanner/types";
 import { GRADE_META, SEVERITY_META, STATUS_LABEL } from "@/lib/scanner/grade";
+import { buildFixPrompt } from "@/lib/fix-prompt";
 import { t } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -121,6 +122,8 @@ export function ReportView({
   onReset: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(false);
   const fails = scan.results.filter((r) => r.status === "fail").length;
   const warns = scan.results.filter((r) => r.status === "warn").length;
   const passes = scan.results.filter((r) => r.status === "pass").length;
@@ -141,12 +144,23 @@ export function ReportView({
   }, [scan.results]);
 
   const embedCode = `<a href="?report=${scan.id}" target="_blank" rel="noopener"><img src="/api/badge?id=${scan.id}" alt="AppMOT ${scan.grade}" width="132" height="40"></a>`;
+  const fixPrompt = useMemo(() => buildFixPrompt(scan, lang), [scan, lang]);
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(embedCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
+  const copyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(fixPrompt);
+      setPromptCopied(true);
+      setTimeout(() => setPromptCopied(false), 2000);
     } catch {
       /* clipboard unavailable */
     }
@@ -210,6 +224,34 @@ export function ReportView({
           {t(lang, "rescan")}
         </Button>
       </div>
+
+      {/* AI-fix prompt */}
+      {fails + warns > 0 && (
+        <Collapsible open={promptOpen} onOpenChange={setPromptOpen}>
+          <div className="mt-6 rounded-xl border border-sky-900/50 bg-sky-500/5 p-5">
+            <div className="flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-sky-300">{t(lang, "fixPromptTitle")}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500">{t(lang, "fixPromptCopy")}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={copyPrompt}
+                className="shrink-0 border-sky-800 text-sky-300 hover:bg-sky-900/30"
+              >
+                {promptCopied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                {promptCopied ? t(lang, "copied") : t(lang, "fixPromptBtn")}
+              </Button>
+            </div>
+            <CollapsibleContent>
+              <pre className="appmot-scroll mt-3 max-h-96 overflow-auto rounded-md bg-[#0a0c10] p-3 font-mono text-[11px] leading-relaxed text-zinc-400">
+                {fixPrompt}
+              </pre>
+            </CollapsibleContent>
+          </div>
+        </Collapsible>
+      )}
 
       {/* badge embed */}
       <div className="mt-6 rounded-xl border border-zinc-800 bg-[#0f1216] p-5">

@@ -9,6 +9,21 @@ import { checkPlaceholder, checkRenderedErrors, checkBrokenLinks, checkMetaHealt
 
 const DEMO_HOST = "http://127.0.0.1:3210";
 
+/**
+ * Detects a client-side render shell: a known SPA mount node with almost no
+ * static content - the DOM the user sees is built by JS, which plain fetch
+ * cannot execute (v0.3: JS-rendering engine).
+ */
+export function isClientRenderShell(html: string): boolean {
+  const hasMount = /<div[^>]+id=["'](?:root|app|__next|__nuxt|q-app|__astro-root)["'][^>]*>/i.test(html);
+  const visible = html
+    .replace(/<(?:script|style|noscript|template)[\s\S]*?<\/(?:script|style|noscript|template)>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;?/g, " ")
+    .trim();
+  return hasMount && visible.length < 200;
+}
+
 interface Progress {
   stage: Localized;
   progress: number;
@@ -62,7 +77,18 @@ export async function runScan(scan: ScanResult): Promise<void> {
       homeBody: home.body,
       homeHeaders: home.headers,
       isHttp: (home.url || url).startsWith("http://"),
+      csr: isClientRenderShell(home.body),
     };
+
+    if (ctx.csr) {
+      await setProgress(scan.id, {
+        stage: {
+          ru: "Приложение рендерится на клиенте - часть проверок будет пропущена честно",
+          en: "App is client-rendered - some checks are skipped honestly",
+        },
+        progress: 9,
+      });
+    }
 
     const all: { fn: () => Promise<CheckResult>; id: string }[] = [
       { fn: () => checkEnvExposure(ctx), id: "env_exposure" },

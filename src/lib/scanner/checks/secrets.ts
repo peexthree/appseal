@@ -270,29 +270,76 @@ export async function checkBaaSOpenRead(ctx: Ctx): Promise<CheckResult> {
     }, undefined, Date.now() - t0);
   }
 
-  // Supabase: if REST endpoint present try unauthenticated read
+  // Supabase: with the public anon key, probe the REST OpenAPI schema and
+  // try to read real table rows (v0.2: deep RLS check)
   const sb = blob.match(/https:\/\/([a-z0-9]{15,30})\.supabase\.co/i);
   if (sb) {
-    const r = await safeFetch(`https://${sb[1]}.supabase.co/rest/v1/`, { timeoutMs: 6000 });
-    const open = r.status === 200;
-    if (open) {
-      return done(
-        "baas_open_read",
-        "warn",
-        "high",
-        20,
-        { ru: "Supabase REST отвечает без авторизации", en: "Supabase REST responds without auth" },
-        {
-          code: "SUPABASE_OPEN_REST",
-          detail: {
-            ru: "REST-эндпоинт отвечает без ключа. Часто это признак выключенного RLS. Требуется ручная проверка таблиц.",
-            en: "REST endpoint responds without an API key. Often a sign of disabled RLS. Tables need manual verification.",
-          },
-          evidence: [`GET /rest/v1/ → ${r.status}`],
-        },
-        Date.now() - t0,
-      );
+    const base = `https://${sb[1]}.supabase.co/rest/v1`;
+    const anon =
+      blob.match(/anon[_-]?key["'\s:=]+["']([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)["']/i)?.[1] ?? "";
+    const authHeaders: Record<string, string> = anon
+      ? { apikey: anon, authorization: `Bearer ${anon}` }
+      : {};
+
+    // OpenAPI root returns the schema (with table paths) for a valid key
+    const spec = await safeFetch(`${base}/`, { timeoutMs: 6000, headers: authHeaders });
+    if (spec.status === 401 || spec.status === 403) {
+      return done("baas_open_read", "pass", "critical", 0, {
+        ru: "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+        en: "No BaaS databases (Firebase/Supabase) found, or they are locked",
+      }, undefined, Date.now() - t0);
     }
+    if (spec.status === 200) {
+      // table names from the OpenAPI paths: "/rest/v1/<table>"
+      const tables = [...new Set(
+        [...spec.body.matchAll(/"\/rest\/v1\/([A-Za-z0-9_]+)"/g)].map((m) => m[1]),
+      )].filter((t) => t && t !== "rpc").slice(0, 3);
+
+      const readable: string[] = [];
+      for (const table of tables) {
+        const r = await safeFetch(`${base}/${table}?select=*&limit=1`, {
+          timeoutMs: 6000,
+          headers: authHeaders,
+        });
+        if (r.status === 200 && /^\s*\[/.test(r.body)) {
+          readable.push(`${table} (${truncate(r.body, 60)})`);
+        }
+      }
+      if (readable.length) {
+        return done(
+          "baas_open_read",
+          "fail",
+          "critical",
+          35,
+          { ru: "Supabase: данные читаются анонимно (RLS выключен)", en: "Supabase: data readable anonymously (RLS disabled)" },
+          {
+            code: "SUPABASE_OPEN_READ",
+            detail: {
+              ru: "С публичным anon-ключом таблицы отдают реальные строки без авторизации: Row Level Security не настроен. Любой пользователь браузера может выгрузить данные.",
+              en: "With the public anon key, tables return real rows without auth: Row Level Security is not configured. Any visitor can download the data.",
+            },
+            evidence: readable.slice(0, 3),
+          },
+          Date.now() - t0,
+        );
+      }
+      if (tables.length) {
+        return done("baas_open_read", "pass", "critical", 0, {
+          ru: "Supabase: RLS закрывает публичное чтение таблиц",
+          en: "Supabase: RLS denies public table reads",
+        }, undefined, Date.now() - t0);
+      }
+      // schema visible but no tables detectable - conservative pass
+      return done("baas_open_read", "pass", "critical", 0, {
+        ru: "Supabase: REST отвечает, открытых таблиц не найдено",
+        en: "Supabase: REST responds, no openly readable tables found",
+      }, undefined, Date.now() - t0);
+    }
+    // spec unreachable without key and no key found
+    return done("baas_open_read", "pass", "critical", 0, {
+      ru: "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
+      en: "No BaaS databases (Firebase/Supabase) found, or they are locked",
+    }, undefined, Date.now() - t0);
   }
 
   return done("baas_open_read", "pass", "critical", 0, {
