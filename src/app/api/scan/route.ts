@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { runScan, normalizeInputUrl } from "@/lib/scanner";
-import { newId, saveScan, serializeScan, pushRegistryEntry } from "@/lib/scanner/store";
+import { newId, newReportKey, saveScan, serializeScan, pushRegistryEntry } from "@/lib/scanner/store";
 import { assertPublicTarget } from "@/lib/scanner/guard";
 import type { Lang, ScanResult } from "@/lib/scanner/types";
 
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     const demoTargetUrl = `${fwdProto}://${fwdHost}/api/demo-target`;
 
     const id = newId();
+    const rkey = newReportKey();
     const scan: ScanResult = {
       id,
       inputUrl: raw,
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
       score: 0,
       grade: "E",
       results: [],
+      rkey,
     };
 
     await saveScan(id, serializeScan(scan));
@@ -74,7 +76,9 @@ export async function POST(req: NextRequest) {
         });
       }
     });
-    return NextResponse.json({ id });
+    // rkey goes only to the initiator: bare id grants the public view, the
+    // key unlocks the full report (results, PDF) for this browser session
+    return NextResponse.json({ id, rkey });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "internal error" },

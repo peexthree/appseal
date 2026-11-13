@@ -127,10 +127,13 @@ export function ReportView({
   scan,
   lang,
   onReset,
+  reportKey,
 }: {
   scan: ScanResult;
   lang: Lang;
   onReset: () => void;
+  /** report key held by the scan initiator; unlocks the PDF download */
+  reportKey?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
@@ -235,6 +238,57 @@ export function ReportView({
     }
   };
 
+  // Public verification view: anyone holding the bare report id (badge
+  // clicks, shared links) sees only the seal data - the findings stay with
+  // the initiator who has the secret report key.
+  if (scan.publicOnly) {
+    const fmtDate = new Date(scan.finishedAt || scan.startedAt).toLocaleDateString(
+      lang === "ru" ? "ru-RU" : "en-US",
+    );
+    return (
+      <div className="w-full">
+        <div className="flex flex-col items-start gap-6 rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:flex-row sm:items-center sm:p-8">
+          <TrophyHero grade={scan.grade} score={scan.score} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                {t(lang, "gradeTitle")}
+              </p>
+              <span
+                className="inline-flex items-center rounded px-2 py-0.5 font-display text-xs font-extrabold"
+                style={{ color: gm.color, backgroundColor: `${gm.color}1a` }}
+              >
+                Класс {scan.grade}
+              </span>
+            </div>
+            <h2 className="font-display mt-1 truncate text-2xl font-bold text-slate-50">
+              {scan.host}
+            </h2>
+            <p className="mt-2 text-xs leading-relaxed text-slate-400">
+              {lang === "ru"
+                ? `Проверка завершена ${fmtDate}. Публичная верификация подтверждает класс и дату; полный отчёт с перечнем проверок доступен только инициатору скана.`
+                : `Check completed ${fmtDate}. Public verification confirms the grade and date; the full findings report is available only to the scan initiator.`}
+            </p>
+            <Button
+              onClick={onReset}
+              className="mt-4 bg-sky-400 font-bold text-[#090d16] hover:bg-sky-300"
+            >
+              {lang === "ru" ? "Проверить свой сайт" : "Scan your own app"}
+            </Button>
+          </div>
+        </div>
+        <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
+          {lang === "ru"
+            ? "Результаты носят информационный характер и не являются заключением аудита безопасности - "
+            : "Results are informational and not a security audit - "}
+          <a href="/legal" className="underline decoration-slate-600 hover:text-slate-300">
+            {lang === "ru" ? "правила и дисклеймер" : "terms & disclaimer"}
+          </a>
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {/* header card with 3D trophy */}
@@ -332,7 +386,7 @@ export function ReportView({
       {/* actions & 1-click viral sharing */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
-          <a href={`/api/report?id=${scan.id}`} download>
+          <a href={`/api/report?id=${scan.id}${reportKey ? `&key=${reportKey}` : ""}`} download>
             <Download className="h-4 w-4" />
             {t(lang, "downloadPdf")}
           </a>

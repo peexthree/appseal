@@ -47,12 +47,20 @@ const CHECK_CATEGORIES = [
   },
 ];
 
-export function ScannerPage({ initialScan }: { initialScan: ScanResult | null }) {
+export function ScannerPage({
+  initialScan,
+  initialReportKey,
+}: {
+  initialScan: ScanResult | null;
+  /** report key from ?key= - present only for the scan initiator */
+  initialReportKey?: string;
+}) {
   const [lang, setLang] = useState<Lang>("ru");
   const [phase, setPhase] = useState<Phase>(initialScan ? "report" : "form");
   const [url, setUrl] = useState("");
   const [consent, setConsent] = useState(true);
   const [scanId, setScanId] = useState<string | null>(null);
+  const [rkey, setRkey] = useState<string | null>(initialReportKey ?? null);
   const [scan, setScan] = useState<ScanResult | null>(initialScan);
   const [error, setError] = useState("");
   const reportRef = useRef<HTMLDivElement>(null);
@@ -90,8 +98,9 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
         const j = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(j.error ?? `HTTP ${res.status}`);
       }
-      const { id } = (await res.json()) as { id: string };
+      const { id, rkey: rk } = (await res.json()) as { id: string; rkey?: string };
       setScanId(id);
+      setRkey(rk ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setPhase("error");
@@ -103,7 +112,11 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
     let alive = true;
     const tick = async () => {
       try {
-        const res = await fetch(`/api/scan/${scanId}`, { cache: "no-store" });
+        // the report key keeps this session on the full record; without it
+        // the server downgrades a finished scan to the public view
+        const res = await fetch(`/api/scan/${scanId}${rkey ? `?key=${rkey}` : ""}`, {
+          cache: "no-store",
+        });
         if (!res.ok) throw new Error("poll failed");
         const data = (await res.json()) as ScanResult;
         if (!alive) return;
@@ -128,12 +141,13 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
     return () => {
       alive = false;
     };
-  }, [scanId, lang]);
+  }, [scanId, lang, rkey]);
 
   const reset = () => {
     setPhase("form");
     setScan(null);
     setScanId(null);
+    setRkey(null);
     setUrl("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -314,7 +328,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
 
           <div ref={reportRef} className={phase === "report" ? "mt-10 scroll-mt-20" : ""}>
             {phase === "report" && scan && (
-              <ReportView scan={scan} lang={lang} onReset={reset} />
+              <ReportView scan={scan} lang={lang} onReset={reset} reportKey={rkey ?? undefined} />
             )}
           </div>
         </section>

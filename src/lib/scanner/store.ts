@@ -124,6 +124,23 @@ export function newId(): string {
   return `${Date.now().toString(36)}-${randomBytes(5).toString("hex")}`;
 }
 
+/** 128-bit secret for the full report, handed to the scan initiator only. */
+export function newReportKey(): string {
+  return randomBytes(16).toString("hex");
+}
+
+/**
+ * Copy safe to serve to anyone holding only the scan id (badge clicks, shared
+ * links, registry): verification data (host, grade, score, dates) stays, the
+ * findings list, tech passport and report key are removed.
+ */
+export function publicView(scan: ScanResult): ScanResult {
+  const copy: ScanResult = { ...scan, results: [], publicOnly: true };
+  delete copy.techPassport;
+  delete copy.rkey;
+  return copy;
+}
+
 /* ------------------------------------------------------------------ */
 /* Public registry (issue #2 GTM: dofollow catalog of scanned hosts)   */
 /* ------------------------------------------------------------------ */

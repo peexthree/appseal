@@ -61,6 +61,13 @@ export interface ScanResult {
   results: CheckResult[];
   platform?: string; // detected builder platform
   techPassport?: TechPassport;
+  /** Secret report key: issued once to the scan initiator at POST /api/scan.
+   *  Full findings (results, PDF, fix prompt) are served only with it; the
+   *  bare report id grants the public verification view only. Never sent
+   *  back in API responses. */
+  rkey?: string;
+  /** Transport flag set by the server on public (keyless) views; never persisted. */
+  publicOnly?: boolean;
 }
 
 export const CATEGORY_META: Record<CategoryId, { title: Localized; icon: string }> = {

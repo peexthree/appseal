@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ScannerPage } from "@/components/scanner-page";
-import { getScan } from "@/lib/scanner/store";
+import { getScan, publicView } from "@/lib/scanner/store";
 import type { ScanResult } from "@/lib/scanner/types";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ report?: string }>;
+  searchParams: Promise<{ report?: string; key?: string }>;
 }): Promise<Metadata> {
   const { report } = await searchParams;
   if (report && /^[a-z0-9-]{6,40}$/i.test(report)) {
@@ -53,13 +53,25 @@ export async function generateMetadata({
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ report?: string }>;
+  searchParams: Promise<{ report?: string; key?: string }>;
 }) {
-  const { report } = await searchParams;
+  const { report, key } = await searchParams;
   let initial: ScanResult | null = null;
+  let reportKey: string | undefined;
   if (report && /^[a-z0-9-]{6,40}$/i.test(report)) {
-    // shared report links (?report=<id>) render the stored scan server-side
-    initial = await getScan(report);
+    // shared report links (?report=<id>) render the stored scan server-side;
+    // full findings require the initiator's report key, otherwise the public
+    // verification view only
+    const scan = await getScan(report);
+    if (scan?.status === "done") {
+      if (scan.rkey && key && scan.rkey === key) {
+        reportKey = key;
+      } else {
+        initial = publicView(scan);
+      }
+    } else if (scan) {
+      initial = { ...scan, rkey: undefined };
+    }
   }
-  return <ScannerPage initialScan={initial} />;
+  return <ScannerPage initialScan={initial} initialReportKey={reportKey} />;
 }
