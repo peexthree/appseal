@@ -237,7 +237,7 @@ const SIG_GROUPS: { id: string; group: { ru: string; en: string }; sigs: Sig[] }
   },
   {
     id: "sig_crypto_material",
-    group: { ru: "криптографический материал", en: "cryptographic material" },
+    group: { ru: "криптографические ключи", en: "cryptographic keys" },
     sigs: [
       { name: "Private key block", re: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/g, sev: "critical", pen: 40, structural: true },
       {
