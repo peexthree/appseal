@@ -1,0 +1,26 @@
+{
+  "id": "mwfi1z2i-1c0b48fe82",
+  "inputUrl": "https://voicegremlin.com/",
+  "targetUrl": "https://voicegremlin.com/",
+  "host": "voicegremlin.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:22.698Z",
+  "finishedAt": "2026-11-13T21:39:36.792Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "voicegremlin-com",
+  "label": "voicegremlin.com",
+  "group": "harvest"
+}

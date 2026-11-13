@@ -1,0 +1,26 @@
+{
+  "id": "mwfi2ulc-b6d99b68cc",
+  "inputUrl": "https://www.blamo.ai/",
+  "targetUrl": "https://www.blamo.ai/",
+  "host": "www.blamo.ai",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:03.553Z",
+  "finishedAt": "2026-11-13T21:40:04.285Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.blamo.ai/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.blamo.ai/"
+  },
+  "key": "www-blamo-ai",
+  "label": "www.blamo.ai",
+  "group": "harvest"
+}

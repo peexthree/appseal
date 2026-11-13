@@ -1,0 +1,26 @@
+{
+  "id": "mwfi1mlo-0c0621eebe",
+  "inputUrl": "https://vibe-eval.com/",
+  "targetUrl": "https://vibe-eval.com/",
+  "host": "vibe-eval.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:06.540Z",
+  "finishedAt": "2026-11-13T21:39:07.186Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://vibe-eval.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://vibe-eval.com/"
+  },
+  "key": "vibe-eval-com",
+  "label": "vibe-eval.com",
+  "group": "harvest"
+}

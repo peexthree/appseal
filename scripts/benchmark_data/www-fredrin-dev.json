@@ -1,0 +1,26 @@
+{
+  "id": "mwfi31ps-1a1d17e80c",
+  "inputUrl": "https://www.fredrin.dev",
+  "targetUrl": "https://www.fredrin.dev/",
+  "host": "www.fredrin.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:12.785Z",
+  "finishedAt": "2026-11-13T21:40:13.515Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "www-fredrin-dev",
+  "label": "www.fredrin.dev",
+  "group": "harvest"
+}

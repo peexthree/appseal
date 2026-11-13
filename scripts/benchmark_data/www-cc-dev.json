@@ -1,0 +1,26 @@
+{
+  "id": "mwfi2vkl-73dbddfc2e",
+  "inputUrl": "https://www.cc.dev/",
+  "targetUrl": "https://www.cc.dev/",
+  "host": "www.cc.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:04.821Z",
+  "finishedAt": "2026-11-13T21:40:05.412Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.cc.dev/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.cc.dev/"
+  },
+  "key": "www-cc-dev",
+  "label": "www.cc.dev",
+  "group": "harvest"
+}

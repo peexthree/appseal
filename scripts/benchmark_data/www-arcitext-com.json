@@ -1,0 +1,26 @@
+{
+  "id": "mwfi2qbc-9d275311b7",
+  "inputUrl": "https://www.arcitext.com",
+  "targetUrl": "https://www.arcitext.com/",
+  "host": "www.arcitext.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:58.008Z",
+  "finishedAt": "2026-11-13T21:39:58.460Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.arcitext.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.arcitext.com/"
+  },
+  "key": "www-arcitext-com",
+  "label": "www.arcitext.com",
+  "group": "harvest"
+}

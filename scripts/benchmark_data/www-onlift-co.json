@@ -1,0 +1,26 @@
+{
+  "id": "mwfi3lhi-0f30c35797",
+  "inputUrl": "https://www.onlift.co/",
+  "targetUrl": "https://www.onlift.co/",
+  "host": "www.onlift.co",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:38.407Z",
+  "finishedAt": "2026-11-13T21:40:40.213Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "www-onlift-co",
+  "label": "www.onlift.co",
+  "group": "harvest"
+}

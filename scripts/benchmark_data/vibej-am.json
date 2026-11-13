@@ -1,0 +1,26 @@
+{
+  "id": "mwfi1u5q-5a765ff679",
+  "inputUrl": "https://vibej.am/2026/",
+  "targetUrl": "https://vibej.am/2026/",
+  "host": "vibej.am",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:16.334Z",
+  "finishedAt": "2026-11-13T21:39:17.753Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://vibej.am/2026/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://vibej.am/2026/"
+  },
+  "key": "vibej-am",
+  "label": "vibej.am",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfi3z0h-992be44efc",
+  "inputUrl": "https://www.tastebudsai.com",
+  "targetUrl": "https://www.tastebudsai.com/",
+  "host": "www.tastebudsai.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:55.937Z",
+  "finishedAt": "2026-11-13T21:40:56.881Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.tastebudsai.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.tastebudsai.com/"
+  },
+  "key": "www-tastebudsai-com",
+  "label": "www.tastebudsai.com",
+  "group": "harvest"
+}

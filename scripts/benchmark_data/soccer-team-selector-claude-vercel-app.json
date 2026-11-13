@@ -1,0 +1,26 @@
+{
+  "id": "mwfhzkh9-609bcc2fad",
+  "inputUrl": "https://soccer-team-selector-claude.vercel.app",
+  "targetUrl": "https://soccer-team-selector-claude.vercel.app/",
+  "host": "soccer-team-selector-claude.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:30.478Z",
+  "finishedAt": "2026-11-13T21:37:31.372Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://soccer-team-selector-claude.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://soccer-team-selector-claude.vercel.app/"
+  },
+  "key": "soccer-team-selector-claude-vercel-app",
+  "label": "soccer-team-selector-claude.vercel.app",
+  "group": "harvest"
+}

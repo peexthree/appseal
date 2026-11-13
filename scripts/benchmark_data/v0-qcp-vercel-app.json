@@ -1,0 +1,26 @@
+{
+  "id": "mwfi18oz-375e829df9",
+  "inputUrl": "https://v0-qcp.vercel.app/",
+  "targetUrl": "https://v0-qcp.vercel.app/",
+  "host": "v0-qcp.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:48.516Z",
+  "finishedAt": "2026-11-13T21:38:49.314Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://v0-qcp.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://v0-qcp.vercel.app/"
+  },
+  "key": "v0-qcp-vercel-app",
+  "label": "v0-qcp.vercel.app",
+  "group": "harvest"
+}

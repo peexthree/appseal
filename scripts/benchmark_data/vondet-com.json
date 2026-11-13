@@ -1,0 +1,26 @@
+{
+  "id": "mwfi21bl-52025ca74d",
+  "inputUrl": "https://vondet.com/en?ref=hn",
+  "targetUrl": "https://vondet.com/en?ref=hn",
+  "host": "vondet.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:25.618Z",
+  "finishedAt": "2026-11-13T21:39:34.674Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "vondet-com",
+  "label": "vondet.com",
+  "group": "harvest"
+}

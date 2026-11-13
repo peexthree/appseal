@@ -1,0 +1,26 @@
+{
+  "id": "mwfi4j4b-a6eb69698c",
+  "inputUrl": "https://yourhrh.github.io/slidehtml/",
+  "targetUrl": "https://yourhrh.github.io/slidehtml/",
+  "host": "yourhrh.github.io",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:41:21.995Z",
+  "finishedAt": "2026-11-13T21:41:22.521Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "yourhrh-github-io",
+  "label": "yourhrh.github.io",
+  "group": "harvest"
+}

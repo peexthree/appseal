@@ -1,0 +1,26 @@
+{
+  "id": "mwfi2zzq-ebe23281a0",
+  "inputUrl": "https://www.fiverr.com/larissadoura380",
+  "targetUrl": "https://www.fiverr.com/larissadoura380",
+  "host": "www.fiverr.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:10.551Z",
+  "finishedAt": "2026-11-13T21:40:11.171Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.fiverr.com/larissadoura380",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.fiverr.com/larissadoura380"
+  },
+  "key": "www-fiverr-com",
+  "label": "www.fiverr.com",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfi18pp-b39419bd3f",
+  "inputUrl": "https://v0-screen-capture-audio.vercel.app/",
+  "targetUrl": "https://v0-screen-capture-audio.vercel.app/",
+  "host": "v0-screen-capture-audio.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:48.542Z",
+  "finishedAt": "2026-11-13T21:38:49.319Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://v0-screen-capture-audio.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://v0-screen-capture-audio.vercel.app/"
+  },
+  "key": "v0-screen-capture-audio-vercel-app",
+  "label": "v0-screen-capture-audio.vercel.app",
+  "group": "harvest"
+}

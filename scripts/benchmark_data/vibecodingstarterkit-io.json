@@ -1,0 +1,26 @@
+{
+  "id": "mwfi1rk8-41f6ad02e3",
+  "inputUrl": "https://vibecodingstarterkit.io",
+  "targetUrl": "https://vibecodingstarterkit.io/",
+  "host": "vibecodingstarterkit.io",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:12.969Z",
+  "finishedAt": "2026-11-13T21:39:14.045Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://vibecodingstarterkit.io/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://vibecodingstarterkit.io/"
+  },
+  "key": "vibecodingstarterkit-io",
+  "label": "vibecodingstarterkit.io",
+  "group": "harvest"
+}

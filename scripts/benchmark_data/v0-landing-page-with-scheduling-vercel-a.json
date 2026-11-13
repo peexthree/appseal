@@ -1,0 +1,26 @@
+{
+  "id": "mwfi13d9-9f2a0bffe6",
+  "inputUrl": "https://v0-landing-page-with-scheduling.vercel.app",
+  "targetUrl": "https://v0-landing-page-with-scheduling.vercel.app/",
+  "host": "v0-landing-page-with-scheduling.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:41.614Z",
+  "finishedAt": "2026-11-13T21:38:42.355Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://v0-landing-page-with-scheduling.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://v0-landing-page-with-scheduling.vercel.app/"
+  },
+  "key": "v0-landing-page-with-scheduling-vercel-a",
+  "label": "v0-landing-page-with-scheduling.vercel.app",
+  "group": "harvest"
+}

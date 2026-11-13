@@ -1,0 +1,26 @@
+{
+  "id": "mwfi416f-02bf11a37c",
+  "inputUrl": "https://www.testsolid.com/",
+  "targetUrl": "https://www.testsolid.com/",
+  "host": "www.testsolid.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:58.743Z",
+  "finishedAt": "2026-11-13T21:40:59.436Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.testsolid.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.testsolid.com/"
+  },
+  "key": "www-testsolid-com",
+  "label": "www.testsolid.com",
+  "group": "harvest"
+}

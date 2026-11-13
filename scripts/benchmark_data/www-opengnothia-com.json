@@ -1,0 +1,26 @@
+{
+  "id": "mwfi3mc2-daf4948d89",
+  "inputUrl": "https://www.opengnothia.com/tr",
+  "targetUrl": "https://www.opengnothia.com/tr",
+  "host": "www.opengnothia.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:39.506Z",
+  "finishedAt": "2026-11-13T21:40:40.001Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.opengnothia.com/tr",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.opengnothia.com/tr"
+  },
+  "key": "www-opengnothia-com",
+  "label": "www.opengnothia.com",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfi46rf-b659a6d9cb",
+  "inputUrl": "https://www.vibes.design/",
+  "targetUrl": "https://www.vibes.design/",
+  "host": "www.vibes.design",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:41:05.979Z",
+  "finishedAt": "2026-11-13T21:41:06.936Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.vibes.design/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.vibes.design/"
+  },
+  "key": "www-vibes-design",
+  "label": "www.vibes.design",
+  "group": "harvest"
+}

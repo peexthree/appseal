@@ -1,0 +1,26 @@
+{
+  "id": "mwfi37rl-ef681a151d",
+  "inputUrl": "https://www.incidentops.io/",
+  "targetUrl": "https://www.incidentops.io/",
+  "host": "www.incidentops.io",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:20.625Z",
+  "finishedAt": "2026-11-13T21:40:21.649Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.incidentops.io/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.incidentops.io/"
+  },
+  "key": "www-incidentops-io",
+  "label": "www.incidentops.io",
+  "group": "harvest"
+}

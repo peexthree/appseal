@@ -1,0 +1,26 @@
+{
+  "id": "mwfi18ai-faa65dc255",
+  "inputUrl": "https://v0-personal-developer-portfolio-psi-blush.vercel.app",
+  "targetUrl": "https://v0-personal-developer-portfolio-psi-blush.vercel.app/",
+  "host": "v0-personal-developer-portfolio-psi-blush.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:47.995Z",
+  "finishedAt": "2026-11-13T21:38:48.829Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://v0-personal-developer-portfolio-psi-blush.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://v0-personal-developer-portfolio-psi-blush.vercel.app/"
+  },
+  "key": "v0-personal-developer-portfolio-psi-blus",
+  "label": "v0-personal-developer-portfolio-psi-blush.vercel.app",
+  "group": "harvest"
+}

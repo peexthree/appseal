@@ -408,6 +408,7 @@ export function ScannerPage({
           <nav className="hidden items-center gap-1 md:flex" aria-label="Site">
             {[
               { href: "/registry", label: t(lang, "navRegistry") },
+              { href: "/stats", label: t(lang, "navStats") },
               { href: "#pricing", label: t(lang, "navPricing") },
               { href: "/legal", label: t(lang, "navLegal") },
             ].map((item) => (
@@ -466,6 +467,7 @@ export function ScannerPage({
           <nav className="space-y-1 border-t border-slate-800/60 px-4 py-3" aria-label="Mobile">
             {[
               { href: "/registry", label: t(lang, "navRegistry") },
+              { href: "/stats", label: t(lang, "navStats") },
               { href: "#pricing", label: t(lang, "navPricing") },
               { href: "/legal", label: t(lang, "navLegal") },
             ].map((item) => (
@@ -627,7 +629,15 @@ export function ScannerPage({
 
           {/* interactive grade showcase: the trophy changes glow per rank */}
           {phase === "form" && (
-            <div className="appseal-card mx-auto mt-6 max-w-2xl rounded-2xl p-5 sm:p-6">
+            <div className="appseal-card mx-auto mt-6 max-w-2xl overflow-hidden rounded-2xl p-5 sm:p-6">
+              <img
+                src="/img/scan-field.png"
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40"
+              />
+              <div className="relative">
               <p className="text-center text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
                 {t(lang, "showcaseHint")}
               </p>
@@ -685,11 +695,20 @@ export function ScannerPage({
                   <p className="mt-1 text-xs leading-relaxed text-slate-400">{GRADE_META[showGrade].description[lang]}</p>
                 </div>
               </div>
+              </div>
             </div>
           )}
 
           {phase === "scanning" && (
-            <div className="appseal-card mx-auto mt-8 max-w-2xl rounded-2xl p-6 sm:p-8">
+            <div className="appseal-card mx-auto mt-8 max-w-2xl overflow-hidden rounded-2xl p-6 sm:p-8">
+              <img
+                src="/img/scan-field.png"
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30"
+              />
+              <div className="relative">
               <div className="flex items-center gap-3">
                 <span className="appseal-pulse flex h-3 w-3 rounded-full bg-sky-400" />
                 <p className="font-semibold text-slate-100">{t(lang, "scanning")}</p>
@@ -734,6 +753,7 @@ export function ScannerPage({
                     </motion.div>
                   );
                 })}
+              </div>
               </div>
             </div>
           )}
@@ -945,45 +965,61 @@ export function ScannerPage({
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "issue2Title")}>
           <Reveal>
             <div className="appseal-ring mx-auto max-w-3xl">
-              <div className="rounded-[15px] bg-[#0b101c] p-6 text-center sm:p-10">
-            <h2 className="font-display text-2xl font-bold text-slate-100">
-              {t(lang, "issue2Title")}
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-[13px] leading-relaxed text-slate-400">
-              {t(lang, "issue2Sub")}
-            </p>
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button
-                className="bg-sky-400 px-5 text-sm font-bold text-[#090d16] hover:bg-sky-300"
-                onClick={() => {
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                  document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
-                }}
-              >
-                <Zap className="h-4 w-4" />
-                {t(lang, "issue2CtaScan")}
-              </Button>
-              <a
-                href="/registry"
-                className="rounded-md border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
-              >
-                {t(lang, "issue2CtaRegistry")} →
-              </a>
-            </div>
-
-            {/* decorative hint of registry contents: host + grade dot (static) */}
-            <div aria-hidden className="mx-auto mt-8 flex max-w-xs flex-col gap-2 font-mono text-[11px] text-slate-600">
-              {REGISTRY_DECOR.map((r) => (
-                <div key={r.host} className="flex items-center justify-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: r.color }} />
-                  <span>{r.host}</span>
+              <div className="rounded-[15px] bg-[#0b101c] p-6 sm:p-10">
+                <div className="flex flex-col items-center gap-7 sm:flex-row sm:gap-9">
+                  <div className="min-w-0 flex-1 text-center sm:text-left">
+                    <h2 className="font-display text-2xl font-bold text-slate-100">
+                      {t(lang, "issue2Title")}
+                    </h2>
+                    <p className="mx-auto mt-3 max-w-xl text-[13px] leading-relaxed text-slate-400 sm:mx-0">
+                      {t(lang, "issue2Sub")}
+                    </p>
+                    <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:justify-start">
+                      <Button
+                        className="bg-sky-400 px-5 text-sm font-bold text-[#090d16] hover:bg-sky-300"
+                        onClick={() => {
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
+                        }}
+                      >
+                        <Zap className="h-4 w-4" />
+                        {t(lang, "issue2CtaScan")}
+                      </Button>
+                      <a
+                        href="/registry"
+                        className="rounded-md border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
+                      >
+                        {t(lang, "issue2CtaRegistry")} →
+                      </a>
+                    </div>
+                  </div>
+                  {/* trust seal artwork, cropped from a wide canvas to a square */}
+                  <div
+                    aria-hidden
+                    className="relative hidden h-60 w-60 shrink-0 overflow-hidden rounded-2xl border border-slate-800 sm:block md:h-72 md:w-72"
+                  >
+                    <img
+                      src="/img/seal.png"
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                 </div>
-              ))}
-              <div className="flex items-center justify-center gap-2 text-slate-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
-                <span>···</span>
-              </div>
-            </div>
+
+                {/* decorative hint of registry contents: host + grade dot (static) */}
+                <div aria-hidden className="mx-auto mt-8 flex max-w-xs flex-col gap-2 font-mono text-[11px] text-slate-600">
+                  {REGISTRY_DECOR.map((r) => (
+                    <div key={r.host} className="flex items-center justify-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: r.color }} />
+                      <span>{r.host}</span>
+                    </div>
+                  ))}
+                  <div className="flex items-center justify-center gap-2 text-slate-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
+                    <span>···</span>
+                  </div>
+                </div>
               </div>
             </div>
           </Reveal>

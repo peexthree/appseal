@@ -1,0 +1,26 @@
+{
+  "id": "mwfhzhhj-84e53c7ea9",
+  "inputUrl": "https://slopcop.adriankrebs.ch",
+  "targetUrl": "https://slopcop.adriankrebs.ch/",
+  "host": "slopcop.adriankrebs.ch",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:26.600Z",
+  "finishedAt": "2026-11-13T21:37:26.976Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "slopcop-adriankrebs-ch",
+  "label": "slopcop.adriankrebs.ch",
+  "group": "harvest"
+}

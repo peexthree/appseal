@@ -1,0 +1,26 @@
+{
+  "id": "mwfi2g5x-ada05c5d6a",
+  "inputUrl": "https://www.agemo.ai/codewords",
+  "targetUrl": "https://www.agemo.ai/codewords",
+  "host": "www.agemo.ai",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:44.853Z",
+  "finishedAt": "2026-11-13T21:39:45.705Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.agemo.ai/codewords",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.agemo.ai/codewords"
+  },
+  "key": "www-agemo-ai",
+  "label": "www.agemo.ai",
+  "group": "harvest"
+}

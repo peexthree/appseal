@@ -1,0 +1,26 @@
+{
+  "id": "mwfi21is-a3933f3b25",
+  "inputUrl": "https://wealthgap.lovable.app/",
+  "targetUrl": "https://wealthgap.lovable.app/",
+  "host": "wealthgap.lovable.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:25.876Z",
+  "finishedAt": "2026-11-13T21:39:26.389Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "wealthgap-lovable-app",
+  "label": "wealthgap.lovable.app",
+  "group": "harvest"
+}

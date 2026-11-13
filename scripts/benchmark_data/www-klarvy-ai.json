@@ -1,0 +1,26 @@
+{
+  "id": "mwfi39zq-b4545ba433",
+  "inputUrl": "https://www.klarvy.ai",
+  "targetUrl": "https://www.klarvy.ai/",
+  "host": "www.klarvy.ai",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:23.510Z",
+  "finishedAt": "2026-11-13T21:40:24.239Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.klarvy.ai/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.klarvy.ai/"
+  },
+  "key": "www-klarvy-ai",
+  "label": "www.klarvy.ai",
+  "group": "harvest"
+}

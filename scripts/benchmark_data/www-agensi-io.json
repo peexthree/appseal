@@ -1,0 +1,26 @@
+{
+  "id": "mwfi2g8k-ba4a33865e",
+  "inputUrl": "https://www.agensi.io",
+  "targetUrl": "https://www.agensi.io/",
+  "host": "www.agensi.io",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:44.949Z",
+  "finishedAt": "2026-11-13T21:39:59.418Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "www-agensi-io",
+  "label": "www.agensi.io",
+  "group": "harvest"
+}

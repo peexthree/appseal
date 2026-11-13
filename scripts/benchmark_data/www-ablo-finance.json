@@ -1,0 +1,26 @@
+{
+  "id": "mwfi2drb-550ee5ee09",
+  "inputUrl": "https://www.ablo.finance/",
+  "targetUrl": "https://www.ablo.finance/",
+  "host": "www.ablo.finance",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:41.735Z",
+  "finishedAt": "2026-11-13T21:39:42.291Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.ablo.finance/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.ablo.finance/"
+  },
+  "key": "www-ablo-finance",
+  "label": "www.ablo.finance",
+  "group": "harvest"
+}

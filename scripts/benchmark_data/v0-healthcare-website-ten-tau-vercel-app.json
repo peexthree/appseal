@@ -1,0 +1,26 @@
+{
+  "id": "mwfi139e-8043b6f034",
+  "inputUrl": "https://v0-healthcare-website-ten-tau.vercel.app",
+  "targetUrl": "https://v0-healthcare-website-ten-tau.vercel.app/",
+  "host": "v0-healthcare-website-ten-tau.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:41.475Z",
+  "finishedAt": "2026-11-13T21:38:42.244Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://v0-healthcare-website-ten-tau.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://v0-healthcare-website-ten-tau.vercel.app/"
+  },
+  "key": "v0-healthcare-website-ten-tau-vercel-app",
+  "label": "v0-healthcare-website-ten-tau.vercel.app",
+  "group": "harvest"
+}

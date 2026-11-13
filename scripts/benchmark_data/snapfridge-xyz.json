@@ -1,0 +1,26 @@
+{
+  "id": "mwfhzjkq-f223e71aef",
+  "inputUrl": "https://snapfridge.xyz/",
+  "targetUrl": "https://snapfridge.xyz/",
+  "host": "snapfridge.xyz",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:29.307Z",
+  "finishedAt": "2026-11-13T21:37:29.578Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "snapfridge-xyz",
+  "label": "snapfridge.xyz",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfi0vbu-899a86927b",
+  "inputUrl": "https://twinonyms.vercel.app/",
+  "targetUrl": "https://twinonyms.vercel.app/",
+  "host": "twinonyms.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:31.194Z",
+  "finishedAt": "2026-11-13T21:38:32.398Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://twinonyms.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://twinonyms.vercel.app/"
+  },
+  "key": "twinonyms-vercel-app",
+  "label": "twinonyms.vercel.app",
+  "group": "harvest"
+}

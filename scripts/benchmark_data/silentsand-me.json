@@ -1,0 +1,26 @@
+{
+  "id": "mwfhzeqz-23294fe37b",
+  "inputUrl": "https://silentsand.me/",
+  "targetUrl": "https://silentsand.me/",
+  "host": "silentsand.me",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:23.052Z",
+  "finishedAt": "2026-11-13T21:37:23.725Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://silentsand.me/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://silentsand.me/"
+  },
+  "key": "silentsand-me",
+  "label": "silentsand.me",
+  "group": "harvest"
+}

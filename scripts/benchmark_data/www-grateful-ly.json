@@ -1,0 +1,26 @@
+{
+  "id": "mwfi36r4-56bc7b2208",
+  "inputUrl": "https://www.grateful.ly/",
+  "targetUrl": "https://www.grateful.ly/",
+  "host": "www.grateful.ly",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:19.313Z",
+  "finishedAt": "2026-11-13T21:40:20.001Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.grateful.ly/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.grateful.ly/"
+  },
+  "key": "www-grateful-ly",
+  "label": "www.grateful.ly",
+  "group": "harvest"
+}

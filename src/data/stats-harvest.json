@@ -1,11 +1,104 @@
 {
-  "generatedAt": "",
-  "panel": { "total": 0, "done": 0, "error": 0, "api-error": 0, "timeout": 0 },
-  "grades": { "A+": 0, "A": 0, "B": 0, "C": 0, "D": 0, "E": 0 },
-  "avgScore": 0,
-  "medianScore": 0,
-  "gradeACount": 0,
-  "sources": {},
-  "avgScoreBySource": {},
-  "topFails": []
+  "generatedAt": "2026-11-14T02:46:23+0500",
+  "panel": {
+    "total": 627,
+    "done": 405,
+    "dead": 188,
+    "apiError": 28,
+    "missing": 0
+  },
+  "grades": {
+    "A+": 5,
+    "A": 40,
+    "B": 190,
+    "C": 158,
+    "D": 12,
+    "E": 0
+  },
+  "avgScore": 73,
+  "medianScore": 73,
+  "gradeACount": 45,
+  "sources": {
+    "hn": 311,
+    "github": 91,
+    "unknown": 3
+  },
+  "avgScoreBySource": {
+    "github": 72,
+    "hn": 73
+  },
+  "topFails": [
+    {
+      "id": "hdr_coop",
+      "title": "Заголовок COOP не установлен",
+      "failPct": 0,
+      "warnPct": 96
+    },
+    {
+      "id": "hdr_permissions",
+      "title": "Заголовок Permissions-Policy не установлен",
+      "failPct": 0,
+      "warnPct": 86
+    },
+    {
+      "id": "hdr_csp",
+      "title": "Заголовок CSP не установлен",
+      "failPct": 0,
+      "warnPct": 83
+    },
+    {
+      "id": "hdr_xfo",
+      "title": "Заголовок X-Frame-Options не установлен",
+      "failPct": 0,
+      "warnPct": 80
+    },
+    {
+      "id": "hdr_referrer",
+      "title": "Referrer-Policy установлен",
+      "failPct": 0,
+      "warnPct": 54
+    },
+    {
+      "id": "hdr_xcto",
+      "title": "X-Content-Type-Options установлен",
+      "failPct": 0,
+      "warnPct": 50
+    },
+    {
+      "id": "hdr_hsts",
+      "title": "HSTS установлен",
+      "failPct": 0,
+      "warnPct": 36
+    },
+    {
+      "id": "og_image",
+      "title": "og:image настроен",
+      "failPct": 0,
+      "warnPct": 33
+    },
+    {
+      "id": "og_title",
+      "title": "og:title настроен",
+      "failPct": 0,
+      "warnPct": 30
+    },
+    {
+      "id": "og_description",
+      "title": "og:description настроен",
+      "failPct": 0,
+      "warnPct": 30
+    },
+    {
+      "id": "sri_missing",
+      "title": "Сторонние скрипты без SRI",
+      "failPct": 0,
+      "warnPct": 27
+    },
+    {
+      "id": "cors_wildcard",
+      "title": "CORS не открыт для всех",
+      "failPct": 0,
+      "warnPct": 25
+    }
+  ]
 }

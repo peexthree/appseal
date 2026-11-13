@@ -1,0 +1,26 @@
+{
+  "id": "mwfi3siu-3ae65c8dee",
+  "inputUrl": "https://www.standardtopic.com/",
+  "targetUrl": "https://www.standardtopic.com/",
+  "host": "www.standardtopic.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:47.526Z",
+  "finishedAt": "2026-11-13T21:40:48.077Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.standardtopic.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.standardtopic.com/"
+  },
+  "key": "www-standardtopic-com",
+  "label": "www.standardtopic.com",
+  "group": "harvest"
+}

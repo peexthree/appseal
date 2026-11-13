@@ -1,0 +1,26 @@
+{
+  "id": "mwfi1z9u-3d27ad6742",
+  "inputUrl": "https://von.dev/",
+  "targetUrl": "https://von.dev/",
+  "host": "von.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:22.962Z",
+  "finishedAt": "2026-11-13T21:39:23.499Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "von-dev",
+  "label": "von.dev",
+  "group": "harvest"
+}

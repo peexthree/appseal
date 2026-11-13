@@ -1,0 +1,26 @@
+{
+  "id": "mwfhz1cu-f540178285",
+  "inputUrl": "https://securevibing.com",
+  "targetUrl": "https://securevibing.com/",
+  "host": "securevibing.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:05.694Z",
+  "finishedAt": "2026-11-13T21:37:20.464Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "securevibing-com",
+  "label": "securevibing.com",
+  "group": "harvest"
+}

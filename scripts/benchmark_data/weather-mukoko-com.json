@@ -1,0 +1,26 @@
+{
+  "id": "mwfi21qz-f7a8f76b63",
+  "inputUrl": "https://weather.mukoko.com/harare",
+  "targetUrl": "https://weather.mukoko.com/harare",
+  "host": "weather.mukoko.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:26.172Z",
+  "finishedAt": "2026-11-13T21:39:26.627Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://weather.mukoko.com/harare",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://weather.mukoko.com/harare"
+  },
+  "key": "weather-mukoko-com",
+  "label": "weather.mukoko.com",
+  "group": "harvest"
+}

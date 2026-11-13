@@ -1,0 +1,26 @@
+{
+  "id": "mwfi0u35-d6242147e6",
+  "inputUrl": "https://trulytyped.com/",
+  "targetUrl": "https://trulytyped.com/",
+  "host": "trulytyped.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:29.585Z",
+  "finishedAt": "2026-11-13T21:38:30.562Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 530",
+    "en": "Scan failed: site responded 530"
+  },
+  "key": "trulytyped-com",
+  "label": "trulytyped.com",
+  "group": "harvest"
+}

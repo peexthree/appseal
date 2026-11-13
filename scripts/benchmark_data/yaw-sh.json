@@ -1,0 +1,26 @@
+{
+  "id": "mwfi4ivs-01c0aaf225",
+  "inputUrl": "https://yaw.sh",
+  "targetUrl": "https://yaw.sh/",
+  "host": "yaw.sh",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:41:21.690Z",
+  "finishedAt": "2026-11-13T21:41:36.181Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "yaw-sh",
+  "label": "yaw.sh",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhzzwx-030bd4ca14",
+  "inputUrl": "https://start-ng-lego.vercel.app",
+  "targetUrl": "https://start-ng-lego.vercel.app/",
+  "host": "start-ng-lego.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:50.482Z",
+  "finishedAt": "2026-11-13T21:37:51.213Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://start-ng-lego.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://start-ng-lego.vercel.app/"
+  },
+  "key": "start-ng-lego-vercel-app",
+  "label": "start-ng-lego.vercel.app",
+  "group": "harvest"
+}

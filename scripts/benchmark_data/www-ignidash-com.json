@@ -1,0 +1,26 @@
+{
+  "id": "mwfi37fy-9ea5be0341",
+  "inputUrl": "https://www.ignidash.com",
+  "targetUrl": "https://www.ignidash.com/",
+  "host": "www.ignidash.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:20.207Z",
+  "finishedAt": "2026-11-13T21:40:20.873Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.ignidash.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.ignidash.com/"
+  },
+  "key": "www-ignidash-com",
+  "label": "www.ignidash.com",
+  "group": "harvest"
+}
