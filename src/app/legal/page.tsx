@@ -71,6 +71,22 @@ export default function LegalPage() {
             .
           </p>
 
+          <div className="mt-4 rounded-xl border border-slate-800 bg-[#090d16] p-4 text-[13px] leading-relaxed text-slate-300">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-sky-400">Оператор сервиса</p>
+            <p className="mt-2">
+              Сычёв Игорь Матвеевич - самозанятый, применяющий специальный налоговый режим
+              «Налог на профессиональный доход» (Федеральный закон № 422-ФЗ).
+            </p>
+            <p className="mt-1 font-mono text-xs text-slate-400">
+              ИНН: 026906141678 · e-mail: {CONTACT_EMAIL}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Реквизиты указаны в соответствии с ч. 4 ст. 4 Федерального закона № 422-ФЗ.
+              Платежи обрабатывает платёжный провайдер ЮKassa; чек направляется плательщику
+              автоматически.
+            </p>
+          </div>
+
           <div className="mt-8 space-y-8 text-sm leading-relaxed text-slate-300">
             <section>
               <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -110,6 +126,14 @@ export default function LegalPage() {
                   Регистрация отсутствует, формы для ввода персональных данных не используются.
                   Сервис не собирает ФИО, адреса электронной почты, телефоны, не использует
                   cookie-файлы и системы веб-аналитики.
+                </li>
+                <li>
+                  Исключение - покупка Launch Pass: для оформления платежа, чека и доступа к
+                  пропуску обрабатывается адрес электронной почты плательщика и домен, на который
+                  оформлен пропуск. Данные передаются платёжному провайдеру ЮKassa
+                  (формирование чека) и хранятся у оператора не дольше 1 года с последней
+                  активности по пропуску. Эти данные не публикуются и не передаются третьим лицам,
+                  кроме ЮKassa и налоговых органов.
                 </li>
                 <li>
                   В localStorage браузера хранится только выбранный язык интерфейса. Эти данные не
@@ -208,11 +232,13 @@ export default function LegalPage() {
                   strictly passive (public GET/HEAD/OPTIONS responses only).
                 </li>
                 <li>
-                  No accounts, no forms, no cookies, no analytics. Only the chosen UI language is
-                  kept in your browser. Scan results (domain, date, grade) may be published in the
-                  public registry; domain owners may request removal by email (processed within 3
-                  business days). Request logs are handled by infrastructure providers Vercel and
-                  Cloudflare under their own policies.
+                  No accounts, no forms, no cookies, no analytics (exception: the buyer&apos;s email
+                  when purchasing the Launch Pass - processed for the payment, the receipt and pass
+                  access, shared with the payment provider YooKassa only). Only the chosen UI
+                  language is kept in your browser. Scan results (domain, date, grade) may be
+                  published in the public registry; domain owners may request removal by email
+                  (processed within 3 business days). Request logs are handled by infrastructure
+                  providers Vercel and Cloudflare under their own policies.
                 </li>
                 <li>
                   Results are automated heuristic findings - not a security audit, not a guarantee,

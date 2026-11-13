@@ -3,12 +3,17 @@ import { after } from "next/server";
 import { runScan, normalizeInputUrl } from "@/lib/scanner";
 import { newId, newReportKey, saveScan, serializeScan, pushRegistryEntry } from "@/lib/scanner/store";
 import { assertPublicTarget } from "@/lib/scanner/guard";
+import { bumpDailyQuota, hasActivePass, hashIp } from "@/lib/passes";
 import type { Lang, ScanResult } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // scan takes 15-40s; keep the function alive for the background work
 export const maxDuration = 60;
+
+// free tier promised in the pricing table: 1 full scan per day per IP;
+// an active Launch Pass on the target host bypasses it
+const FREE_DAILY_LIMIT = 1;
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,6 +36,26 @@ export async function POST(req: NextRequest) {
         { error: isGuard ? reason : "invalid url" },
         { status: isGuard ? 403 : 400 },
       );
+    }
+
+    // free quota (demo target excluded - it is the marketing funnel);
+    // a live Launch Pass on the target host removes the limit
+    if (!norm.isDemo) {
+      const ip =
+        req.headers.get("cf-connecting-ip") ??
+        req.headers.get("x-forwarded-for")?.split(",")[0] ??
+        "unknown";
+      const targetHost = new URL(norm.url).hostname;
+      const pass = await hasActivePass(targetHost);
+      if (!pass) {
+        const { allowed } = await bumpDailyQuota(hashIp(ip), FREE_DAILY_LIMIT);
+        if (!allowed) {
+          return NextResponse.json(
+            { error: "quota_exceeded", upsell: "launch-pass" },
+            { status: 429 },
+          );
+        }
+      }
     }
 
     // the built-in demo target is served by this app itself (works in prod
