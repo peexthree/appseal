@@ -27,6 +27,14 @@ export const metadata: Metadata = {
     description:
       "Scan your AI-built app for leaked secrets, open databases, exposed admin panels and abandonment. A+–E grade in a minute.",
     type: "website",
+    images: ["/OG.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AppSeal — the trust seal for AI-built apps",
+    description:
+      "Scan your AI-built app for leaked secrets, open databases, exposed admin panels and abandonment. A+–E grade in a minute.",
+    images: ["/OG.png"],
   },
 };
 
