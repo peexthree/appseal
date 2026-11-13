@@ -7,8 +7,6 @@ import path from "node:path";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-
 /** Badge endpoint:
  *  - style=trophy | format=png -> 512x512 3D trophy PNG
  *  - default -> vector shield SVG with cyber-security theme
@@ -17,6 +15,7 @@ export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
   const style = req.nextUrl.searchParams.get("style") ?? req.nextUrl.searchParams.get("format");
   const theme = req.nextUrl.searchParams.get("theme") === "light" ? "light" : "dark";
+  const langParam = req.nextUrl.searchParams.get("lang");
   const scan = await getScan(id);
 
   const grade = scan?.grade ?? "E";
@@ -44,43 +43,69 @@ export async function GET(req: NextRequest) {
   const score = scan ? String(scan.score) : "--";
   const color = meta.color;
   const secondaryColor = meta.secondaryColor;
-  const host = scan ? (scan.host.length > 24 ? scan.host.slice(0, 22) + "…" : scan.host) : "appseal";
-  const date = scan
-    ? MONTHS[new Date(scan.startedAt).getUTCMonth()] + " " + new Date(scan.startedAt).getUTCFullYear()
-    : "";
+  const rawHost = scan ? scan.host : "appseal.online";
+  const cleanHost = rawHost.replace(/^www\./i, "");
+  const hostDisplay = cleanHost.length > 24 ? cleanHost.slice(0, 22) + "…" : cleanHost;
 
-  const bgL = theme === "light" ? "#ffffff" : "#0b0d10";
-  const fgL = theme === "light" ? "#111111" : "#f5f6f7";
-  const mutL = theme === "light" ? "#6b7280" : "#9aa1ab";
-  const panelL = theme === "light" ? "#f3f4f6" : "#12161c";
-
-  const labelW = 118;
-  const gradeW = 56;
-  const W = labelW + gradeW;
+  const baseW = 228;
+  const neededW = Math.round(44 + hostDisplay.length * 7.2 + 64);
+  const W = Math.max(baseW, Math.min(276, neededW));
   const H = 44;
-  const mono = "JetBrains Mono,Menlo,Consolas,monospace";
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="AppSeal grade ${grade}">
+  const pillW = 54;
+  const pillH = 32;
+  const pillX = W - pillW - 6;
+  const pillY = 6;
+  const pillMidX = pillX + pillW / 2;
+
+  const isRu = langParam === "ru" || (!langParam && scan?.lang === "ru");
+  const subLabel = isRu ? "APPSEAL ПРОВЕРЕНО" : "APPSEAL VERIFIED";
+
+  const fontSans = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+  const fontMono = "'JetBrains Mono', Menlo, Consolas, monospace";
+
+  const bg = theme === "light" ? "#FFFFFF" : "#080B11";
+  const fg = theme === "light" ? "#0F172A" : "#F8FAFC";
+  const mut = theme === "light" ? "#64748B" : "#7C8BA1";
+  const pillBg = theme === "light" ? "#F1F5F9" : "#101522";
+  const borderStroke = theme === "light" ? color : "url(#borderGrad)";
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="AppSeal verified ${grade}">
   <defs>
-    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${color}" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="${color}" stop-opacity="0.35"/>
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="${color}" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="${secondaryColor}" stop-opacity="0.7"/>
     </linearGradient>
-    <linearGradient id="s" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${color}"/>
-      <stop offset="1" stop-color="${secondaryColor}"/>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="${color}"/>
+      <stop offset="100%" stop-color="${secondaryColor}"/>
     </linearGradient>
+    <radialGradient id="glow" cx="21" cy="22" r="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#080B11" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect x="0.75" y="0.75" width="${W - 1.5}" height="${H - 1.5}" rx="9" fill="${bgL}" stroke="url(#b)" stroke-width="1.5"/>
-  <g transform="translate(12,10)">
-    <path d="M12 2 L21 5.5 V12 C21 17.6 17.2 21.6 12 24 C6.8 21.6 3 17.6 3 12 V5.5 Z" fill="url(#s)"/>
-    <path d="M8.5 12.4 l2.4 2.4 4.6-4.8" fill="none" stroke="#0b0d10" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Card background -->
+  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="8" fill="${bg}" stroke="${borderStroke}" stroke-width="1"/>
+  <!-- Ambient glow around shield -->
+  <circle cx="21" cy="22" r="20" fill="url(#glow)"/>
+
+  <!-- Shield Icon -->
+  <g transform="translate(11, 10)">
+    <path d="M11 2 L20 5.5 V12 C20 17.6 16.2 21.6 11 24 C5.8 21.6 2 17.6 2 12 V5.5 Z" fill="url(#shieldGrad)"/>
+    <path d="M7.5 12.5 L10 15 L14.5 9.5" fill="none" stroke="#080B11" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-  <text x="44" y="16.5" font-family="${mono}" font-size="8.5" fill="${mutL}" letter-spacing="2.5">APPSEAL${date ? " · " + date : ""}</text>
-  <text x="44" y="32" font-family="${mono}" font-size="11.5" font-weight="bold" fill="${fgL}">${escapeXml(host)}</text>
-  <rect x="${labelW}" y="6" width="${gradeW - 6}" height="${H - 12}" rx="6" fill="${panelL}" stroke="${color}" stroke-opacity="0.55"/>
-  <text x="${labelW + (gradeW - 6) / 2}" y="27.5" text-anchor="middle" font-family="${mono}" font-size="${grade.length > 1 ? 13 : 14}" font-weight="bold" fill="${color}">${grade}</text>
-  <text x="${labelW + (gradeW - 6) / 2}" y="${H - 9}" text-anchor="middle" font-family="${mono}" font-size="8.5" fill="${mutL}">${score}/100</text>
+
+  <!-- Text: Brand & Host -->
+  <text x="40" y="16.5" font-family="${fontSans}" font-size="8" font-weight="700" fill="${mut}" letter-spacing="0.8">${subLabel}</text>
+  <text x="40" y="31.5" font-family="${fontSans}" font-size="12" font-weight="700" fill="${fg}">${escapeXml(hostDisplay)}</text>
+
+  <!-- Right: Grade Box -->
+  <rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="6" fill="${pillBg}" stroke="${color}" stroke-width="0.8" stroke-opacity="0.5"/>
+  <text x="${pillMidX}" y="20.5" text-anchor="middle" font-family="${fontSans}" font-size="${grade.length > 1 ? 13.5 : 15}" font-weight="900" fill="${color}">${grade}</text>
+  <text x="${pillMidX}" y="31.5" text-anchor="middle" font-family="${fontMono}" font-size="8.5" font-weight="700" fill="#94A3B8">${score}/100</text>
 </svg>`;
 
   return new Response(svg, {
