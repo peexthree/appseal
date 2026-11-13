@@ -254,8 +254,8 @@ export const DICT = {
   },
   footerStatus: { ru: "All systems operational", en: "All systems operational" },
   footerBadgeNote: {
-    ru: "Наш собственный сайт проверен AppSeal - нажмите на бейдж, чтобы открыть живой отчёт",
-    en: "Our own site verified by AppSeal - click the badge to open the live report",
+    ru: "Наш собственный сайт проверен AppSeal - нажмите на бейдж, чтобы подтвердить подлинность",
+    en: "Our own site verified by AppSeal - click the badge to verify its authenticity",
   },
   gradeTitle: { ru: "Оценка техосмотра", en: "Trust grade" },
   findingsTitle: { ru: "Находки по категориям", en: "Findings by category" },
@@ -264,8 +264,8 @@ export const DICT = {
     en: "No critical issues found. But one scan is not forever: apps change, and checks should be repeated after every release.",
   },
   caseReportLink: {
-    ru: "Посмотреть реальный отчёт этого скана →",
-    en: "Open the real report of this scan →",
+    ru: "Подтвердить подлинность этого скана →",
+    en: "Verify the authenticity of this scan →",
   },
   casePrompt: {
     ru: "Ты ИИ-агент, дорабатывающий веб-приложение. Сайт: akulenok-tmz.ru.\nНезависимый сканер AppSeal поставил оценку A (86/100). Ниже - все найденные проблемы.\n\n## Проблемы (3)\n### 1. X-Frame-Options отсутствует [warn, medium]\n### 2. CORS «для всех» [warn, high]\n### 3. Пустой title [warn, low]",
