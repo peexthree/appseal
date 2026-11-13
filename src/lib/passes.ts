@@ -11,10 +11,13 @@ import { createHash } from "node:crypto";
 
 const PASS_TTL_SECONDS = 8 * 24 * 3600; // 7-day pass + 1 day of grace
 
+// 152-FZ data localization (part 5, art. 18): storing payer emails here would
+// require an RF-hosted database. The email goes to YooKassa for the receipt
+// and is NEVER written to our store - only non-personal references (payment
+// id, domain, expiry) stay.
 export interface PassRecord {
   paymentId: string;
   host: string;
-  email: string;
   until: string; // ISO timestamp
 }
 
@@ -62,11 +65,10 @@ function passHostKey(host: string): string {
   return `lpass:host:${createHash("sha256").update(clean).digest("hex")}`;
 }
 
-export async function activatePass(paymentId: string, host: string, email: string): Promise<PassRecord> {
+export async function activatePass(paymentId: string, host: string): Promise<PassRecord> {
   const record: PassRecord = {
     paymentId,
     host: host.replace(/^www\./i, "").toLowerCase(),
-    email,
     until: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
   };
   await redisCommand(["SET", `lpass:pay:${paymentId}`, JSON.stringify(record), "EX", String(PASS_TTL_SECONDS)]);
@@ -121,6 +123,10 @@ export async function bumpDailyQuota(
   return { used, allowed: used <= limit };
 }
 
+/** Salted one-way hash: an unsalted sha256 of an IPv4 address is reversible
+ *  by brute force, which would make the quota key personal data under
+ *  152-FZ. The salt makes deconvolution infeasible. */
 export function hashIp(ip: string): string {
-  return createHash("sha256").update(ip).digest("hex");
+  const salt = process.env.QUOTA_SALT ?? "appseal-quota-v1";
+  return createHash("sha256").update(`${salt}:${ip}`).digest("hex");
 }
