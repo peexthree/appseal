@@ -1,25 +1,25 @@
 {
-  "generatedAt": "2026-11-14T02:46:23+0500",
+  "generatedAt": "2026-11-14T02:53:50+0500",
   "panel": {
     "total": 627,
-    "done": 405,
+    "done": 409,
     "dead": 188,
-    "apiError": 28,
+    "apiError": 24,
     "missing": 0
   },
   "grades": {
     "A+": 5,
-    "A": 40,
-    "B": 190,
-    "C": 158,
+    "A": 41,
+    "B": 192,
+    "C": 159,
     "D": 12,
     "E": 0
   },
   "avgScore": 73,
   "medianScore": 73,
-  "gradeACount": 45,
+  "gradeACount": 46,
   "sources": {
-    "hn": 311,
+    "hn": 315,
     "github": 91,
     "unknown": 3
   },
@@ -38,7 +38,7 @@
       "id": "hdr_permissions",
       "title": "Заголовок Permissions-Policy не установлен",
       "failPct": 0,
-      "warnPct": 86
+      "warnPct": 87
     },
     {
       "id": "hdr_csp",
@@ -98,7 +98,7 @@
       "id": "cors_wildcard",
       "title": "CORS не открыт для всех",
       "failPct": 0,
-      "warnPct": 25
+      "warnPct": 24
     }
   ]
 }
