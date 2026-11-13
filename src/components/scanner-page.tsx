@@ -63,6 +63,13 @@ export function ScannerPage({
   const [rkey, setRkey] = useState<string | null>(initialReportKey ?? null);
   const [scan, setScan] = useState<ScanResult | null>(initialScan);
   const [error, setError] = useState("");
+  const [quotaHit, setQuotaHit] = useState(false);
+  const [passInfo, setPassInfo] = useState<{ host: string; until: string } | null>(null);
+  const [paidPending, setPaidPending] = useState(false);
+  const [lpHost, setLpHost] = useState("");
+  const [lpEmail, setLpEmail] = useState("");
+  const [lpBusy, setLpBusy] = useState(false);
+  const [lpErr, setLpErr] = useState("");
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -85,6 +92,7 @@ export function ScannerPage({
 
   const startScan = useCallback(async (target: string) => {
     setError("");
+    setQuotaHit(false);
     setScan(null);
     setScanId(null);
     setPhase("scanning");
@@ -94,6 +102,11 @@ export function ScannerPage({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ url: target, lang }),
       });
+      if (res.status === 429) {
+        setQuotaHit(true);
+        setPhase("error");
+        return;
+      }
       if (!res.ok) {
         const j = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(j.error ?? `HTTP ${res.status}`);
@@ -106,6 +119,65 @@ export function ScannerPage({
       setPhase("error");
     }
   }, [lang]);
+
+  // returning from YooKassa: /?paid=<nonce> -> resolve the payment, show the pass
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const nonce = sp.get("paid");
+    if (!nonce) return;
+    try {
+      history.replaceState(null, "", "/");
+    } catch {
+      /* keep the query on older browsers */
+    }
+    const check = async () => {
+      try {
+        const res = await fetch(`/api/purchase?nonce=${encodeURIComponent(nonce)}`, { cache: "no-store" });
+        const d = (await res.json()) as { status?: string; host?: string; until?: string };
+        if (d.status === "succeeded" && d.host) {
+          setPassInfo({ host: d.host, until: d.until ?? "" });
+        } else if (d.status) {
+          setPaidPending(true);
+        }
+      } catch {
+        /* network hiccup: the webhook still activates the pass server-side */
+      }
+    };
+    void check();
+  }, []);
+
+  const buyPass = async () => {
+    setLpErr("");
+    const host = lpHost.trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/^www\./i, "");
+    const email = lpEmail.trim();
+    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(host)) {
+      setLpErr(t(lang, "lpDomainBad"));
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      setLpErr(t(lang, "lpEmailBad"));
+      return;
+    }
+    setLpBusy(true);
+    try {
+      const nonce = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      const res = await fetch("/api/purchase", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ host, email, nonce, lang }),
+      });
+      const d = (await res.json().catch(() => ({}))) as { confirmationUrl?: string; error?: string };
+      if (!res.ok || !d.confirmationUrl) {
+        throw new Error(d.error ?? `HTTP ${res.status}`);
+      }
+      window.location.href = d.confirmationUrl;
+    } catch (e) {
+      setLpErr(`${t(lang, "lpErr")}${e instanceof Error ? e.message : String(e)}`);
+      setLpBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!scanId) return;
@@ -186,6 +258,28 @@ export function ScannerPage({
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">
+        {/* Launch Pass status (returning from YooKassa) */}
+        {(passInfo || paidPending) && (
+          <div
+            className={`mx-auto mb-2 mt-4 max-w-3xl rounded-xl border p-4 text-sm leading-relaxed ${
+              passInfo
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                : "border-amber-500/40 bg-amber-500/10 text-amber-300"
+            }`}
+            role="status"
+          >
+            {passInfo ? (
+              <>
+                <span className="font-bold">{t(lang, "paidOk")}</span> {passInfo.host}{" "}
+                {t(lang, "paidUntil")}{" "}
+                {new Date(passInfo.until).toLocaleDateString(lang === "ru" ? "ru-RU" : "en-US")}
+              </>
+            ) : (
+              t(lang, "paidPending")
+            )}
+          </div>
+        )}
+
         {/* hero + scanner */}
         <section
           className="appmot-grid relative pb-14 pt-14 sm:pt-20"
@@ -315,7 +409,28 @@ export function ScannerPage({
             </div>
           )}
 
-          {phase === "error" && (
+          {phase === "error" && quotaHit ? (
+            <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-amber-900/60 bg-amber-500/5 p-6 text-center">
+              <Zap className="mx-auto h-8 w-8 text-amber-400" />
+              <p className="mt-3 font-semibold text-amber-300">{t(lang, "quotaTitle")}</p>
+              <p className="mt-1 text-sm text-slate-400">{t(lang, "quotaText")}</p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  className="bg-indigo-500 text-white hover:bg-indigo-400"
+                  onClick={() => {
+                    setPhase("form");
+                    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                >
+                  <Zap className="h-4 w-4" />
+                  {t(lang, "quotaCta")}
+                </Button>
+                <Button variant="outline" onClick={reset} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+                  {t(lang, "rescan")}
+                </Button>
+              </div>
+            </div>
+          ) : phase === "error" ? (
             <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-red-900/60 bg-red-500/5 p-6 text-center">
               <ShieldAlert className="mx-auto h-8 w-8 text-red-400" />
               <p className="mt-3 font-semibold text-red-300">{t(lang, "errTitle")}</p>
@@ -324,7 +439,7 @@ export function ScannerPage({
                 {t(lang, "rescan")}
               </Button>
             </div>
-          )}
+          ) : null}
 
           <div ref={reportRef} className={phase === "report" ? "mt-10 scroll-mt-20" : ""}>
             {phase === "report" && scan && (
@@ -433,16 +548,16 @@ export function ScannerPage({
         </section>
 
         {/* pricing */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "pricingTitle")}>
+        <section id="pricing" className="scroll-mt-16 border-t border-slate-800/70 py-14" aria-label={t(lang, "pricingTitle")}>
           <h2 className="font-display text-center text-2xl font-bold text-slate-100">
             {t(lang, "pricingTitle")}
           </h2>
           <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "pricingSub")}</p>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {[
-              { name: t(lang, "planFree"), price: t(lang, "planFreePrice"), feats: list(lang, "planFreeFeats"), hi: false, cta: t(lang, "planFreeCta"), soon: false },
-              { name: t(lang, "planPro"), price: t(lang, "planProPrice"), feats: list(lang, "planProFeats"), hi: true, cta: t(lang, "planSoonCta"), soon: true },
-              { name: t(lang, "planPlatform"), price: t(lang, "planPlatformPrice"), feats: list(lang, "planPlatformFeats"), hi: false, cta: t(lang, "planSoonCta"), soon: true },
+              { name: t(lang, "planFree"), price: t(lang, "planFreePrice"), feats: list(lang, "planFreeFeats"), hi: false, cta: t(lang, "planFreeCta"), soon: false, lp: false },
+              { name: t(lang, "planLP"), price: t(lang, "planLPPrice"), feats: list(lang, "planLPFeats"), hi: true, cta: t(lang, "planLPCta"), soon: false, lp: true },
+              { name: t(lang, "planPlatform"), price: t(lang, "planPlatformPrice"), feats: list(lang, "planPlatformFeats"), hi: false, cta: t(lang, "planSoonCta"), soon: true, lp: false },
             ].map((p) => (
               <div
                 key={p.name}
@@ -462,7 +577,35 @@ export function ScannerPage({
                     </li>
                   ))}
                 </ul>
-                {p.soon ? (
+                {p.lp ? (
+                  <div className="mt-5 space-y-2">
+                    <input
+                      value={lpHost}
+                      onChange={(e) => setLpHost(e.target.value)}
+                      placeholder={t(lang, "lpDomainPh")}
+                      aria-label="Pass domain"
+                      className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
+                    />
+                    <input
+                      value={lpEmail}
+                      onChange={(e) => setLpEmail(e.target.value)}
+                      placeholder={t(lang, "lpEmailPh")}
+                      type="email"
+                      aria-label="Pass email"
+                      className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
+                    />
+                    <Button
+                      className="w-full bg-indigo-500 text-white hover:bg-indigo-400"
+                      onClick={buyPass}
+                      disabled={lpBusy}
+                    >
+                      <Zap className="h-4 w-4" />
+                      {lpBusy ? "…" : p.cta}
+                    </Button>
+                    <p className="text-[10px] leading-relaxed text-slate-500">{t(lang, "lpNote")}</p>
+                    {lpErr && <p className="text-[11px] leading-snug text-red-400">{lpErr}</p>}
+                  </div>
+                ) : p.soon ? (
                   <Button variant="outline" disabled className="mt-5 w-full border-slate-700 text-slate-500">
                     {p.cta}
                   </Button>

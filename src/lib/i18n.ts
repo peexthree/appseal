@@ -140,6 +140,38 @@ export const DICT = {
     ru: "API для платформ-конструкторов|White-label бейджи|Массовый скан каталога приложений|SLA и партнёрская интеграция",
     en: "API for app builders|White-label badges|Bulk catalog scans|SLA and partner integration",
   },
+  planLP: { ru: "Launch Pass", en: "Launch Pass" },
+  planLPPrice: { ru: "490 ₽", en: "490 ₽" },
+  planLPFeats: {
+    ru: "Неделя безлимитных проверок одного домена|Повторный скан сразу после фикса|Помогает довести домен до класса A|Промпт для ИИ-агента и PDF-отчёт",
+    en: "A week of unlimited checks of one domain|Re-scan right after each fix|Helps bring your domain to grade A|AI-agent prompt and PDF report",
+  },
+  planLPCta: { ru: "Купить за 490 ₽", en: "Buy for 490 ₽" },
+  lpDomainPh: { ru: "домен пропуска, например myapp.vercel.app", en: "pass domain, e.g. myapp.vercel.app" },
+  lpEmailPh: { ru: "email для чека и доступа", en: "email for the receipt and access" },
+  lpPay: { ru: "Оплатить", en: "Pay" },
+  lpNote: {
+    ru: "Оплата картой через ЮKassa. Чек придёт на email автоматически (НПД).",
+    en: "Card payment via YooKassa. The receipt arrives by email automatically.",
+  },
+  lpErr: { ru: "Не удалось создать платёж: ", en: "Could not create the payment: " },
+  lpDomainBad: { ru: "Укажите домен в формате myapp.com", en: "Enter a domain like myapp.com" },
+  lpEmailBad: { ru: "Укажите корректный email", en: "Enter a valid email" },
+  quotaTitle: {
+    ru: "Бесплатный скан на сегодня уже использован",
+    en: "The free scan for today is already used",
+  },
+  quotaText: {
+    ru: "На Free - 1 скан в день с одного адреса. Launch Pass снимает лимит на один домен на неделю.",
+    en: "Free tier is 1 scan per day per address. A Launch Pass removes the limit for one domain for a week.",
+  },
+  quotaCta: { ru: "Посмотреть Launch Pass", en: "See the Launch Pass" },
+  paidOk: { ru: "Launch Pass активен:", en: "Launch Pass is active:" },
+  paidUntil: { ru: "до", en: "until" },
+  paidPending: {
+    ru: "Платёж ещё не подтверждён - обновите страницу через минуту.",
+    en: "The payment is not confirmed yet - refresh this page in a minute.",
+  },
   faqTitle: { ru: "Частые вопросы", en: "FAQ" },
   issue2Title: { ru: "Выпуск №2: соберём датасет вместе", en: "Issue #2: let's build the dataset together" },
   issue2Sub: {
