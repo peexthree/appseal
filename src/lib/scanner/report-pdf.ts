@@ -54,21 +54,18 @@ const A4: [number, number] = [595.28, 841.89];
 const M = 52; // margin
 const CW = A4[0] - M * 2; // content width
 
+// Single light palette: the whole document shares one visual language.
 const C = {
   ink: rgb(0.09, 0.1, 0.12),
   mut: rgb(0.42, 0.44, 0.48),
+  faint: rgb(0.62, 0.65, 0.69),
   line: rgb(0.85, 0.86, 0.88),
   bgSoft: rgb(0.965, 0.97, 0.975),
-  crit: rgb(0.94, 0.27, 0.27),
-  high: rgb(0.98, 0.45, 0.09),
-  med: rgb(0.96, 0.62, 0.04),
-  low: rgb(0.55, 0.57, 0.6),
-  ok: rgb(0.06, 0.72, 0.51),
-  heroDark: rgb(0.035, 0.05, 0.086), // #090D16
-  heroBox: rgb(0.067, 0.094, 0.153),  // #111827
-  heroBorder: rgb(0.12, 0.16, 0.23),  // #1F2937
-  heroText: rgb(0.95, 0.96, 0.98),
-  heroMut: rgb(0.58, 0.64, 0.72),
+  crit: rgb(0.85, 0.21, 0.21),
+  high: rgb(0.91, 0.39, 0.04),
+  med: rgb(0.83, 0.53, 0.02),
+  low: rgb(0.45, 0.48, 0.52),
+  ok: rgb(0.02, 0.6, 0.43),
 };
 
 const CAT_TITLES: Record<CategoryId, { ru: string; en: string }> = {
@@ -77,6 +74,8 @@ const CAT_TITLES: Record<CategoryId, { ru: string; en: string }> = {
   admin: { ru: "Админки и доступ", en: "Admin & Auth" },
   liveness: { ru: "Живость и контент", en: "Liveness & Content" },
 };
+
+const CAT_ORDER: CategoryId[] = ["secrets", "headers", "admin", "liveness"];
 
 function sevColor(s: string) {
   return s === "critical" ? C.crit : s === "high" ? C.high : s === "medium" ? C.med : C.low;
@@ -112,8 +111,10 @@ function wrap(text: string, font: PDFFont, size: number, maxW: number): string[]
   return lines;
 }
 
-function newPage(pdf: PDFDocument, fonts: { reg: PDFFont; bold: PDFFont; mono: PDFFont }, lang: "ru" | "en", pageNo: number): PDFPage {
+function newPage(pdf: PDFDocument, fonts: { reg: PDFFont; bold: PDFFont; mono: PDFFont }, lang: "ru" | "en", pageNo: number, accent: string): PDFPage {
   const page = pdf.addPage(A4);
+  // thin brand stripe across the very top of every page
+  page.drawRectangle({ x: 0, y: A4[1] - 4, width: A4[0], height: 4, color: hex2rgb(accent) });
   page.drawText("AppSeal", { x: M, y: 26, size: 8, font: fonts.bold, color: C.mut });
   page.drawText(lang === "ru" ? "Отчёт техосмотра приложения" : "Application trust report", {
     x: M + 46,
@@ -139,14 +140,17 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   pdf.setAuthor("AppSeal");
   pdf.setSubject(lang === "ru" ? "Отчёт техосмотра приложения" : "Trust report for application");
 
+  const gm = GRADE_META[scan.grade] ?? GRADE_META["E"];
+  const accent = gm.color;
+
   let pageNo = 1;
-  let page = newPage(pdf, { reg, bold, mono }, lang, pageNo);
-  let y = A4[1] - M;
+  let page = newPage(pdf, { reg, bold, mono }, lang, pageNo, accent);
+  let y = A4[1] - M - 6;
 
   const ensure = (need: number) => {
     if (y - need < 56) {
-      page = newPage(pdf, { reg, bold, mono }, lang, ++pageNo);
-      y = A4[1] - M;
+      page = newPage(pdf, { reg, bold, mono }, lang, ++pageNo, accent);
+      y = A4[1] - M - 6;
     }
   };
 
@@ -165,20 +169,14 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     y -= o.gap ?? 0;
   };
 
-  /* ---------------- Dark Hero Header with 3D Trophy ---------------- */
-  const gm = GRADE_META[scan.grade] ?? GRADE_META["E"];
-  const heroH = 126;
-  page.drawRectangle({ x: M, y: A4[1] - M - heroH, width: CW, height: heroH, color: C.heroDark });
-  page.drawRectangle({
-    x: M,
-    y: A4[1] - M - heroH,
-    width: CW,
-    height: heroH,
-    borderColor: C.heroBorder,
-    borderWidth: 0.8,
-  });
+  /* ---------------- Light hero: white card + grade accent ---------------- */
+  const heroH = 118;
+  const heroY = A4[1] - M - 6 - heroH;
+  page.drawRectangle({ x: M, y: heroY, width: CW, height: heroH, color: rgb(1, 1, 1), borderColor: C.line, borderWidth: 0.8 });
+  // left accent spine in the grade color
+  page.drawRectangle({ x: M, y: heroY, width: 5, height: heroH, color: hex2rgb(accent) });
 
-  // Trophy image embedding
+  // trophy
   let trophyDrawn = false;
   try {
     const root = path.resolve("public");
@@ -186,180 +184,108 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     if (!trophyPath.startsWith(root + path.sep)) throw new Error("path escapes public root");
     const trophyBytes = await fs.readFile(trophyPath);
     const trophyImg = await pdf.embedPng(trophyBytes);
-    page.drawImage(trophyImg, {
-      x: M + 14,
-      y: A4[1] - M - heroH + 20,
-      width: 84,
-      height: 84,
-    });
+    page.drawImage(trophyImg, { x: M + 16, y: heroY + 17, width: 84, height: 84 });
     trophyDrawn = true;
   } catch {
     // fallback if file not accessible
   }
-
   if (!trophyDrawn) {
-    page.drawRectangle({ x: M + 18, y: A4[1] - M - 100, width: 80, height: 80, color: hex2rgb(gm.color) });
+    page.drawRectangle({ x: M + 20, y: heroY + 19, width: 80, height: 80, color: hex2rgb(gm.color) });
     const gsize = scan.grade.length > 1 ? 36 : 42;
     page.drawText(scan.grade, {
-      x: M + 18 + (80 - bold.widthOfTextAtSize(scan.grade, gsize)) / 2,
-      y: A4[1] - M - 100 + (80 - gsize) / 2 + (scan.grade.length > 1 ? 6 : 8),
+      x: M + 20 + (80 - bold.widthOfTextAtSize(scan.grade, gsize)) / 2,
+      y: heroY + 19 + (80 - gsize) / 2 + (scan.grade.length > 1 ? 6 : 8),
       size: gsize,
       font: bold,
       color: rgb(1, 1, 1),
     });
   }
 
-  // Floating score pill under trophy
-  const scoreTxt = `${scan.score}/100`;
-  const pillW = bold.widthOfTextAtSize(scoreTxt, 9) + 12;
-  page.drawRectangle({
-    x: M + 14 + (84 - pillW) / 2,
-    y: A4[1] - M - heroH + 8,
-    width: pillW,
-    height: 14,
-    color: C.heroBox,
-    borderColor: hex2rgb(gm.color),
-    borderWidth: 0.8,
-  });
-  page.drawText(scoreTxt, {
-    x: M + 14 + (84 - pillW) / 2 + 6,
-    y: A4[1] - M - heroH + 11.5,
-    size: 9,
-    font: bold,
-    color: hex2rgb(gm.color),
-  });
-
-  // Hero text info
-  const textX = M + 114;
+  const textX = M + 116;
+  const hx = (dy: number) => heroY + heroH - dy;
   page.drawText(lang === "ru" ? "ПЕЧАТЬ ДОВЕРИЯ APPSEAL" : "APPSEAL TRUST REPORT", {
     x: textX,
-    y: A4[1] - M - 24,
+    y: hx(26),
     size: 8,
     font: bold,
-    color: rgb(0.22, 0.74, 0.97),
+    color: C.faint,
   });
-  page.drawText(`${scan.host}`, {
-    x: textX,
-    y: A4[1] - M - 46,
-    size: 15,
-    font: bold,
-    color: C.heroText,
-  });
+  page.drawText(scan.host, { x: textX, y: hx(48), size: 16, font: bold, color: C.ink });
   page.drawText(
     (lang === "ru" ? "Класс " : "Grade ") + `${scan.grade} (${scan.score}/100) — ${t(gm.label, lang)}`,
-    {
-      x: textX,
-      y: A4[1] - M - 64,
-      size: 10,
-      font: bold,
-      color: hex2rgb(gm.color),
-    },
+    { x: textX, y: hx(67), size: 10.5, font: bold, color: hex2rgb(accent) },
   );
   page.drawText(
     (lang === "ru" ? "Дата: " : "Date: ") +
       new Date(scan.finishedAt || scan.startedAt).toISOString().slice(0, 16).replace("T", " ") +
       " UTC" +
       (scan.platform ? `   ${lang === "ru" ? "Платформа: " : "Platform: "}${scan.platform}` : ""),
-    {
-      x: textX,
-      y: A4[1] - M - 80,
-      size: 8.5,
-      font: reg,
-      color: C.heroMut,
-    },
+    { x: textX, y: hx(83), size: 8.5, font: reg, color: C.mut },
   );
-
-  // TechPassport meta line if present (clean text & bullets, no missing emoji glyphs)
   if (scan.techPassport) {
     const tp = scan.techPassport;
-    const tpStr =
+    page.drawText(
       lang === "ru"
         ? `Стек: ${tp.stack}   •   Сеть: ${tp.cdnWaf}   •   Вес: ${tp.pageSizeKb} КБ   •   TTFB: ${tp.ttfbMs} мс`
-        : `Stack: ${tp.stack}   •   Network: ${tp.cdnWaf}   •   Size: ${tp.pageSizeKb} KB   •   TTFB: ${tp.ttfbMs} ms`;
-    page.drawText(tpStr, {
-      x: textX,
-      y: A4[1] - M - 98,
-      size: 7.4,
-      font: reg,
-      color: rgb(0.72, 0.78, 0.86),
-    });
+        : `Stack: ${tp.stack}   •   Network: ${tp.cdnWaf}   •   Size: ${tp.pageSizeKb} KB   •   TTFB: ${tp.ttfbMs} ms`,
+      { x: textX, y: hx(99), size: 7.4, font: reg, color: C.faint },
+    );
   }
 
-  y = A4[1] - M - heroH - 18;
+  y = heroY - 20;
 
-  /* ---------------- 4 Category Progress / Radar Bars ---------------- */
-  const cats: CategoryId[] = ["secrets", "headers", "admin", "liveness"];
+  /* ---------------- 4 category summary cards ---------------- */
   const gap = 8;
   const cardW = (CW - gap * 3) / 4;
-  const cardH = 38;
+  const cardH = 40;
 
-  for (let i = 0; i < cats.length; i++) {
-    const cat = cats[i];
+  for (let i = 0; i < CAT_ORDER.length; i++) {
+    const cat = CAT_ORDER[i];
     const catItems = scan.results.filter((r) => r.category === cat);
     const passed = catItems.filter((r) => r.status === "pass" || r.status === "info").length;
     const failed = catItems.filter((r) => r.status === "fail").length;
     const warned = catItems.filter((r) => r.status === "warn").length;
-    const total = catItems.length || 6;
+    const total = catItems.length;
     const cx = M + i * (cardW + gap);
     const cy = y - cardH;
 
-    page.drawRectangle({
-      x: cx,
-      y: cy,
-      width: cardW,
-      height: cardH,
-      color: C.bgSoft,
-      borderColor: C.line,
-      borderWidth: 0.6,
-    });
+    page.drawRectangle({ x: cx, y: cy, width: cardW, height: cardH, color: C.bgSoft, borderColor: C.line, borderWidth: 0.6 });
+    page.drawRectangle({ x: cx, y: cy, width: cardW, height: 2.5, color: failed > 0 ? C.crit : warned > 0 ? C.med : C.ok });
 
-    const title = CAT_TITLES[cat][lang];
-    page.drawText(title, {
+    page.drawText(CAT_TITLES[cat][lang], {
       x: cx + 6,
-      y: cy + cardH - 12,
-      size: 7.2,
+      y: cy + cardH - 13,
+      size: 6.8,
       font: bold,
       color: C.ink,
     });
-
     const statusTxt = `${passed}/${total}`;
     const scoreColor = failed > 0 ? C.crit : warned > 0 ? C.med : C.ok;
     page.drawText(statusTxt, {
-      x: cx + cardW - bold.widthOfTextAtSize(statusTxt, 7.5) - 6,
-      y: cy + cardH - 12,
-      size: 7.5,
+      x: cx + cardW - bold.widthOfTextAtSize(statusTxt, 9) - 6,
+      y: cy + cardH - 26,
+      size: 9,
       font: bold,
       color: scoreColor,
     });
-
-    const barW = cardW - 12;
-    const barH = 4;
-    const barY = cy + 8;
-    page.drawRectangle({
+    const word = lang === "ru" ? "в норме" : "OK";
+    page.drawText(word, {
       x: cx + 6,
-      y: barY,
-      width: barW,
-      height: barH,
-      color: rgb(0.88, 0.9, 0.92),
+      y: cy + 9,
+      size: 7,
+      font: reg,
+      color: C.mut,
     });
-    if (passed > 0) {
-      page.drawRectangle({
-        x: cx + 6,
-        y: barY,
-        width: Math.round((passed / total) * barW),
-        height: barH,
-        color: scoreColor,
-      });
-    }
   }
 
-  y -= cardH + 16;
+  y -= cardH + 18;
 
   /* ---------------- Summary ---------------- */
   const fails = scan.results.filter((r) => r.status === "fail");
   const warns = scan.results.filter((r) => r.status === "warn");
   const passes = scan.results.filter((r) => r.status === "pass").length;
   const infos = scan.results.filter((r) => r.status === "info").length;
+  const skips = scan.results.filter((r) => r.status === "skip").length;
 
   function plural(n: number, one: string, few: string, many: string): string {
     const mod10 = n % 10;
@@ -373,58 +299,94 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   const countWord = plural(scan.results.length, "пункт", "пункта", "пунктов");
   const summaryMsg =
     lang === "ru"
-      ? `Проверено ${scan.results.length} ${countWord}: ${fails.length} провалено, ${warns.length} с предупреждениями, ${passes} в норме${infos > 0 ? `, ${infos} инфо` : ""}.`
-      : `${scan.results.length} checks completed: ${fails.length} failed, ${warns.length} warnings, ${passes} passed${infos > 0 ? `, ${infos} info` : ""}.`;
+      ? `Проверено ${scan.results.length} ${countWord}: ${fails.length} провалено, ${warns.length} с предупреждениями, ${passes} в норме${infos > 0 ? `, ${infos} инфо` : ""}${skips > 0 ? `, ${skips} пропущено` : ""}.`
+      : `${scan.results.length} checks completed: ${fails.length} failed, ${warns.length} warnings, ${passes} passed${infos > 0 ? `, ${infos} info` : ""}${skips > 0 ? `, ${skips} skipped` : ""}.`;
 
-  text(summaryMsg, { size: 10.5, font: bold, gap: 6 });
+  text(summaryMsg, { size: 10.5, font: bold, gap: 4 });
+  text(
+    lang === "ru"
+      ? "Ниже - замечания по категориям в порядке важности. Каждый пункт содержит объяснение и доказательства: их достаточно, чтобы починить вручную или отдать ИИ-агенту."
+      : "Below - findings grouped by category, most important first. Each entry explains the issue with evidence: enough to fix manually or hand to an AI agent.",
+    { color: C.mut, gap: 8 },
+  );
 
-  if (fails.length || warns.length) {
-    text(
-      lang === "ru"
-        ? "Сначала перечислены проваленные пункты в порядке важности. Каждый пункт содержит объяснение и доказательства — их достаточно, чтобы починить вручную или отдать агенту для автофикса."
-        : "Failed checks are listed first, most important on top. Each entry explains the issue and includes evidence — enough to fix manually or hand to an autofix agent.",
-      { color: C.mut, gap: 10 },
-    );
-  } else {
-    text(
-      lang === "ru"
-        ? "Проваленных пунктов нет — это редкий результат. Поддерживайте уровень: перепроверяйте приложение после каждого изменения."
-        : "No failed checks — a rare result. Keep the level: re-scan after every change.",
-      { color: C.mut, gap: 10 },
-    );
-  }
+  /* ---------------- Findings grouped by category ---------------- */
+  const isProblem = (r: CheckResult) => r.status === "fail" || r.status === "warn";
 
-  /* ---------------- Findings ---------------- */
-  const ordered: CheckResult[] = [
-    ...fails,
-    ...warns,
-    ...scan.results.filter((r) => r.status !== "fail" && r.status !== "warn"),
-  ];
-
-  for (const r of ordered) {
-    ensure(70);
-    const color = r.status === "fail" ? sevColor(r.severity) : r.status === "warn" ? sevColor(r.severity) : C.ok;
-    const label = r.status === "fail" || r.status === "warn" ? t(SEVERITY_META[r.severity].label, lang).toUpperCase() : t(STATUS_LABEL[r.status], lang).toUpperCase();
+  const drawProblemRow = (r: CheckResult) => {
+    ensure(60);
+    const color = isProblem(r) ? sevColor(r.severity) : C.ok;
+    const label = t(SEVERITY_META[r.severity].label, lang).toUpperCase();
 
     page.drawRectangle({ x: M, y: y - 13, width: 3.5, height: 14, color });
     page.drawText(label, { x: M + 10, y: y - 10, size: 7.5, font: bold, color });
-    page.drawText(t(r.title, lang), { x: M + 10 + bold.widthOfTextAtSize(label, 7.5) + 8, y: y - 10, size: 10.5, font: bold, color: C.ink });
-    y -= 20;
+    page.drawText(t(r.title, lang), { x: M + 10 + bold.widthOfTextAtSize(label, 7.5) + 8, y: y - 10, size: 10, font: bold, color: C.ink });
+    y -= 19;
 
     if (r.finding) {
-      text(t(r.finding.detail, lang), { x: M + 10, size: 9, color: C.mut, gap: 2 });
-      for (const ev of r.finding.evidence.slice(0, 4)) {
-        const lines = wrap(ev, mono, 7.3, CW - 20);
+      text(t(r.finding.detail, lang), { x: M + 10, size: 8.8, color: C.mut, gap: 2 });
+      for (const ev of r.finding.evidence.slice(0, 3)) {
+        const lines = wrap(ev, mono, 7.2, CW - 20);
         for (const ln of lines.slice(0, 2)) {
           ensure(12);
-          page.drawRectangle({ x: M + 8, y: y - 11, width: CW - 8, height: 13.5, color: C.bgSoft });
-          page.drawText(ln, { x: M + 14, y: y - 8, size: 7.3, font: mono, color: C.ink });
-          y -= 15;
+          page.drawRectangle({ x: M + 8, y: y - 11, width: CW - 8, height: 13, color: C.bgSoft });
+          page.drawText(ln, { x: M + 14, y: y - 8, size: 7.2, font: mono, color: C.ink });
+          y -= 14.5;
         }
       }
     }
-    y -= 8;
-  }
+    y -= 6;
+  };
+
+  const drawPassedBlock = (items: CheckResult[], skipped: CheckResult[]) => {
+    const names = items.map((r) => t(r.title, lang));
+    const chunk = lang === "ru" ? "Без замечаний" : "No findings";
+    ensure(24);
+    page.drawText(chunk + ":", { x: M + 10, y: y - 10, size: 8.2, font: bold, color: C.ok });
+    y -= 14;
+    text(names.join("  ·  "), { x: M + 10, size: 7.8, color: C.faint, gap: 2 });
+    if (skipped.length) {
+      const labels = skipped.map((r) => t(r.title, lang)).join("  ·  ");
+      text((lang === "ru" ? "Пропущено честно: " : "Skipped honestly: ") + labels, { x: M + 10, size: 7.8, color: C.faint, gap: 2 });
+    }
+  };
+
+  CAT_ORDER.forEach((cat, idx) => {
+    const items = scan.results.filter((r) => r.category === cat);
+    if (!items.length) return;
+    const problems = items.filter(isProblem);
+    const ok = items.filter((r) => r.status === "pass" || r.status === "info");
+    const skipped = items.filter((r) => r.status === "skip");
+    const failed = problems.filter((r) => r.status === "fail").length;
+    const warned = problems.filter((r) => r.status === "warn").length;
+
+    // category header - force a fresh page if less than 120pt remains
+    if (y - 120 < 56 && pageNo > 1) {
+      page = newPage(pdf, { reg, bold, mono }, lang, ++pageNo, accent);
+      y = A4[1] - M - 6;
+    }
+    ensure(40);
+    page.drawRectangle({ x: M, y: y - 18, width: CW, height: 20, color: C.bgSoft });
+    page.drawRectangle({ x: M, y: y - 18, width: 3.5, height: 20, color: failed ? C.crit : warned ? C.med : C.ok });
+    page.drawText(
+      `${idx + 1}. ${CAT_TITLES[cat][lang]}  ·  ${ok.length}/${items.length} ${lang === "ru" ? "в норме" : "OK"}`,
+      { x: M + 10, y: y - 12.5, size: 10.5, font: bold, color: C.ink },
+    );
+    y -= 30;
+
+    if (problems.length) {
+      for (const r of problems) drawProblemRow(r);
+    } else {
+      text(
+        lang === "ru" ? "Все проверки этой категории пройдены без замечаний." : "Every check in this category passed without findings.",
+        { size: 8.8, color: C.ok, gap: 4 },
+      );
+    }
+    if (ok.length || skipped.length) {
+      drawPassedBlock(ok, skipped);
+    }
+    y -= 10;
+  });
 
   /* ---------------- AI Fix Prompt Block ---------------- */
   if (scan.score < 100 || scan.grade !== "A+") {
@@ -436,7 +398,7 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
       lang === "ru"
         ? "ИНСТРУКЦИЯ ДЛЯ ИИ-АВТОФИКСА (CURSOR / CLAUDE / CHATGPT)"
         : "AI AUTOFIX INSTRUCTION (CURSOR / CLAUDE / COPILOT)",
-      { size: 9, font: bold, color: hex2rgb(gm.color), gap: 3 },
+      { size: 9, font: bold, color: hex2rgb(accent), gap: 3 },
     );
     text(
       lang === "ru"
@@ -462,27 +424,13 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     const boxH = Math.min(linesToDraw.length * 10 + 16, 210);
     ensure(boxH + 10);
 
-    page.drawRectangle({
-      x: M,
-      y: y - boxH,
-      width: CW,
-      height: boxH,
-      color: C.bgSoft,
-      borderColor: C.line,
-      borderWidth: 0.7,
-    });
+    page.drawRectangle({ x: M, y: y - boxH, width: CW, height: boxH, color: C.bgSoft, borderColor: C.line, borderWidth: 0.7 });
 
     let py = y - 12;
     for (const pline of linesToDraw) {
       if (py < y - boxH + 6) break;
       if (pline) {
-        page.drawText(pline, {
-          x: M + 10,
-          y: py,
-          size: 6.8,
-          font: mono,
-          color: C.ink,
-        });
+        page.drawText(pline, { x: M + 10, y: py, size: 6.8, font: mono, color: C.ink });
       }
       py -= 10;
     }
@@ -494,8 +442,8 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   page.drawLine({ start: { x: M, y: y - 6 }, end: { x: A4[0] - M, y: y - 6 }, thickness: 0.7, color: C.line });
   text(
     lang === "ru"
-      ? "AppSeal — техосмотр для приложений, собранных с ИИ. Сканирование внешнее, чёрный ящик: мы видим только то, что видит посетитель. Полный отчёт доступен онлайн."
-      : "AppSeal — the trust seal for AI-built apps. The scan is external black-box: we only see what a visitor sees. The interactive report is available online.",
+      ? "AppSeal - печать доверия для приложений, собранных с ИИ. Сканирование внешнее, чёрный ящик: мы видим только то, что видит посетитель. Интерактивный отчёт доступен онлайн."
+      : "AppSeal - the trust seal for AI-built apps. The scan is external black-box: we only see what a visitor sees. The interactive report is available online.",
     { size: 7.8, color: C.mut, gap: 2 },
   );
 

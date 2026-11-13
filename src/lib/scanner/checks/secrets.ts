@@ -6,11 +6,11 @@ import {
   maskSecret,
   safeFetch,
   shannonEntropy,
-  truncate,
 } from "../fetcher";
 
 interface Ctx {
   origin: string; // e.g. https://example.com
+  host: string;
   homeBody: string; // homepage HTML (already fetched)
   homeHeaders: Record<string, string>;
   isHttp: boolean;
@@ -28,27 +28,26 @@ const done = (
   durationMs = 0,
 ): CheckResult => ({ id, category: "secrets", status, severity, penalty, title, durationMs, finding });
 
+const base = (ctx: Ctx): string => ctx.origin + (ctx.basePath ?? "");
+
+/** A 200 response is only evidence when it is not a soft-404 HTML page. */
+function isRealFile(body: string, contentType: string, homeBody: string): boolean {
+  const isHtml = /text\/html/i.test(contentType) && /<html|<!doctype/i.test(body);
+  return !isHtml && !bodiesEquivalent(body, homeBody);
+}
+
 /* ------------------------------------------------------------------ */
 /* .env / .git exposure                                                */
 /* ------------------------------------------------------------------ */
 
-const ENV_PATHS = ["/.env", "/.env.local", "/.env.production", "/.env.development"];
-
-export async function checkEnvExposure(ctx: Ctx): Promise<CheckResult> {
+export async function checkEnvExposure(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
-  const found: string[] = [];
-  const evidence: string[] = [];
-  for (const p of ENV_PATHS) {
-    const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + p, { timeoutMs: 5000 });
-    if (r.ok && r.status === 200 && /^[A-Za-z0-9_]+\s*=/.test(r.body)) {
-      found.push(p);
-      const firstLine = r.body.split("\n").find((l) => /^[A-Za-z0-9_]+\s*=/.test(l)) ?? "";
-      const varName = firstLine.split("=")[0].trim() || "SECRET_KEY";
-      evidence.push(`${p} → ${varName}=******** (скрыто политикой безопасности)`);
-    }
-  }
-  if (found.length) {
-    return done(
+  const r = await safeFetch(base(ctx) + "/.env", { timeoutMs: 5000, maxBody: 4096 });
+  if (r.ok && r.status === 200 && /^[A-Za-z0-9_]+\s*=/m.test(r.body) && isRealFile(r.body, r.contentType, ctx.homeBody)) {
+    const firstLine = r.body.split("\n").find((l) => /^[A-Za-z0-9_]+\s*=/.test(l)) ?? "";
+    const varName = firstLine.split("=")[0].trim() || "SECRET_KEY";
+    const count = (r.body.match(/^[A-Za-z0-9_]+\s*=/gm) ?? []).length;
+    return [done(
       "env_exposure",
       "fail",
       "critical",
@@ -57,25 +56,58 @@ export async function checkEnvExposure(ctx: Ctx): Promise<CheckResult> {
       {
         code: "ENV_EXPOSED",
         detail: {
-          ru: "Файл с переменными окружения (ключи API, пароли БД) отдаётся веб-сервером любому посетителю. Это самая дорогая ошибка вайб-кодинга: злоумышленник получает ключи за 10 секунд.",
-          en: "A dot-env file (API keys, DB passwords) is served to any visitor. This is the most expensive vibe-coding mistake: an attacker gets your keys in 10 seconds.",
+          ru: `Файл переменных окружения открыт любому посетителю (~${count} переменных, включая ключи API и пароли БД). Это самая дорогая ошибка вайб-кодинга: злоумышленник получает ключи за 10 секунд.`,
+          en: `A dot-env file is served to any visitor (~${count} variables including API keys and DB passwords). This is the most expensive vibe-coding mistake: an attacker gets your keys in 10 seconds.`,
         },
-        evidence,
+        evidence: [`${"/.env"} → ${varName}=******** (${count} vars)`],
       },
       Date.now() - t0,
-    );
+    )];
   }
-  return done("env_exposure", "pass", "low", 0, {
-    ru: "Файлы .env не доступны",
-    en: ".env files are not exposed",
-  }, undefined, Date.now() - t0);
+  return [done("env_exposure", "pass", "critical", 0, {
+    ru: "Файл .env не доступен",
+    en: ".env file is not exposed",
+  }, undefined, Date.now() - t0)];
 }
 
-export async function checkGitExposure(ctx: Ctx): Promise<CheckResult> {
+const ENV_VARIANTS = ["/.env.local", "/.env.production", "/.env.development", "/.env.bak", "/.env.backup", "/env.backup"];
+
+export async function checkEnvVariants(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
-  const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + "/.git/HEAD", { timeoutMs: 5000 });
-  if (r.ok && r.status === 200 && r.body.includes("ref: refs/")) {
-    return done(
+  const probed = await Promise.all(
+    ENV_VARIANTS.map(async (p) => {
+      const r = await safeFetch(base(ctx) + p, { timeoutMs: 5000, maxBody: 2048 });
+      if (r.ok && r.status === 200 && /^[A-Za-z0-9_]+\s*=/m.test(r.body) && isRealFile(r.body, r.contentType, ctx.homeBody)) {
+        return p;
+      }
+      return null;
+    }),
+  );
+  const found = probed.filter((p): p is string => Boolean(p));
+  if (found.length) {
+    return [done("env_variants", "fail", "critical", 30, {
+      ru: "Варианты .env доступны по прямым ссылкам",
+      en: ".env variants are publicly accessible",
+    }, {
+      code: "ENV_VARIANTS_EXPOSED",
+      detail: {
+        ru: "Найдены копии env-файлов (.env.local, .env.bak и т.п.): их часто забывают в веб-корне после ручного деплоя. Содержимое то же - живые ключи.",
+        en: "Copies of env files found (.env.local, .env.bak etc.): commonly left in the web root after manual deploys. Same contents - live keys.",
+      },
+      evidence: found.map((p) => `${p} → vars=********`),
+    }, Date.now() - t0)];
+  }
+  return [done("env_variants", "pass", "critical", 0, {
+    ru: "Варианты .env не найдены",
+    en: "No .env variants exposed",
+  }, undefined, Date.now() - t0)];
+}
+
+export async function checkGitExposure(ctx: Ctx): Promise<CheckResult[]> {
+  const t0 = Date.now();
+  const r = await safeFetch(base(ctx) + "/.git/HEAD", { timeoutMs: 5000, maxBody: 512 });
+  if (r.ok && r.status === 200 && r.body.includes("ref: refs/") && isRealFile(r.body, r.contentType, ctx.homeBody)) {
+    return [done(
       "git_exposure",
       "fail",
       "critical",
@@ -87,19 +119,66 @@ export async function checkGitExposure(ctx: Ctx): Promise<CheckResult> {
           ru: "Репозиторий исходного кода доступен по сети: можно скачать всю историю проекта и найти в ней ключи и внутренние адреса.",
           en: "The source repository is downloadable over the network: full project history including keys and internal addresses can be reconstructed.",
         },
-        evidence: ["/.git/HEAD → " + truncate(r.body, 60)],
+        evidence: ["/.git/HEAD → " + r.body.slice(0, 60)],
       },
       Date.now() - t0,
-    );
+    )];
   }
-  return done("git_exposure", "pass", "medium", 0, {
+  return [done("git_exposure", "pass", "critical", 0, {
     ru: "Папка .git не доступна",
     en: ".git directory is not exposed",
-  }, undefined, Date.now() - t0);
+  }, undefined, Date.now() - t0)];
+}
+
+const VCS_PATHS: { path: string; marker: RegExp; vcs: string }[] = [
+  { path: "/.git/config", marker: /\[core\]|\[remote/i, vcs: "git config" },
+  { path: "/.svn/entries", marker: /^\d+\s*$|\dir\b/i, vcs: "svn" },
+  { path: "/.hg/hgrc", marker: /\[paths\]|\[ui\]/i, vcs: "mercurial" },
+  { path: "/.DS_Store", marker: /Bud1[\x00-\xff]/, vcs: ".DS_Store (macOS)" },
+];
+
+export async function checkVcsLeaks(ctx: Ctx): Promise<CheckResult[]> {
+  const t0 = Date.now();
+  const probes = await Promise.all(
+    VCS_PATHS.map(async (v) => {
+      const r = await safeFetch(base(ctx) + v.path, { timeoutMs: 5000, maxBody: 2048 });
+      const hit = r.ok && r.status === 200 && isRealFile(r.body, r.contentType, ctx.homeBody) && v.marker.test(r.body);
+      return { v, hit };
+    }),
+  );
+  const out: CheckResult[] = [];
+  for (const { v, hit } of probes) {
+    if (v.vcs === ".DS_Store (macOS)") {
+      out.push(done("ds_store", hit ? "warn" : "pass", "low", hit ? 3 : 0, {
+        ru: hit ? ".DS_Store доступен (мусор macOS в веб-корне)" : ".DS_Store не найден",
+        en: hit ? ".DS_Store exposed (macOS junk in web root)" : ".DS_Store not found",
+      }, hit ? {
+        code: "DS_STORE",
+        detail: {
+          ru: "Служебный файл macOS лежит в веб-корне: по нему восстанавливают имена файлов и структуру каталогов.",
+          en: "The macOS service file sits in the web root: file names and directory structure are reconstructable from it.",
+        },
+        evidence: [v.path],
+      } : undefined, Date.now() - t0));
+    } else {
+      out.push(done(v.vcs.includes("git") ? "git_config" : "vcs_others", hit ? "fail" : "pass", hit ? "critical" : "high", hit ? (v.vcs.includes("git") ? 30 : 15) : 0, {
+        ru: hit ? `${v.vcs} доступен публично` : `${v.vcs} не доступен`,
+        en: hit ? `${v.vcs} is publicly accessible` : `${v.vcs} is not exposed`,
+      }, hit ? {
+        code: "VCS_EXPOSED",
+        detail: {
+          ru: "Служебные файлы системы контроля версий открыты: адреса репозиториев, учётки и внутренняя структура проекта на виду.",
+          en: "Version-control service files are open: repository addresses, accounts and the internal project layout are on display.",
+        },
+        evidence: [v.path],
+      } : undefined, Date.now() - t0));
+    }
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
-/* Secrets in client-side source (HTML + JS bundles)                   */
+/* Secrets in client-side source (HTML + JS bundles), by provider group */
 /* ------------------------------------------------------------------ */
 
 interface Sig {
@@ -107,27 +186,85 @@ interface Sig {
   re: RegExp;
   sev: Severity;
   pen: number;
-  /** structural markers (private key headers) are checked for shape, not entropy */
   structural?: boolean;
 }
-const SIGNATURES: Sig[] = [
-  { name: "OpenAI API key", re: /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/g, sev: "critical", pen: 40 },
-  { name: "AWS access key", re: /AKIA[0-9A-Z]{16}/g, sev: "critical", pen: 40 },
-  { name: "Stripe live secret key", re: /sk_live_[0-9a-zA-Z]{10,}/g, sev: "critical", pen: 40 },
-  { name: "SendGrid API key", re: /SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/g, sev: "critical", pen: 40 },
-  { name: "Google API key", re: /AIza[0-9A-Za-z_-]{35}/g, sev: "high", pen: 20 },
-  { name: "Private key block", re: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/g, sev: "critical", pen: 40, structural: true },
+
+const SIG_GROUPS: { id: string; group: { ru: string; en: string }; sigs: Sig[] }[] = [
   {
-    name: "Supabase service_role key",
-    re: /eyJ[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{20,}/g,
-    sev: "high",
-    pen: 25,
+    id: "sig_ai_keys",
+    group: { ru: "ключи ИИ-сервисов", en: "AI service keys" },
+    sigs: [
+      { name: "OpenAI API key", re: /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/g, sev: "critical", pen: 40 },
+      { name: "Anthropic API key", re: /sk-ant-[A-Za-z0-9_-]{20,}/g, sev: "critical", pen: 40 },
+      { name: "Groq/Mistral key", re: /gsk_[A-Za-z0-9]{20,}|mistral-[A-Za-z0-9]{20,}/g, sev: "critical", pen: 30 },
+    ],
   },
   {
-    name: "Generic hardcoded secret",
-    re: /(?:api[_-]?key|apikey|secret|password|token)["']?\s*[:=]\s*["'][A-Za-z0-9+/_=-]{20,}["']/gi,
-    sev: "medium",
-    pen: 8,
+    id: "sig_cloud_keys",
+    group: { ru: "ключи облачных провайдеров", en: "cloud provider keys" },
+    sigs: [
+      { name: "AWS access key", re: /AKIA[0-9A-Z]{16}/g, sev: "critical", pen: 40 },
+      { name: "Google API key", re: /AIza[0-9A-Za-z_-]{35}/g, sev: "high", pen: 20 },
+      { name: "Azure/DO token", re: /(?: AZ[A-Za-z0-9]{30,})|(?:dop_v1_[a-f0-9]{32,})/g, sev: "high", pen: 25 },
+    ],
+  },
+  {
+    id: "sig_payment_keys",
+    group: { ru: "ключи платёжных систем", en: "payment system keys" },
+    sigs: [
+      { name: "Stripe live secret key", re: /sk_live_[0-9a-zA-Z]{10,}/g, sev: "critical", pen: 40 },
+      { name: "Stripe restricted key", re: /rk_live_[0-9a-zA-Z]{10,}/g, sev: "critical", pen: 35 },
+      { name: "PayPal secret", re: /(?:access_token\$production\$)[A-Za-z0-9$._-]{20,}/g, sev: "critical", pen: 35 },
+    ],
+  },
+  {
+    id: "sig_comms_tokens",
+    group: { ru: "токены коммуникационных сервисов", en: "communication service tokens" },
+    sigs: [
+      { name: "Slack token", re: /xox[bpars]-[A-Za-z0-9-]{10,}/g, sev: "critical", pen: 35 },
+      { name: "Telegram bot token", re: /\b\d{8,10}:AA[A-Za-z0-9_-]{30,}/g, sev: "critical", pen: 30 },
+      { name: "Twilio SID/Auth", re: /SK?[a-f0-9]{32}\b[\s\S]{0,20}[a-f0-9]{32}/g, sev: "high", pen: 25 },
+    ],
+  },
+  {
+    id: "sig_email_keys",
+    group: { ru: "ключи почтовых сервисов", en: "email service keys" },
+    sigs: [
+      { name: "SendGrid API key", re: /SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/g, sev: "critical", pen: 40 },
+      { name: "Mailgun key", re: /key-[a-f0-9]{32}/g, sev: "high", pen: 25 },
+      { name: "SMTP password literal", re: /smtp[^"'\n]{0,40}(?:pass(?:word)?)["']?\s*[:=]\s*["'][^"'\s]{8,}["']/gi, sev: "high", pen: 25 },
+    ],
+  },
+  {
+    id: "sig_crypto_material",
+    group: { ru: "криптографический материал", en: "cryptographic material" },
+    sigs: [
+      { name: "Private key block", re: /-----BEGIN (?:RSA |EC |OPENSSH |PGP )?PRIVATE KEY-----/g, sev: "critical", pen: 40, structural: true },
+      {
+        name: "JWT/service token",
+        re: /eyJ[A-Za-z0-9_-]{40,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{20,}/g,
+        sev: "high",
+        pen: 25,
+      },
+      {
+        name: "DB connection string",
+        re: /(?:mongodb(?:\+srv)?|postgres(?:ql)?|mysql|redis):\/\/[^:\/\s"']+:[^@\/\s"']+@[^\s"'>]+/g,
+        sev: "critical",
+        pen: 35,
+      },
+    ],
+  },
+  {
+    id: "sig_generic",
+    group: { ru: "обобщённые захардкоженные секреты", en: "generic hardcoded secrets" },
+    sigs: [
+      {
+        name: "Generic hardcoded secret",
+        re: /(?:api[_-]?key|apikey|secret|password|token)["']?\s*[:=]\s*["'][A-Za-z0-9+/_=-]{20,}["']/gi,
+        sev: "medium",
+        pen: 8,
+      },
+    ],
   },
 ];
 
@@ -145,25 +282,21 @@ function jwtPayload(token: string): Record<string, unknown> | null {
 
 /** Google API keys in client JS are common; Firebase/Supabase anon keys are by design public.
  *  These contexts are flagged only as info. */
-function classifyHit(sig: Sig, context: string, hit: string): { sev: Severity; pen: number } {
+function classifyHit(sig: Sig, context: string, hit: string): { sev: Severity; pen: number } | null {
   if (sig.name === "Google API key" && /firebase|maps|gstatic/i.test(context)) {
-    return { sev: "info", pen: 0 };
+    return null; // public by design context
   }
-  if (sig.name === "Supabase service_role key" && /supabase/i.test(context)) {
-    // JWT-shaped: only an actual service_role token is dangerous; anon /
-    // authenticated tokens are public by design (real risk is tested by the
-    // live RLS check in baas_open_read)
+  if (sig.name === "JWT/service token" && /supabase/i.test(context)) {
     const role = jwtPayload(hit)?.["role"];
-    if (role === "anon" || role === "authenticated") return { sev: "info", pen: 0 };
+    if (role === "anon" || role === "authenticated") return null;
     if (role === "service_role") return { sev: "critical", pen: 40 };
-    return { sev: "high", pen: 25 }; // undecodable JWT in supabase context
+    return { sev: "high", pen: 25 };
   }
   return { sev: sig.sev, pen: sig.pen };
 }
 
-export async function checkSecretsInSource(ctx: Ctx): Promise<CheckResult> {
-  const t0 = Date.now();
-  const bundles = extractScripts(ctx.homeBody, ctx.origin, 6);
+async function collectDocs(ctx: Ctx, maxBundles: number): Promise<{ src: string; body: string }[]> {
+  const bundles = extractScripts(ctx.homeBody, ctx.origin, maxBundles);
   const docs: { src: string; body: string }[] = [{ src: "index.html", body: ctx.homeBody }];
   await Promise.all(
     bundles.map(async (u) => {
@@ -171,89 +304,116 @@ export async function checkSecretsInSource(ctx: Ctx): Promise<CheckResult> {
       if (r.ok && r.body) docs.push({ src: u.replace(ctx.origin, ""), body: r.body });
     }),
   );
-  const hits: { name: string; src: string; masked: string }[] = [];
-  let filtered = 0; // v0.2: candidates dropped by entropy/context filters
+  return docs;
+}
+
+interface SigHit { sig: Sig; src: string; masked: string; context: string }
+
+async function scanSignatures(ctx: Ctx, maxBundles: number): Promise<{ hits: SigHit[]; filtered: number }> {
+  const docs = await collectDocs(ctx, maxBundles);
+  const hits: SigHit[] = [];
+  let filtered = 0;
   for (const doc of docs) {
-    for (const sig of SIGNATURES) {
-      const m = doc.body.match(sig.re);
-      if (!m) continue;
-      const uniq = [...new Set(m)].slice(0, 2);
-      for (const hit of uniq) {
-        const idx = doc.body.indexOf(hit);
-        const context = doc.body.slice(Math.max(0, idx - 120), idx + 160);
-        // v0.2 filter 0: values public by design - UUID-shaped identifiers
-        // (captcha sitekeys, correlation ids) and pk_-prefixed publishable keys
-        if (
-          sig.name === "Generic hardcoded secret" &&
-          (/\b(pk|pub|public)[_-]?key\b/i.test(hit) ||
-            /pk_[A-Za-z0-9_-]{10,}/.test(hit) ||
-            /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(hit))
-        ) {
-          filtered++;
-          continue;
-        }
-        // v0.2 filter 1: entropy threshold - a real key looks generated,
-        // a marketing/docs string looks like a word
-        if (!sig.structural && shannonEntropy(hit) < 3.0) {
-          filtered++;
-          continue;
-        }
-        // v0.2 filter 1b: OpenAI keys are pure alphanumeric after the prefix;
-        // lowercase-hyphenated bodies are CSS/design tokens (sk-inline-block-color)
-        if (sig.name === "OpenAI API key") {
-          const body = hit.replace(/^sk-(?:proj-)?/, "");
-          if (/^[a-z]+-[a-z-]+$/.test(body)) {
+    for (const group of SIG_GROUPS) {
+      for (const sig of group.sigs) {
+        const m = doc.body.match(sig.re);
+        if (!m) continue;
+        const uniq = [...new Set(m)].slice(0, 2);
+        for (const hit of uniq) {
+          const idx = doc.body.indexOf(hit);
+          const context = doc.body.slice(Math.max(0, idx - 120), idx + 160);
+          if (
+            sig.name === "Generic hardcoded secret" &&
+            (/\b(pk|pub|public)[_-]?key\b/i.test(hit) ||
+              /pk_[A-Za-z0-9_-]{10,}/.test(hit) ||
+              /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(hit))
+          ) {
             filtered++;
             continue;
           }
+          if (!sig.structural && shannonEntropy(hit) < 3.0) {
+            filtered++;
+            continue;
+          }
+          if (sig.name === "OpenAI API key") {
+            const body = hit.replace(/^sk-(?:proj-)?/, "");
+            if (/^[a-z]+-[a-z-]+$/.test(body)) {
+              filtered++;
+              continue;
+            }
+          }
+          if (!sig.structural && looksLikeDocExample(hit, context)) {
+            filtered++;
+            continue;
+          }
+          const cls = classifyHit(sig, context, hit);
+          if (!cls) continue;
+          hits.push({ sig, src: doc.src, masked: maskSecret(hit), context });
         }
-        // v0.2 filter 2: documentation / code-example context
-        if (!sig.structural && looksLikeDocExample(hit, context)) {
-          filtered++;
-          continue;
-        }
-        const cls = classifyHit(sig, context, hit);
-        if (cls.sev === "info") continue;
-        hits.push({ name: sig.name, src: doc.src, masked: maskSecret(hit) });
       }
     }
   }
-  if (hits.length) {
-    const worst = SIGNATURES.filter((s) => hits.some((h) => h.name === s.name)).sort(
-      (a, b) => b.pen - a.pen,
-    )[0];
-    return done(
-      "secrets_in_source",
-      "fail",
-      worst.sev,
-      worst.pen,
-      { ru: "Секреты в клиентском коде", en: "Secrets in client-side code" },
-      {
-        code: "SECRETS_IN_SOURCE",
-        detail: {
-          ru: "Ключи API зашиты в HTML или в JS-бандлы — всё, что видно браузеру, видно и злоумышленнику. Живые ключи нужно немедленно ротировать; серверные секреты переносить на бэкенд/edge-функции.",
-          en: "API keys are embedded in HTML or JS bundles — anything the browser can see, an attacker can see. Live keys must be rotated immediately; server secrets moved to backend/edge functions.",
-        },
-        evidence: hits.slice(0, 6).map((h) => `${h.name} @ ${h.src} → ${h.masked}`),
+  return { hits, filtered };
+}
+
+function sigGroupResult(
+  ctx: Ctx,
+  groupId: string,
+  groupLabel: { ru: string; en: string },
+  groupHits: SigHit[],
+  t0: number,
+): CheckResult {
+  const worst = groupHits.reduce((a, b) => (b.sig.pen > a.sig.pen ? b : a));
+  return done(
+    groupId,
+    "fail",
+    worst.sig.sev,
+    worst.sig.pen,
+    {
+      ru: `В клиентском коде найдены ${groupLabel.ru}`,
+      en: `${groupLabel.en} found in client-side code`,
+    },
+    {
+      code: groupId.toUpperCase(),
+      detail: {
+        ru: "Ключи API зашиты в HTML или JS-бандлы - всё, что видно браузеру, видно и злоумышленнику. Живые ключи нужно немедленно ротировать, серверные секреты переносить на бэкенд/edge-функции.",
+        en: "API keys are embedded in HTML or JS bundles - anything the browser can see, an attacker can see. Rotate live keys immediately and move server secrets to backend/edge functions.",
       },
-      Date.now() - t0,
-    );
+      evidence: groupHits.slice(0, 4).map((h) => `${h.sig.name} @ ${h.src} → ${h.masked}`),
+    },
+    Date.now() - t0,
+  );
+}
+
+export async function checkSecretsInSource(ctx: Ctx): Promise<CheckResult[]> {
+  const t0 = Date.now();
+  const { hits, filtered } = await scanSignatures(ctx, 6);
+  const out: CheckResult[] = [];
+  for (const group of SIG_GROUPS) {
+    const groupHits = hits.filter((h) => group.sigs.some((s) => s.name === h.sig.name));
+    if (groupHits.length) {
+      out.push(sigGroupResult(ctx, group.id, group.group, groupHits, t0));
+    } else {
+      out.push(done(group.id, "pass", "high", 0, {
+        ru: `${group.group.ru} не найдены`,
+        en: `No ${group.group.en} found`,
+      }, undefined, Date.now() - t0));
+    }
   }
-  return done("secrets_in_source", "pass", "high", 0, {
-    ru: filtered
-      ? `Секретов не найдено (отфильтровано ${filtered} кандидатов из документации/примеров)`
-      : "Секретов в клиентском коде не найдено",
-    en: filtered
-      ? `No secrets (filtered ${filtered} doc/example candidates)`
-      : "No secrets found in client-side code",
-  }, undefined, Date.now() - t0);
+  if (filtered > 0) {
+    out.push(done("sig_filter_report", "info", "low", 0, {
+      ru: `Отфильтровано ${filtered} ложных кандидатов (документация/примеры)`,
+      en: `${filtered} false candidates filtered (docs/examples)`,
+    }, undefined, Date.now() - t0));
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ */
-/* Firebase / Supabase open database read                              */
+/* Firebase / Supabase open database read (two separate checks)        */
 /* ------------------------------------------------------------------ */
 
-export async function checkBaaSOpenRead(ctx: Ctx): Promise<CheckResult> {
+export async function checkFirebaseOpenRead(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
   const allJs = [ctx.homeBody];
   const bundles = extractScripts(ctx.homeBody, ctx.origin, 4);
@@ -264,132 +424,121 @@ export async function checkBaaSOpenRead(ctx: Ctx): Promise<CheckResult> {
     }),
   );
   const blob = allJs.join("\n");
-
-  // Firebase project id
   const fbId = blob.match(/([a-z0-9][a-z0-9-]{4,28})\.firebaseio\.com/i) ??
     blob.match(/([a-z0-9][a-z0-9-]{4,28})-default-rtdb\.(?:[a-z]{2}\.)?firebaseio\.com/i);
-  if (fbId) {
-    const bases = [
-      `https://${fbId[1]}-default-rtdb.firebaseio.com/.json`,
-      `https://${fbId[1]}.firebaseio.com/.json`,
-    ];
-    for (const b of bases) {
-      const r = await safeFetch(b, { timeoutMs: 6000 });
-      if (r.ok && r.status === 200 && !/permission denied|Permission denied/.test(r.body)) {
-        return done(
-          "baas_open_read",
-          "fail",
-          "critical",
-          35,
-          { ru: "База Firebase открыта на чтение", en: "Firebase database allows public reads" },
-          {
-            code: "FIREBASE_OPEN_READ",
-            detail: {
-              ru: "Правила безопасности Realtime Database разрешают анонимное чтение: содержимое базы (пользователи, заказы, сообщения) скачивается одним GET-запросом.",
-              en: "Realtime Database security rules allow anonymous reads: the whole database (users, orders, messages) downloads with a single GET request.",
-            },
-            evidence: [`${b} → ${truncate(r.body, 90)}`],
-          },
-          Date.now() - t0,
-        );
-      }
-    }
-    return done("baas_open_read", "pass", "critical", 0, {
-      ru: "Firebase: публичное чтение закрыто",
-      en: "Firebase: public reads denied",
-    }, undefined, Date.now() - t0);
+  if (!fbId) {
+    return [done("firebase_open_read", "pass", "critical", 0, {
+      ru: "Firebase RTDB не используется или не обнаружен",
+      en: "Firebase RTDB not used or not detected",
+    }, undefined, Date.now() - t0)];
   }
+  const bases = [
+    `https://${fbId[1]}-default-rtdb.firebaseio.com/.json`,
+    `https://${fbId[1]}.firebaseio.com/.json`,
+  ];
+  for (const b of bases) {
+    const r = await safeFetch(b, { timeoutMs: 6000 });
+    if (r.ok && r.status === 200 && !/permission denied|Permission denied/.test(r.body)) {
+      return [done(
+        "firebase_open_read",
+        "fail",
+        "critical",
+        35,
+        { ru: "База Firebase открыта на чтение", en: "Firebase database allows public reads" },
+        {
+          code: "FIREBASE_OPEN_READ",
+          detail: {
+            ru: "Правила безопасности Realtime Database разрешают анонимное чтение: содержимое базы (пользователи, заказы, сообщения) скачивается одним GET-запросом.",
+            en: "Realtime Database security rules allow anonymous reads: the whole database (users, orders, messages) downloads with a single GET request.",
+          },
+          evidence: [`${b} → ${r.body.slice(0, 90)}`],
+        },
+        Date.now() - t0,
+      )];
+    }
+  }
+  return [done("firebase_open_read", "pass", "critical", 0, {
+    ru: "Firebase: публичное чтение закрыто",
+    en: "Firebase: public reads denied",
+  }, undefined, Date.now() - t0)];
+}
 
-  // Supabase: with the public anon key, probe the REST OpenAPI schema and
-  // try to read real table rows (v0.2: deep RLS check)
+export async function checkSupabaseOpenRead(ctx: Ctx): Promise<CheckResult[]> {
+  const t0 = Date.now();
+  const blob = ctx.homeBody;
   const sb = blob.match(/https:\/\/([a-z0-9]{15,30})\.supabase\.co/i);
-  if (sb) {
-    const base = `https://${sb[1]}.supabase.co/rest/v1`;
-    const anon =
-      blob.match(/anon[_-]?key["'\s:=]+["']([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)["']/i)?.[1] ?? "";
-    const authHeaders: Record<string, string> = anon
-      ? { apikey: anon, authorization: `Bearer ${anon}` }
-      : {};
-
-    // OpenAPI root returns the schema (with table paths) for a valid key
-    const spec = await safeFetch(`${base}/`, { timeoutMs: 6000, headers: authHeaders });
-    if (spec.status === 401 || spec.status === 403) {
-      return done("baas_open_read", "pass", "critical", 0, {
-        ru: "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
-        en: "No BaaS databases (Firebase/Supabase) found, or they are locked",
-      }, undefined, Date.now() - t0);
-    }
-    if (spec.status === 200) {
-      // table names from the OpenAPI paths: "/rest/v1/<table>"
-      const tables = [...new Set(
-        [...spec.body.matchAll(/"\/rest\/v1\/([A-Za-z0-9_]+)"/g)].map((m) => m[1]),
-      )].filter((t) => t && t !== "rpc").slice(0, 3);
-
-      const readable: string[] = [];
-      for (const table of tables) {
-        const r = await safeFetch(`${base}/${table}?select=*&limit=1`, {
-          timeoutMs: 6000,
-          headers: authHeaders,
-        });
-        if (r.status === 200 && /^\s*\[/.test(r.body)) {
-          readable.push(`${table} (${truncate(r.body, 60)})`);
-        }
-      }
-      if (readable.length) {
-        return done(
-          "baas_open_read",
-          "fail",
-          "critical",
-          35,
-          { ru: "Supabase: данные читаются анонимно (RLS выключен)", en: "Supabase: data readable anonymously (RLS disabled)" },
-          {
-            code: "SUPABASE_OPEN_READ",
-            detail: {
-              ru: "С публичным anon-ключом таблицы отдают реальные строки без авторизации: Row Level Security не настроен. Любой пользователь браузера может выгрузить данные.",
-              en: "With the public anon key, tables return real rows without auth: Row Level Security is not configured. Any visitor can download the data.",
-            },
-            evidence: readable.slice(0, 3),
-          },
-          Date.now() - t0,
-        );
-      }
-      if (tables.length) {
-        return done("baas_open_read", "pass", "critical", 0, {
-          ru: "Supabase: RLS закрывает публичное чтение таблиц",
-          en: "Supabase: RLS denies public table reads",
-        }, undefined, Date.now() - t0);
-      }
-      // schema visible but no tables detectable - conservative pass
-      return done("baas_open_read", "pass", "critical", 0, {
-        ru: "Supabase: REST отвечает, открытых таблиц не найдено",
-        en: "Supabase: REST responds, no openly readable tables found",
-      }, undefined, Date.now() - t0);
-    }
-    // spec unreachable without key and no key found
-    return done("baas_open_read", "pass", "critical", 0, {
-      ru: "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
-      en: "No BaaS databases (Firebase/Supabase) found, or they are locked",
-    }, undefined, Date.now() - t0);
+  if (!sb) {
+    return [done("supabase_open_read", "pass", "critical", 0, {
+      ru: "Supabase не используется или не обнаружен",
+      en: "Supabase not used or not detected",
+    }, undefined, Date.now() - t0)];
   }
-
-  return done("baas_open_read", "pass", "critical", 0, {
-    ru: "BaaS-базы (Firebase/Supabase) не обнаружены или закрыты",
-    en: "No BaaS databases (Firebase/Supabase) found, or they are locked",
-  }, undefined, Date.now() - t0);
+  const baseSb = `https://${sb[1]}.supabase.co/rest/v1`;
+  const anon =
+    blob.match(/anon[_-]?key["'\s:=]+["']([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)["']/i)?.[1] ?? "";
+  const authHeaders: Record<string, string> = anon
+    ? { apikey: anon, authorization: `Bearer ${anon}` }
+    : {};
+  const spec = await safeFetch(`${baseSb}/`, { timeoutMs: 6000, headers: authHeaders });
+  if (spec.status === 401 || spec.status === 403) {
+    return [done("supabase_open_read", "pass", "critical", 0, {
+      ru: "Supabase: REST закрыт ключом",
+      en: "Supabase: REST is key-protected",
+    }, undefined, Date.now() - t0)];
+  }
+  if (spec.status === 200) {
+    const tables = [...new Set(
+      [...spec.body.matchAll(/"\/rest\/v1\/([A-Za-z0-9_]+)"/g)].map((m) => m[1]),
+    )].filter((t) => t && t !== "rpc").slice(0, 3);
+    const readable: string[] = [];
+    for (const table of tables) {
+      const r = await safeFetch(`${baseSb}/${table}?select=*&limit=1`, {
+        timeoutMs: 6000,
+        headers: authHeaders,
+      });
+      if (r.status === 200 && /^\s*\[/.test(r.body)) {
+        readable.push(`${table} (${r.body.slice(0, 60)})`);
+      }
+    }
+    if (readable.length) {
+      return [done(
+        "supabase_open_read",
+        "fail",
+        "critical",
+        35,
+        { ru: "Supabase: данные читаются анонимно (RLS выключен)", en: "Supabase: data readable anonymously (RLS disabled)" },
+        {
+          code: "SUPABASE_OPEN_READ",
+          detail: {
+            ru: "С публичным anon-ключом таблицы отдают реальные строки без авторизации: Row Level Security не настроен. Любой пользователь браузера может выгрузить данные.",
+            en: "With the public anon key, tables return real rows without auth: Row Level Security is not configured. Any visitor can download the data.",
+          },
+          evidence: readable.slice(0, 3),
+        },
+        Date.now() - t0,
+      )];
+    }
+    return [done("supabase_open_read", "pass", "critical", 0, {
+      ru: tables.length ? "Supabase: RLS закрывает публичное чтение таблиц" : "Supabase: REST отвечает, открытых таблиц не найдено",
+      en: tables.length ? "Supabase: RLS denies public table reads" : "Supabase: REST responds, no openly readable tables found",
+    }, undefined, Date.now() - t0)];
+  }
+  return [done("supabase_open_read", "pass", "critical", 0, {
+    ru: "Supabase: REST не доступен для проверки",
+    en: "Supabase: REST not reachable for verification",
+  }, undefined, Date.now() - t0)];
 }
 
 /* ------------------------------------------------------------------ */
 /* Source maps                                                         */
 /* ------------------------------------------------------------------ */
 
-export async function checkSourceMaps(ctx: Ctx): Promise<CheckResult> {
+export async function checkSourceMaps(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
   const bundles = extractScripts(ctx.homeBody, ctx.origin, 3);
   const found: string[] = [];
   await Promise.all(
     bundles.map(async (u) => {
-      // .map belongs to the pathname, not the tail of the URL: "chunk.js?dpl=1"
-      // + ".map" would fetch the JS file itself (query ignored) and 200
       let mapUrl = u;
       try {
         const parsed = new URL(u);
@@ -399,15 +548,13 @@ export async function checkSourceMaps(ctx: Ctx): Promise<CheckResult> {
         mapUrl = u + ".map";
       }
       const r = await safeFetch(mapUrl, { timeoutMs: 5000, maxBody: 2048 });
-      // a real source map is JSON with a "mappings" field - a 200 HTML/JS
-      // body (soft-404 / catch-all) does not count
       if (r.ok && r.status === 200 && r.body.includes('"mappings"')) {
         found.push(mapUrl.replace(ctx.origin, ""));
       }
     }),
   );
   if (found.length) {
-    return done(
+    return [done(
       "source_maps",
       "warn",
       "low",
@@ -422,12 +569,12 @@ export async function checkSourceMaps(ctx: Ctx): Promise<CheckResult> {
         evidence: found,
       },
       Date.now() - t0,
-    );
+    )];
   }
-  return done("source_maps", "pass", "low", 0, {
+  return [done("source_maps", "pass", "low", 0, {
     ru: "Source maps закрыты",
     en: "Source maps are not exposed",
-  }, undefined, Date.now() - t0);
+  }, undefined, Date.now() - t0)];
 }
 
 /* ------------------------------------------------------------------ */
@@ -441,7 +588,7 @@ const DANGEROUS_CLIENT_ENV = [
   /NUXT_PUBLIC_(?:SECRET|PRIVATE|TOKEN|PASSWORD)\b/i,
 ];
 
-export async function checkClientEnvLeak(ctx: Ctx): Promise<CheckResult> {
+export async function checkClientEnvLeak(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
   const bundles = extractScripts(ctx.homeBody, ctx.origin, 3);
   const found: string[] = [];
@@ -450,15 +597,11 @@ export async function checkClientEnvLeak(ctx: Ctx): Promise<CheckResult> {
     for (const re of DANGEROUS_CLIENT_ENV) {
       const match = text.match(re);
       if (match) {
-        found.push(`${srcLabel} → найдена опасная переменная ${match[0]} (риск утечки приватного ключа в клиент)`);
+        found.push(`${srcLabel} → ${match[0]}`);
       }
     }
   };
-
-  // check HTML
   checkText(ctx.homeBody, "homepage HTML");
-
-  // check client JS bundles
   await Promise.all(
     bundles.map(async (u) => {
       const r = await safeFetch(u, { timeoutMs: 5000, maxBody: 256 * 1024 });
@@ -469,7 +612,7 @@ export async function checkClientEnvLeak(ctx: Ctx): Promise<CheckResult> {
   );
 
   if (found.length) {
-    return done(
+    return [done(
       "client_env_leak",
       "fail",
       "high",
@@ -484,17 +627,16 @@ export async function checkClientEnvLeak(ctx: Ctx): Promise<CheckResult> {
         evidence: found,
       },
       Date.now() - t0,
-    );
+    )];
   }
-
-  return done("client_env_leak", "pass", "low", 0, {
+  return [done("client_env_leak", "pass", "low", 0, {
     ru: "Приватные env-переменные не найдены в клиенте",
     en: "No sensitive env vars leaked to client bundles",
-  }, undefined, Date.now() - t0);
+  }, undefined, Date.now() - t0)];
 }
 
 /* ------------------------------------------------------------------ */
-/* Docker / Kubernetes files exposure                                 */
+/* Docker / Kubernetes files exposure                                  */
 /* ------------------------------------------------------------------ */
 
 const DOCKER_K8S_PATHS = [
@@ -506,29 +648,27 @@ const DOCKER_K8S_PATHS = [
   "/.kube/config",
 ];
 
-export async function checkDockerK8sExposure(ctx: Ctx): Promise<CheckResult> {
+export async function checkDockerK8sExposure(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
-  const found: string[] = [];
-
-  for (const p of DOCKER_K8S_PATHS) {
-    const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + p, { timeoutMs: 4000, maxBody: 1024 });
-    if (r.ok && r.status === 200) {
-      const isHtml = /text\/html/i.test(r.contentType) && /<html|<!doctype/i.test(r.body);
-      if (isHtml || bodiesEquivalent(r.body, ctx.homeBody)) continue;
-
-      const isDockerfile = p.includes("Dockerfile") && /FROM\s+[a-z0-9_.-]+|WORKDIR\s+|ENTRYPOINT\s+/i.test(r.body);
-      const isCompose = p.includes("compose") && /services:\s*|version:\s*['"]?[0-9]/i.test(r.body);
-      const isDockerEnv = p === "/.dockerenv";
-      const isKube = p.includes(".kube") && /apiVersion:|clusters:|users:/i.test(r.body);
-
-      if (isDockerfile || isCompose || isDockerEnv || isKube) {
-        found.push(`${p} → файл конфигурации контейнеризации доступен публично`);
+  const probed = await Promise.all(
+    DOCKER_K8S_PATHS.map(async (p) => {
+      const r = await safeFetch(base(ctx) + p, { timeoutMs: 4000, maxBody: 1024 });
+      if (r.ok && r.status === 200) {
+        if (!isRealFile(r.body, r.contentType, ctx.homeBody)) return null;
+        const isDockerfile = p.includes("Dockerfile") && /FROM\s+[a-z0-9_.-]+|WORKDIR\s+|ENTRYPOINT\s+/i.test(r.body);
+        const isCompose = p.includes("compose") && /services:\s*|version:\s*['"]?[0-9]/i.test(r.body);
+        const isDockerEnv = p === "/.dockerenv";
+        const isKube = p.includes(".kube") && /apiVersion:|clusters:|users:/i.test(r.body);
+        if (isDockerfile || isCompose || isDockerEnv || isKube) {
+          return `${p} → файл конфигурации контейнеризации доступен публично`;
+        }
       }
-    }
-  }
-
+      return null;
+    }),
+  );
+  const found = probed.filter((x): x is string => Boolean(x));
   if (found.length) {
-    return done(
+    return [done(
       "docker_k8s_exposure",
       "fail",
       "high",
@@ -543,12 +683,77 @@ export async function checkDockerK8sExposure(ctx: Ctx): Promise<CheckResult> {
         evidence: found,
       },
       Date.now() - t0,
-    );
+    )];
   }
-
-  return done("docker_k8s_exposure", "pass", "low", 0, {
+  return [done("docker_k8s_exposure", "pass", "low", 0, {
     ru: "Файлы Docker и Kubernetes не найдены",
     en: "No Docker or Kubernetes configuration exposed",
-  }, undefined, Date.now() - t0);
+  }, undefined, Date.now() - t0)];
 }
 
+/* ------------------------------------------------------------------ */
+/* Package manifests in web root                                       */
+/* ------------------------------------------------------------------ */
+
+const MANIFEST_PATHS = ["/package.json", "/composer.json", "/Gemfile", "/requirements.txt"];
+
+export async function checkManifestExposure(ctx: Ctx): Promise<CheckResult[]> {
+  const t0 = Date.now();
+  const probed = await Promise.all(
+    MANIFEST_PATHS.map(async (p): Promise<string | null> => {
+      const r = await safeFetch(base(ctx) + p, { timeoutMs: 4000, maxBody: 4096 });
+      if (r.ok && r.status === 200 && isRealFile(r.body, r.contentType, ctx.homeBody)) {
+        const isManifest =
+          p === "/package.json" && /"name"|"dependencies"/i.test(r.body) ||
+          p === "/composer.json" && /"require"|"name"/i.test(r.body) ||
+          p === "/Gemfile" && /gem\s/i.test(r.body) ||
+          p === "/requirements.txt" && /==|>=/i.test(r.body);
+        if (isManifest) return p;
+      }
+      return null;
+    }),
+  );
+  const found = probed.filter((p): p is string => Boolean(p));
+  if (found.length) {
+    return [done("manifest_exposure", "warn", "medium", 8, {
+      ru: "Манифесты зависимостей в веб-корне",
+      en: "Dependency manifests exposed in web root",
+    }, {
+      code: "MANIFEST_EXPOSED",
+      detail: {
+        ru: "package.json / composer.json доступны по прямому URL: точные версии библиотек помогают подобрать известные уязвимости под стек. Уберите манифесты из веб-корня.",
+        en: "package.json / composer.json are reachable by URL: exact dependency versions help target known CVEs for the stack. Remove manifests from the web root.",
+      },
+      evidence: found,
+    }, Date.now() - t0)];
+  }
+  return [done("manifest_exposure", "pass", "medium", 0, {
+    ru: "Манифесты зависимостей не доступны",
+    en: "No dependency manifests exposed",
+  }, undefined, Date.now() - t0)];
+}
+
+/* ------------------------------------------------------------------ */
+/* security.txt (RFC 9116 - good practice, info)                       */
+/* ------------------------------------------------------------------ */
+
+export async function checkSecurityTxt(ctx: Ctx): Promise<CheckResult[]> {
+  const t0 = Date.now();
+  const r = await safeFetch(base(ctx) + "/.well-known/security.txt", { timeoutMs: 4000, maxBody: 2048 });
+  const has = r.ok && r.status === 200 && /contact:/i.test(r.body);
+  return [done("security_txt", has ? "pass" : "info", "low", 0, {
+    ru: has ? "security.txt опубликован (канал для сообщений о уязвимостях)" : "security.txt не опубликован",
+    en: has ? "security.txt published (vulnerability disclosure channel)" : "security.txt is not published",
+  }, has ? undefined : {
+    code: "NO_SECURITY_TXT",
+    detail: {
+      ru: "RFC 9116 security.txt говорит исследователям, куда сообщать о найденных уязвимостях. Это бесплатный сигнал зрелости: /.well-known/security.txt со строкой Contact.",
+      en: "RFC 9116 security.txt tells researchers where to report vulnerabilities. A free maturity signal: /.well-known/security.txt with a Contact line.",
+    },
+    evidence: [],
+  }, Date.now() - t0)];
+}
+
+function truncate(s: string, n: number): string {
+  return s.length > n ? s.slice(0, n) + "…" : s;
+}

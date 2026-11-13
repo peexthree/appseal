@@ -5,35 +5,54 @@ import { isClientRenderShell, safeFetch, truncate } from "./fetcher";
 import { renderPage, shouldRender } from "./render";
 import {
   checkEnvExposure,
+  checkEnvVariants,
   checkGitExposure,
+  checkVcsLeaks,
   checkSecretsInSource,
-  checkBaaSOpenRead,
+  checkFirebaseOpenRead,
+  checkSupabaseOpenRead,
+  checkSourceMaps,
   checkClientEnvLeak,
   checkDockerK8sExposure,
+  checkManifestExposure,
+  checkSecurityTxt,
 } from "./checks/secrets";
 import {
   checkSecurityHeaders,
+  checkIsolationHeaders,
+  checkLeakyHeaders,
   checkCors,
   checkCookies,
   checkTls,
-  checkServerFingerprint,
-  checkPermissionsPolicy,
+  checkHttpsRedirects,
+  checkTransportHygiene,
 } from "./checks/headers";
 import {
+  checkSoft404,
   checkAdminExposure,
   checkBackups,
   checkDebugEndpoints,
-  checkSwaggerGraphQLOpen,
+  checkDebugTargets,
+  checkFrameworkErrors,
+  checkSwaggerOpen,
+  checkGraphqlOpen,
+  checkWpEnum,
+  checkDirectoryListing,
   checkCorsPreflightMethods,
   checkRateLimitProtection,
 } from "./checks/admin";
 import {
   checkPlaceholder,
+  checkDefaultPage,
   checkRenderedErrors,
+  checkTinyPage,
   checkBrokenLinks,
   checkMetaHealth,
-  checkMixedContentDom,
+  checkFavicon,
   checkOpenGraphHealth,
+  checkMixedContentDom,
+  checkScriptHygiene,
+  checkImgAlt,
   detectPlatform,
   detectTechPassport,
 } from "./checks/liveness";
@@ -61,8 +80,9 @@ export function normalizeInputUrl(input: string): { url: string; isDemo: boolean
 }
 
 /**
- * Runs a full 24-check scan for the given scan id (already saved as "queued").
- * Never throws: errors are recorded into the scan record.
+ * Runs a full ~100-check scan for the given scan id (already saved as "queued").
+ * Each macro-check returns a group of granular results; never throws: errors
+ * are recorded into the scan record.
  * Returns the final outcome on success (for the registry feed) or null.
  */
 export async function runScan(scan: ScanResult): Promise<{ host: string; grade: string; score: number } | null> {
@@ -127,6 +147,7 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
       isHttp: (home.url || url).startsWith("http://"),
       csr: isClientRenderShell(home.body),
       basePath: scan.isDemo ? new URL(url).pathname.replace(/\/+$/, "") : "",
+      finalUrl: home.url,
     };
 
     if (shouldRender(ctx.csr, scan.isDemo)) {
@@ -154,58 +175,83 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
       });
     }
 
-    // 24 checks across 4 categories: exactly 6 per category
-    const all: { fn: () => Promise<CheckResult>; id: string }[] = [
-      // 1. Secrets & leaks (6)
+    // 43 macro-checks, each returning a group of granular results (~100 total)
+    const all: { fn: () => Promise<CheckResult[]>; id: string }[] = [
+      // 1. Secrets & leaks
       { fn: () => checkEnvExposure(ctx), id: "env_exposure" },
+      { fn: () => checkEnvVariants(ctx), id: "env_variants" },
       { fn: () => checkGitExposure(ctx), id: "git_exposure" },
+      { fn: () => checkVcsLeaks(ctx), id: "vcs_leaks" },
       { fn: () => checkSecretsInSource(ctx), id: "secrets_in_source" },
-      { fn: () => checkBaaSOpenRead(ctx), id: "baas_open_read" },
       { fn: () => checkClientEnvLeak(ctx), id: "client_env_leak" },
+      { fn: () => checkFirebaseOpenRead(ctx), id: "firebase_open_read" },
+      { fn: () => checkSupabaseOpenRead(ctx), id: "supabase_open_read" },
+      { fn: () => checkSourceMaps(ctx), id: "source_maps" },
       { fn: () => checkDockerK8sExposure(ctx), id: "docker_k8s_exposure" },
+      { fn: () => checkManifestExposure(ctx), id: "manifest_exposure" },
+      { fn: () => checkSecurityTxt(ctx), id: "security_txt" },
 
-      // 2. Headers & TLS (6)
+      // 2. Headers & TLS
       { fn: () => checkSecurityHeaders(ctx), id: "security_headers" },
+      { fn: () => checkIsolationHeaders(ctx), id: "isolation_headers" },
+      { fn: () => checkLeakyHeaders(ctx), id: "leaky_headers" },
       { fn: () => checkCors(ctx), id: "cors_wildcard" },
       { fn: () => checkCookies(ctx), id: "cookie_flags" },
       { fn: () => checkTls(ctx), id: "tls_cert" },
-      { fn: () => checkServerFingerprint(ctx), id: "server_fingerprint" },
-      { fn: () => checkPermissionsPolicy(ctx), id: "permissions_policy" },
+      { fn: () => checkHttpsRedirects(ctx), id: "https_redirects" },
+      { fn: () => checkTransportHygiene(ctx), id: "transport_hygiene" },
 
-      // 3. Admin & Auth (6)
+      // 3. Admin & auth
+      { fn: () => checkSoft404(ctx), id: "soft404_routing" },
       { fn: () => checkAdminExposure(ctx), id: "admin_exposure" },
       { fn: () => checkBackups(ctx), id: "backup_files" },
       { fn: () => checkDebugEndpoints(ctx), id: "debug_endpoints" },
-      { fn: () => checkSwaggerGraphQLOpen(ctx), id: "swagger_graphql_open" },
+      { fn: () => checkDebugTargets(ctx), id: "debug_targets" },
+      { fn: () => checkFrameworkErrors(ctx), id: "framework_errors" },
+      { fn: () => checkSwaggerOpen(ctx), id: "swagger_open" },
+      { fn: () => checkGraphqlOpen(ctx), id: "graphql_ui_open" },
+      { fn: () => checkWpEnum(ctx), id: "wp_enum" },
+      { fn: () => checkDirectoryListing(ctx), id: "directory_listing" },
       { fn: () => checkCorsPreflightMethods(ctx), id: "cors_preflight_methods" },
       { fn: () => checkRateLimitProtection(ctx), id: "auth_rate_limit" },
 
-      // 4. Liveness & Content (6)
+      // 4. Liveness & content
       { fn: () => checkPlaceholder(ctx), id: "placeholder_content" },
+      { fn: () => checkDefaultPage(ctx), id: "default_page" },
       { fn: () => checkRenderedErrors(ctx), id: "rendered_errors" },
+      { fn: () => checkTinyPage(ctx), id: "tiny_page" },
       { fn: () => checkBrokenLinks(ctx), id: "broken_links" },
       { fn: () => checkMetaHealth(ctx), id: "meta_health" },
-      { fn: () => checkMixedContentDom(ctx), id: "mixed_content_dom" },
+      { fn: () => checkFavicon(ctx), id: "favicon" },
       { fn: () => checkOpenGraphHealth(ctx), id: "open_graph_health" },
+      { fn: () => checkMixedContentDom(ctx), id: "mixed_content_dom" },
+      { fn: () => checkScriptHygiene(ctx), id: "script_hygiene" },
+      { fn: () => checkImgAlt(ctx), id: "img_alt" },
     ];
 
     const results: CheckResult[] = [];
     let doneCount = 0;
     const LIGHT_IDS = new Set([
+      "security_headers",
+      "isolation_headers",
+      "leaky_headers",
+      "cookie_flags",
       "placeholder_content",
       "rendered_errors",
+      "tiny_page",
+      "default_page",
       "meta_health",
-      "server_fingerprint",
-      "permissions_policy",
-      "mixed_content_dom",
       "open_graph_health",
-      "auth_rate_limit",
+      "mixed_content_dom",
+      "script_hygiene",
+      "img_alt",
+      "framework_errors",
     ]);
 
-    const runOne = async (fn: () => Promise<CheckResult>) => {
+    const runOne = async (fn: () => Promise<CheckResult[]>) => {
       try {
-        const r = await fn();
-        results.push(r);
+        const group = await fn();
+        results.push(...group);
       } catch (e) {
         results.push({
           id: "internal_error",
