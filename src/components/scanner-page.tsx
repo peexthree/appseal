@@ -239,6 +239,17 @@ export function ScannerPage({
             />
             <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
           </a>
+          <nav className="flex items-center gap-4" aria-label="Site">
+            <a href="/registry" className="hidden text-xs font-semibold text-slate-400 transition hover:text-slate-200 sm:block">
+              {t(lang, "navRegistry")}
+            </a>
+            <a href="#pricing" className="hidden text-xs font-semibold text-slate-400 transition hover:text-slate-200 sm:block">
+              {t(lang, "navPricing")}
+            </a>
+            <a href="/legal" className="hidden text-xs font-semibold text-slate-400 transition hover:text-slate-200 sm:block">
+              {t(lang, "navLegal")}
+            </a>
+          </nav>
           <nav className="flex items-center gap-1" aria-label="Language">
             <Globe className="mr-1 h-3.5 w-3.5 text-slate-600" />
             {(["ru", "en"] as Lang[]).map((l) => (
@@ -517,6 +528,36 @@ export function ScannerPage({
           </div>
         </section>
 
+        {/* public registry: prominent placement after the proof case */}
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "issue2Title")}>
+          <div className="mx-auto max-w-3xl rounded-2xl border border-sky-900/40 bg-sky-400/[0.04] p-6 text-center sm:p-10">
+            <h2 className="font-display text-2xl font-bold text-slate-100">
+              {t(lang, "issue2Title")}
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-[13px] leading-relaxed text-slate-400">
+              {t(lang, "issue2Sub")}
+            </p>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Button
+                className="bg-sky-400 px-5 text-sm font-bold text-[#090d16] hover:bg-sky-300"
+                onClick={() => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                  document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
+                }}
+              >
+                <Zap className="h-4 w-4" />
+                {t(lang, "issue2CtaScan")}
+              </Button>
+              <a
+                href="/registry"
+                className="rounded-md border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
+              >
+                {t(lang, "issue2CtaRegistry")} →
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* what we check */}
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "checksTitle")}>
           <h2 className="font-display text-center text-2xl font-bold text-slate-100">
@@ -623,36 +664,6 @@ export function ScannerPage({
                 )}
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* issue #2 CTA: bring your URL (GTM) */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "issue2Title")}>
-          <div className="mx-auto max-w-3xl rounded-2xl border border-sky-900/40 bg-sky-400/[0.04] p-6 text-center sm:p-10">
-            <h2 className="font-display text-2xl font-bold text-slate-100">
-              {t(lang, "issue2Title")}
-            </h2>
-            <p className="mx-auto mt-3 max-w-xl text-[13px] leading-relaxed text-slate-400">
-              {t(lang, "issue2Sub")}
-            </p>
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button
-                className="bg-sky-400 px-5 text-sm font-bold text-[#090d16] hover:bg-sky-300"
-                onClick={() => {
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                  document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
-                }}
-              >
-                <Zap className="h-4 w-4" />
-                {t(lang, "issue2CtaScan")}
-              </Button>
-              <a
-                href="/registry"
-                className="rounded-md border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
-              >
-                {t(lang, "issue2CtaRegistry")} →
-              </a>
-            </div>
           </div>
         </section>
 
