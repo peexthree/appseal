@@ -163,12 +163,18 @@ export function ReportView({
   // absolute URLs: the embed lives on foreign sites, relative paths break there
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
+  const badgeW = useMemo(() => {
+    const cleanHost = scan.host.replace(/^www\./i, "");
+    const hostDisplay = cleanHost.length > 24 ? cleanHost.slice(0, 22) + "…" : cleanHost;
+    return Math.max(228, Math.min(276, Math.round(44 + hostDisplay.length * 7.2 + 64)));
+  }, [scan.host]);
+
   const embedCode = useMemo(() => {
     if (badgeFormat === "trophy") {
       return `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}&style=trophy" alt="AppSeal Verified: Grade ${scan.grade}" width="80" height="80" style="filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" /></a>`;
     }
-    return `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener"><img src="${origin}/api/badge?id=${scan.id}" alt="AppSeal ${scan.grade}" width="168" height="44"></a>`;
-  }, [badgeFormat, origin, scan.id, scan.grade, scan.score]);
+    return `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}" alt="AppSeal Verified: Grade ${scan.grade}" width="${badgeW}" height="44"></a>`;
+  }, [badgeFormat, origin, scan.id, scan.grade, scan.score, badgeW]);
 
   const fixPrompt = useMemo(() => buildFixPrompt(scan, lang), [scan, lang]);
 
@@ -347,7 +353,7 @@ export function ReportView({
 
         {/* Live Badge Preview and Copy Area */}
         <div className="mt-4 flex flex-col items-center gap-5 rounded-lg border border-slate-800/80 bg-[#090d16]/70 p-4 sm:flex-row">
-          <div className="flex min-w-[130px] items-center justify-center p-2">
+          <div className="flex shrink-0 items-center justify-center p-2">
             {badgeFormat === "trophy" ? (
               <div className="group relative flex items-center justify-center">
                 <div
@@ -366,9 +372,9 @@ export function ReportView({
               <img
                 src={`/api/badge?id=${scan.id}`}
                 alt={`AppSeal ${scan.grade}`}
-                width={168}
+                width={badgeW}
                 height={44}
-                className="rounded"
+                className="rounded-lg shadow-md max-w-none"
               />
             )}
           </div>
