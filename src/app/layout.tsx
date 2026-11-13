@@ -22,6 +22,18 @@ export const metadata: Metadata = {
     "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+–E и бейдж доверия за минуту.",
   keywords: ["appseal", "vibe coding", "security scanner", "trust badge", "техосмотр приложений"],
   authors: [{ name: "AppSeal" }],
+  icons: {
+    icon: [
+      { url: "/ico.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/ICO.png", sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: "/ico.svg",
+    apple: [
+      { url: "/apple.png", sizes: "160x160", type: "image/png" },
+    ],
+  },
+  manifest: "/site.webmanifest",
   openGraph: {
     title: "AppSeal — the trust seal for AI-built apps",
     description:
