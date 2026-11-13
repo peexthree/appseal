@@ -95,6 +95,7 @@ const CHECK_TICKER = [
 const EYEBROWS = {
   stats: { ru: "Почему", en: "Why" },
   how: { ru: "Процесс", en: "Process" },
+  grades: { ru: "Грейды", en: "Grades" },
   case: { ru: "Кейс", en: "Case" },
   engine: { ru: "Движок", en: "Engine" },
   pricing: { ru: "Тарифы", en: "Pricing" },
@@ -382,27 +383,34 @@ export function ScannerPage({
         )}
       </AnimatePresence>
 
-      {/* header */}
+      {/* header: black glass, shrinks on scroll (logo halves with it) */}
       <header
-        className={`sticky top-0 z-40 transition-colors duration-300 ${
-          scrolled ? "bg-[#090d16]/90 backdrop-blur-2xl" : "bg-[#090d16]/75 backdrop-blur-xl"
+        className={`sticky top-0 z-40 border-b border-white/5 backdrop-blur-2xl transition-all duration-300 ${
+          scrolled ? "bg-black/70" : "bg-black/40"
         }`}
       >
-        {/* gradient bottom edge instead of a flat border */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sky-400/40 to-transparent"
-        />
-        <div className="mx-auto flex h-20 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div
+          className={`mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 transition-all duration-300 sm:px-6 ${
+            scrolled ? "h-14" : "h-20"
+          }`}
+        >
           <a href="/" className="group flex shrink-0 items-center gap-3" aria-label="AppSeal home">
             <img
               src="/ico.png"
               alt="AppSeal"
               width={56}
               height={56}
-              className="h-14 w-14 object-contain drop-shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-transform group-hover:scale-110"
+              className={`object-contain drop-shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-all duration-300 ${
+                scrolled ? "h-7 w-7" : "h-14 w-14"
+              }`}
             />
-            <span className="font-display text-2xl font-extrabold tracking-tight">AppSeal</span>
+            <span
+              className={`font-display font-extrabold tracking-tight transition-all duration-300 ${
+                scrolled ? "text-lg" : "text-2xl"
+              }`}
+            >
+              AppSeal
+            </span>
           </a>
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="Site">
@@ -437,16 +445,6 @@ export function ScannerPage({
                 </button>
               ))}
             </nav>
-            <Button
-              className="hidden h-9 rounded-full bg-sky-400 px-4 text-[13px] font-bold text-[#090d16] shadow-[0_0_20px_-6px_rgba(56,189,248,0.6)] hover:bg-sky-300 md:inline-flex"
-              onClick={() => {
-                window.scrollTo({ top: 0, behavior: "smooth" });
-                document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
-              }}
-            >
-              <Zap className="h-3.5 w-3.5" />
-              {t(lang, "headerCta")}
-            </Button>
             <button
               onClick={() => setMenuOpen((v) => !v)}
               className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-800 text-slate-300 transition hover:bg-slate-800/70 md:hidden"
@@ -480,17 +478,6 @@ export function ScannerPage({
                 {item.label}
               </a>
             ))}
-            <Button
-              className="mt-2 w-full rounded-full bg-sky-400 text-[#090d16] hover:bg-sky-300"
-              onClick={() => {
-                setMenuOpen(false);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-                document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
-              }}
-            >
-              <Zap className="h-4 w-4" />
-              {t(lang, "headerCta")}
-            </Button>
             <div className="flex items-center justify-center gap-1 pt-2 pb-1 sm:hidden">
               {(["ru", "en"] as Lang[]).map((l) => (
                 <button
@@ -634,78 +621,6 @@ export function ScannerPage({
                     </span>
                   </button>
                 ))}
-              </div>
-            </div>
-          )}
-
-          {/* interactive grade showcase: the trophy changes glow per rank */}
-          {phase === "form" && (
-            <div className="appseal-card mx-auto mt-6 max-w-2xl overflow-hidden rounded-2xl p-5 sm:p-6">
-              <img
-                src="/img/scan-field.png"
-                alt=""
-                aria-hidden
-                loading="lazy"
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40"
-              />
-              <div className="relative">
-              <p className="text-center text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                {t(lang, "showcaseHint")}
-              </p>
-              <div className="mt-4 flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
-                <div className="relative flex shrink-0 items-center justify-center">
-                  {/* soft radial glow behind the trophy, follows the active grade */}
-                  <motion.span
-                    aria-hidden
-                    className="absolute h-36 w-36 rounded-full blur-2xl"
-                    initial={false}
-                    animate={{ backgroundColor: `${GRADE_META[showGrade].color}24` }}
-                    transition={{ duration: 0.6 }}
-                    style={{ backgroundColor: `${GRADE_META["A+"].color}24` }}
-                  />
-                  <motion.img
-                    key={showGrade}
-                    src={getTrophyPath(showGrade)}
-                    alt={`AppSeal grade ${showGrade}`}
-                    width={112}
-                    height={112}
-                    initial={{ opacity: 0, scale: 0.92 }}
-                    animate={{ opacity: 1, scale: 1, filter: `drop-shadow(0 0 22px ${GRADE_META[showGrade].color}66)` }}
-                    transition={{ duration: 0.35 }}
-                    className="relative h-28 w-28 object-contain"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap justify-center gap-1.5 sm:justify-start">
-                    {(["A+", "A", "B", "C", "D", "E"] as Grade[]).map((g) => {
-                      const m = GRADE_META[g];
-                      const active = g === showGrade;
-                      return (
-                        <button
-                          key={g}
-                          onClick={() => setShowGrade(g)}
-                          className="rounded-lg border px-2.5 py-1 font-display text-sm font-extrabold transition"
-                          style={
-                            active
-                              ? { color: m.color, borderColor: `${m.color}66`, backgroundColor: `${m.color}14` }
-                              : { color: "#64748b", borderColor: "rgba(30,41,59,0.8)" }
-                          }
-                          aria-pressed={active}
-                        >
-                          {g}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="mt-3 text-sm font-bold" style={{ color: GRADE_META[showGrade].color }}>
-                    {GRADE_META[showGrade].label[lang]}
-                    <span className="ml-2 font-mono text-xs text-slate-500">
-                      {GRADE_META[showGrade].minScore}-{GRADE_META[showGrade].maxScore}
-                    </span>
-                  </p>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-400">{GRADE_META[showGrade].description[lang]}</p>
-                </div>
-              </div>
               </div>
             </div>
           )}
@@ -879,6 +794,78 @@ export function ScannerPage({
               </div>
             ))}
           </div>
+        </section>
+
+        {/* grade showcase: what each rank means (out of the hero, its own beat) */}
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "showcaseHint")}>
+          <SectionHead eyebrow={EYEBROWS.grades[lang]} title={t(lang, "showcaseHint")} />
+          <Reveal className="mt-8">
+            <div className="appseal-card mx-auto max-w-2xl overflow-hidden rounded-2xl p-5 sm:p-6">
+              <img
+                src="/img/scan-field.png"
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40"
+              />
+              <div className="relative">
+                <div className="flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
+                  <div className="relative flex shrink-0 items-center justify-center">
+                    {/* soft radial glow behind the trophy, follows the active grade */}
+                    <motion.span
+                      aria-hidden
+                      className="absolute h-36 w-36 rounded-full blur-2xl"
+                      initial={false}
+                      animate={{ backgroundColor: `${GRADE_META[showGrade].color}24` }}
+                      transition={{ duration: 0.6 }}
+                      style={{ backgroundColor: `${GRADE_META["A+"].color}24` }}
+                    />
+                    <motion.img
+                      key={showGrade}
+                      src={getTrophyPath(showGrade)}
+                      alt={`AppSeal grade ${showGrade}`}
+                      width={112}
+                      height={112}
+                      initial={{ opacity: 0, scale: 0.92 }}
+                      animate={{ opacity: 1, scale: 1, filter: `drop-shadow(0 0 22px ${GRADE_META[showGrade].color}66)` }}
+                      transition={{ duration: 0.35 }}
+                      className="relative h-28 w-28 object-contain"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap justify-center gap-1.5 sm:justify-start">
+                      {(["A+", "A", "B", "C", "D", "E"] as Grade[]).map((g) => {
+                        const m = GRADE_META[g];
+                        const active = g === showGrade;
+                        return (
+                          <button
+                            key={g}
+                            onClick={() => setShowGrade(g)}
+                            className="rounded-lg border px-2.5 py-1 font-display text-sm font-extrabold transition"
+                            style={
+                              active
+                                ? { color: m.color, borderColor: `${m.color}66`, backgroundColor: `${m.color}14` }
+                                : { color: "#64748b", borderColor: "rgba(30,41,59,0.8)" }
+                            }
+                            aria-pressed={active}
+                          >
+                            {g}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="mt-3 text-sm font-bold" style={{ color: GRADE_META[showGrade].color }}>
+                      {GRADE_META[showGrade].label[lang]}
+                      <span className="ml-2 font-mono text-xs text-slate-500">
+                        {GRADE_META[showGrade].minScore}-{GRADE_META[showGrade].maxScore}
+                      </span>
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-400">{GRADE_META[showGrade].description[lang]}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Reveal>
         </section>
 
         {/* first real case */}

@@ -155,6 +155,8 @@ export interface RegistryEntry {
   score: number;
   ts: number;
   id: string;
+  /** short public description taken from the site's <title>; optional (old entries) */
+  desc?: string;
 }
 
 /**

@@ -35,8 +35,10 @@ function GradeChip({ grade }: { grade: string }) {
 
 export default async function RegistryPage() {
   const raw = await getRegistryEntries();
-  const entries = dedupeRegistry(raw).slice(0, 120);
-  const aCount = entries.filter((e) => e.grade === "A+" || e.grade === "A").length;
+  // the registry is a showcase of good sites: only top grades are listed
+  const entries = dedupeRegistry(raw)
+    .filter((e) => e.grade === "A+" || e.grade === "A")
+    .slice(0, 120);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
@@ -87,7 +89,7 @@ export default async function RegistryPage() {
         ) : (
           <>
             <p className="mt-6 text-sm text-slate-500">
-              {entries.length} приложени{entries.length === 1 ? "е" : "я"} · {aCount} с классом A/A+ · сканы хранятся 7 дней, реестр обновляется при каждом новом скане
+              {entries.length} приложени{entries.length === 1 ? "е" : "я"} · только классы A/A+ · сканы хранятся 7 дней
             </p>
             <ul className="mt-6 divide-y divide-slate-800/70 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
               {entries.map((e: RegistryEntry) => {
@@ -124,6 +126,9 @@ export default async function RegistryPage() {
                           </span>
                         )}
                       </div>
+                      {e.desc && (
+                        <p className="mt-0.5 truncate text-xs text-slate-500">{e.desc}</p>
+                      )}
                     </div>
                     {dofollow && (
                       <span className={`hidden rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider sm:inline ${
