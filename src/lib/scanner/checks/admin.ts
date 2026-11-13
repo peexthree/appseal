@@ -140,13 +140,20 @@ export async function checkBackups(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
   const out: CheckResult[] = [];
 
-  const probe = async (paths: string[], id: string, label: { ru: string; en: string }, sev: Severity, pen: number, marker: RegExp) => {
+  const probe = async (
+    paths: string[],
+    id: string,
+    label: { ru: string; en: string },
+    passLabel: { ru: string; en: string },
+    sev: Severity,
+    pen: number,
+  ) => {
     const probed = await Promise.all(
       paths.map(async (p) => {
         const r = await safeFetch(base(ctx) + p, { timeoutMs: 5000, maxBody: 512 });
         if (r.status === 200 && (r.bodyBytes > 64 || r.body.length > 32)) {
           if (!isRealFile(r.body, r.contentType, ctx.homeBody)) return null;
-          if (!marker || marker.test(r.body.slice(0, 512)) || !/text\/html/i.test(r.contentType)) return p;
+          return p;
         }
         return null;
       }),
@@ -162,16 +169,34 @@ export async function checkBackups(ctx: Ctx): Promise<CheckResult[]> {
         evidence: found.map((p) => `${p} → файл доступен (содержимое скрыто политикой безопасности)`),
       }, Date.now() - t0));
     } else {
-      out.push(done(id, "pass", sev, 0, {
-        ru: label.ru.replace(" доступны по прямым ссылкам", " не найдены").replace(" найден по прямым ссылкам", " не найден"),
-        en: label.en.replace(" are directly downloadable", " not found").replace(" found", " not found"),
-      }, undefined, Date.now() - t0));
+      out.push(done(id, "pass", sev, 0, passLabel, undefined, Date.now() - t0));
     }
   };
 
-  await probe(ARCHIVE_PATHS, "backup_archives", { ru: "Архивы бэкапов доступны по прямым ссылкам", en: "Backup archives are directly downloadable" }, "critical", 40, /./);
-  await probe(DUMP_PATHS, "db_dumps", { ru: "Дампы БД доступны по прямым ссылкам", en: "Database dumps are directly downloadable" }, "critical", 40, /./);
-  await probe(BAK_PATHS, "bak_files", { ru: "Резервные копии кода (.bak/.old) найдены", en: "Code backup files (.bak/.old) found" }, "medium", 8, /./);
+  await probe(
+    ARCHIVE_PATHS,
+    "backup_archives",
+    { ru: "Архивы бэкапов доступны по прямым ссылкам", en: "Backup archives are directly downloadable" },
+    { ru: "Архивы бэкапов не найдены", en: "No backup archives found" },
+    "critical",
+    40,
+  );
+  await probe(
+    DUMP_PATHS,
+    "db_dumps",
+    { ru: "Дампы БД доступны по прямым ссылкам", en: "Database dumps are directly downloadable" },
+    { ru: "Дампы БД не найдены", en: "No database dumps found" },
+    "critical",
+    40,
+  );
+  await probe(
+    BAK_PATHS,
+    "bak_files",
+    { ru: "Резервные копии кода (.bak/.old) доступны по ссылкам", en: "Code backup files (.bak/.old) are downloadable" },
+    { ru: "Резервные копии кода (.bak/.old) не найдены", en: "No code backup files found" },
+    "medium",
+    8,
+  );
 
   return out;
 }
@@ -209,7 +234,7 @@ export async function checkDebugEndpoints(ctx: Ctx): Promise<CheckResult[]> {
   return out;
 }
 
-interface DebugTarget { id: string; paths: string[]; marker: RegExp; label: { ru: string; en: string }; sev: Severity; pen: number; contentType?: RegExp }
+interface DebugTarget { id: string; paths: string[]; marker: RegExp; label: { ru: string; en: string }; passLabel: { ru: string; en: string }; sev: Severity; pen: number }
 
 const DEBUG_TARGETS: DebugTarget[] = [
   {
@@ -217,6 +242,7 @@ const DEBUG_TARGETS: DebugTarget[] = [
     paths: ["/actuator", "/actuator/health"],
     marker: /"_links"|"status"\s*:\s*"UP"|WHITELABEL/i,
     label: { ru: "Spring Boot Actuator открыт", en: "Spring Boot Actuator exposed" },
+    passLabel: { ru: "Spring Boot Actuator: закрыто", en: "Spring Boot Actuator: not exposed" },
     sev: "medium", pen: 10,
   },
   {
@@ -224,6 +250,7 @@ const DEBUG_TARGETS: DebugTarget[] = [
     paths: ["/actuator/env", "/actuator/heapdump"],
     marker: /"propertySources"|HPROF|java\.heap/i,
     label: { ru: "Actuator env/heapdump открыт", en: "Actuator env/heapdump exposed" },
+    passLabel: { ru: "Actuator env/heapdump: закрыто", en: "Actuator env/heapdump: not exposed" },
     sev: "critical", pen: 30,
   },
   {
@@ -231,6 +258,7 @@ const DEBUG_TARGETS: DebugTarget[] = [
     paths: ["/_ignition/health-check", "/telescope", "/_debugbar"],
     marker: /ignition|telescope|debugbar/i,
     label: { ru: "Отладка Laravel доступна", en: "Laravel debug tooling exposed" },
+    passLabel: { ru: "Отладка Laravel: закрыто", en: "Laravel debug tooling: not exposed" },
     sev: "high", pen: 15,
   },
   {
@@ -238,6 +266,7 @@ const DEBUG_TARGETS: DebugTarget[] = [
     paths: ["/elmah.axd", "/trace.axd"],
     marker: /elmah|trace.*application/i,
     label: { ru: "ASP.NET отладочные страницы открыты", en: "ASP.NET debug pages exposed" },
+    passLabel: { ru: "ASP.NET отладочные страницы: закрыто", en: "ASP.NET debug pages: not exposed" },
     sev: "medium", pen: 10,
   },
   {
@@ -245,6 +274,7 @@ const DEBUG_TARGETS: DebugTarget[] = [
     paths: ["/phpinfo.php", "/info.php", "/test.php"],
     marker: /phpinfo\(\)|PHP Version/i,
     label: { ru: "phpinfo открыт", en: "phpinfo exposed" },
+    passLabel: { ru: "phpinfo: закрыто", en: "phpinfo: not exposed" },
     sev: "medium", pen: 10,
   },
   {
@@ -252,6 +282,7 @@ const DEBUG_TARGETS: DebugTarget[] = [
     paths: ["/server-status", "/server-info"],
     marker: /Apache Server Status|Server Information/i,
     label: { ru: "Статус Apache открыт", en: "Apache status exposed" },
+    passLabel: { ru: "Статус Apache: закрыто", en: "Apache status: not exposed" },
     sev: "medium", pen: 10,
   },
   {
@@ -259,6 +290,7 @@ const DEBUG_TARGETS: DebugTarget[] = [
     paths: ["/wp-content/debug.log"],
     marker: /PHP (?:Notice|Warning|Fatal)/i,
     label: { ru: "WordPress debug.log открыт", en: "WordPress debug.log exposed" },
+    passLabel: { ru: "WordPress debug.log: закрыто", en: "WordPress debug.log: not exposed" },
     sev: "medium", pen: 10,
   },
   {
@@ -266,6 +298,7 @@ const DEBUG_TARGETS: DebugTarget[] = [
     paths: ["/CHANGELOG.txt"],
     marker: /Drupal/i,
     label: { ru: "CHANGELOG Drupal открыт (версия CMS)", en: "Drupal CHANGELOG exposed (CMS version)" },
+    passLabel: { ru: "CHANGELOG Drupal: закрыто", en: "Drupal CHANGELOG: not exposed" },
     sev: "low", pen: 4,
   },
 ];
@@ -286,10 +319,7 @@ export async function checkDebugTargets(ctx: Ctx): Promise<CheckResult[]> {
         }, Date.now() - t0);
       }
     }
-    return done(t.id, "pass", t.sev, 0, {
-      ru: `${t.label.ru.replace(" открыт", "")}: закрыто`,
-      en: `${t.label.en.replace(" exposed", "")}: not exposed`,
-    }, undefined, Date.now() - t0);
+    return done(t.id, "pass", t.sev, 0, t.passLabel, undefined, Date.now() - t0);
   })()));
 }
 

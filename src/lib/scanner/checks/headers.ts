@@ -496,7 +496,16 @@ export async function checkHttpsRedirects(ctx: Ctx): Promise<CheckResult[]> {
     const alt = host.startsWith("www.") ? host.slice(4) : `www.${host}`;
     const altUrl = ctx.origin.replace(`://${host}`, `://${alt}`);
     const ra = await safeFetch(altUrl + "/", { timeoutMs: 6000, maxBody: 2048 });
-    const altServes = ra.ok && ra.status === 200 && !(ra.url ?? "").includes(alt + ".");
+    // safeFetch follows redirects: the alt host only "serves as a mirror" when
+    // the FINAL url still sits on the alt hostname (a 308 to the canonical
+    // host lands there instead)
+    let finalHost = "";
+    try {
+      finalHost = new URL(ra.url || altUrl).hostname;
+    } catch {
+      finalHost = "";
+    }
+    const altServes = ra.ok && ra.status === 200 && finalHost === alt;
     out.push(done("host_canonical", altServes ? "warn" : "pass", "low", altServes ? 2 : 0, {
       ru: altServes ? "www и без www отвечают как разные сайты" : "Канонический хост настроен",
       en: altServes ? "www and apex serve as different sites" : "Canonical host is configured",
@@ -506,7 +515,7 @@ export async function checkHttpsRedirects(ctx: Ctx): Promise<CheckResult[]> {
         ru: "Обе версии хоста (с www и без) отдают контент без редиректа: поисковики видят дубли, cookie и кэш живут раздельно. Настройте 301 на основной.",
         en: "Both host versions (with and without www) serve content without redirect: search engines see duplicates, cookies and caches split. Set a 301 to the canonical one.",
       },
-      evidence: [`alt host responds 200: ${alt}`],
+      evidence: [`alt host serves content: ${alt} (final: ${finalHost})`],
     } : undefined, Date.now() - t0));
   } else {
     out.push(done("https_enforced", "skip", "info", 0, {
