@@ -1,23 +1,49 @@
 import { NextRequest } from "next/server";
 import { getScan } from "@/lib/scanner/store";
-import { GRADE_META } from "@/lib/scanner/grade";
+import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-/** Badge SVG: /api/badge?id=...&theme=dark|light
- *  Cyber-security aesthetic: vector shield, mono grade block, date stamp,
- *  thin gradient border. */
+/** Badge endpoint:
+ *  - style=trophy | format=png -> 512x512 3D trophy PNG
+ *  - default -> vector shield SVG with cyber-security theme
+ */
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
+  const style = req.nextUrl.searchParams.get("style") ?? req.nextUrl.searchParams.get("format");
   const theme = req.nextUrl.searchParams.get("theme") === "light" ? "light" : "dark";
   const scan = await getScan(id);
 
-  const grade = scan?.grade ?? "…";
+  const grade = scan?.grade ?? "E";
+  const meta = GRADE_META[grade as keyof typeof GRADE_META] ?? GRADE_META["E"];
+
+  // 3D Trophy mode: return the 512x512 transparent PNG image
+  if (style === "trophy" || style === "png") {
+    const trophyFile = getTrophyPath(grade).replace(/^\//, "");
+    const filePath = path.join(process.cwd(), "public", trophyFile);
+    try {
+      const buffer = await fs.readFile(filePath);
+      return new Response(buffer, {
+        headers: {
+          "content-type": "image/png",
+          "cache-control": "public, max-age=300",
+        },
+      });
+    } catch {
+      // fallback to redirect if file read fails
+      return Response.redirect(new URL(`/${trophyFile}`, req.url), 307);
+    }
+  }
+
+  // Classic SVG badge mode with 6-tier palette
   const score = scan ? String(scan.score) : "--";
-  const color = scan ? GRADE_META[grade].color : "#6b7280";
+  const color = meta.color;
+  const secondaryColor = meta.secondaryColor;
   const host = scan ? (scan.host.length > 24 ? scan.host.slice(0, 22) + "…" : scan.host) : "appseal";
   const date = scan
     ? MONTHS[new Date(scan.startedAt).getUTCMonth()] + " " + new Date(scan.startedAt).getUTCFullYear()
@@ -41,8 +67,8 @@ export async function GET(req: NextRequest) {
       <stop offset="1" stop-color="${color}" stop-opacity="0.35"/>
     </linearGradient>
     <linearGradient id="s" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#34d399"/>
-      <stop offset="1" stop-color="#059669"/>
+      <stop offset="0" stop-color="${color}"/>
+      <stop offset="1" stop-color="${secondaryColor}"/>
     </linearGradient>
   </defs>
   <rect x="0.75" y="0.75" width="${W - 1.5}" height="${H - 1.5}" rx="9" fill="${bgL}" stroke="url(#b)" stroke-width="1.5"/>
@@ -53,7 +79,7 @@ export async function GET(req: NextRequest) {
   <text x="44" y="16.5" font-family="${mono}" font-size="8.5" fill="${mutL}" letter-spacing="2.5">APPSEAL${date ? " · " + date : ""}</text>
   <text x="44" y="32" font-family="${mono}" font-size="11.5" font-weight="bold" fill="${fgL}">${escapeXml(host)}</text>
   <rect x="${labelW}" y="6" width="${gradeW - 6}" height="${H - 12}" rx="6" fill="${panelL}" stroke="${color}" stroke-opacity="0.55"/>
-  <text x="${labelW + (gradeW - 6) / 2}" y="27.5" text-anchor="middle" font-family="${mono}" font-size="14" font-weight="bold" fill="${color}">${grade}</text>
+  <text x="${labelW + (gradeW - 6) / 2}" y="27.5" text-anchor="middle" font-family="${mono}" font-size="${grade.length > 1 ? 13 : 14}" font-weight="bold" fill="${color}">${grade}</text>
   <text x="${labelW + (gradeW - 6) / 2}" y="${H - 9}" text-anchor="middle" font-family="${mono}" font-size="8.5" fill="${mutL}">${score}/100</text>
 </svg>`;
 

@@ -151,10 +151,10 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   page.drawRectangle({ x: M, y: A4[1] - M - 118, width: CW, height: 118, color: C.bgSoft });
   // grade box
   page.drawRectangle({ x: M + 18, y: A4[1] - M - 100, width: 82, height: 82, color: hex2rgb(gm.color) });
-  const gsize = 42;
+  const gsize = scan.grade.length > 1 ? 36 : 42;
   page.drawText(scan.grade, {
     x: M + 18 + (82 - bold.widthOfTextAtSize(scan.grade, gsize)) / 2,
-    y: A4[1] - M - 100 + (82 - gsize) / 2 + 8,
+    y: A4[1] - M - 100 + (82 - gsize) / 2 + (scan.grade.length > 1 ? 6 : 8),
     size: gsize,
     font: bold,
     color: rgb(1, 1, 1),
