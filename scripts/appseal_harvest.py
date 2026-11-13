@@ -166,13 +166,18 @@ class Sink:
             json.dumps(self.meta, ensure_ascii=False, indent=2), encoding="utf-8"
         )
         urls = sorted(v["url"] for v in self.meta.values())
-        TARGETS_TXT.write_text(
+        body = (
             "# AppSeal harvested targets - collected %s, %d hosts\n"
             "# Sources: Hacker News (Show HN), Reddit, GitHub search.\n"
             "# Aggregate-only policy: public listing requires grade A or owner consent.\n%s\n"
-            % (time.strftime("%Y-%m-%d"), len(urls), "\n".join(urls)),
-            encoding="utf-8",
+            % (time.strftime("%Y-%m-%d"), len(urls), "\n".join(urls))
         )
+        # keep the tracked file byte-stable when nothing changed, so the
+        # scheduled pipeline run does not produce date-only commits
+        if TARGETS_TXT.exists() and TARGETS_TXT.read_text(encoding="utf-8") == body:
+            print(f"targets unchanged: {len(urls)} hosts")
+            return
+        TARGETS_TXT.write_text(body, encoding="utf-8")
         print(f"saved {len(urls)} unique hosts -> {TARGETS_TXT.name}")
 
 
