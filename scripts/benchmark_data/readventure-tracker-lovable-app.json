@@ -1,0 +1,26 @@
+{
+  "id": "mwfis698-e49808b916",
+  "inputUrl": "https://readventure-tracker.lovable.app/",
+  "targetUrl": "https://readventure-tracker.lovable.app/",
+  "host": "readventure-tracker.lovable.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:59:45.069Z",
+  "finishedAt": "2026-11-13T21:59:45.502Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "readventure-tracker-lovable-app",
+  "label": "readventure-tracker.lovable.app",
+  "group": "harvest"
+}

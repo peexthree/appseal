@@ -1,0 +1,26 @@
+{
+  "id": "mwfis60q-bd3a2ef869",
+  "inputUrl": "https://qckfx.com/demo",
+  "targetUrl": "https://qckfx.com/demo",
+  "host": "qckfx.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:59:44.762Z",
+  "finishedAt": "2026-11-13T21:59:46.261Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "qckfx-com",
+  "label": "qckfx.com",
+  "group": "harvest"
+}

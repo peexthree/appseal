@@ -1,0 +1,26 @@
+{
+  "id": "mwfis4ta-731e681eea",
+  "inputUrl": "https://patakaro.vercel.app/",
+  "targetUrl": "https://patakaro.vercel.app/",
+  "host": "patakaro.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:59:43.198Z",
+  "finishedAt": "2026-11-13T21:59:44.017Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://patakaro.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://patakaro.vercel.app/"
+  },
+  "key": "patakaro-vercel-app",
+  "label": "patakaro.vercel.app",
+  "group": "harvest"
+}

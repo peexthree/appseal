@@ -1,0 +1,26 @@
+{
+  "id": "mwfis4wn-d9e5a93b45",
+  "inputUrl": "https://preview--ai-lever-finance.lovable.app/",
+  "targetUrl": "https://preview--ai-lever-finance.lovable.app/",
+  "host": "preview--ai-lever-finance.lovable.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:59:43.319Z",
+  "finishedAt": "2026-11-13T21:59:43.919Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 401",
+    "en": "Scan failed: site responded 401"
+  },
+  "key": "preview--ai-lever-finance-lovable-app",
+  "label": "preview--ai-lever-finance.lovable.app",
+  "group": "harvest"
+}
