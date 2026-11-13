@@ -1,0 +1,26 @@
+{
+  "name": "AppSeal",
+  "short_name": "AppSeal",
+  "description": "Техосмотр и печать доверия для приложений, собранных с ИИ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "icons": [
+    {
+      "src": "/ico.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/apple.png",
+      "sizes": "160x160",
+      "type": "image/png"
+    },
+    {
+      "src": "/ICO.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

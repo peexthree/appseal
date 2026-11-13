@@ -42,10 +42,14 @@ export default async function RegistryPage() {
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
       <header className="sticky top-0 z-40 border-b border-slate-800/70 bg-[#090d16]/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2" aria-label="AppSeal home">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-sky-400 text-[#090d16]">
-              <ShieldCheck className="h-4.5 w-4.5" strokeWidth={2.4} />
-            </span>
+          <Link href="/" className="flex items-center gap-2.5" aria-label="AppSeal home">
+            <img
+              src="/ico.svg"
+              alt="AppSeal"
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)] transition-transform hover:scale-105"
+            />
             <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
           </Link>
           <Link
