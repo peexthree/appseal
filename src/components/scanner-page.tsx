@@ -534,13 +534,24 @@ export function ScannerPage({
 
         {/* hero + scanner */}
         <section
-          className="appmot-grid relative pb-14 pt-14 sm:pt-20"
+          className="appmot-grid relative isolate pb-14 pt-14 sm:pt-20"
           aria-label="Scanner"
           style={{
             backgroundImage:
               "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(56,189,248,0.12), transparent 70%)",
           }}
         >
+          {/* optional hero artwork slot: shows up when public/img/hero-bg.png exists */}
+          <img
+            src="/img/hero-bg.png"
+            alt=""
+            aria-hidden
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+            className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[420px] w-full object-cover opacity-50 [mask-image:linear-gradient(to_bottom,transparent,black_65%)]"
+          />
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-400">
               {t(lang, "tagline")}
@@ -974,7 +985,7 @@ export function ScannerPage({
                     <p className="mx-auto mt-3 max-w-xl text-[13px] leading-relaxed text-slate-400 sm:mx-0">
                       {t(lang, "issue2Sub")}
                     </p>
-                    <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:justify-start">
+                    <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap sm:justify-start">
                       <Button
                         className="bg-sky-400 px-5 text-sm font-bold text-[#090d16] hover:bg-sky-300"
                         onClick={() => {
