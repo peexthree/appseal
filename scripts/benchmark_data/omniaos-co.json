@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwsw8-7a5d307417",
+  "inputUrl": "https://omniaos.co/",
+  "targetUrl": "https://omniaos.co/",
+  "host": "omniaos.co",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:21.416Z",
+  "finishedAt": "2026-11-13T21:35:35.745Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "omniaos-co",
+  "label": "omniaos.co",
+  "group": "harvest"
+}

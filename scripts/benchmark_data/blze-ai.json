@@ -1,0 +1,26 @@
+{
+  "id": "mwfhqsjc-efeec19052",
+  "inputUrl": "https://blze.ai/storage",
+  "targetUrl": "https://blze.ai/storage",
+  "host": "blze.ai",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:30:41.017Z",
+  "finishedAt": "2026-11-13T21:30:42.175Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campa…",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.backblaze.com/sign-up/ai-cloud-storage?utm_source=github&utm_medium=referral&utm_campa…"
+  },
+  "key": "blze-ai",
+  "label": "blze.ai",
+  "group": "harvest"
+}

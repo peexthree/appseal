@@ -1,0 +1,26 @@
+{
+  "id": "mwfhpk7p-bb9419e6bf",
+  "inputUrl": "https://aiflagbot.com",
+  "targetUrl": "https://aiflagbot.com/",
+  "host": "aiflagbot.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:43.573Z",
+  "finishedAt": "2026-11-13T21:29:44.341Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 521",
+    "en": "Scan failed: site responded 521"
+  },
+  "key": "aiflagbot-com",
+  "label": "aiflagbot.com",
+  "group": "harvest"
+}

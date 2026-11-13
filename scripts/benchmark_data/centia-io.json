@@ -1,0 +1,26 @@
+{
+  "id": "mwfhr5nw-1ca97ee1c4",
+  "inputUrl": "https://centia.io/docs/vibe-coding",
+  "targetUrl": "https://centia.io/docs/vibe-coding",
+  "host": "centia.io",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:30:58.028Z",
+  "finishedAt": "2026-11-13T21:31:12.141Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "centia-io",
+  "label": "centia.io",
+  "group": "harvest"
+}

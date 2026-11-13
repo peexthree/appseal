@@ -1,0 +1,3764 @@
+{
+  "vondet.com": {
+    "url": "https://vondet.com/en?ref=hn",
+    "source": "hn",
+    "title": "Show HN: Vondet – A planning board Claude keeps, so you don't have to",
+    "ref": "https://news.ycombinator.com/item?id=50405170"
+  },
+  "whenever.dev": {
+    "url": "https://www.whenever.dev/",
+    "source": "hn",
+    "title": "Show HN: whenever.dev - Vercel and v0 for Workflows",
+    "ref": "https://news.ycombinator.com/item?id=50255119"
+  },
+  "chuks.org": {
+    "url": "https://chuks.org/blog/chuks-v020-rc1-the-release-candidate/",
+    "source": "hn",
+    "title": "Show HN: Chuks v0.2.0-RC.1, we're asking people to try to break it",
+    "ref": "https://news.ycombinator.com/item?id=49764179"
+  },
+  "youtube.com": {
+    "url": "https://www.youtube.com/watch?v=dLL2Jv0IgIQ",
+    "source": "hn",
+    "title": "Show HN: AI generated short film using Midjourney and GPT [video]",
+    "ref": "https://news.ycombinator.com/item?id=44470711"
+  },
+  "aidcrew.dev": {
+    "url": "https://aidcrew.dev/cases/skyforge-islands/",
+    "source": "hn",
+    "title": "Show HN: AIDCrew v0.3 – conding agents, terminal and web UIs",
+    "ref": "https://news.ycombinator.com/item?id=49644034"
+  },
+  "lanes.sh": {
+    "url": "https://lanes.sh/blog/whats-new-v049-astra-is-a-banger-and-codex-got-a-lot-better",
+    "source": "hn",
+    "title": "Show HN: GPT 6 Astra in Lanes",
+    "ref": "https://news.ycombinator.com/item?id=49625681"
+  },
+  "flyxl.github.io": {
+    "url": "https://flyxl.github.io/datazen/",
+    "source": "hn",
+    "title": "Show HN: DataZen – a local-first client for cross-database workflows",
+    "ref": "https://news.ycombinator.com/item?id=49490148"
+  },
+  "registry.modelcontextprotocol.io": {
+    "url": "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.JAIPilot%2Fjaipilot/versions/6.4.2",
+    "source": "hn",
+    "title": "Show HN: Codex / Claude Code harness for Java high performance improvements",
+    "ref": "https://news.ycombinator.com/item?id=49440860"
+  },
+  "iiio.app": {
+    "url": "https://iiio.app?u=showhn",
+    "source": "hn",
+    "title": "Show HN: CIYA – Purely Deterministic AI",
+    "ref": "https://news.ycombinator.com/item?id=49364986"
+  },
+  "alexanderwanyoike.github.io": {
+    "url": "https://alexanderwanyoike.github.io/jolt/",
+    "source": "hn",
+    "title": "Show HN: Jolt a decentralised content syndication network",
+    "ref": "https://news.ycombinator.com/item?id=49195406"
+  },
+  "judi.systems": {
+    "url": "https://judi.systems/shirei/blog/release-v0.6-2026-07-22/",
+    "source": "hn",
+    "title": "Show HN: Shirei v0.6 adds iOS/Android support for cross-platform GUI development",
+    "ref": "https://news.ycombinator.com/item?id=49003247"
+  },
+  "gian-reto.github.io": {
+    "url": "https://gian-reto.github.io/print-blocks/",
+    "source": "hn",
+    "title": "Show HN: PrintBlocks – API and MCP server for your thermal printer",
+    "ref": "https://news.ycombinator.com/item?id=48952726"
+  },
+  "tmahmood.github.io": {
+    "url": "https://tmahmood.github.io/fluffy_sparrow/",
+    "source": "hn",
+    "title": "Show HN: Fluffy Sparrow – Frictionless, Fast, Note Taking App",
+    "ref": "https://news.ycombinator.com/item?id=48834432"
+  },
+  "v0-qcp.vercel.app": {
+    "url": "https://v0-qcp.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Query Companion (QCP) for your database",
+    "ref": "https://news.ycombinator.com/item?id=48805307"
+  },
+  "aegize.com": {
+    "url": "https://www.aegize.com/",
+    "source": "hn",
+    "title": "Show HN: Aegize – Infrastructure for autonomous AI agents",
+    "ref": "https://news.ycombinator.com/item?id=48729035"
+  },
+  "codeberg.org": {
+    "url": "https://codeberg.org/MimosaDev/dikaletus",
+    "source": "hn",
+    "title": "Show HN: Dikaletus – meeting recording and transcription using Mistral AI",
+    "ref": "https://news.ycombinator.com/item?id=48073470"
+  },
+  "npmjs.com": {
+    "url": "https://www.npmjs.com/package/whitehat-squad",
+    "source": "github",
+    "title": "Your AI wrote the code. Who checked it? 9 security agents + 185 rules audit vibe-coded apps (Supabase, Next.js, Firebase, LLM apps), then plan the fix and verify it. Offline, no API key.",
+    "ref": "https://github.com/LihanCanCode/whitehat-squad"
+  },
+  "llm-wiki.net": {
+    "url": "https://llm-wiki.net/",
+    "source": "hn",
+    "title": "Show HN: LLM-wiki LLM-compiled knowledge bases with multi-agent research v0.0.20",
+    "ref": "https://news.ycombinator.com/item?id=47717056"
+  },
+  "akuna.software": {
+    "url": "https://akuna.software/introduction",
+    "source": "hn",
+    "title": "Show HN: Knowledge Bases for AI/Human Sharing",
+    "ref": "https://news.ycombinator.com/item?id=47669022"
+  },
+  "vibecheck.appvelocity.io": {
+    "url": "https://vibecheck.appvelocity.io",
+    "source": "hn",
+    "title": "Show HN: Vibe Check – UX Benchmark for vibe designs",
+    "ref": "https://news.ycombinator.com/item?id=47588285"
+  },
+  "v0-netlens.vercel.app": {
+    "url": "https://v0-netlens.vercel.app",
+    "source": "hn",
+    "title": "Show HN: NetLens – Instant CLI Assistant for Network Engineers",
+    "ref": "https://news.ycombinator.com/item?id=47575359"
+  },
+  "blog.peeramid.xyz": {
+    "url": "https://blog.peeramid.xyz/nsed-v0-5-0/",
+    "source": "hn",
+    "title": "Show HN: NSED v0.5.1: Don't Trust Your Agents. Verify Them",
+    "ref": "https://news.ycombinator.com/item?id=47404043"
+  },
+  "port42.ai": {
+    "url": "https://port42.ai/",
+    "source": "hn",
+    "title": "Show HN: Port42 – AI companions that build and act on your Mac (v0.5.0)",
+    "ref": "https://news.ycombinator.com/item?id=47395572"
+  },
+  "aacyn.com": {
+    "url": "https://www.aacyn.com/",
+    "source": "hn",
+    "title": "Show HN: Aacyn v0.7.0 – A bare-metal observability engine (5M events/SEC)",
+    "ref": "https://news.ycombinator.com/item?id=47337890"
+  },
+  "rampart.sh": {
+    "url": "https://rampart.sh/",
+    "source": "hn",
+    "title": "Show HN: Rampart – Open-source firewall for AI agents (v0.8)",
+    "ref": "https://news.ycombinator.com/item?id=47329032"
+  },
+  "ariatype.com": {
+    "url": "https://ariatype.com/en/",
+    "source": "hn",
+    "title": "Show HN: AriaType – Privacy-first voice keyboard with AI polish (Beta, macOS)",
+    "ref": "https://news.ycombinator.com/item?id=47309881"
+  },
+  "qurt.ai": {
+    "url": "https://qurt.ai/",
+    "source": "hn",
+    "title": "Show HN: Qurt – open-source desktop AI coworker (BYOK, agent mode)",
+    "ref": "https://news.ycombinator.com/item?id=47277541"
+  },
+  "brainstom.in": {
+    "url": "https://www.brainstom.in/",
+    "source": "hn",
+    "title": "Show HN: Built a Cursor for Product Managers",
+    "ref": "https://news.ycombinator.com/item?id=47259392"
+  },
+  "piiblock.com": {
+    "url": "https://www.piiblock.com",
+    "source": "hn",
+    "title": "Show HN: PrivacyShield – Mask your PII before it reaches ChatGPT/Claude",
+    "ref": "https://news.ycombinator.com/item?id=47213778"
+  },
+  "yaw.sh": {
+    "url": "https://yaw.sh",
+    "source": "hn",
+    "title": "Show HN: Yaw – A terminal built around the Claude Code/Codex CLI workflow",
+    "ref": "https://news.ycombinator.com/item?id=47231524"
+  },
+  "salt-lang.dev": {
+    "url": "https://salt-lang.dev/playground/",
+    "source": "hn",
+    "title": "Show HN: Write and Run Salt v0.9.2 in the Browser",
+    "ref": "https://news.ycombinator.com/item?id=47217981"
+  },
+  "praxisjs.org": {
+    "url": "https://praxisjs.org/",
+    "source": "hn",
+    "title": "Show HN: PraxisJS – signal-driven front end framework and AI experiment",
+    "ref": "https://news.ycombinator.com/item?id=47209808"
+  },
+  "memctl.com": {
+    "url": "https://memctl.com",
+    "source": "hn",
+    "title": "Show HN: Memctl v0.1.0 Open source shared persistent memory for AI coding agents",
+    "ref": "https://news.ycombinator.com/item?id=47203115"
+  },
+  "mvnt.studio": {
+    "url": "https://www.mvnt.studio/",
+    "source": "hn",
+    "title": "Show HN: mvntSTUDIO – AI model that generates dance choreography from music",
+    "ref": "https://news.ycombinator.com/item?id=47180954"
+  },
+  "seite.sh": {
+    "url": "https://seite.sh/",
+    "source": "hn",
+    "title": "Show HN: Seite static site generator with MCP server and Claude Code integration",
+    "ref": "https://news.ycombinator.com/item?id=47151427"
+  },
+  "secbear.github.io": {
+    "url": "https://secbear.github.io/neuron/",
+    "source": "hn",
+    "title": "Show HN: Neuron – Independent Rust crates for building AI agents",
+    "ref": "https://news.ycombinator.com/item?id=47138618"
+  },
+  "v0-screen-capture-audio.vercel.app": {
+    "url": "https://v0-screen-capture-audio.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Add reverb and bass boost via WebAudio API to Spotify/YouTube",
+    "ref": "https://news.ycombinator.com/item?id=47059620"
+  },
+  "motionode.com": {
+    "url": "https://www.motionode.com/index",
+    "source": "hn",
+    "title": "Show HN: Motionode – Cursor for Technical Planning",
+    "ref": "https://news.ycombinator.com/item?id=47051434"
+  },
+  "broomy.org": {
+    "url": "https://broomy.org/",
+    "source": "hn",
+    "title": "Show HN: Broomy – Open-source app for working with many AI agents at once",
+    "ref": "https://news.ycombinator.com/item?id=47048886"
+  },
+  "cothou.com": {
+    "url": "https://cothou.com/",
+    "source": "hn",
+    "title": "Show HN: CoThou v0.2 – Autonomous Superagent",
+    "ref": "https://news.ycombinator.com/item?id=47045028"
+  },
+  "deeploy.sh": {
+    "url": "https://deeploy.sh",
+    "source": "hn",
+    "title": "Show HN: Deeploy v0.3.0 – terminal-first VPS app deployment tool",
+    "ref": "https://news.ycombinator.com/item?id=46975383"
+  },
+  "vibeshield.tech": {
+    "url": "https://vibeshield.tech/",
+    "source": "hn",
+    "title": "Show HN: I made a dev tool that helps vibecoders to AVOID security issues",
+    "ref": "https://news.ycombinator.com/item?id=46820686"
+  },
+  "promptle.quest": {
+    "url": "https://promptle.quest/",
+    "source": "hn",
+    "title": "Show HN: Promptle – The Daily AI Prompt Challenge",
+    "ref": "https://news.ycombinator.com/item?id=44437262"
+  },
+  "backend.im": {
+    "url": "https://backend.im",
+    "source": "hn",
+    "title": "Show HN: V0/Bolt.new for back end code",
+    "ref": "https://news.ycombinator.com/item?id=44204212"
+  },
+  "glyde.world": {
+    "url": "https://glyde.world",
+    "source": "hn",
+    "title": "Show HN: Glyde – MCP based AI website builder that uses 21st.dev",
+    "ref": "https://news.ycombinator.com/item?id=44140053"
+  },
+  "chromewebstore.google.com": {
+    "url": "https://chromewebstore.google.com/detail/daysift-â-find-any-tab-in/llnlmmjddpfmjjkhpbjkdpcclgncajag",
+    "source": "hn",
+    "title": "Show HN: I had 100 tabs open, so I built Daysift with AI powered by Proton",
+    "ref": "https://news.ycombinator.com/item?id=49993330"
+  },
+  "onlift.co": {
+    "url": "https://www.onlift.co/",
+    "source": "hn",
+    "title": "Show HN: I improved vibe coding with a prompting engine",
+    "ref": "https://news.ycombinator.com/item?id=43400885"
+  },
+  "nut.new": {
+    "url": "https://nut.new",
+    "source": "hn",
+    "title": "Show HN: Time travel debugging AI for more reliable vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=43258585"
+  },
+  "resumeadapter.com": {
+    "url": "https://www.resumeadapter.com/",
+    "source": "hn",
+    "title": "Show HN: I Used AI to Fight ATS Rejection – 500 Signups in 5 Days",
+    "ref": "https://news.ycombinator.com/item?id=43144210"
+  },
+  "thebirthdaypoem.com": {
+    "url": "https://www.thebirthdaypoem.com/",
+    "source": "hn",
+    "title": "Show HN: I Made an AI Birthday Poem Generator",
+    "ref": "https://news.ycombinator.com/item?id=43127262"
+  },
+  "doc.onlift.co": {
+    "url": "https://doc.onlift.co/",
+    "source": "hn",
+    "title": "Show HN: I built a tool that helps break down your SaaS idea into AI coder steps",
+    "ref": "https://news.ycombinator.com/item?id=42695251"
+  },
+  "go.sea.dev": {
+    "url": "https://go.sea.dev/",
+    "source": "hn",
+    "title": "Show HN: \"Bolt.new\" for Data Extraction from Documents",
+    "ref": "https://news.ycombinator.com/item?id=42643285"
+  },
+  "deft-lokum-df8eb2.netlify.app": {
+    "url": "https://deft-lokum-df8eb2.netlify.app/",
+    "source": "hn",
+    "title": "Show HN: AI builds music synth app in 1 hour",
+    "ref": "https://news.ycombinator.com/item?id=42246303"
+  },
+  "stalwart-entremet-08eb9c.netlify.app": {
+    "url": "https://stalwart-entremet-08eb9c.netlify.app/",
+    "source": "hn",
+    "title": "Show HN: I built a Vimeo alternative for small content creators",
+    "ref": "https://news.ycombinator.com/item?id=42147847"
+  },
+  "pixlpal.com": {
+    "url": "https://pixlpal.com/",
+    "source": "hn",
+    "title": "Show HN: Lovable for Photoshop",
+    "ref": "https://news.ycombinator.com/item?id=50444931"
+  },
+  "cleanslop.com": {
+    "url": "https://cleanslop.com",
+    "source": "hn",
+    "title": "Show HN: CleanSlop – Find what breaks in AI-generated TypeScript/Node web apps",
+    "ref": "https://news.ycombinator.com/item?id=50353615"
+  },
+  "playplanet.dev": {
+    "url": "https://playplanet.dev/",
+    "source": "hn",
+    "title": "Show HN: I built a Lovable Alternative that runs in the browser",
+    "ref": "https://news.ycombinator.com/item?id=50261927"
+  },
+  "docperrow.netlify.app": {
+    "url": "https://docperrow.netlify.app/",
+    "source": "hn",
+    "title": "Show HN: DocPerRow – one Word document per spreadsheet row, in the browser",
+    "ref": "https://news.ycombinator.com/item?id=50261239"
+  },
+  "danpla.github.io": {
+    "url": "https://danpla.github.io/dp_intl/",
+    "source": "hn",
+    "title": "Show HN: dp_intl – Gettext-compatible internationalization library for C++",
+    "ref": "https://news.ycombinator.com/item?id=50169507"
+  },
+  "vibetown.social": {
+    "url": "https://vibetown.social",
+    "source": "hn",
+    "title": "Show HN: Vibetown – public sandboxes to vibecode with strangers",
+    "ref": "https://news.ycombinator.com/item?id=50156477"
+  },
+  "metriq.fitness": {
+    "url": "https://metriq.fitness",
+    "source": "hn",
+    "title": "Show HN: MetrIQ – An AI fitness coach who supports you",
+    "ref": "https://news.ycombinator.com/item?id=49093051"
+  },
+  "clockjumper.com": {
+    "url": "https://clockjumper.com/",
+    "source": "hn",
+    "title": "Show HN: Clockjumper – An Intervibed Project",
+    "ref": "https://news.ycombinator.com/item?id=48747630"
+  },
+  "appaca.ai": {
+    "url": "https://www.appaca.ai/",
+    "source": "hn",
+    "title": "Show HN: Appaca – AI Workspace for Operators",
+    "ref": "https://news.ycombinator.com/item?id=48682461"
+  },
+  "agentry.run": {
+    "url": "https://agentry.run",
+    "source": "hn",
+    "title": "Show HN: Build and Host AI apps on your own servers",
+    "ref": "https://news.ycombinator.com/item?id=48631977"
+  },
+  "locaible.com": {
+    "url": "https://locaible.com/cursor",
+    "source": "hn",
+    "title": "Show HN: Locaible – local AI agents for Cursor with pre-tuned marketplace/commu",
+    "ref": "https://news.ycombinator.com/item?id=48475954"
+  },
+  "sleekcms.com": {
+    "url": "https://www.sleekcms.com/",
+    "source": "hn",
+    "title": "Show HN: SleekCMS – Lovable for Websites",
+    "ref": "https://news.ycombinator.com/item?id=48435262"
+  },
+  "apps.shopify.com": {
+    "url": "https://apps.shopify.com/droppable-ai",
+    "source": "hn",
+    "title": "Show HN: I built a Lovable-style editor for Shopify themes",
+    "ref": "https://news.ycombinator.com/item?id=48383747"
+  },
+  "howbadis.it": {
+    "url": "https://howbadis.it",
+    "source": "hn",
+    "title": "Show HN: Howbadis.it – Paste your vibe-coded app, see what'll break",
+    "ref": "https://news.ycombinator.com/item?id=48064176"
+  },
+  "stanzio.fly.dev": {
+    "url": "https://stanzio.fly.dev/",
+    "source": "hn",
+    "title": "Show HN: Stanzio, AI presentation tool that designs each slide as real HTML",
+    "ref": "https://news.ycombinator.com/item?id=47974235"
+  },
+  "agensi.io": {
+    "url": "https://www.agensi.io",
+    "source": "hn",
+    "title": "Show HN: Agensi – Curated marketplace for AI agent skills (SKILL.md)",
+    "ref": "https://news.ycombinator.com/item?id=47846681"
+  },
+  "texocad.ai": {
+    "url": "https://www.texocad.ai/",
+    "source": "hn",
+    "title": "Show HN: TexoCAD – Lovable for Hardware",
+    "ref": "https://news.ycombinator.com/item?id=47673332"
+  },
+  "matrix-os.com": {
+    "url": "https://matrix-os.com/",
+    "source": "hn",
+    "title": "Show HN: Matrix OS, like Lovable, but for personal apps",
+    "ref": "https://news.ycombinator.com/item?id=47629143"
+  },
+  "100toolkit.com": {
+    "url": "https://100toolkit.com/claudepreview",
+    "source": "hn",
+    "title": "Show HN: Lovable-like deployment preview extension for Claude Code Web",
+    "ref": "https://news.ycombinator.com/item?id=47598664"
+  },
+  "dataverse001.net": {
+    "url": "https://dataverse001.net/AxyU5_5vWmP2tO_klN4UpbZzRsuJEvJTrdwdg_gODxZJ.00000000-0000-0000-0000-000000000000",
+    "source": "hn",
+    "title": "Show HN: Data that explains itself to Coding Agents (Bonus: free, BYOA Lovable)",
+    "ref": "https://news.ycombinator.com/item?id=47535888"
+  },
+  "pomoflow-app.lovable.app": {
+    "url": "https://pomoflow-app.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Focus music and Pomodoro app for lazer focus",
+    "ref": "https://news.ycombinator.com/item?id=47313678"
+  },
+  "bronto.io": {
+    "url": "https://www.bronto.io/blog/brontovibe",
+    "source": "hn",
+    "title": "Show HN: Bring your own UI to telemetry data with Bronto and Lovable",
+    "ref": "https://news.ycombinator.com/item?id=47262114"
+  },
+  "stackhaus.ai": {
+    "url": "https://stackhaus.ai/",
+    "source": "hn",
+    "title": "Show HN: Stackhaus – A marketplace for AI-built apps (1,204 verified at launch)",
+    "ref": "https://news.ycombinator.com/item?id=47237435"
+  },
+  "gipity.ai": {
+    "url": "https://gipity.ai",
+    "source": "hn",
+    "title": "Show HN: Gipity – AI cloud computer in the browser",
+    "ref": "https://news.ycombinator.com/item?id=47221929"
+  },
+  "nano-banana2.me": {
+    "url": "https://nano-banana2.me/",
+    "source": "hn",
+    "title": "Show HN: Nano Banana 2 – Sub-second AI image gen via Gemini 3.1 Flash",
+    "ref": "https://news.ycombinator.com/item?id=47176969"
+  },
+  "appmetahub.com": {
+    "url": "https://appmetahub.com",
+    "source": "hn",
+    "title": "Show HN: AppMetaHub – Update App Store Metadata from Claude Code via MCP",
+    "ref": "https://news.ycombinator.com/item?id=47137227"
+  },
+  "crosspassion.lovable.app": {
+    "url": "https://crosspassion.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Reddit but for finding where your interests overlap",
+    "ref": "https://news.ycombinator.com/item?id=47114466"
+  },
+  "deployclaw.lovable.app": {
+    "url": "https://deployclaw.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Deploy Clawbot Instance in Seconds",
+    "ref": "https://news.ycombinator.com/item?id=47001784"
+  },
+  "kelo.lovable.app": {
+    "url": "https://kelo.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: AI SEO on Autopilot",
+    "ref": "https://news.ycombinator.com/item?id=47001333"
+  },
+  "laminar.sh": {
+    "url": "https://laminar.sh/blog/2026-02-10-rebuilding-my-first-startup-as-an-ai-agent",
+    "source": "hn",
+    "title": "Show HN: Rebuilding My First Startup with Claude Agent SDK",
+    "ref": "https://news.ycombinator.com/item?id=46991539"
+  },
+  "glow-dash-chase.lovable.app": {
+    "url": "https://glow-dash-chase.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I Made a New Game",
+    "ref": "https://news.ycombinator.com/item?id=46964126"
+  },
+  "snapfridge.xyz": {
+    "url": "https://snapfridge.xyz/",
+    "source": "hn",
+    "title": "Show HN: Snapfridge–vision-based grocery assistant built with Lovable and Gemini",
+    "ref": "https://news.ycombinator.com/item?id=46958380"
+  },
+  "app.shippable.build": {
+    "url": "https://app.shippable.build/",
+    "source": "hn",
+    "title": "Show HN: Shippable – Lovable but with live dev environment (Django+Next)",
+    "ref": "https://news.ycombinator.com/item?id=46944449"
+  },
+  "screenshotforx.com": {
+    "url": "https://screenshotforx.com/",
+    "source": "hn",
+    "title": "Show HN: My first tool built with AI, accidentally created a Twitter growth loop",
+    "ref": "https://news.ycombinator.com/item?id=46880930"
+  },
+  "requency.lovable.app": {
+    "url": "https://requency.lovable.app",
+    "source": "hn",
+    "title": "Show HN: Requency – a quiet way to notice which ideas keep coming back",
+    "ref": "https://news.ycombinator.com/item?id=46872154"
+  },
+  "vibecodetogether.flow.club": {
+    "url": "https://vibecodetogether.flow.club/",
+    "source": "hn",
+    "title": "Show HN: Vibecode Together – StumbleUpon for Vibe-coded projects",
+    "ref": "https://news.ycombinator.com/item?id=46859513"
+  },
+  "prewallet.lovable.app": {
+    "url": "https://prewallet.lovable.app/fsa-calculator",
+    "source": "hn",
+    "title": "Show HN: FSA Savings Calculator (see how much pre-tax saves you)",
+    "ref": "https://news.ycombinator.com/item?id=46773780"
+  },
+  "precision-heavens-earth.lovable.app": {
+    "url": "https://precision-heavens-earth.lovable.app",
+    "source": "hn",
+    "title": "Show HN: Strata AI-powered ops platform",
+    "ref": "https://news.ycombinator.com/item?id=46773126"
+  },
+  "blog.bymitch.com": {
+    "url": "https://blog.bymitch.com/posts/bets-by-mitch/",
+    "source": "hn",
+    "title": "Show HN: I built a dumb website using AI – Bets by Mitch",
+    "ref": "https://news.ycombinator.com/item?id=46739701"
+  },
+  "keen-spot.lovable.app": {
+    "url": "https://keen-spot.lovable.app",
+    "source": "hn",
+    "title": "Show HN: Our vibe-coded pitch deck (with Lovable)",
+    "ref": "https://news.ycombinator.com/item?id=46733488"
+  },
+  "benjaminshoemaker.github.io": {
+    "url": "https://benjaminshoemaker.github.io/ai_coding_project_base/",
+    "source": "hn",
+    "title": "Show HN: AI Coding Toolkit. Low-overhead workflow for reliable AI coding",
+    "ref": "https://news.ycombinator.com/item?id=46726651"
+  },
+  "figr.design": {
+    "url": "https://figr.design/",
+    "source": "hn",
+    "title": "Show HN: Figr – AI that thinks through product problems before designing",
+    "ref": "https://news.ycombinator.com/item?id=46724567"
+  },
+  "bluefeather.ai": {
+    "url": "https://bluefeather.ai",
+    "source": "hn",
+    "title": "Show HN: Curor/Lovable for Writing",
+    "ref": "https://news.ycombinator.com/item?id=46719762"
+  },
+  "preview--chrono-strata.lovable.app": {
+    "url": "https://preview--chrono-strata.lovable.app/shop",
+    "source": "hn",
+    "title": "Show HN: I built an enterprise weather intelligence platform with Lovable",
+    "ref": "https://news.ycombinator.com/item?id=46702438"
+  },
+  "accordio.ai": {
+    "url": "https://www.accordio.ai/",
+    "source": "hn",
+    "title": "Show HN: I lost €50K to non-paying clients, so I built an AI contract platform",
+    "ref": "https://news.ycombinator.com/item?id=46634178"
+  },
+  "cadencespanish.com": {
+    "url": "https://cadencespanish.com/",
+    "source": "hn",
+    "title": "Show HN: Cadence Spanish – AI audio lessons to learn Spanish",
+    "ref": "https://news.ycombinator.com/item?id=46616830"
+  },
+  "calea.lovable.app": {
+    "url": "https://calea.lovable.app",
+    "source": "hn",
+    "title": "Show HN: Calea – Autonomous AI Agent for Local QA Testing (E2E, Security, Perf)",
+    "ref": "https://news.ycombinator.com/item?id=46565162"
+  },
+  "pic-pal-space.lovable.app": {
+    "url": "https://pic-pal-space.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I built an Instagram Clone",
+    "ref": "https://news.ycombinator.com/item?id=46522972"
+  },
+  "aiexcel.lovable.app": {
+    "url": "https://aiexcel.lovable.app",
+    "source": "hn",
+    "title": "Show HN: Gamma for Excel Spreadsheets",
+    "ref": "https://news.ycombinator.com/item?id=46511784"
+  },
+  "prompt-to-ppt.lovable.app": {
+    "url": "https://prompt-to-ppt.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I Made a Gamma Clone with 1 Prompt",
+    "ref": "https://news.ycombinator.com/item?id=46494555"
+  },
+  "inputly.byako.dev": {
+    "url": "https://inputly.byako.dev/",
+    "source": "hn",
+    "title": "Show HN: I built a feedback board using Lovable in 2 hours",
+    "ref": "https://news.ycombinator.com/item?id=46488301"
+  },
+  "wealthgap.lovable.app": {
+    "url": "https://wealthgap.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Wealth Gap Calculator (Salary vs. Billionaires)",
+    "ref": "https://news.ycombinator.com/item?id=46435386"
+  },
+  "tinykit.studio": {
+    "url": "https://tinykit.studio",
+    "source": "hn",
+    "title": "Show HN: Tinykit – self-hosted Lovable, deploys to itself",
+    "ref": "https://news.ycombinator.com/item?id=46385040"
+  },
+  "vibes.higashi.blog": {
+    "url": "https://vibes.higashi.blog/",
+    "source": "hn",
+    "title": "Show HN: I built the fastest AI app builder that I can find",
+    "ref": "https://news.ycombinator.com/item?id=46376987"
+  },
+  "grateful.ly": {
+    "url": "https://www.grateful.ly/",
+    "source": "hn",
+    "title": "Show HN: Built a gratitude letter generator in a weekend with Lovable",
+    "ref": "https://news.ycombinator.com/item?id=46368871"
+  },
+  "eze.lovable.app": {
+    "url": "https://eze.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Eze – AI co‑pilot that turns startup ideas into execution roadmaps",
+    "ref": "https://news.ycombinator.com/item?id=46341465"
+  },
+  "vibecodeprompts.cloud": {
+    "url": "https://vibecodeprompts.cloud/",
+    "source": "hn",
+    "title": "Show HN: Prompt optimizer for vibe-coding with LLMs",
+    "ref": "https://news.ycombinator.com/item?id=46331900"
+  },
+  "strengthquest.lovable.app": {
+    "url": "https://strengthquest.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I replaced my premium workout app with vibecode",
+    "ref": "https://news.ycombinator.com/item?id=46187102"
+  },
+  "steem.dev": {
+    "url": "https://steem.dev/",
+    "source": "hn",
+    "title": "Show HN: Steem.dev – Vibe code and generate full WordPress plugins",
+    "ref": "https://news.ycombinator.com/item?id=46152188"
+  },
+  "api-real-test.lovable.app": {
+    "url": "https://api-real-test.lovable.app",
+    "source": "hn",
+    "title": "Show HN: ApiRealTest Beta – Test APIs Through Real User Scenarios",
+    "ref": "https://news.ycombinator.com/item?id=46136833"
+  },
+  "seovendor.co": {
+    "url": "https://seovendor.co/ranklens-llm-rankings/",
+    "source": "hn",
+    "title": "Show HN: RankLens – Track your brand's visibility in AI answers reliably",
+    "ref": "https://news.ycombinator.com/item?id=46054337"
+  },
+  "aestheteai.design": {
+    "url": "https://www.aestheteai.design/",
+    "source": "hn",
+    "title": "Show HN: Aestheai – Text-to-UI Generator Powered by Gemini 3 (Export to Lovable)",
+    "ref": "https://news.ycombinator.com/item?id=46028800"
+  },
+  "textable.live": {
+    "url": "https://www.textable.live",
+    "source": "hn",
+    "title": "Show HN: Textable! It's Lovable, but Teletext",
+    "ref": "https://news.ycombinator.com/item?id=45981905"
+  },
+  "solar-shade-simulator.lovable.app": {
+    "url": "https://solar-shade-simulator.lovable.app",
+    "source": "hn",
+    "title": "Show HN: Solar Panel Shade Simulator – Visualize How Shading Impacts PV Output",
+    "ref": "https://news.ycombinator.com/item?id=45977602"
+  },
+  "data-to-display-whiz.lovable.app": {
+    "url": "https://data-to-display-whiz.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Paydown calculator, Should you pay down debt or invest in the markets?",
+    "ref": "https://news.ycombinator.com/item?id=45911723"
+  },
+  "spendscope.ai": {
+    "url": "https://spendscope.ai",
+    "source": "hn",
+    "title": "Show HN: SpendScope – Track AI Costs Across OpenAI, Anthropic, Google AI",
+    "ref": "https://news.ycombinator.com/item?id=45901290"
+  },
+  "promtcontext.com": {
+    "url": "https://promtcontext.com",
+    "source": "hn",
+    "title": "Show HN: IDE for Vibe Coders",
+    "ref": "https://news.ycombinator.com/item?id=45868380"
+  },
+  "teda.dev": {
+    "url": "https://teda.dev",
+    "source": "hn",
+    "title": "Show HN: Teda.dev – AI app builder that beats Lovable",
+    "ref": "https://news.ycombinator.com/item?id=45864879"
+  },
+  "vaynoai.lovable.app": {
+    "url": "https://vaynoai.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Vayno – AI Email Sequence Generator from Any Landing Page",
+    "ref": "https://news.ycombinator.com/item?id=45802673"
+  },
+  "disperse.lovable.app": {
+    "url": "https://disperse.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Share your AI chats to multiple channels",
+    "ref": "https://news.ycombinator.com/item?id=45794860"
+  },
+  "amazon.com": {
+    "url": "https://www.amazon.com/dp/B0FY6XJ7X3",
+    "source": "hn",
+    "title": "Show HN: I wrote a short book about how AI app builders like Lovable work",
+    "ref": "https://news.ycombinator.com/item?id=45758448"
+  },
+  "claude-arcade.lovable.app": {
+    "url": "https://claude-arcade.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I built a Claude Code wrapper to play minigames while its working",
+    "ref": "https://news.ycombinator.com/item?id=45696153"
+  },
+  "clink.new": {
+    "url": "https://clink.new/base",
+    "source": "hn",
+    "title": "Show HN: Clink – Use your existing AI subscriptions to build and deploy apps",
+    "ref": "https://news.ycombinator.com/item?id=45682488"
+  },
+  "quantify-ai.co": {
+    "url": "https://quantify-ai.co/",
+    "source": "hn",
+    "title": "Show HN: I made Quantify AI – alternative to TradingView (2 months work)",
+    "ref": "https://news.ycombinator.com/item?id=45678718"
+  },
+  "oneclickprd.com": {
+    "url": "https://oneclickprd.com/",
+    "source": "hn",
+    "title": "Show HN: OneClickPRD – Save hours vibe coding with concise PRDs",
+    "ref": "https://news.ycombinator.com/item?id=45622273"
+  },
+  "compyle.ai": {
+    "url": "https://www.compyle.ai/",
+    "source": "hn",
+    "title": "Show HN: Compyle – Lovable for Software Engineers",
+    "ref": "https://news.ycombinator.com/item?id=45541752"
+  },
+  "learnroute-forge.lovable.app": {
+    "url": "https://learnroute-forge.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I build an app for solo learners",
+    "ref": "https://news.ycombinator.com/item?id=45495213"
+  },
+  "scoutqa.ai": {
+    "url": "https://scoutqa.ai",
+    "source": "hn",
+    "title": "Show HN: Scout QA – Vibe testing for vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=45482519"
+  },
+  "euro-ship-share.lovable.app": {
+    "url": "https://euro-ship-share.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Eurosend Project",
+    "ref": "https://news.ycombinator.com/item?id=45474100"
+  },
+  "myzylo.app": {
+    "url": "https://www.myzylo.app",
+    "source": "hn",
+    "title": "Show HN: AI that trades speed for reliability in site generation",
+    "ref": "https://news.ycombinator.com/item?id=45418719"
+  },
+  "netflix-price-index-calculator.lovable.app": {
+    "url": "https://netflix-price-index-calculator.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Localize Prices, Like Netflix",
+    "ref": "https://news.ycombinator.com/item?id=45364572"
+  },
+  "klarvy.ai": {
+    "url": "https://www.klarvy.ai",
+    "source": "hn",
+    "title": "Show HN: Observability for Your Vibecoded Projects",
+    "ref": "https://news.ycombinator.com/item?id=45345544"
+  },
+  "banker.so": {
+    "url": "https://www.banker.so/",
+    "source": "hn",
+    "title": "Show HN: Banker – Lovable for Spreadsheets",
+    "ref": "https://news.ycombinator.com/item?id=45345493"
+  },
+  "dyad.sh": {
+    "url": "https://www.dyad.sh/",
+    "source": "hn",
+    "title": "Show HN: Dyad – free, local, open-source AI app builder (v0/lovable alternative)",
+    "ref": "https://news.ycombinator.com/item?id=43848489"
+  },
+  "agemo.ai": {
+    "url": "https://www.agemo.ai/codewords",
+    "source": "hn",
+    "title": "Show HN: CodeWords – Build automations by chatting with AI",
+    "ref": "https://news.ycombinator.com/item?id=45276256"
+  },
+  "ansible-ee-builder.lovable.app": {
+    "url": "https://ansible-ee-builder.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Visual Ansible EE Builder",
+    "ref": "https://news.ycombinator.com/item?id=45267939"
+  },
+  "graphnotes.vercel.app": {
+    "url": "https://graphnotes.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Another note-taking app? My first built app",
+    "ref": "https://news.ycombinator.com/item?id=45235716"
+  },
+  "namegator.lovable.app": {
+    "url": "https://namegator.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Free AI Business Name Generator and Domain Avalibility",
+    "ref": "https://news.ycombinator.com/item?id=45223628"
+  },
+  "chilldog-news-feed.lovable.app": {
+    "url": "https://chilldog-news-feed.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I built a simple site for today's top tech news. What are your picks?",
+    "ref": "https://news.ycombinator.com/item?id=45127298"
+  },
+  "secureaf.lovable.app": {
+    "url": "https://secureaf.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Provably secure vibe coding is now a thing",
+    "ref": "https://news.ycombinator.com/item?id=45108938"
+  },
+  "holocron.so": {
+    "url": "https://holocron.so/",
+    "source": "hn",
+    "title": "Show HN: Holocron – Lovable but for Docs Websites",
+    "ref": "https://news.ycombinator.com/item?id=45105820"
+  },
+  "fantasyfootballneuron.app": {
+    "url": "https://fantasyfootballneuron.app/",
+    "source": "hn",
+    "title": "Show HN: Fantasy Football Neuron – AI-powered debates for lineup building",
+    "ref": "https://news.ycombinator.com/item?id=44987740"
+  },
+  "startup-solve.lovable.app": {
+    "url": "https://startup-solve.lovable.app",
+    "source": "hn",
+    "title": "Show HN: Startup Solve – AI toolkit for startup clarity",
+    "ref": "https://news.ycombinator.com/item?id=45050633"
+  },
+  "lumi.new": {
+    "url": "https://lumi.new",
+    "source": "hn",
+    "title": "Show HN: Lumi – AI apps and websites builder (base44/lovable alternative)",
+    "ref": "https://news.ycombinator.com/item?id=45024322"
+  },
+  "truth-wave.lovable.app": {
+    "url": "https://truth-wave.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Truth Wave – Community Driven Truth or Myth Game",
+    "ref": "https://news.ycombinator.com/item?id=44958167"
+  },
+  "vibei18n.com": {
+    "url": "https://vibei18n.com/",
+    "source": "hn",
+    "title": "Show HN: VibeI18n – i18n linter for vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=44895852"
+  },
+  "raq.com": {
+    "url": "https://raq.com/real-world-test",
+    "source": "hn",
+    "title": "Show HN: Same prompt tested across Replit, Bolt, v0, Lovable and Raq.com",
+    "ref": "https://news.ycombinator.com/item?id=44723183"
+  },
+  "cron-us.vercel.app": {
+    "url": "https://cron-us.vercel.app",
+    "source": "hn",
+    "title": "Show HN: Cronus – A Beautiful, Multilingual Cron Expression Editor",
+    "ref": "https://news.ycombinator.com/item?id=44702157"
+  },
+  "edge-aware-ai-cut.lovable.app": {
+    "url": "https://edge-aware-ai-cut.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I built a simple tool because I was tired of clunky background removers",
+    "ref": "https://news.ycombinator.com/item?id=44690922"
+  },
+  "sun-capture-win.lovable.app": {
+    "url": "https://sun-capture-win.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: App to stop me from hitting the snooze button by looking at the sun",
+    "ref": "https://news.ycombinator.com/item?id=44687109"
+  },
+  "truesift.dev": {
+    "url": "https://www.truesift.dev/",
+    "source": "hn",
+    "title": "Show HN: TrueSift – AI-Powered Real-Time Fact-Checking Chrome Extension",
+    "ref": "https://news.ycombinator.com/item?id=44598309"
+  },
+  "neoarcana.net": {
+    "url": "https://www.neoarcana.net",
+    "source": "hn",
+    "title": "Show HN: Free Tarot Readings(Not So Vibe Coded)",
+    "ref": "https://news.ycombinator.com/item?id=44491580"
+  },
+  "manga-craft-boost.lovable.app": {
+    "url": "https://manga-craft-boost.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: MangaCraft – SaaS that audits Webtoon series using AI (SEO)",
+    "ref": "https://news.ycombinator.com/item?id=44477249"
+  },
+  "tier-craft.lovable.app": {
+    "url": "https://tier-craft.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Created a nifty subscription price and market research generator",
+    "ref": "https://news.ycombinator.com/item?id=44468852"
+  },
+  "paulgraham.resurrect.space": {
+    "url": "https://paulgraham.resurrect.space",
+    "source": "hn",
+    "title": "Show HN: I Built a Paul Graham AI Advisor for Founders and Hackers",
+    "ref": "https://news.ycombinator.com/item?id=44431943"
+  },
+  "vybetr.com": {
+    "url": "https://vybetr.com",
+    "source": "hn",
+    "title": "Show HN: Vybetr – Hire AI app developers using tools like Lovable, Bolt and more",
+    "ref": "https://news.ycombinator.com/item?id=44371132"
+  },
+  "forge-ai-interface.lovable.app": {
+    "url": "https://forge-ai-interface.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I made PromptForge – a tool to build and manage intelligent AI prompts",
+    "ref": "https://news.ycombinator.com/item?id=44233990"
+  },
+  "remotelygood.lovable.app": {
+    "url": "https://remotelygood.lovable.app",
+    "source": "hn",
+    "title": "Show HN: Remotely Good – AI-powered job platform for remote, mission-driven work",
+    "ref": "https://news.ycombinator.com/item?id=44348604"
+  },
+  "reeroll.com": {
+    "url": "https://reeroll.com",
+    "source": "hn",
+    "title": "Show HN: Reeroll – Lovable for Video",
+    "ref": "https://news.ycombinator.com/item?id=44310776"
+  },
+  "slopable.com": {
+    "url": "https://slopable.com",
+    "source": "hn",
+    "title": "Show HN: Slopable – create fun websites instantly, lovable but for memes",
+    "ref": "https://news.ycombinator.com/item?id=44248655"
+  },
+  "vibe-eval.com": {
+    "url": "https://vibe-eval.com/",
+    "source": "hn",
+    "title": "Show HN: Lovable/Bolt Security Scanner",
+    "ref": "https://news.ycombinator.com/item?id=44202596"
+  },
+  "indian-company-checker.vercel.app": {
+    "url": "https://indian-company-checker.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Is Your Company's AI Just Indians?",
+    "ref": "https://news.ycombinator.com/item?id=44198613"
+  },
+  "verysmall.site": {
+    "url": "https://verysmall.site",
+    "source": "hn",
+    "title": "Show HN: Verysmall.site – vibecode single page websites",
+    "ref": "https://news.ycombinator.com/item?id=44181237"
+  },
+  "adpreese.github.io": {
+    "url": "https://adpreese.github.io/circuit-game/",
+    "source": "hn",
+    "title": "Show HN: Mini Escape Room",
+    "ref": "https://news.ycombinator.com/item?id=44173322"
+  },
+  "prompt-efficiency-suite.lovable.app": {
+    "url": "https://prompt-efficiency-suite.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I built a free full-stack prompt engineering tool for every AI dev",
+    "ref": "https://news.ycombinator.com/item?id=44142909"
+  },
+  "spiritt.ai": {
+    "url": "https://spiritt.ai/marketplace",
+    "source": "hn",
+    "title": "Show HN: I created a Lovable-meets-Sharetribe AI tool",
+    "ref": "https://news.ycombinator.com/item?id=44099294"
+  },
+  "securevibing.com": {
+    "url": "https://securevibing.com",
+    "source": "hn",
+    "title": "Show HN: I made the vibe coders' cybersecurity app",
+    "ref": "https://news.ycombinator.com/item?id=44042910"
+  },
+  "chromaflow.ai": {
+    "url": "https://chromaflow.ai/",
+    "source": "hn",
+    "title": "Show HN: A free MVP that outperformed Lovable, Bolt, and V0",
+    "ref": "https://news.ycombinator.com/item?id=44042784"
+  },
+  "craftedagencies.com": {
+    "url": "https://craftedagencies.com/tools/lovable-prompt-generator",
+    "source": "hn",
+    "title": "Show HN: I've build a prompt generator for Lovable",
+    "ref": "https://news.ycombinator.com/item?id=44039244"
+  },
+  "launched-badges.lovable.app": {
+    "url": "https://launched-badges.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Launched Badges-showcase launches on HN, Reddit and more, not just PH",
+    "ref": "https://news.ycombinator.com/item?id=43967557"
+  },
+  "genie-slack-connect.lovable.app": {
+    "url": "https://genie-slack-connect.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Genie – A Slack teammate to help teams research and find answers fast",
+    "ref": "https://news.ycombinator.com/item?id=43946346"
+  },
+  "rainbow-math-grid-fun.lovable.app": {
+    "url": "https://rainbow-math-grid-fun.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I vibe-coded a times table app for my kid",
+    "ref": "https://news.ycombinator.com/item?id=43933632"
+  },
+  "nextlovable.com": {
+    "url": "https://nextlovable.com",
+    "source": "hn",
+    "title": "Show HN: I built CLI to migrate Lovable React apps to Next.js–no rewrites needed",
+    "ref": "https://news.ycombinator.com/item?id=43894372"
+  },
+  "cake.me": {
+    "url": "https://www.cake.me/personality-test/what-cake-r-u-pro?locale=en",
+    "source": "hn",
+    "title": "Show HN: I Built a personality test with AI-generated questions",
+    "ref": "https://news.ycombinator.com/item?id=43891284"
+  },
+  "von.dev": {
+    "url": "https://von.dev/",
+    "source": "hn",
+    "title": "Show HN: Von.dev – Lovable and Cursor and Roo in One Tool",
+    "ref": "https://news.ycombinator.com/item?id=43880968"
+  },
+  "generatemcp.com": {
+    "url": "https://www.generatemcp.com/",
+    "source": "hn",
+    "title": "Show HN: Lovable for MCPs – No/low-code builder for AI tools",
+    "ref": "https://news.ycombinator.com/item?id=43862152"
+  },
+  "kannandreams.github.io": {
+    "url": "https://kannandreams.github.io/",
+    "source": "hn",
+    "title": "Show HN: Vim inspired Portfolio page design",
+    "ref": "https://news.ycombinator.com/item?id=43838270"
+  },
+  "ninja-invoice-ai.lovable.app": {
+    "url": "https://ninja-invoice-ai.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I vibe-coded an Invoicing Follow-up Platform\"",
+    "ref": "https://news.ycombinator.com/item?id=43801751"
+  },
+  "devopsagent.dev": {
+    "url": "https://devopsagent.dev",
+    "source": "hn",
+    "title": "Show HN: DevOpsAgent – AI ChatOps for Cloud Deployments",
+    "ref": "https://news.ycombinator.com/item?id=43798112"
+  },
+  "circuit.sh": {
+    "url": "https://circuit.sh",
+    "source": "hn",
+    "title": "Show HN: OWASP Scanner for Vibe Coded Apps",
+    "ref": "https://news.ycombinator.com/item?id=43795345"
+  },
+  "plutonic.dev": {
+    "url": "https://plutonic.dev",
+    "source": "hn",
+    "title": "Show HN: I built Lovable for text bots and mini apps",
+    "ref": "https://news.ycombinator.com/item?id=43780918"
+  },
+  "calendar-ai.lovable.app": {
+    "url": "https://calendar-ai.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I Built an AI Calendar – Focused on Helping You Start, Not Just Plan",
+    "ref": "https://news.ycombinator.com/item?id=43773845"
+  },
+  "resumedogs.netlify.app": {
+    "url": "https://resumedogs.netlify.app",
+    "source": "hn",
+    "title": "Show HN: A vibecoded LLM wrapper that got 250 users in 3 hours",
+    "ref": "https://news.ycombinator.com/item?id=43772102"
+  },
+  "uiprompt.art": {
+    "url": "https://uiprompt.art/",
+    "source": "hn",
+    "title": "Show HN: UI Prompt Explorer – Make AI Write Beautiful UI",
+    "ref": "https://news.ycombinator.com/item?id=43662813"
+  },
+  "reversible-execution-lab.lovable.app": {
+    "url": "https://reversible-execution-lab.lovable.app/project",
+    "source": "hn",
+    "title": "Show HN: Open-Source Reversible Debugger – Step Backwards While Debugging",
+    "ref": "https://news.ycombinator.com/item?id=43633974"
+  },
+  "kozy.studio": {
+    "url": "https://www.kozy.studio",
+    "source": "hn",
+    "title": "Show HN: Bolt/Loveable for Video Editing",
+    "ref": "https://news.ycombinator.com/item?id=43555239"
+  },
+  "inspades.ai": {
+    "url": "https://inspades.ai",
+    "source": "hn",
+    "title": "Show HN: Refine AI Websites",
+    "ref": "https://news.ycombinator.com/item?id=43533839"
+  },
+  "simplink.click": {
+    "url": "https://www.simplink.click/",
+    "source": "hn",
+    "title": "Show HN: I built a bio link app 100% with AI",
+    "ref": "https://news.ycombinator.com/item?id=43529628"
+  },
+  "daily-bible.lovable.app": {
+    "url": "https://daily-bible.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I built a complete Bible app with Lovable and no coding experience",
+    "ref": "https://news.ycombinator.com/item?id=43524345"
+  },
+  "chariotai.com": {
+    "url": "https://chariotai.com",
+    "source": "hn",
+    "title": "Show HN: I built bolt/lovable clone",
+    "ref": "https://news.ycombinator.com/item?id=43428816"
+  },
+  "pi-pursuit-adventure.lovable.app": {
+    "url": "https://pi-pursuit-adventure.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Vibe Coded a simple browser game for Pi Day",
+    "ref": "https://news.ycombinator.com/item?id=43368595"
+  },
+  "letterfall.lovable.app": {
+    "url": "https://letterfall.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: LetterFall – Where Tetris Meets Wordle",
+    "ref": "https://news.ycombinator.com/item?id=43352073"
+  },
+  "getavid.dev": {
+    "url": "https://www.getavid.dev",
+    "source": "hn",
+    "title": "Show HN: We built Lovable for Mobile Apps (uses Flutter)",
+    "ref": "https://news.ycombinator.com/item?id=43342101"
+  },
+  "creator-connection-galaxy.lovable.app": {
+    "url": "https://creator-connection-galaxy.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I made a free directory of online indie creators",
+    "ref": "https://news.ycombinator.com/item?id=43313456"
+  },
+  "feedfrog.netlify.app": {
+    "url": "https://feedfrog.netlify.app",
+    "source": "hn",
+    "title": "Show HN: Feedly clone in 10 hours w. Loveable and Supabase",
+    "ref": "https://news.ycombinator.com/item?id=43300924"
+  },
+  "severance-display-portfolio.lovable.app": {
+    "url": "https://severance-display-portfolio.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Severance-Inspired Personal Site",
+    "ref": "https://news.ycombinator.com/item?id=43172880"
+  },
+  "lovelettersai.com": {
+    "url": "https://lovelettersai.com/",
+    "source": "hn",
+    "title": "Show HN: LoveLettersAI – email agent with payments and postage",
+    "ref": "https://news.ycombinator.com/item?id=43052937"
+  },
+  "apps.apple.com": {
+    "url": "https://apps.apple.com/us/app/halo-personal-ai/id6783715054",
+    "source": "hn",
+    "title": "Show HN: Halo – A Personal AI with On-Device Harness, Memory and Browser Agent",
+    "ref": "https://news.ycombinator.com/item?id=49969988"
+  },
+  "nicchia-code.github.io": {
+    "url": "https://nicchia-code.github.io/trama/",
+    "source": "hn",
+    "title": "Show HN: Trama, Meta Vibe Coding Agent 0.1.1 Released",
+    "ref": "https://news.ycombinator.com/item?id=50261185"
+  },
+  "play.linnaeus-game.workers.dev": {
+    "url": "https://play.linnaeus-game.workers.dev/",
+    "source": "hn",
+    "title": "Show HN: Linnaeus, a daily biological taxonomy game",
+    "ref": "https://news.ycombinator.com/item?id=49947375"
+  },
+  "drmagnuslynch.com": {
+    "url": "https://www.drmagnuslynch.com/skin",
+    "source": "hn",
+    "title": "Show HN: I'm a dermatologist and I vibe coded a 3D biophysical skin model",
+    "ref": "https://news.ycombinator.com/item?id=49881201"
+  },
+  "caspian.md": {
+    "url": "https://caspian.md",
+    "source": "hn",
+    "title": "Show HN: Caspian – Desktop app to build and launch small vibe-coded projects",
+    "ref": "https://news.ycombinator.com/item?id=49875198"
+  },
+  "lightdrift.ai": {
+    "url": "https://lightdrift.ai",
+    "source": "hn",
+    "title": "Show HN: Lightdrift / Image search for AI agents through API and MCP",
+    "ref": "https://news.ycombinator.com/item?id=49806244"
+  },
+  "strlns.github.io": {
+    "url": "https://strlns.github.io/very-serious-vibecoding/AVS-Web-Native-Editor-Alpha/",
+    "source": "hn",
+    "title": "Show HN: Converting AVS audio viz to WebAssembly using GPT 5.6",
+    "ref": "https://news.ycombinator.com/item?id=49781443"
+  },
+  "ai-eng-design-production.up.railway.app": {
+    "url": "https://ai-eng-design-production.up.railway.app/login",
+    "source": "hn",
+    "title": "Show HN: I am vibe coding a drone",
+    "ref": "https://news.ycombinator.com/item?id=49770638"
+  },
+  "vibes.opentangle.com": {
+    "url": "https://vibes.opentangle.com/",
+    "source": "hn",
+    "title": "Show HN: Vibes – A Mac app for friends to see who's online and coding",
+    "ref": "https://news.ycombinator.com/item?id=49582247"
+  },
+  "rawdog-one.vercel.app": {
+    "url": "https://rawdog-one.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: I built a simple free app that helps control ADHD symptoms",
+    "ref": "https://news.ycombinator.com/item?id=49399282"
+  },
+  "play-kitchen.netlify.app": {
+    "url": "https://play-kitchen.netlify.app/",
+    "source": "hn",
+    "title": "Show HN: AI Slop Kitchen",
+    "ref": "https://news.ycombinator.com/item?id=49292742"
+  },
+  "sollawen.github.io": {
+    "url": "https://sollawen.github.io/microNeo/",
+    "source": "hn",
+    "title": "Show HN: A terminal editor that can discuss with OpenCode and Pi",
+    "ref": "https://news.ycombinator.com/item?id=49085341"
+  },
+  "oriflow.in": {
+    "url": "https://oriflow.in/",
+    "source": "hn",
+    "title": "Show HN: Oriflow - A Vibe Coding Platform for Building Personal Apps",
+    "ref": "https://news.ycombinator.com/item?id=49016499"
+  },
+  "opuslabs.substack.com": {
+    "url": "https://opuslabs.substack.com/p/hardware-needs-its-vibe-coding-moment",
+    "source": "hn",
+    "title": "Show HN: Hardware Needs Its Vibe Coding Moment",
+    "ref": "https://news.ycombinator.com/item?id=48950104"
+  },
+  "gamevibe.us": {
+    "url": "https://gamevibe.us/2-hangman",
+    "source": "hn",
+    "title": "Show HN: Vibe-coding video games with Claude",
+    "ref": "https://news.ycombinator.com/item?id=47808041"
+  },
+  "fredrin.dev": {
+    "url": "https://www.fredrin.dev",
+    "source": "hn",
+    "title": "Show HN: A Kanban for vibe coding in Claude Code and Codex",
+    "ref": "https://news.ycombinator.com/item?id=48675431"
+  },
+  "libls.org": {
+    "url": "https://libls.org/ai-use",
+    "source": "hn",
+    "title": "Show HN: AI Use Disclaimer",
+    "ref": "https://news.ycombinator.com/item?id=48657052"
+  },
+  "oh-landing-mu.vercel.app": {
+    "url": "https://oh-landing-mu.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Oh – verbatim memory and insights of all your past vibecoding sessions",
+    "ref": "https://news.ycombinator.com/item?id=48586753"
+  },
+  "backplanes.com:443": {
+    "url": "https://www.backplanes.com:443/",
+    "source": "hn",
+    "title": "Show HN: Spotlight shows what your Claude Code/Codex are doing",
+    "ref": "https://news.ycombinator.com/item?id=48545168"
+  },
+  "fata.dev": {
+    "url": "https://fata.dev",
+    "source": "hn",
+    "title": "Show HN: Fata – Spaced repetition to fight skill rot from AI coding",
+    "ref": "https://news.ycombinator.com/item?id=48489163"
+  },
+  "cc.dev": {
+    "url": "https://www.cc.dev/",
+    "source": "hn",
+    "title": "Show HN: Command Center, the AI coding env for people who care about quality",
+    "ref": "https://news.ycombinator.com/item?id=48453002"
+  },
+  "runapi.ai": {
+    "url": "https://runapi.ai/",
+    "source": "hn",
+    "title": "Show HN: RunAPI – one API for AI video, image, music, audio, and LLMs",
+    "ref": "https://news.ycombinator.com/item?id=48451431"
+  },
+  "vibes.design": {
+    "url": "https://www.vibes.design/",
+    "source": "hn",
+    "title": "Show HN: Vibes.design – Show HN: Vibes.design – Launch AI Apps with Vibe-Coding",
+    "ref": "https://news.ycombinator.com/item?id=48346950"
+  },
+  "zoril.la": {
+    "url": "https://www.zoril.la/",
+    "source": "hn",
+    "title": "Show HN: Zorilla – vibe-code a 3D game in the browser",
+    "ref": "https://news.ycombinator.com/item?id=48295375"
+  },
+  "mijn-travelly.nl": {
+    "url": "https://mijn-travelly.nl/en/",
+    "source": "hn",
+    "title": "Show HN: My first app, artisanally vibe-coded in 4 months",
+    "ref": "https://news.ycombinator.com/item?id=48256017"
+  },
+  "kalerum.com": {
+    "url": "https://kalerum.com/en",
+    "source": "hn",
+    "title": "Show HN: I made a premium booking platform in 2 months vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=48227668"
+  },
+  "vibekeys.dev": {
+    "url": "https://vibekeys.dev/vibekeys-max.html",
+    "source": "hn",
+    "title": "Show HN: VibeKeys – a keypad I built for vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=48209853"
+  },
+  "gigiac.com": {
+    "url": "https://gigiac.com/",
+    "source": "hn",
+    "title": "Show HN: I built a marketplace where AI agents can hire humans (& other agents)",
+    "ref": "https://news.ycombinator.com/item?id=48179202"
+  },
+  "trmnl.com": {
+    "url": "https://trmnl.com/blog/vibe-coding-shiphero",
+    "source": "hn",
+    "title": "Show HN: Vibe Coding a $20k /Year Enterprise Logistics Platform",
+    "ref": "https://news.ycombinator.com/item?id=48148601"
+  },
+  "scope-mcp.langguard.ai": {
+    "url": "https://scope-mcp.langguard.ai/",
+    "source": "hn",
+    "title": "Show HN: Scope MCP, Compliance checking for vibe coding teams",
+    "ref": "https://news.ycombinator.com/item?id=48138979"
+  },
+  "deepeval.com": {
+    "url": "https://deepeval.com/docs/vibe-coding",
+    "source": "hn",
+    "title": "Show HN: Vibe code your agents without vibe coding your agent",
+    "ref": "https://news.ycombinator.com/item?id=48069001"
+  },
+  "simulator86.com": {
+    "url": "https://simulator86.com/blog/development-minus-the-hardware/",
+    "source": "hn",
+    "title": "Show HN: Vibe coding embedded systems with simulators",
+    "ref": "https://news.ycombinator.com/item?id=48056858"
+  },
+  "blamo.ai": {
+    "url": "https://www.blamo.ai/",
+    "source": "hn",
+    "title": "Show HN: Blamo A vibecoded app for vibecoding vibe games",
+    "ref": "https://news.ycombinator.com/item?id=48056267"
+  },
+  "patchly.cc": {
+    "url": "https://patchly.cc/",
+    "source": "hn",
+    "title": "Show HN: Vibecoding apps? track and patch issues in deployment using patchly",
+    "ref": "https://news.ycombinator.com/item?id=47911193"
+  },
+  "thornwood.bsct.so": {
+    "url": "https://thornwood.bsct.so/",
+    "source": "hn",
+    "title": "Show HN: Vibe Coding Games in Minutes",
+    "ref": "https://news.ycombinator.com/item?id=47859759"
+  },
+  "rebuildtheinternet.com": {
+    "url": "https://www.rebuildtheinternet.com",
+    "source": "hn",
+    "title": "Show HN: We're rebuilding Google, YouTube and 3 more giant apps with vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=47778128"
+  },
+  "vibej.am": {
+    "url": "https://vibej.am/2026/",
+    "source": "hn",
+    "title": "Show HN: I'm organizing a vibe coding game dev competition",
+    "ref": "https://news.ycombinator.com/item?id=47730124"
+  },
+  "givedirection.com": {
+    "url": "https://www.givedirection.com/",
+    "source": "hn",
+    "title": "Show HN: Direction – a 4-week course for people afraid of shipping AI slop",
+    "ref": "https://news.ycombinator.com/item?id=47721469"
+  },
+  "dplatz.de": {
+    "url": "https://dplatz.de/blog/2026/vibe-coding-hitstar.html",
+    "source": "hn",
+    "title": "Show HN: I vibe-coded a Hitster clone from my phone",
+    "ref": "https://news.ycombinator.com/item?id=47671508"
+  },
+  "heyalys.com": {
+    "url": "https://www.heyalys.com/",
+    "source": "hn",
+    "title": "Show HN: Alys – Chat GPT for video editing",
+    "ref": "https://news.ycombinator.com/item?id=47642985"
+  },
+  "usecentel.com": {
+    "url": "https://usecentel.com/",
+    "source": "hn",
+    "title": "Show HN: Centel – Vibe Coding for Professionals",
+    "ref": "https://news.ycombinator.com/item?id=47620965"
+  },
+  "agent-arnold.app": {
+    "url": "https://agent-arnold.app/",
+    "source": "hn",
+    "title": "Show HN: Agent Arnold – Gym tracker 100% vibe-coded from my phone between sets",
+    "ref": "https://news.ycombinator.com/item?id=47599944"
+  },
+  "bugramming.dev": {
+    "url": "https://bugramming.dev/post/the-42-days-vibe-ghost-ledger/",
+    "source": "hn",
+    "title": "Show HN: The 42-Day Vibe – A mockumentary on \"Vibe Coding\" taken to the extreme",
+    "ref": "https://news.ycombinator.com/item?id=47592586"
+  },
+  "open.spotify.com": {
+    "url": "https://open.spotify.com/episode/6RuxZkgUxXXjrT66FlXeme",
+    "source": "hn",
+    "title": "Show HN: The 42-Day Vibe – A mockumentary on \"Vibe Coding\" taken to the extreme",
+    "ref": "https://news.ycombinator.com/item?id=47592282"
+  },
+  "vibeconfig.dev": {
+    "url": "https://vibeconfig.dev",
+    "source": "hn",
+    "title": "Show HN: I sell the boring part of vibe coding Claude and Cursor config files",
+    "ref": "https://news.ycombinator.com/item?id=47578216"
+  },
+  "ficus.io": {
+    "url": "https://ficus.io/",
+    "source": "hn",
+    "title": "Show HN: I built a tool for vibe-coding multiplayer games, polls, quizzes",
+    "ref": "https://news.ycombinator.com/item?id=47490884"
+  },
+  "ai-capex-sens-wxc4b.ondigitalocean.app": {
+    "url": "https://ai-capex-sens-wxc4b.ondigitalocean.app/",
+    "source": "hn",
+    "title": "Show HN: AI models AI capex",
+    "ref": "https://news.ycombinator.com/item?id=47484145"
+  },
+  "asaagent.xyz": {
+    "url": "https://asaagent.xyz",
+    "source": "hn",
+    "title": "Show HN: I built an AI agent that does marketing for my apps",
+    "ref": "https://news.ycombinator.com/item?id=47451559"
+  },
+  "marque-web.vercel.app": {
+    "url": "https://marque-web.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Marque – MCP/CLI server for persistent agent design identity",
+    "ref": "https://news.ycombinator.com/item?id=47312489"
+  },
+  "blueblazin.github.io": {
+    "url": "https://blueblazin.github.io/pyrs/",
+    "source": "hn",
+    "title": "Show HN: AI agent coded Python 3.14 interpreter in Rust",
+    "ref": "https://news.ycombinator.com/item?id=47274804"
+  },
+  "gardenhorizonscalculator.pro": {
+    "url": "https://gardenhorizonscalculator.pro",
+    "source": "hn",
+    "title": "Show HN: Garden Horizons Calculator – Built by a Beginner via \"Vibe Coding\"",
+    "ref": "https://news.ycombinator.com/item?id=47271515"
+  },
+  "moatradar.com": {
+    "url": "https://www.moatradar.com/?promo=HACKERNEWS",
+    "source": "hn",
+    "title": "Show HN: MoatRadar – AI investment research through Warren Buffett's principles",
+    "ref": "https://news.ycombinator.com/item?id=47255448"
+  },
+  "ablo.finance": {
+    "url": "https://www.ablo.finance/",
+    "source": "hn",
+    "title": "Show HN: Ablo - AI slides without the generic look or layout restrictions",
+    "ref": "https://news.ycombinator.com/item?id=47231772"
+  },
+  "mind2app.org": {
+    "url": "https://mind2app.org/",
+    "source": "hn",
+    "title": "Show HN: A web-based vibe coding platform (works from your phone)",
+    "ref": "https://news.ycombinator.com/item?id=47207195"
+  },
+  "shiporslop.xyz": {
+    "url": "https://shiporslop.xyz",
+    "source": "hn",
+    "title": "Show HN: Ship or Slop – AI agents submit projects, humans judge them",
+    "ref": "https://news.ycombinator.com/item?id=47165054"
+  },
+  "sysdesai.com": {
+    "url": "https://www.sysdesai.com",
+    "source": "hn",
+    "title": "Show HN: I built an AI senior architect – vibe coding meets system design",
+    "ref": "https://news.ycombinator.com/item?id=47155394"
+  },
+  "clankerrank.xyz": {
+    "url": "https://clankerrank.xyz",
+    "source": "hn",
+    "title": "Show HN: ClankerRank – Vibe coding is a real skill, I built a way to prove it",
+    "ref": "https://news.ycombinator.com/item?id=47137143"
+  },
+  "silentsand.me": {
+    "url": "https://silentsand.me/",
+    "source": "hn",
+    "title": "Show HN: A virtual Zen garden for vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=47111194"
+  },
+  "byephone.io": {
+    "url": "https://byephone.io/",
+    "source": "hn",
+    "title": "Show HN: ByePhone- An AI assistant to automate tedious phone calls",
+    "ref": "https://news.ycombinator.com/item?id=47111179"
+  },
+  "opengnothia.com": {
+    "url": "https://www.opengnothia.com/tr",
+    "source": "hn",
+    "title": "Show HN: OpenGnothia – Open-source AI therapy companion (BYOK)",
+    "ref": "https://news.ycombinator.com/item?id=47074375"
+  },
+  "creativeflow.pages.dev": {
+    "url": "https://creativeflow.pages.dev/",
+    "source": "hn",
+    "title": "Show HN: CreativeFlow – A Guided Brainstorming App",
+    "ref": "https://news.ycombinator.com/item?id=47061769"
+  },
+  "popcornai.art": {
+    "url": "https://popcornai.art/",
+    "source": "hn",
+    "title": "Show HN: Non-coder's AI video tool, built in 1 month via vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=47061573"
+  },
+  "spirofloropoulos.com": {
+    "url": "https://spirofloropoulos.com/asmongold_simulator/",
+    "source": "hn",
+    "title": "Show HN: Purely Vibe Coded Asmongold Simulator",
+    "ref": "https://news.ycombinator.com/item?id=47043149"
+  },
+  "jorgtron.github.io": {
+    "url": "https://jorgtron.github.io/chisel-for-claude/",
+    "source": "hn",
+    "title": "Show HN: Chisel for Claude. Vibe code 2X faster using your voice",
+    "ref": "https://news.ycombinator.com/item?id=47033536"
+  },
+  "hypeframe.ai": {
+    "url": "https://hypeframe.ai",
+    "source": "hn",
+    "title": "Show HN: A New and comprehensive Vibe Coding web platform is here",
+    "ref": "https://news.ycombinator.com/item?id=46992089"
+  },
+  "centia.io": {
+    "url": "https://centia.io/docs/vibe-coding",
+    "source": "hn",
+    "title": "Show HN: Vibe Coding with Centia.io",
+    "ref": "https://news.ycombinator.com/item?id=46961568"
+  },
+  "testsolid.com": {
+    "url": "https://www.testsolid.com/",
+    "source": "hn",
+    "title": "Show HN: A React testing boilerplate built for vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=46919014"
+  },
+  "cloud-forge.me": {
+    "url": "https://cloud-forge.me",
+    "source": "hn",
+    "title": "Show HN: Remote AI coding without moving your code – CloudForge",
+    "ref": "https://news.ycombinator.com/item?id=46898397"
+  },
+  "resolv.sh": {
+    "url": "https://resolv.sh",
+    "source": "hn",
+    "title": "Show HN: Resolv – AI Agentic IDE that insists AI cannot think",
+    "ref": "https://news.ycombinator.com/item?id=46886225"
+  },
+  "indx.sh": {
+    "url": "https://indx.sh",
+    "source": "hn",
+    "title": "Show HN: Indx.sh – Directory of AI coding rules, MCP servers, and tool",
+    "ref": "https://news.ycombinator.com/item?id=46822378"
+  },
+  "vibe.devpost.com": {
+    "url": "https://vibe.devpost.com/",
+    "source": "hn",
+    "title": "Show HN: AI Vibe Coding Hackathon",
+    "ref": "https://news.ycombinator.com/item?id=46620150"
+  },
+  "aimoviequotes.com": {
+    "url": "https://www.aimoviequotes.com",
+    "source": "hn",
+    "title": "Show HN: I built a quote search engine via \"vibe coding\" as a junior dev",
+    "ref": "https://news.ycombinator.com/item?id=46750116"
+  },
+  "zropi.com": {
+    "url": "https://zropi.com",
+    "source": "hn",
+    "title": "Show HN: Burnt out and failing, I built an AI that gives a shit",
+    "ref": "https://news.ycombinator.com/item?id=46708449"
+  },
+  "realpeace.vip": {
+    "url": "https://realpeace.vip/",
+    "source": "hn",
+    "title": "Show HN: I vibe coded an (unofficial) Board of Peace site",
+    "ref": "https://news.ycombinator.com/item?id=46705040"
+  },
+  "getvibecodingcoach.com": {
+    "url": "https://getvibecodingcoach.com",
+    "source": "hn",
+    "title": "Show HN: Vibe Coding Coach - Get Instant Help from Senior Software Engineers",
+    "ref": "https://news.ycombinator.com/item?id=46694732"
+  },
+  "ignidash.com": {
+    "url": "https://www.ignidash.com",
+    "source": "hn",
+    "title": "Show HN: An open-source personal finance simulator with AI features",
+    "ref": "https://news.ycombinator.com/item?id=46694134"
+  },
+  "subterranean.io": {
+    "url": "https://www.subterranean.io/",
+    "source": "hn",
+    "title": "Show HN: Vibe Coding Entire Full-Stack Apps with AI",
+    "ref": "https://news.ycombinator.com/item?id=46689376"
+  },
+  "craps.exe.xyz:8081": {
+    "url": "https://craps.exe.xyz:8081/",
+    "source": "hn",
+    "title": "Show HN: Crapless craps – flutter PWA vibe coded from my phone",
+    "ref": "https://news.ycombinator.com/item?id=46688008"
+  },
+  "calquio.com": {
+    "url": "https://calquio.com/finance/compound-interest",
+    "source": "hn",
+    "title": "Show HN: I quit coding years ago. AI brought me back",
+    "ref": "https://news.ycombinator.com/item?id=46673809"
+  },
+  "tasteful-vibes.pages.dev": {
+    "url": "https://tasteful-vibes.pages.dev",
+    "source": "hn",
+    "title": "Show HN: Built my portfolio in one Claude Code session – 145 repos, AI chat",
+    "ref": "https://news.ycombinator.com/item?id=46670778"
+  },
+  "binora.github.io": {
+    "url": "https://binora.github.io/vibes/",
+    "source": "hn",
+    "title": "Show HN: Vibes – Twitter for Claude Code (and Other AI Agents)",
+    "ref": "https://news.ycombinator.com/item?id=46658490"
+  },
+  "vibecodingstarterkit.io": {
+    "url": "https://vibecodingstarterkit.io",
+    "source": "hn",
+    "title": "Show HN: Native app to scaffold and build Cursor-ready Next.js projects",
+    "ref": "https://news.ycombinator.com/item?id=46600291"
+  },
+  "snippet.wacht.dev": {
+    "url": "https://snippet.wacht.dev/",
+    "source": "hn",
+    "title": "Show HN: Snippet – an always-on AI agent",
+    "ref": "https://news.ycombinator.com/item?id=50261234"
+  },
+  "standardtopic.com": {
+    "url": "https://www.standardtopic.com/",
+    "source": "hn",
+    "title": "Show HN: Standard Topic – An AI and RSS-powered news and resource platform",
+    "ref": "https://news.ycombinator.com/item?id=50166827"
+  },
+  "sandkiln.vercel.app": {
+    "url": "https://sandkiln.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Sandkiln – Fast Firecracker MicroVM sandboxes for AI-generated code",
+    "ref": "https://news.ycombinator.com/item?id=50163287"
+  },
+  "stof.dev": {
+    "url": "https://stof.dev/",
+    "source": "hn",
+    "title": "Show HN: Run AI-generated logic safely inside your app",
+    "ref": "https://news.ycombinator.com/item?id=50093435"
+  },
+  "shipornah.com": {
+    "url": "https://shipornah.com",
+    "source": "hn",
+    "title": "Show HN: ShipOrNah – Free security scan for AI-generated apps",
+    "ref": "https://news.ycombinator.com/item?id=50032632"
+  },
+  "sharefreeform.com": {
+    "url": "https://sharefreeform.com",
+    "source": "hn",
+    "title": "Show HN: Freeform – One click shareable AI generated apps",
+    "ref": "https://news.ycombinator.com/item?id=49725268"
+  },
+  "clawfight.ai": {
+    "url": "https://clawfight.ai/agents.md",
+    "source": "hn",
+    "title": "Show HN: Clawfight.ai MCP-driven agentic game play",
+    "ref": "https://news.ycombinator.com/item?id=49658483"
+  },
+  "floyi.com": {
+    "url": "https://floyi.com/",
+    "source": "hn",
+    "title": "Show HN: Floyi, a topic-first content workflow for Google and AI search",
+    "ref": "https://news.ycombinator.com/item?id=49565003"
+  },
+  "audioreality.ai": {
+    "url": "https://www.audioreality.ai",
+    "source": "hn",
+    "title": "Show HN: Audioreality.ai – email to private daily podcast summary show",
+    "ref": "https://news.ycombinator.com/item?id=49564980"
+  },
+  "superprez.io": {
+    "url": "https://www.superprez.io",
+    "source": "hn",
+    "title": "Show HN: Superprez.io – Sharing and Collaboration for AI-Generated Decks",
+    "ref": "https://news.ycombinator.com/item?id=49358183"
+  },
+  "developer.puter.com": {
+    "url": "https://developer.puter.com",
+    "source": "hn",
+    "title": "Show HN: The Safe, Production-Ready Backend for AI-Generated Apps",
+    "ref": "https://news.ycombinator.com/item?id=48895945"
+  },
+  "slopcop.adriankrebs.ch": {
+    "url": "https://slopcop.adriankrebs.ch",
+    "source": "hn",
+    "title": "Show HN: Scan any website for AI design patterns",
+    "ref": "https://news.ycombinator.com/item?id=48821493"
+  },
+  "uselink.app:443": {
+    "url": "https://uselink.app:443/",
+    "source": "hn",
+    "title": "Show HN: Uselink – publish and collaborate on AI-generated HTML",
+    "ref": "https://news.ycombinator.com/item?id=48719687"
+  },
+  "lex-the-lab.vercel.app": {
+    "url": "https://lex-the-lab.vercel.app/languages",
+    "source": "hn",
+    "title": "Show HN: Lex – learn languages by reading and writing, not just flashcards",
+    "ref": "https://news.ycombinator.com/item?id=48643839"
+  },
+  "eatmydata.ai": {
+    "url": "https://eatmydata.ai/",
+    "source": "hn",
+    "title": "Show HN: Eatmydata.ai – Local-First Question-to-SQL-to-Dashboard AI",
+    "ref": "https://news.ycombinator.com/item?id=48472867"
+  },
+  "play-bot-or-not.vercel.app": {
+    "url": "https://play-bot-or-not.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Bot or Not – Spot AI-generated randomness",
+    "ref": "https://news.ycombinator.com/item?id=48403821"
+  },
+  "handler.team": {
+    "url": "https://handler.team/",
+    "source": "hn",
+    "title": "Show HN: Review-First AI IDE, Built on Codex and OpenCode",
+    "ref": "https://news.ycombinator.com/item?id=48367682"
+  },
+  "formproxy.com": {
+    "url": "https://www.formproxy.com/",
+    "source": "hn",
+    "title": "Show HN: FormProxy – form back end for AI-generated pages – MCP Ready",
+    "ref": "https://news.ycombinator.com/item?id=48357884"
+  },
+  "trulytyped.com": {
+    "url": "https://trulytyped.com/",
+    "source": "hn",
+    "title": "Show HN: Truly Typed – A writing app for the AI era",
+    "ref": "https://news.ycombinator.com/item?id=48125186"
+  },
+  "ispyai.io": {
+    "url": "https://www.ispyai.io/",
+    "source": "hn",
+    "title": "Show HN: I Spy AI – Detect AI-Generated Images, with an MCP Server",
+    "ref": "https://news.ycombinator.com/item?id=47829018"
+  },
+  "crafto.ai": {
+    "url": "https://crafto.ai",
+    "source": "hn",
+    "title": "Show HN: Crafto – AI carousel post generator for LinkedIn and Instagram",
+    "ref": "https://news.ycombinator.com/item?id=47752728"
+  },
+  "mostlykiguess.github.io": {
+    "url": "https://mostlykiguess.github.io/vyasa/",
+    "source": "hn",
+    "title": "Show HN: Vyasa – A client-side AI writing detector (WASM, no API calls)",
+    "ref": "https://news.ycombinator.com/item?id=47557925"
+  },
+  "pneuma.computer": {
+    "url": "https://pneuma.computer",
+    "source": "hn",
+    "title": "Show HN: I built an OS that is pure AI",
+    "ref": "https://news.ycombinator.com/item?id=47557165"
+  },
+  "apimatic.io": {
+    "url": "https://www.apimatic.io/product/context-plugins",
+    "source": "hn",
+    "title": "Show HN: Context Plugins – API context for AI coding assistants",
+    "ref": "https://news.ycombinator.com/item?id=47530870"
+  },
+  "vectree.io": {
+    "url": "https://vectree.io",
+    "source": "hn",
+    "title": "Show HN: Vectree – Learn complex concepts through AI-generated interactive SVGs",
+    "ref": "https://news.ycombinator.com/item?id=47517683"
+  },
+  "ui-stack.dev": {
+    "url": "https://www.ui-stack.dev/",
+    "source": "hn",
+    "title": "Show HN: UI-stack – Claude skill that enforces design system on AI-generated UI",
+    "ref": "https://news.ycombinator.com/item?id=47435063"
+  },
+  "zapcode.dev": {
+    "url": "https://www.zapcode.dev",
+    "source": "hn",
+    "title": "Show HN: Zap Code – AI code generator that teaches kids real HTML/CSS/JS",
+    "ref": "https://news.ycombinator.com/item?id=47380314"
+  },
+  "airiskcalc.com": {
+    "url": "https://www.airiskcalc.com",
+    "source": "hn",
+    "title": "Show HN: AIRiskCalc – AI-Powered Health Risk Calculators",
+    "ref": "https://news.ycombinator.com/item?id=47335719"
+  },
+  "demofly.ai": {
+    "url": "https://demofly.ai",
+    "source": "hn",
+    "title": "Show HN: Get a demo video with AI voiceover using DemoFly",
+    "ref": "https://news.ycombinator.com/item?id=47324590"
+  },
+  "app.exolio.com": {
+    "url": "https://app.exolio.com",
+    "source": "hn",
+    "title": "Show HN: Exolio AI – Free AI text detector for anyone (30-day free trial)",
+    "ref": "https://news.ycombinator.com/item?id=47301283"
+  },
+  "teamshotspro.com": {
+    "url": "https://www.teamshotspro.com",
+    "source": "hn",
+    "title": "Show HN: TeamShotsPro – AI team headshots from a selfie in 60 seconds",
+    "ref": "https://news.ycombinator.com/item?id=47289841"
+  },
+  "yourhrh.github.io": {
+    "url": "https://yourhrh.github.io/slidehtml/",
+    "source": "hn",
+    "title": "Show HN: SlideHTML – render HTML files as slides For AI",
+    "ref": "https://news.ycombinator.com/item?id=47284873"
+  },
+  "kiricast.com": {
+    "url": "https://www.kiricast.com",
+    "source": "hn",
+    "title": "Show HN: I built a mobile-web AI series generator",
+    "ref": "https://news.ycombinator.com/item?id=47246801"
+  },
+  "cosmicmeta.ai": {
+    "url": "https://cosmicmeta.ai/",
+    "source": "hn",
+    "title": "Show HN: CosmicMeta – Daily AI and tech analysis with a humanization pipeline",
+    "ref": "https://news.ycombinator.com/item?id=47220201"
+  },
+  "notpptx.com": {
+    "url": "https://notpptx.com",
+    "source": "hn",
+    "title": "Show HN: Nopp – AI-generated interactive sales microwebsites",
+    "ref": "https://news.ycombinator.com/item?id=47210833"
+  },
+  "openlinq.xyz": {
+    "url": "https://www.openlinq.xyz/",
+    "source": "hn",
+    "title": "Show HN: OpenLinq – invite-only link sharing for humans tired of AI slop",
+    "ref": "https://news.ycombinator.com/item?id=47205779"
+  },
+  "news-alert-eta.vercel.app": {
+    "url": "https://news-alert-eta.vercel.app",
+    "source": "hn",
+    "title": "Show HN: News Pulse – Real-time global news feed, 475 sources, no algorithm",
+    "ref": "https://news.ycombinator.com/item?id=47192012"
+  },
+  "grubl.app": {
+    "url": "https://grubl.app",
+    "source": "hn",
+    "title": "Show HN: Grubl – AI and structured recipe generation",
+    "ref": "https://news.ycombinator.com/item?id=47164084"
+  },
+  "mindforge.run": {
+    "url": "https://mindforge.run/",
+    "source": "hn",
+    "title": "Show HN: Guard – An open-core governance layer for AI-generated code",
+    "ref": "https://news.ycombinator.com/item?id=47154838"
+  },
+  "geovector.ai": {
+    "url": "https://www.geovector.ai/report/yc",
+    "source": "hn",
+    "title": "Show HN: Measuring brand share in AI answers – a Y Combinator case study",
+    "ref": "https://news.ycombinator.com/item?id=47146588"
+  },
+  "crosspassion.onrender.com": {
+    "url": "https://crosspassion.onrender.com/",
+    "source": "hn",
+    "title": "Show HN: Rebuilt My Social Network with Codex in One Day",
+    "ref": "https://news.ycombinator.com/item?id=47137522"
+  },
+  "moltgram-api-production.up.railway.app": {
+    "url": "https://moltgram-api-production.up.railway.app",
+    "source": "hn",
+    "title": "Show HN: Moltgram, a social network where only AI agents can post",
+    "ref": "https://news.ycombinator.com/item?id=47129871"
+  },
+  "deploy.coderocket.com": {
+    "url": "https://deploy.coderocket.com",
+    "source": "hn",
+    "title": "Show HN: CodeRocket Deploy – AI generates GitHub Actions workflows in 60 seconds",
+    "ref": "https://news.ycombinator.com/item?id=47129214"
+  },
+  "tastebudsai.com": {
+    "url": "https://www.tastebudsai.com",
+    "source": "hn",
+    "title": "Show HN: Tastebuds AI – recipe generator with USDA-backed nutrition data",
+    "ref": "https://news.ycombinator.com/item?id=47125408"
+  },
+  "patentfig.ai": {
+    "url": "https://patentfig.ai",
+    "source": "hn",
+    "title": "Show HN: Patentfig.ai AI-generated patent drawings",
+    "ref": "https://news.ycombinator.com/item?id=47121310"
+  },
+  "weather.mukoko.com": {
+    "url": "https://weather.mukoko.com/harare",
+    "source": "hn",
+    "title": "Show HN: Mukoko weather – AI-powered weather intelligence built for Zimbabwe",
+    "ref": "https://news.ycombinator.com/item?id=47097611"
+  },
+  "tropes.fyi": {
+    "url": "https://tropes.fyi/",
+    "source": "hn",
+    "title": "Show HN: Tropes.fyi – Name and shame AI writing",
+    "ref": "https://news.ycombinator.com/item?id=47088813"
+  },
+  "ninjaflix.ai": {
+    "url": "https://www.ninjaflix.ai/",
+    "source": "hn",
+    "title": "Show HN: AI agents designed and shipped this app end-to-end in 36 hours for $270",
+    "ref": "https://news.ycombinator.com/item?id=47059153"
+  },
+  "dashboard.rocketgraph.app": {
+    "url": "https://dashboard.rocketgraph.app",
+    "source": "hn",
+    "title": "Show HN: Cursor for Observability",
+    "ref": "https://news.ycombinator.com/item?id=47053906"
+  },
+  "foundercounsel.vercel.app": {
+    "url": "https://foundercounsel.vercel.app",
+    "source": "hn",
+    "title": "Show HN: FounderCounsel – AI-generated startup legal docs in 2 minutes",
+    "ref": "https://news.ycombinator.com/item?id=47035402"
+  },
+  "events.sonarsource.com": {
+    "url": "https://events.sonarsource.com/kintsugi/",
+    "source": "hn",
+    "title": "Show HN: Kintsugi – A desktop app for reviewing Claude Code sessions",
+    "ref": "https://news.ycombinator.com/item?id=47006289"
+  },
+  "motive8.ca": {
+    "url": "https://motive8.ca",
+    "source": "hn",
+    "title": "Show HN: Motivé – AI-generated cover letters tailored to job descriptions",
+    "ref": "https://news.ycombinator.com/item?id=46985211"
+  },
+  "usemeva.com": {
+    "url": "https://usemeva.com/",
+    "source": "hn",
+    "title": "Show HN: MEVA, a desktop Markdown reader for AI-generated docs",
+    "ref": "https://news.ycombinator.com/item?id=46975959"
+  },
+  "aiflagbot.com": {
+    "url": "https://aiflagbot.com",
+    "source": "hn",
+    "title": "Show HN: AI Flag Bot: Community-driven tool to detect and block AI accounts on X",
+    "ref": "https://news.ycombinator.com/item?id=46966639"
+  },
+  "jpen.onigiri.kr": {
+    "url": "https://jpen.onigiri.kr/",
+    "source": "hn",
+    "title": "Show HN: Language learning through AI example sentences (onigiri.kr)",
+    "ref": "https://news.ycombinator.com/item?id=46933152"
+  },
+  "medresearch-ai.org": {
+    "url": "https://medresearch-ai.org/hypotheses-hub/",
+    "source": "hn",
+    "title": "Show HN: HypothesisHub – An open API where AI agents collaborate on medical res",
+    "ref": "https://news.ycombinator.com/item?id=46923441"
+  },
+  "morphllm.com": {
+    "url": "https://morphllm.com/products/glance",
+    "source": "hn",
+    "title": "Show HN: Morph – Videos of AI testing your PR, embedded in GitHub",
+    "ref": "https://news.ycombinator.com/item?id=46891827"
+  },
+  "helply.com": {
+    "url": "https://helply.com",
+    "source": "hn",
+    "title": "Show HN: Helply – AI support agents with guaranteed results",
+    "ref": "https://news.ycombinator.com/item?id=46875635"
+  },
+  "therekord.ai": {
+    "url": "https://www.therekord.ai",
+    "source": "hn",
+    "title": "Show HN: The Rekord – Global AI-generated polls for major events",
+    "ref": "https://news.ycombinator.com/item?id=46767556"
+  },
+  "getchatalyst.com": {
+    "url": "https://getchatalyst.com/",
+    "source": "hn",
+    "title": "Show HN: We ran a test–92% of local businesses don't show up in AI answers",
+    "ref": "https://news.ycombinator.com/item?id=46762457"
+  },
+  "karbeyazalbum.replit.app": {
+    "url": "https://karbeyazalbum.replit.app/",
+    "source": "hn",
+    "title": "Show HN: A Spectrum Album – Structuring AI-Generated Music with Suno",
+    "ref": "https://news.ycombinator.com/item?id=46702506"
+  },
+  "pasteclean.app": {
+    "url": "https://www.pasteclean.app",
+    "source": "hn",
+    "title": "Show HN: PasteClean – A small tool to clean ChatGPT output for Outlook and email",
+    "ref": "https://news.ycombinator.com/item?id=46694348"
+  },
+  "studybuddy.rest": {
+    "url": "https://www.studybuddy.rest",
+    "source": "hn",
+    "title": "Show HN: Feedback Required)StudyBuddy–an AI-powered study companion for students",
+    "ref": "https://news.ycombinator.com/item?id=46649858"
+  },
+  "appcan.io": {
+    "url": "https://www.appcan.io/",
+    "source": "hn",
+    "title": "Show HN: Built an AI turns security scan results into human-readable insights",
+    "ref": "https://news.ycombinator.com/item?id=46630912"
+  },
+  "aurva.io": {
+    "url": "https://aurva.io",
+    "source": "hn",
+    "title": "Show HN: AIOStack – Using eBPF to Secure AI Services in Kubernetes",
+    "ref": "https://news.ycombinator.com/item?id=46618481"
+  },
+  "academy.thunderson.dev": {
+    "url": "https://academy.thunderson.dev",
+    "source": "hn",
+    "title": "Show HN: I built a 220-lesson programming academy using only Claude Code",
+    "ref": "https://news.ycombinator.com/item?id=46595460"
+  },
+  "onecardtarot.org": {
+    "url": "https://onecardtarot.org",
+    "source": "hn",
+    "title": "Show HN: One Card Tarot – AI-powered one-card tarot for quick daily insight",
+    "ref": "https://news.ycombinator.com/item?id=46528951"
+  },
+  "authority.bhaviavelayudhan.com": {
+    "url": "https://authority.bhaviavelayudhan.com",
+    "source": "hn",
+    "title": "Show HN: An authority gate for AI-generated customer communication",
+    "ref": "https://news.ycombinator.com/item?id=46394626"
+  },
+  "chimera.qq-pwn.com": {
+    "url": "https://chimera.qq-pwn.com/",
+    "source": "hn",
+    "title": "Show HN: Chimera Studio – A browser-based AI asset pipeline",
+    "ref": "https://news.ycombinator.com/item?id=46461402"
+  },
+  "unwrappedyear.forwardmanager.com": {
+    "url": "https://unwrappedyear.forwardmanager.com/",
+    "source": "hn",
+    "title": "Show HN: 2025 Failure Wrapped AI-Generated Year in Review for Tech Failures",
+    "ref": "https://news.ycombinator.com/item?id=46456726"
+  },
+  "safevibee.vercel.app": {
+    "url": "https://safevibee.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: SafeVibe, a collaborative database to fix security gaps in vibe coding",
+    "ref": "https://news.ycombinator.com/item?id=46427346"
+  },
+  "incidentops.io": {
+    "url": "https://www.incidentops.io/",
+    "source": "hn",
+    "title": "Show HN: Incident management for Slack with AI-generated postmortems",
+    "ref": "https://news.ycombinator.com/item?id=46427243"
+  },
+  "doculearnapp.com": {
+    "url": "https://doculearnapp.com",
+    "source": "hn",
+    "title": "Show HN: Doculearn – How much of your Gen-AI code do you understand?",
+    "ref": "https://news.ycombinator.com/item?id=46400512"
+  },
+  "dailyquiz.ai": {
+    "url": "https://www.dailyquiz.ai",
+    "source": "hn",
+    "title": "Show HN: An AI-generated daily quiz app I built on my bike",
+    "ref": "https://news.ycombinator.com/item?id=46396215"
+  },
+  "pagesmith.ai": {
+    "url": "https://pagesmith.ai/seo-for-ai-generated-sites",
+    "source": "hn",
+    "title": "Show HN: Why many AI-generated websites don't show up on Google",
+    "ref": "https://news.ycombinator.com/item?id=46385424"
+  },
+  "x102.tech": {
+    "url": "https://x102.tech",
+    "source": "hn",
+    "title": "Show HN: A tool to help websites appear in AI-generated answers",
+    "ref": "https://news.ycombinator.com/item?id=46337875"
+  },
+  "spuai.github.io": {
+    "url": "https://spuai.github.io",
+    "source": "hn",
+    "title": "Show HN: AI Audience Platform for Practicing Public Speaking",
+    "ref": "https://news.ycombinator.com/item?id=46330204"
+  },
+  "saveforlater.pro": {
+    "url": "https://saveforlater.pro",
+    "source": "hn",
+    "title": "Show HN: Save For Later – AI-powered bookmark manager that resurfaces your saves",
+    "ref": "https://news.ycombinator.com/item?id=46311122"
+  },
+  "quicklyseo.com": {
+    "url": "https://www.quicklyseo.com/",
+    "source": "hn",
+    "title": "Show HN: AI-powered SEO automation tool distilled from production agency systems",
+    "ref": "https://news.ycombinator.com/item?id=46293569"
+  },
+  "postking.app": {
+    "url": "https://postking.app",
+    "source": "hn",
+    "title": "Show HN: I vibe coded a vibe marketing platform",
+    "ref": "https://news.ycombinator.com/item?id=46268002"
+  },
+  "market-echo.vercel.app": {
+    "url": "https://market-echo.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Help validate startup ideas with synthetic customer interviews",
+    "ref": "https://news.ycombinator.com/item?id=46245642"
+  },
+  "devreplay.com": {
+    "url": "https://devreplay.com",
+    "source": "hn",
+    "title": "Show HN: DevReplay – Developer memory for GitHub (free tier, AI summaries $5pm)",
+    "ref": "https://news.ycombinator.com/item?id=46210395"
+  },
+  "valid-human.vercel.app": {
+    "url": "https://valid-human.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Can you spot AI-generated content? (spoiler: probably not)",
+    "ref": "https://news.ycombinator.com/item?id=46104417"
+  },
+  "twinonyms.vercel.app": {
+    "url": "https://twinonyms.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Twinonyms: The Word Game",
+    "ref": "https://news.ycombinator.com/item?id=46017884"
+  },
+  "samurai-agent.tech": {
+    "url": "https://samurai-agent.tech/",
+    "source": "hn",
+    "title": "Show HN: A visual debugger for AI-generated code",
+    "ref": "https://news.ycombinator.com/item?id=45954998"
+  },
+  "yanbiai.com": {
+    "url": "https://www.yanbiai.com/tools/paper-pass?ly=hackernews",
+    "source": "hn",
+    "title": "Show HN: AI text rewriter with 90%+ detection pass rate",
+    "ref": "https://news.ycombinator.com/item?id=45862583"
+  },
+  "madethat.com": {
+    "url": "https://madethat.com/ai-bingo",
+    "source": "hn",
+    "title": "Show HN: AI Bingo – weekly challenges to practice AI",
+    "ref": "https://news.ycombinator.com/item?id=45837904"
+  },
+  "arcitext.com": {
+    "url": "https://www.arcitext.com",
+    "source": "hn",
+    "title": "Show HN: Arcitext, an AI assisted writing app to battle AI generated text",
+    "ref": "https://news.ycombinator.com/item?id=45827824"
+  },
+  "averi.ai": {
+    "url": "https://www.averi.ai/",
+    "source": "hn",
+    "title": "Show HN: Averi – The AI Marketing Workspace",
+    "ref": "https://news.ycombinator.com/item?id=45810606"
+  },
+  "sleek.design": {
+    "url": "https://sleek.design",
+    "source": "hn",
+    "title": "Show HN: Sleek - AI mobile app mockup generator (our 3rd pivot, last shot)",
+    "ref": "https://news.ycombinator.com/item?id=45758944"
+  },
+  "omniaos.co": {
+    "url": "https://omniaos.co/",
+    "source": "hn",
+    "title": "Show HN: Omnia OS, the Most Efficient Email Client Without AI",
+    "ref": "https://news.ycombinator.com/item?id=45722561"
+  },
+  "play.google.com": {
+    "url": "https://play.google.com/store/apps/details?id=ai.capshot.app&hl=en_US",
+    "source": "hn",
+    "title": "Show HN: Capshot – AI app that generates perfect captions for your photos",
+    "ref": "https://news.ycombinator.com/item?id=44960222"
+  },
+  "xano.com": {
+    "url": "https://www.xano.com/",
+    "source": "hn",
+    "title": "Show HN: Xano 2.0 – AI-Generated Back Ends That Are Production-Ready",
+    "ref": "https://news.ycombinator.com/item?id=45671163"
+  },
+  "artsnappy.com": {
+    "url": "https://artsnappy.com/design-editor/",
+    "source": "hn",
+    "title": "Show HN: Turn any photo into AI-generated artwork",
+    "ref": "https://news.ycombinator.com/item?id=45525964"
+  },
+  "pluely.com": {
+    "url": "https://pluely.com/downloads",
+    "source": "hn",
+    "title": "Show HN: Pluely v0.1.5 Released, Open Source Invisible AI Assistant",
+    "ref": "https://news.ycombinator.com/item?id=45486229"
+  },
+  "spore-ten.vercel.app": {
+    "url": "https://spore-ten.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: I Started the New SEO",
+    "ref": "https://news.ycombinator.com/item?id=45478042"
+  },
+  "app.astrobee.ai": {
+    "url": "https://app.astrobee.ai/",
+    "source": "hn",
+    "title": "Show HN: AstroBee – AI-Generated Semantic Layers",
+    "ref": "https://news.ycombinator.com/item?id=45451535"
+  },
+  "code-detector.ai": {
+    "url": "https://code-detector.ai/",
+    "source": "hn",
+    "title": "Show HN: AI Code Detector – detect AI-generated code with 95% accuracy",
+    "ref": "https://news.ycombinator.com/item?id=45265831"
+  },
+  "wordspike.com": {
+    "url": "https://wordspike.com/",
+    "source": "hn",
+    "title": "Show HN: Wordspike–AI spikes from any YouTube video (multilang, Kindle export)",
+    "ref": "https://news.ycombinator.com/item?id=45249301"
+  },
+  "ai-roast.jamatrix.io": {
+    "url": "https://ai-roast.jamatrix.io/",
+    "source": "hn",
+    "title": "Show HN: AI Roast – Fun AI-generated roasts of websites",
+    "ref": "https://news.ycombinator.com/item?id=45231175"
+  },
+  "dreamflow.app": {
+    "url": "https://dreamflow.app/",
+    "source": "hn",
+    "title": "Show HN: Dreamflow – Visual editor for AI generated Flutter apps",
+    "ref": "https://news.ycombinator.com/item?id=45130588"
+  },
+  "kooder.dev": {
+    "url": "https://kooder.dev",
+    "source": "hn",
+    "title": "Show HN: Kooder – AI software engineer for full-stack development",
+    "ref": "https://news.ycombinator.com/item?id=45111231"
+  },
+  "betteraeo.com": {
+    "url": "https://betteraeo.com/",
+    "source": "hn",
+    "title": "Show HN: BetterAEO – Measure AI search readiness and get AI recommendations",
+    "ref": "https://news.ycombinator.com/item?id=44981064"
+  },
+  "sagarty.com": {
+    "url": "https://sagarty.com/",
+    "source": "hn",
+    "title": "Show HN: My job search was a mess of spreadsheets, so I built an AI copilot",
+    "ref": "https://news.ycombinator.com/item?id=44904076"
+  },
+  "senticall.app": {
+    "url": "https://senticall.app",
+    "source": "hn",
+    "title": "Show HN: SentiCall – AI-powered call assistant",
+    "ref": "https://news.ycombinator.com/item?id=44844812"
+  },
+  "applicationfeedback.com": {
+    "url": "https://applicationfeedback.com/",
+    "source": "hn",
+    "title": "Show HN: ApplicationFeedback – AI critiques top-tier accelerator applications",
+    "ref": "https://news.ycombinator.com/item?id=44826020"
+  },
+  "nonescape.com": {
+    "url": "https://www.nonescape.com/",
+    "source": "hn",
+    "title": "Show HN: Open-source AI image/deepfake detection that actually works",
+    "ref": "https://news.ycombinator.com/item?id=44797022"
+  },
+  "standard-default-and-grace.github.io": {
+    "url": "https://standard-default-and-grace.github.io/DoctorVonPeel/",
+    "source": "hn",
+    "title": "Show HN: Scratch Radio Ft Doctor Von Peel: An LLM / Cat-Based Apple Music Client",
+    "ref": "https://news.ycombinator.com/item?id=44793767"
+  },
+  "onlyfeets.app": {
+    "url": "https://onlyfeets.app",
+    "source": "hn",
+    "title": "Show HN: OnlyFeets – AI-Powered Custom Foot Image Generator",
+    "ref": "https://news.ycombinator.com/item?id=44773532"
+  },
+  "museumwhisper.com": {
+    "url": "https://www.museumwhisper.com",
+    "source": "hn",
+    "title": "Show HN: I built an AI audio guide you can use at any museum",
+    "ref": "https://news.ycombinator.com/item?id=44737539"
+  },
+  "robo-comic.vercel.app": {
+    "url": "https://robo-comic.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: RoboComic – Stand-up battles powered by AI (TTS, custom personas)",
+    "ref": "https://news.ycombinator.com/item?id=44693095"
+  },
+  "sharebuttons.ai": {
+    "url": "https://sharebuttons.ai/",
+    "source": "hn",
+    "title": "Show HN: Sharebuttons.ai – generate AI share buttons for ChatGPT, Claude etc.",
+    "ref": "https://news.ycombinator.com/item?id=44682131"
+  },
+  "ailandscape.app": {
+    "url": "https://ailandscape.app",
+    "source": "hn",
+    "title": "Show HN: Free AI Landscape Design Tool –Upload photo, get garden ideas instantly",
+    "ref": "https://news.ycombinator.com/item?id=44660368"
+  },
+  "brain-rot-factory.vercel.app": {
+    "url": "https://brain-rot-factory.vercel.app/en/about",
+    "source": "hn",
+    "title": "Show HN: Brain-rot Factory – Italian meme characters powered by AI (Next.js 15)",
+    "ref": "https://news.ycombinator.com/item?id=44642702"
+  },
+  "mailtion-waitlist.vercel.app": {
+    "url": "https://mailtion-waitlist.vercel.app",
+    "source": "hn",
+    "title": "Show HN: MailTion – AI-Powered Email Marketing for Businesses",
+    "ref": "https://news.ycombinator.com/item?id=44540215"
+  },
+  "sage-ai-waitlist.vercel.app": {
+    "url": "https://sage-ai-waitlist.vercel.app",
+    "source": "hn",
+    "title": "Show HN: Sage-AI – AI-Powered Writing Assistant",
+    "ref": "https://news.ycombinator.com/item?id=44540182"
+  },
+  "review.cspaper.org": {
+    "url": "https://review.cspaper.org/",
+    "source": "hn",
+    "title": "Show HN: AI-generated conf-style feedback to imp your paper before submission",
+    "ref": "https://news.ycombinator.com/item?id=44415526"
+  },
+  "geneo.app": {
+    "url": "https://geneo.app",
+    "source": "hn",
+    "title": "Show HN: Geneo – Track your brand visibility across AI search",
+    "ref": "https://news.ycombinator.com/item?id=44325360"
+  },
+  "taiyaki.ai": {
+    "url": "https://taiyaki.ai/",
+    "source": "hn",
+    "title": "Show HN: Taiyaki – AI-generated 3D jewelry from photos and sketches",
+    "ref": "https://news.ycombinator.com/item?id=44296271"
+  },
+  "mybodytype.net": {
+    "url": "https://mybodytype.net",
+    "source": "hn",
+    "title": "Show HN: I built an app to calculate body type and generate AI fitness plans",
+    "ref": "https://news.ycombinator.com/item?id=44255462"
+  },
+  "auracoder.com": {
+    "url": "https://auracoder.com/",
+    "source": "hn",
+    "title": "Show HN: AuraCoder – Gen AI Learning Platform",
+    "ref": "https://news.ycombinator.com/item?id=44253656"
+  },
+  "convoqueen.xyz": {
+    "url": "https://convoqueen.xyz",
+    "source": "hn",
+    "title": "Show HN: ConvoQueen – AI-powered conversation tracker for dating and networking",
+    "ref": "https://news.ycombinator.com/item?id=44203312"
+  },
+  "runyoyo.com": {
+    "url": "https://www.runyoyo.com/",
+    "source": "hn",
+    "title": "Show HN: YOYO – AI Version Control for Vibe Coding",
+    "ref": "https://news.ycombinator.com/item?id=44195983"
+  },
+  "getairdash.com": {
+    "url": "https://getairdash.com",
+    "source": "hn",
+    "title": "Show HN: I built SQLite databases for your agents with an Airtable view for you",
+    "ref": "https://news.ycombinator.com/item?id=50483632"
+  },
+  "algocademy.com": {
+    "url": "https://algocademy.com/ai-coding-practice/",
+    "source": "hn",
+    "title": "Show HN: Practice coding with AI on real tickets",
+    "ref": "https://news.ycombinator.com/item?id=50483279"
+  },
+  "rocketgit.com": {
+    "url": "https://rocketgit.com/user/catalinux/ai-drop",
+    "source": "hn",
+    "title": "Show HN: AI-drop project – drop traffic fast from misbehaving crawlers (AGPL)",
+    "ref": "https://news.ycombinator.com/item?id=50479949"
+  },
+  "heysenku.com": {
+    "url": "https://www.heysenku.com/",
+    "source": "hn",
+    "title": "Show HN: Senku, an AI agent that can control your phone in background",
+    "ref": "https://news.ycombinator.com/item?id=50468886"
+  },
+  "meta-hackathon.com": {
+    "url": "https://meta-hackathon.com/",
+    "source": "hn",
+    "title": "Show HN: MetaArena – Compare & Rank 5,353 Meta Global AI Hackathon Projects",
+    "ref": "https://news.ycombinator.com/item?id=50464559"
+  },
+  "acneally.vercel.app": {
+    "url": "https://acneally.vercel.app",
+    "source": "hn",
+    "title": "Show HN: I built a AI acne coach that helps find root cause of your acne",
+    "ref": "https://news.ycombinator.com/item?id=50460717"
+  },
+  "fn2.ai": {
+    "url": "https://fn2.ai/claude",
+    "source": "hn",
+    "title": "Show HN: Connect Claude Code to 10.6M Earnings Call Embeddings with FN2 AI",
+    "ref": "https://news.ycombinator.com/item?id=50455416"
+  },
+  "mimzie.com": {
+    "url": "https://mimzie.com/",
+    "source": "hn",
+    "title": "Show HN: Mimzie, an agent-neutral alternative to the Claude Suite/Claude Cowork",
+    "ref": "https://news.ycombinator.com/item?id=50448283"
+  },
+  "thunderphone.com": {
+    "url": "https://thunderphone.com/blog/introducing-zeus",
+    "source": "hn",
+    "title": "Show HN: Zeus – Claude Code for AI voice agents",
+    "ref": "https://news.ycombinator.com/item?id=50445758"
+  },
+  "aircad.com": {
+    "url": "https://aircad.com",
+    "source": "hn",
+    "title": "Show HN: Aircad – Professional drafting and 3D modeling in the browser",
+    "ref": "https://news.ycombinator.com/item?id=50441350"
+  },
+  "aivisionindex.com": {
+    "url": "https://aivisionindex.com/",
+    "source": "hn",
+    "title": "Show HN: AI Vision Index, private tests of how well 36 AI models see",
+    "ref": "https://news.ycombinator.com/item?id=50439591"
+  },
+  "app.nuancelabs.ai": {
+    "url": "https://app.nuancelabs.ai/try",
+    "source": "hn",
+    "title": "Show HN: Emma, a real-time AI video persona from Nuance Labs",
+    "ref": "https://news.ycombinator.com/item?id=50432589"
+  },
+  "kiosk.tech": {
+    "url": "https://kiosk.tech/",
+    "source": "hn",
+    "title": "Show HN: Kiosk, a first-class AI assistants' intefrace to online services",
+    "ref": "https://news.ycombinator.com/item?id=50426314"
+  },
+  "sortaballs.vercel.app": {
+    "url": "https://sortaballs.vercel.app",
+    "source": "hn",
+    "title": "Show HN: Sortaballs v2 – logical game with 10 modes and over 1000 puzzles",
+    "ref": "https://news.ycombinator.com/item?id=50424695"
+  },
+  "company.mindfries.com": {
+    "url": "https://company.mindfries.com/login",
+    "source": "hn",
+    "title": "Show HN: Mindfries- AI Interviewer based on real eng skill not on L**tC*de",
+    "ref": "https://news.ycombinator.com/item?id=50420697"
+  },
+  "airlock.lunareng.com": {
+    "url": "https://airlock.lunareng.com/docs",
+    "source": "hn",
+    "title": "Show HN: Airlock – Policy-as-code for fleets of AI coding agents",
+    "ref": "https://news.ycombinator.com/item?id=50419615"
+  },
+  "ajx.dev": {
+    "url": "https://ajx.dev/",
+    "source": "hn",
+    "title": "Show HN: AJX – Find out where AI agents get stuck using your product",
+    "ref": "https://news.ycombinator.com/item?id=50399373"
+  },
+  "penguinbase.com": {
+    "url": "https://penguinbase.com/game-install?game=192471728&ref=hn",
+    "source": "hn",
+    "title": "Show HN: Grid – A Hold'em arena where your AI agent plays your strategy (Beta)",
+    "ref": "https://news.ycombinator.com/item?id=50392347"
+  },
+  "app.stitch.ai": {
+    "url": "https://app.stitch.ai/auth/signup",
+    "source": "hn",
+    "title": "Show HN: Stitch.ai – New all-in-one workspace with Stitchy the AI assistant",
+    "ref": "https://news.ycombinator.com/item?id=50388519"
+  },
+  "blog.etherpk.com": {
+    "url": "https://blog.etherpk.com/hand-your-markdown-tasks-to-claude-code-from-a-kanban-board",
+    "source": "hn",
+    "title": "Show HN: Hand Your Markdown Tasks to Claude Code from a Kanban Board",
+    "ref": "https://news.ycombinator.com/item?id=50384357"
+  },
+  "finalapproach.fm": {
+    "url": "https://finalapproach.fm/",
+    "source": "hn",
+    "title": "Show HN: Lo-fi layered over air traffic control (recorded myself)",
+    "ref": "https://news.ycombinator.com/item?id=50383438"
+  },
+  "huggingface.co": {
+    "url": "https://huggingface.co/mesmertech/mesmer-ai-detector-4b",
+    "source": "hn",
+    "title": "Show HN: Training a SOTA Pangram-like detector on a 4070ti with Claude",
+    "ref": "https://news.ycombinator.com/item?id=50381455"
+  },
+  "robloxideas.com": {
+    "url": "https://robloxideas.com/",
+    "source": "hn",
+    "title": "Show HN: Roblox game idea generator I built with AI as a non-coder",
+    "ref": "https://news.ycombinator.com/item?id=50380797"
+  },
+  "postraid.com": {
+    "url": "https://www.postraid.com",
+    "source": "hn",
+    "title": "Show HN: I built Postraid to help founders create social media content with AI",
+    "ref": "https://news.ycombinator.com/item?id=50380154"
+  },
+  "mallard-ai.com": {
+    "url": "https://mallard-ai.com/home",
+    "source": "hn",
+    "title": "Show HN: Mallard: Git for the age of AI agents",
+    "ref": "https://news.ycombinator.com/item?id=50357605"
+  },
+  "mistake-trainer.pages.dev": {
+    "url": "https://mistake-trainer.pages.dev/",
+    "source": "hn",
+    "title": "Show HN: Mistake Trainer – Spaced repetition from your own Lichess games",
+    "ref": "https://news.ycombinator.com/item?id=50335339"
+  },
+  "calvinyz.github.io": {
+    "url": "https://calvinyz.github.io/corollary/",
+    "source": "hn",
+    "title": "Show HN: Corollary, LaTeX Editor for Mac with On-Device Apple Foundation Models",
+    "ref": "https://news.ycombinator.com/item?id=50330224"
+  },
+  "anonce.io": {
+    "url": "https://www.anonce.io/",
+    "source": "hn",
+    "title": "Show HN: Nonce – Open-source, least-privilege Gmail access for AI agents",
+    "ref": "https://news.ycombinator.com/item?id=50330213"
+  },
+  "kilasec.com": {
+    "url": "https://kilasec.com",
+    "source": "hn",
+    "title": "Show HN: Building an AI Traffic Guardrail(kilasec)",
+    "ref": "https://news.ycombinator.com/item?id=50330158"
+  },
+  "pollsight.napsty.com": {
+    "url": "https://pollsight.napsty.com",
+    "source": "hn",
+    "title": "Show HN: Pollsight – a simple tool to aid ballot research",
+    "ref": "https://news.ycombinator.com/item?id=50307706"
+  },
+  "nomorehappypath.com": {
+    "url": "https://nomorehappypath.com/",
+    "source": "hn",
+    "title": "Show HN: AI agent needs process to build a commercial application",
+    "ref": "https://news.ycombinator.com/item?id=50304765"
+  },
+  "beolis.com": {
+    "url": "https://beolis.com",
+    "source": "hn",
+    "title": "Show HN: Beolis – Manage your coding AI agents",
+    "ref": "https://news.ycombinator.com/item?id=50304351"
+  },
+  "nostringtheory.com": {
+    "url": "https://nostringtheory.com",
+    "source": "hn",
+    "title": "Show HN: No String Theory – a store that sells air guitars (the box is real)",
+    "ref": "https://news.ycombinator.com/item?id=50288888"
+  },
+  "app.userrank.ai": {
+    "url": "https://app.userrank.ai/",
+    "source": "hn",
+    "title": "Show HN: Coding agent spots your AI practices and the ones you're missing",
+    "ref": "https://news.ycombinator.com/item?id=50275266"
+  },
+  "ai-resume-reviewer-nine-drab.vercel.app": {
+    "url": "https://ai-resume-reviewer-nine-drab.vercel.app",
+    "source": "hn",
+    "title": "Show HN: AI Resume Reviewer Built with Next.js",
+    "ref": "https://news.ycombinator.com/item?id=50274082"
+  },
+  "thegit.ai": {
+    "url": "https://thegit.ai/docs/core-features/browser-control",
+    "source": "hn",
+    "title": "Show HN: Control the browser directly from TheGitAI Terminal",
+    "ref": "https://news.ycombinator.com/item?id=50263081"
+  },
+  "crulon.ai": {
+    "url": "https://crulon.ai/",
+    "source": "hn",
+    "title": "Show HN: Crulon – Business phone where AI does the work, humans make the calls",
+    "ref": "https://news.ycombinator.com/item?id=50261381"
+  },
+  "griyd.com": {
+    "url": "https://griyd.com",
+    "source": "hn",
+    "title": "Show HN: Mob programming with AI agents, built on OpenSpec and OpenCode",
+    "ref": "https://news.ycombinator.com/item?id=50241738"
+  },
+  "uipalooza.ai": {
+    "url": "https://uipalooza.ai/",
+    "source": "hn",
+    "title": "Show HN: UIPalooza – Do AI models have a recognizable design taste?",
+    "ref": "https://news.ycombinator.com/item?id=50238943"
+  },
+  "perchfocus.com": {
+    "url": "https://perchfocus.com/",
+    "source": "hn",
+    "title": "Show HN: Perch, a calm Mac app for juggling Claude Code sessions",
+    "ref": "https://news.ycombinator.com/item?id=50225233"
+  },
+  "kron-lstm.vercel.app": {
+    "url": "https://kron-lstm.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: KronLSTM Walkthrough",
+    "ref": "https://news.ycombinator.com/item?id=50206431"
+  },
+  "ternlux.com": {
+    "url": "https://www.ternlux.com/online-demo/",
+    "source": "hn",
+    "title": "Show HN: Ternlux – Free, local-first, bring-your-own-key AI pipeline builder",
+    "ref": "https://news.ycombinator.com/item?id=50197685"
+  },
+  "microsoft.github.io": {
+    "url": "https://microsoft.github.io/flint-chart/",
+    "source": "hn",
+    "title": "Show HN: Flint-interactive, a language for interactive data visualizations (MSR)",
+    "ref": "https://news.ycombinator.com/item?id=50197593"
+  },
+  "worklicant.com": {
+    "url": "https://worklicant.com/",
+    "source": "hn",
+    "title": "Show HN: Worklicant – Lightweight ATS. Pay per Vacancy. AI Enabled",
+    "ref": "https://news.ycombinator.com/item?id=50168474"
+  },
+  "playgroundarcade.com": {
+    "url": "https://playgroundarcade.com/",
+    "source": "hn",
+    "title": "Show HN: AI-built browser games, collected in one place",
+    "ref": "https://news.ycombinator.com/item?id=50168142"
+  },
+  "asktori.ai": {
+    "url": "https://asktori.ai",
+    "source": "hn",
+    "title": "Show HN: Tori by TalkJS. AI support that's actually good",
+    "ref": "https://news.ycombinator.com/item?id=50166358"
+  },
+  "minuteoffame.lol": {
+    "url": "https://minuteoffame.lol",
+    "source": "hn",
+    "title": "Show HN: Minute of Fame – own one minute of the day, it airs live every day",
+    "ref": "https://news.ycombinator.com/item?id=50165035"
+  },
+  "xtract-production-2efc.up.railway.app": {
+    "url": "https://xtract-production-2efc.up.railway.app/",
+    "source": "hn",
+    "title": "Show HN: Search for AI-agents and usefulness score",
+    "ref": "https://news.ycombinator.com/item?id=50160830"
+  },
+  "privai-sandy.vercel.app": {
+    "url": "https://privai-sandy.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Privacy Layer for Frontier Models",
+    "ref": "https://news.ycombinator.com/item?id=50160374"
+  },
+  "taskpocket.io": {
+    "url": "https://taskpocket.io/",
+    "source": "hn",
+    "title": "Show HN: TaskPocket, a to-do app with an MCP server instead of built-in AI",
+    "ref": "https://news.ycombinator.com/item?id=50141513"
+  },
+  "local-host.ai": {
+    "url": "https://local-host.ai/connectingCaptions/",
+    "source": "hn",
+    "title": "Show HN: Connecting Captions Local Private AI Interpreter",
+    "ref": "https://news.ycombinator.com/item?id=50138839"
+  },
+  "cuore.fit": {
+    "url": "https://cuore.fit/",
+    "source": "hn",
+    "title": "Show HN: I built an AI cycling coach",
+    "ref": "https://news.ycombinator.com/item?id=50131950"
+  },
+  "cr34te.it": {
+    "url": "https://cr34te.it/",
+    "source": "hn",
+    "title": "Show HN: Cr34te.it – a website anyone can rewrite one turn at a time with AI",
+    "ref": "https://news.ycombinator.com/item?id=50117588"
+  },
+  "meet-cedric.com": {
+    "url": "https://meet-cedric.com",
+    "source": "hn",
+    "title": "Show HN: Cedric, the AI teammates that works in Slack and joins meetings",
+    "ref": "https://news.ycombinator.com/item?id=50103931"
+  },
+  "realdesignbenchmark.com": {
+    "url": "https://www.realdesignbenchmark.com",
+    "source": "hn",
+    "title": "Show HN: Real Design Benchmark – can you tell AI designs from real products?",
+    "ref": "https://news.ycombinator.com/item?id=50099581"
+  },
+  "usemerlin.ai": {
+    "url": "https://usemerlin.ai",
+    "source": "hn",
+    "title": "Show HN: Merlin, Run Your Claude Code and Codex from Slack, Linear and GitHub",
+    "ref": "https://news.ycombinator.com/item?id=50088088"
+  },
+  "pulseos.finance": {
+    "url": "https://pulseos.finance",
+    "source": "hn",
+    "title": "Show HN: Pulse Local, a Mac budgeting app whose AI models run on your machine",
+    "ref": "https://news.ycombinator.com/item?id=50080275"
+  },
+  "sugabots.ai": {
+    "url": "https://sugabots.ai/",
+    "source": "hn",
+    "title": "Show HN: Sugabots – Group chats where your team and AI agents work together",
+    "ref": "https://news.ycombinator.com/item?id=50079791"
+  },
+  "ronangaillard.github.io": {
+    "url": "https://ronangaillard.github.io/posts/factory-ds-a-factory-game-for-the-nintendo-ds/",
+    "source": "hn",
+    "title": "Show HN: Factory DS, A Factorio-Like Game for the Nintendo DS",
+    "ref": "https://news.ycombinator.com/item?id=50076586"
+  },
+  "ourmana.app": {
+    "url": "https://ourmana.app/",
+    "source": "hn",
+    "title": "Show HN: Mana – family organizer with an AI assistant",
+    "ref": "https://news.ycombinator.com/item?id=50071636"
+  },
+  "autographmusic.com": {
+    "url": "https://autographmusic.com",
+    "source": "hn",
+    "title": "Show HN: Autograph – a music notation editor you can drive with Claude over MCP",
+    "ref": "https://news.ycombinator.com/item?id=50070306"
+  },
+  "proofsource.co": {
+    "url": "https://proofsource.co/",
+    "source": "hn",
+    "title": "Show HN: Proofsource. Find where AI leaves you out. And Fix it",
+    "ref": "https://news.ycombinator.com/item?id=50067749"
+  },
+  "airlock.sorrel.systems": {
+    "url": "https://airlock.sorrel.systems",
+    "source": "hn",
+    "title": "Show HN: I built Airlock, to sandbox your AI agent and know what it's doing",
+    "ref": "https://news.ycombinator.com/item?id=50054620"
+  },
+  "afterchinesenewyear.pages.dev": {
+    "url": "https://afterchinesenewyear.pages.dev/",
+    "source": "hn",
+    "title": "Show HN: A calendar of every Chinese holiday your supplier will cite as a delay",
+    "ref": "https://news.ycombinator.com/item?id=50054095"
+  },
+  "synonymizer.fyi": {
+    "url": "https://synonymizer.fyi/",
+    "source": "hn",
+    "title": "Show HN: Synonymizer – an experiment in non AI text adjustment",
+    "ref": "https://news.ycombinator.com/item?id=50045321"
+  },
+  "atlasruna.com": {
+    "url": "https://atlasruna.com/",
+    "source": "hn",
+    "title": "Show HN: Atlas Runa – E2E AI-enhanced language learning",
+    "ref": "https://news.ycombinator.com/item?id=50044874"
+  },
+  "flopper.io": {
+    "url": "https://flopper.io/",
+    "source": "hn",
+    "title": "Show HN: Flopper is a hardware explorer for AI infrastructure and beyond",
+    "ref": "https://news.ycombinator.com/item?id=50035826"
+  },
+  "maplehill.openwants.com": {
+    "url": "https://maplehill.openwants.com/",
+    "source": "hn",
+    "title": "Show HN: OpenWants – A Simulated City Where AI Agents Handle Residents Needs",
+    "ref": "https://news.ycombinator.com/item?id=50032374"
+  },
+  "jackdamon.org": {
+    "url": "https://jackdamon.org/blog/lacuna/",
+    "source": "hn",
+    "title": "Show HN: Lacuna – open-source inline AI writing suggestions for your Mac",
+    "ref": "https://news.ycombinator.com/item?id=50025559"
+  },
+  "higherlevel.to": {
+    "url": "https://higherlevel.to/",
+    "source": "hn",
+    "title": "Show HN: Higherlevel – Define and review what AI agents build",
+    "ref": "https://news.ycombinator.com/item?id=50023234"
+  },
+  "design.helpmarq.com": {
+    "url": "https://design.helpmarq.com",
+    "source": "hn",
+    "title": "Show HN: Launching NS UI easy to use components,AI slop should be a term of past",
+    "ref": "https://news.ycombinator.com/item?id=50011077"
+  },
+  "blog.simbastack.com": {
+    "url": "https://blog.simbastack.com/claude-edited-my-youtube-videos-davinci-resolve/",
+    "source": "hn",
+    "title": "Show HN: Runbook and scripts for Claude to edit raw footage in DaVinci Resolve",
+    "ref": "https://news.ycombinator.com/item?id=50003959"
+  },
+  "stayleet.com": {
+    "url": "https://stayleet.com/",
+    "source": "hn",
+    "title": "Show HN: StayLeet – keeping skills sharp in AI coding era",
+    "ref": "https://news.ycombinator.com/item?id=50000084"
+  },
+  "chloejs.org": {
+    "url": "https://chloejs.org/compare",
+    "source": "hn",
+    "title": "Show HN: Chloe is a TypeScript AI agent",
+    "ref": "https://news.ycombinator.com/item?id=49998857"
+  },
+  "voicegremlin.com": {
+    "url": "https://voicegremlin.com/",
+    "source": "hn",
+    "title": "Show HN: VoiceGremlin, a SaaS tool for automated tests against AI phone agents",
+    "ref": "https://news.ycombinator.com/item?id=49995804"
+  },
+  "pypi.org": {
+    "url": "https://pypi.org/project/search2o/",
+    "source": "hn",
+    "title": "Show HN: Searchable AI agents built with a JSONC DSL",
+    "ref": "https://news.ycombinator.com/item?id=49994289"
+  },
+  "leaks.md": {
+    "url": "https://leaks.md/",
+    "source": "hn",
+    "title": "Show HN: Leaks.md – anonymous, encrypted whistleblowing for AI agents",
+    "ref": "https://news.ycombinator.com/item?id=49991893"
+  },
+  "satyasairay.github.io": {
+    "url": "https://satyasairay.github.io/banyan/banyan_v5.html",
+    "source": "hn",
+    "title": "Show HN: Banyan, a procedural tree grown from a 32-bit seed in one HTML file",
+    "ref": "https://news.ycombinator.com/item?id=49977811"
+  },
+  "designobo.com": {
+    "url": "https://designobo.com/",
+    "source": "hn",
+    "title": "Show HN: Designobo – AI prototyping tool in 40kb of js",
+    "ref": "https://news.ycombinator.com/item?id=49966733"
+  },
+  "teacherplanner.ai": {
+    "url": "https://teacherplanner.ai",
+    "source": "hn",
+    "title": "Show HN: Teacher Planner – A digital planbook with AI tools for teachers",
+    "ref": "https://news.ycombinator.com/item?id=49939688"
+  },
+  "patens-dev.github.io": {
+    "url": "https://patens-dev.github.io/pbi-guard/",
+    "source": "hn",
+    "title": "Show HN: PBI Guard – Stop people from messing up your Power BI (you included)",
+    "ref": "https://news.ycombinator.com/item?id=49925738"
+  },
+  "innerloop.works": {
+    "url": "https://innerloop.works/breadcrumb",
+    "source": "hn",
+    "title": "Show HN: Breadcrumb, record everything on your mac + context manager for AI",
+    "ref": "https://news.ycombinator.com/item?id=49924943"
+  },
+  "jdevuyst.github.io": {
+    "url": "https://jdevuyst.github.io/kio/",
+    "source": "hn",
+    "title": "Show HN: The Kio Programming Language",
+    "ref": "https://news.ycombinator.com/item?id=49920582"
+  },
+  "quiet-hci.pages.dev": {
+    "url": "https://quiet-hci.pages.dev",
+    "source": "hn",
+    "title": "Show HN: Quiet – exploring when an AI assistant should intervene",
+    "ref": "https://news.ycombinator.com/item?id=49912153"
+  },
+  "datastory.tech": {
+    "url": "https://www.datastory.tech",
+    "source": "hn",
+    "title": "Show HN: Datastory, Data storytelling with AI and an open knowledge graph",
+    "ref": "https://news.ycombinator.com/item?id=49911411"
+  },
+  "manzambi.com": {
+    "url": "https://www.manzambi.com/writing/local-redteaming-field-report/",
+    "source": "github",
+    "title": "Three-layer red-team smoke test for LLMs and MCP servers, run against local models on Ollama: Garak, Promptfoo, PyRIT and a built-in MCP descriptor scan with capability scoping (v0.1.0). CI-ready. Not",
+    "ref": "https://github.com/josephManzambi/ai-redteam-orchestrator"
+  },
+  "isabellmartins.de": {
+    "url": "https://www.isabellmartins.de",
+    "source": "github",
+    "title": "The source-code of a Next.js-powered website. Built with v0.",
+    "ref": "https://github.com/janraasch/isabellmartinsde-www"
+  },
+  "create-github-portfolio.vercel.app": {
+    "url": "https://create-github-portfolio.vercel.app",
+    "source": "github",
+    "title": "My personal portfolio website-built with v0,Next.js and deployed on Vercel",
+    "ref": "https://github.com/SamudiUthpala/create-github-portfolio"
+  },
+  "akiromusic.github.io": {
+    "url": "https://akiromusic.github.io/AkiMark/",
+    "source": "github",
+    "title": "AkiMark - Lightweight on-screen annotation tool built with Tauri v2 + Vue 3. Beta v0.1.0. / 轻量级屏幕标注工具（Tauri v2 + Vue 3 构建），内测版 v0.1.0。",
+    "ref": "https://github.com/AkiroMusic/AkiMark"
+  },
+  "crumple.priberry.com": {
+    "url": "https://crumple.priberry.com",
+    "source": "github",
+    "title": "The crash test for AI coding agents: 19 realistic traps for Claude Code, Codex and Gemini CLI in a sealed container, plus a safety grade with fix prompts for apps built with Lovable, Bolt, v0 and Repl",
+    "ref": "https://github.com/priberry-data/crumplelab"
+  },
+  "greenlit.priberry.com": {
+    "url": "https://greenlit.priberry.com",
+    "source": "github",
+    "title": "Is your AI-built app safe to launch? A grade from A to F for Lovable, Bolt, v0 and Replit apps, with a fix prompt for every problem.",
+    "ref": "https://github.com/priberry-data/greenlitlab"
+  },
+  "soda-strudel.netlify.app": {
+    "url": "https://soda-strudel.netlify.app",
+    "source": "github",
+    "title": "Live-code music, images, camera and story in the browser – built on Strudel, vibed with Claude. v0.0.1",
+    "ref": "https://github.com/worksona/soda-strudel"
+  },
+  "programming.chanmeng.org": {
+    "url": "https://programming.chanmeng.org/",
+    "source": "github",
+    "title": "【Every star you give feeds a hungry developer's motivation! ⭐️】A modern educational platform built with Docusaurus that teaches AI-assisted programming through comprehensive tutorials, practical exerc",
+    "ref": "https://github.com/ChanMeng666/ai-programming-teaching-project"
+  },
+  "v0-minimal-portfolio-site-phi.vercel.app": {
+    "url": "https://v0-minimal-portfolio-site-phi.vercel.app",
+    "source": "github",
+    "title": "Minimal personal portfolio site built with v0.dev. Next.js.",
+    "ref": "https://github.com/dimitrispalamidas/minimal-portfolio"
+  },
+  "v0-personal-developer-portfolio-psi-blush.vercel.app": {
+    "url": "https://v0-personal-developer-portfolio-psi-blush.vercel.app",
+    "source": "github",
+    "title": "My software engineer portfolio website built with v0 from Versel",
+    "ref": "https://github.com/KaungSithuLinn/v0-personal-developer-portfolio"
+  },
+  "launchworthy.dev": {
+    "url": "https://launchworthy.dev",
+    "source": "github",
+    "title": "A Claude Code skill that plays bouncer at the door of production: audits AI-built apps (Lovable, Bolt, v0, Cursor) across 5 domains and hands you a scored  punch list with copy-paste fixes. MIT.",
+    "ref": "https://github.com/Wunderlandmedia/launchworthy"
+  },
+  "start-ng-lego.vercel.app": {
+    "url": "https://start-ng-lego.vercel.app",
+    "source": "github",
+    "title": "Good vibes. Good games. — start.ng v0 with a playful LEGO layer: 3D brick hero, LEGO-logo rings, minifigs, motion. Built with Next.js 16 + React 19 + Tailwind v4.",
+    "ref": "https://github.com/yusuuf-mm/start-ng-lego"
+  },
+  "okf-memory.dev": {
+    "url": "https://okf-memory.dev",
+    "source": "github",
+    "title": "Git-native persistent memory for AI coding agents. Implements Google OKF v0.2 with sub-300µs in-memory BM25 search, embedded MCP server, and progressive disclosure. Slashes token bloat by 80% with zer",
+    "ref": "https://github.com/okf-memory/okf-agent-memory"
+  },
+  "seek-k-nowledge.github.io": {
+    "url": "https://seek-k-nowledge.github.io",
+    "source": "github",
+    "title": "News and narrative monitor with spike alerts, built for the Listening Between the Lies podcast. Checks public news, social and video feeds every 15 minutes. Working prototype (v0.1). Python, runs loca",
+    "ref": "https://github.com/seek-k-nowledge/narrative-radar"
+  },
+  "claude-code-mobile-green.vercel.app": {
+    "url": "https://claude-code-mobile-green.vercel.app",
+    "source": "github",
+    "title": "Claude Code Mobile - built with v0. AI assistants: read AGENTS.md first.",
+    "ref": "https://github.com/krushnahon99-netizen/claude-code-mobile"
+  },
+  "personal-blog-onerlaw.vercel.app": {
+    "url": "https://personal-blog-onerlaw.vercel.app",
+    "source": "github",
+    "title": "Personal blog built with Next.js (v0).",
+    "ref": "https://github.com/honerlaw/personal-blog"
+  },
+  "pewterkit.com": {
+    "url": "https://pewterkit.com/guides",
+    "source": "github",
+    "title": "A pre-launch checklist for apps built with Lovable, Bolt, Replit, v0 and Cursor: security, payments, sign-in, email, privacy and search.",
+    "ref": "https://github.com/pewterkit/vibe-launch-checklist"
+  },
+  "babeleo.vercel.app": {
+    "url": "https://babeleo.vercel.app",
+    "source": "github",
+    "title": "Chat with my cats. 🐈 A personal project built with v0, OpenAI, and ElevenLabs to test design prompts, voice chat, and personality fidelity.",
+    "ref": "https://github.com/katekalcevich/Babeleo"
+  },
+  "fetch-a-thon-30-hackthon.vercel.app": {
+    "url": "https://fetch-a-thon-30-hackthon.vercel.app",
+    "source": "github",
+    "title": "AutoCollective AI 🚗 — Decentralized multi-agent car buying and collective negotiation portal built with Fetch.ai uAgents, Agentverse cloud, ACP v0.2.0, and ASI:One. Pools retail car buyers into autono",
+    "ref": "https://github.com/Adityak1273/FETCH-A-THON-3.0-HACKTHON"
+  },
+  "devendrasaim.vercel.app": {
+    "url": "https://devendrasaim.vercel.app/",
+    "source": "github",
+    "title": "Personal portfolio with an AI chatbot that answers recruiter questions in first person using prompt-engineered Gemini. and built using v0.dev",
+    "ref": "https://github.com/devendrasaim/devendrasaim.github.io"
+  },
+  "la-street-sweeping-tickets.vercel.app": {
+    "url": "https://la-street-sweeping-tickets.vercel.app",
+    "source": "github",
+    "title": "Data story on 131,197 LA street sweeping tickets (Jul to Sep 2026): when, where, and a Koreatown spotlight. Built with ChatGPT and v0.",
+    "ref": "https://github.com/jhernandezfintech/la-street-sweeping-tickets"
+  },
+  "green-sahara-client.vercel.app": {
+    "url": "https://green-sahara-client.vercel.app/",
+    "source": "github",
+    "title": "Green Sahara is a circular management web platform that connects organic waste generators  with farmers to facilitate waste recovery. Built with a bilingual French and Arabic interface featuring full ",
+    "ref": "https://github.com/its-Medd/Green_Sahara-v0.2"
+  },
+  "car-agent-eve.vercel.app": {
+    "url": "https://car-agent-eve.vercel.app/",
+    "source": "github",
+    "title": "Shop Agent built with V0 & Eve integration (Vercel Ship 26 Build)",
+    "ref": "https://github.com/nithinaru/car-agent-eve"
+  },
+  "nicchin.com": {
+    "url": "https://nicchin.com/blog/vibe-coded-app-security-study",
+    "source": "github",
+    "title": "Launch checklist for apps built with Lovable, Bolt, v0, Cursor, Replit or Claude Code - triaged by what blocks launch, plus measured research on 53 public AI-built repositories",
+    "ref": "https://github.com/nicuk/ai-built-app-production-readiness-checklist"
+  },
+  "selfoia.com": {
+    "url": "https://selfoia.com/checklist",
+    "source": "github",
+    "title": "24 checks for apps built with Lovable, Bolt, Cursor, Replit, v0, Base44 or Claude Code: leaked keys, open databases, payments, AI bills, speed and backups. A 2-minute self-test for each, plus a CHECKL",
+    "ref": "https://github.com/denys-kharkovskyy/ai-built-app-checklist"
+  },
+  "harmonie-montreuil-sur-mer.fr": {
+    "url": "https://harmonie-montreuil-sur-mer.fr",
+    "source": "github",
+    "title": "This repository contains the source code for a modern web interface built with Next.js for Harmonie de Montreuil sur Mer. The base and design were initially created by v0.",
+    "ref": "https://github.com/Nathandelenclos/harmonie-montreuil-sur-mer"
+  },
+  "driftbound-v04.vercel.app": {
+    "url": "https://driftbound-v04.vercel.app/",
+    "source": "github",
+    "title": "Driftbound — A 3D downhill sledding game built with Three.js",
+    "ref": "https://github.com/umeshpalsingh/Driftbound-v0.4"
+  },
+  "v0-healthcare-website-ten-tau.vercel.app": {
+    "url": "https://v0-healthcare-website-ten-tau.vercel.app",
+    "source": "github",
+    "title": "Healthcare clinic website with doctor schedules, on-call roster and online appointment booking. Built with Next.js & Supabase.",
+    "ref": "https://github.com/mdalamin-py/v0-healthcare-website"
+  },
+  "digitalguidesneighborsnetwork.vercel.app": {
+    "url": "https://digitalguidesneighborsnetwork.vercel.app",
+    "source": "github",
+    "title": "A senior-friendly, privacy-first community site pairing background-checked young adult Guides with senior Explorers for patient, one-on-one tech help. Built with v0, Next.js and Tailwind CSS.",
+    "ref": "https://github.com/dariadaniellegiraud-ux/digitalguidesneighborsnetwork"
+  },
+  "elmo-cantonese-quiz.vercel.app": {
+    "url": "https://elmo-cantonese-quiz.vercel.app",
+    "source": "github",
+    "title": "A Cantonese vocabulary quiz game that was supposed to feature Elmo, my kid's favourite character - built with React, Vite, and Tailwind CSS. v0.2",
+    "ref": "https://github.com/josiahwyk/elmo-cantonese-quiz"
+  },
+  "cartly-neon.vercel.app": {
+    "url": "https://cartly-neon.vercel.app",
+    "source": "github",
+    "title": "AI-built e-commerce landing page made with v0.dev, exported to GitHub and deployed live on Vercel with continuous deployment (NextWork project)",
+    "ref": "https://github.com/jasahorro/Ship-a-Landing-Page-with-v0-and-Vercel"
+  },
+  "anil-builds-portfolio-d5.vercel.app": {
+    "url": "https://anil-builds-portfolio-d5.vercel.app",
+    "source": "github",
+    "title": "Anil Builds — a responsive portfolio of practical AI projects, built with v0 and deployed on Vercel.",
+    "ref": "https://github.com/anilvirajj97-png/anil-builds-portfolio"
+  },
+  "xdevac.github.io": {
+    "url": "https://xdevac.github.io/video-v0/",
+    "source": "github",
+    "title": "video-v0 website built with Website Builder",
+    "ref": "https://github.com/xdevac/video-v0"
+  },
+  "v0-landing-page-with-scheduling.vercel.app": {
+    "url": "https://v0-landing-page-with-scheduling.vercel.app",
+    "source": "github",
+    "title": "Personal portfolio site (alejo86a.com) built with Next.js, TypeScript, Tailwind, and shadcn/ui, originally scaffolded with v0.dev",
+    "ref": "https://github.com/alejo86a/alejo86a.com"
+  },
+  "v0-wireframe-dot-matrix-globe-two-beta.vercel.app": {
+    "url": "https://v0-wireframe-dot-matrix-globe-two-beta.vercel.app",
+    "source": "github",
+    "title": "Interactive 3D wireframe dot-matrix Earth globe — drag to rotate, scroll to zoom. Built with Next.js 15, React 19 and D3.js.",
+    "ref": "https://github.com/girishlade111/wireframe-dot-matrix-globe"
+  },
+  "v0-movify-your-life-navy.vercel.app": {
+    "url": "https://v0-movify-your-life-navy.vercel.app",
+    "source": "github",
+    "title": "A high-performance marketing landing page for the \"Movify Your Life\" service - transforming personal life stories into professional Hollywood-style movie scripts. Built with Next.js 15, React 19, and ",
+    "ref": "https://github.com/girishlade111/movify-your-life"
+  },
+  "kbun2846.github.io": {
+    "url": "https://kbun2846.github.io/deadstab/",
+    "source": "github",
+    "title": "deadstab alpha v0.8, minimalist top down shooter with distinct weapons, explosive combat and online multiplayer, playable in the browser on mobile or pc. Built for multiple maps, with more to come; th",
+    "ref": "https://github.com/kbun2846/deadstab"
+  },
+  "ember-isle-friendsdk.vercel.app": {
+    "url": "https://ember-isle-friendsdk.vercel.app",
+    "source": "github",
+    "title": "Ember Isle game built with FriendSDK v0.1.4 for deployment",
+    "ref": "https://github.com/dejagold123/ember-isle-friendsdk"
+  },
+  "clone-vibe.vercel.app": {
+    "url": "https://clone-vibe.vercel.app",
+    "source": "github",
+    "title": "AI-powered application builder built with Next.js 16 that lets you create apps and websites by chatting with AI.",
+    "ref": "https://github.com/sanidhyy/lovable-clone"
+  },
+  "vibeking.fun": {
+    "url": "https://vibeking.fun",
+    "source": "github",
+    "title": "Shipped with AI — a curated list of real products built with AI coding tools (vibe coding). Auto-updated daily from vibeking.fun, every entry verified live.",
+    "ref": "https://github.com/0xvibly/shipped-with-ai"
+  },
+  "thebdk.com": {
+    "url": "https://thebdk.com/agent",
+    "source": "github",
+    "title": "BDK Native plugin: connect your AI assistant to BDK's MCP server and turn a web app built with Lovable, Bolt, Replit, Bubble or any other tool into iOS and Android apps.",
+    "ref": "https://github.com/gauraviitr/bdk-native-plugin"
+  },
+  "screenshot-magic-2653.lovable.app": {
+    "url": "https://screenshot-magic-2653.lovable.app/",
+    "source": "github",
+    "title": "Match or Hang: a gamified brand engagement web game where players match products against the clock, and wrong moves bring them closer to getting hanged. Built with HUL as a demo brand for AI Showbiz a",
+    "ref": "https://github.com/anushkasinghdagar/AI-SHOWBIZ"
+  },
+  "verilay.dev": {
+    "url": "https://verilay.dev",
+    "source": "github",
+    "title": "Free plain-English security check for apps built with AI tools like Lovable, Replit and Bolt. Paste a GitHub link, no account needed.",
+    "ref": "https://github.com/ekbm/verilay"
+  },
+  "qomardeen-designs.vercel.app": {
+    "url": "https://qomardeen-designs.vercel.app",
+    "source": "github",
+    "title": "My portfolio website built primarily with lovable",
+    "ref": "https://github.com/thintallqomar/qomardeen-designs"
+  },
+  "lattafaluxuryretreat.netlify.app": {
+    "url": "https://lattafaluxuryretreat.netlify.app/",
+    "source": "github",
+    "title": "A modern luxury retreat website built with Lovable and deployed on Netlify, featuring a responsive design and premium user experience.",
+    "ref": "https://github.com/MenelikAdundo/lattafa-luxury-retreat"
+  },
+  "mindbloom-ai-app.lovable.app": {
+    "url": "https://mindbloom-ai-app.lovable.app/",
+    "source": "github",
+    "title": "Student wellness prototype with daily check-ins, guided skills, a resilience garden, and explainable counselor insights. Built with React and TypeScript at UA Little Rock's 2026 AI Hackathon.",
+    "ref": "https://github.com/anaypandit/mindbloom"
+  },
+  "serviconnecthub.lovable.app": {
+    "url": "https://serviconnecthub.lovable.app",
+    "source": "github",
+    "title": "Marketplace platform connecting Abuja residents with verified professionals - Built by Bisacal Tech Enterprise ",
+    "ref": "https://github.com/Bisacal/serviconnecthub"
+  },
+  "lorenzolivieri.vercel.app": {
+    "url": "https://lorenzolivieri.vercel.app",
+    "source": "github",
+    "title": "Production author website for Italian thriller writer Lorenzo Livieri. Dark, mobile first, SEO ready. Built with Lovable ->React, Vite, Tailwind and an AI native workflow. (2026)",
+    "ref": "https://github.com/FrancescoPierfederici/lorenzolivieri"
+  },
+  "patchlabs.dev": {
+    "url": "https://patchlabs.dev",
+    "source": "github",
+    "title": "Free, open-source security scanner for apps built with Lovable, Supabase, Bolt, Replit or Cursor: RLS, risky code, dependencies, live headers. Apache-2.0.",
+    "ref": "https://github.com/manra399/patchlabs-cli"
+  },
+  "aditibuilds.lovable.app": {
+    "url": "https://aditibuilds.lovable.app",
+    "source": "github",
+    "title": "Personal portfolio of Aditi Anand Guddeti, an IT student exploring AI and Machine Learning. Showcases projects, skills and a learning roadmap. Built with Lovable.",
+    "ref": "https://github.com/Aditiii222/Portfolio"
+  },
+  "liquidplatform.org": {
+    "url": "https://liquidplatform.org/guides",
+    "source": "github",
+    "title": "A practical security checklist for apps built with AI coding tools (Lovable, Bolt, Cursor) on Supabase. Maintained by Liquid Cybersecurity.",
+    "ref": "https://github.com/criptogus/vibe-app-security-checklist"
+  },
+  "soundcheck-lovat.vercel.app": {
+    "url": "https://soundcheck-lovat.vercel.app",
+    "source": "github",
+    "title": "Open-source security scanner for apps that are built with Lovable, Bolt, Cursor, and other AI tools.",
+    "ref": "https://github.com/bling05/soundcheck"
+  },
+  "fiverr.com": {
+    "url": "https://www.fiverr.com/larissadoura380",
+    "source": "github",
+    "title": "A practical security checklist for apps built with Lovable, Bolt, Cursor and Supabase",
+    "ref": "https://github.com/Larissadourado27/lovable-supabase-security-checklist"
+  },
+  "afekaharoni.github.io": {
+    "url": "https://afekaharoni.github.io/",
+    "source": "github",
+    "title": "Personal portfolio website built with React, TypeScript, Tailwind CSS, and shadcn/ui - created with Lovable and deployed via GitHub Pages.",
+    "ref": "https://github.com/AfekAharoni/afekaharoni.github.io"
+  },
+  "glucoseguide.lovable.app": {
+    "url": "https://glucoseguide.lovable.app",
+    "source": "github",
+    "title": "Glucose Guide: log a blood glucose reading and get instant food, recipe, and activity suggestions tailored to it. Built for people with Type 1 diabetes. Informational only, not medical advice.",
+    "ref": "https://github.com/Warficent/glucoseguide"
+  },
+  "vibecodedapps.dev": {
+    "url": "https://vibecodedapps.dev",
+    "source": "github",
+    "title": "Real apps built with vibe coding: curated examples made with Claude Code, Cursor, Lovable and more. Live, link-checked list at vibecodedapps.dev",
+    "ref": "https://github.com/levz0r/awesome-vibecoded-apps"
+  },
+  "ytodi96.github.io": {
+    "url": "https://ytodi96.github.io/lemonbowl-website/",
+    "source": "github",
+    "title": "The Lemon Bowl website redesign, built with Lovable from my brief",
+    "ref": "https://github.com/ytodi96/lemonbowl-website"
+  },
+  "vyaparlite-app.lovable.app": {
+    "url": "https://vyaparlite-app.lovable.app",
+    "source": "github",
+    "title": "VyaparLite is a responsive small-business finance tracker built to manage income, expenses, transactions, and financial reports. Built with Lovable and Supabase, with a focus on simplicity, secure dat",
+    "ref": "https://github.com/ChaudhariParthh/VyaparLite-Webapp"
+  },
+  "rajpoot-mango-market.lovable.app": {
+    "url": "https://rajpoot-mango-market.lovable.app/",
+    "source": "github",
+    "title": "An AI-powered customer support solution for Rajpoot Organic Foods, featuring a website built with Lovable.dev and a Zapier RAG chatbot. Combines product-focused design, a structured knowledge base, an",
+    "ref": "https://github.com/aqsairfan323-AI/rajpoot-organic-foods-website-"
+  },
+  "marwadmaratha.in": {
+    "url": "https://marwadmaratha.in",
+    "source": "github",
+    "title": "E-commerce website for a real homemade food brand (Aachar, Papad, Millets & Namkeen) | Built with AI assistance (Lovable) | React · TypeScript · Tailwind CSS · Vercel | 🚧 Under Development",
+    "ref": "https://github.com/ParthVerma1906/marwad_maratha"
+  },
+  "actsolo.ai": {
+    "url": "https://actsolo.ai/",
+    "source": "github",
+    "title": "A teleprompter app and scene reading partner for actors built with Lovable, Supabase, ElevenLabs Realtime API for conversational voice.  Actors can copy/paste any script & assign AI voices to characte",
+    "ref": "https://github.com/afllewellyn/act-solo-ai"
+  },
+  "turni-facili.lovable.app": {
+    "url": "https://turni-facili.lovable.app/",
+    "source": "github",
+    "title": "Excel to calendar shift converter. Built with Lovable at the Lovable & Drivhuset Impact Buildathon (Stockholm, 2026).",
+    "ref": "https://github.com/francescofuligni/easy-shifts"
+  },
+  "carrerconnect.lovable.app": {
+    "url": "https://carrerconnect.lovable.app/",
+    "source": "github",
+    "title": "University career portal prototype for finding internships and jobs, applying with one CV, and tracking applications. Built with Lovable.",
+    "ref": "https://github.com/TKHONDE/carrerconnect"
+  },
+  "speedy-racers.lovable.app": {
+    "url": "https://speedy-racers.lovable.app",
+    "source": "github",
+    "title": "This racing game was built collaboratively on Lovable by a seven-year-old with a big imagination using voice mode to bring his creative vision to life. It was a really fun experiment showing how kids ",
+    "ref": "https://github.com/katrinaaps/speedy-racers"
+  },
+  "bitshares-explorer.lovable.app": {
+    "url": "https://bitshares-explorer.lovable.app",
+    "source": "github",
+    "title": "Simple BitShares Blockchain Explorer being built with lovable",
+    "ref": "https://github.com/abitmore/lovable-bitshares-explorer"
+  },
+  "mntn-phi.vercel.app": {
+    "url": "https://mntn-phi.vercel.app",
+    "source": "github",
+    "title": "MNTN hiking landing page — React + Tailwind (Lovable-ready), built from Figma with scroll animations",
+    "ref": "https://github.com/refael2200/mntn"
+  },
+  "ledgerline-dashboard.lovable.app": {
+    "url": "https://ledgerline-dashboard.lovable.app",
+    "source": "github",
+    "title": "A premium, multi-page B2B SaaS analytics dashboard built with React and Tailwind. Features custom SVG data visualizations with zero external chart libraries.",
+    "ref": "https://github.com/Xhenzouu/ledgerline-dashboard"
+  },
+  "ayushsingh0456.github.io": {
+    "url": "https://ayushsingh0456.github.io/case-studies/mneme.html",
+    "source": "github",
+    "title": "Mneme: AI operational workspace I designed and built myself with vibe coding. Keeps project meetings, daily logs, decisions and client threads in one searchable memory.",
+    "ref": "https://github.com/ayushsingh0456/context-hub"
+  },
+  "daycraft-action-companion.lovable.app": {
+    "url": "https://daycraft-action-companion.lovable.app",
+    "source": "github",
+    "title": "AI workplace productivity assistant: email summarizer, meeting-notes action-item extractor, and prioritised daily task planner. Mock AI, no API key needed. Built with Lovable.",
+    "ref": "https://github.com/mokadipromise27/AI-Productivity-Assistant"
+  },
+  "wtfchord.lovable.app": {
+    "url": "https://wtfchord.lovable.app/",
+    "source": "github",
+    "title": "Identify any guitar chord from a virtual fretboard: music-theory scoring, slash chords, alternate tunings and 7-string support. Built with Lovable.",
+    "ref": "https://github.com/Jorge-Barbosa1/wtfchord"
+  },
+  "linkedin.com": {
+    "url": "https://www.linkedin.com/in/brian-ball/",
+    "source": "github",
+    "title": "Portfolio showcasing 4 iOS apps live on App Store + 1 in review. Built with Lovable/React. Family Trail (school/child organiser), Invogo (invoicing for freelancers), Daily Detective (puzzle), Pinch Pa",
+    "ref": "https://github.com/b35-sketch/app-store-portfolio"
+  },
+  "stylish-achievements.vercel.app": {
+    "url": "https://stylish-achievements.vercel.app",
+    "source": "github",
+    "title": "A modern, interactive portfolio built with React, TypeScript, and 3D web technologies to showcase achievements through immersive design and smooth user experiences.",
+    "ref": "https://github.com/ajaygangwar945/Stylish-Achievements"
+  },
+  "soccer-team-selector-claude.vercel.app": {
+    "url": "https://soccer-team-selector-claude.vercel.app",
+    "source": "github",
+    "title": "Splits pickup soccer players into fair teams by skill, position and goalkeeper. Built with Claude Code as a rebuild of a Lovable app, for a side-by-side tool comparison.",
+    "ref": "https://github.com/gnp2115/soccer_team_selector_claude"
+  },
+  "docintel-rag.lovable.app": {
+    "url": "https://docintel-rag.lovable.app",
+    "source": "github",
+    "title": "A functional Document Intelligence app that uses RAG (Retrieval-Augmented Generation) to chat with PDFs, with page-level citations. Built with React, Supabase, and Lovable AI.",
+    "ref": "https://github.com/Xhenzouu/docintel-rag"
+  },
+  "street-food-burger-treats-app.lovable.app": {
+    "url": "https://street-food-burger-treats-app.lovable.app",
+    "source": "github",
+    "title": "A vibrant street-food restaurant website showcasing expressive UI/UX design, responsive layouts and an interactive menu. Built with Lovable, React and TypeScript.",
+    "ref": "https://github.com/3ConstArt3/street-food-burger-treats-app"
+  },
+  "glass-nebula-shooter.lovable.app": {
+    "url": "https://glass-nebula-shooter.lovable.app",
+    "source": "github",
+    "title": "A glass-style space shooter game set in a glowing nebula. Built with Lovable.",
+    "ref": "https://github.com/thehustler-manoj/glass-nebula-shooter"
+  },
+  "pitlane-garage.lovable.app": {
+    "url": "https://pitlane-garage.lovable.app",
+    "source": "github",
+    "title": "Vehicle library web app — React, TypeScript, Supabase (built with Lovable). Live: https://pitlane-garage.lovable.app",
+    "ref": "https://github.com/miroslavjovanovicsrb/Pitlane-Garage"
+  },
+  "shipreadycheck-dev.github.io": {
+    "url": "https://shipreadycheck-dev.github.io",
+    "source": "github",
+    "title": "Free security scanner for apps built with Lovable, Bolt, Cursor and Claude Code. Finds exposed keys, open Supabase tables and fake-able Stripe payments.",
+    "ref": "https://github.com/shipreadycheck-dev/shipready-scan"
+  },
+  "cuhk-shortcut-finder.lovable.app": {
+    "url": "https://cuhk-shortcut-finder.lovable.app",
+    "source": "github",
+    "title": "CUHK campus shortcut finder — a mobile-first product built with Lovable. Product case study, live demo, screenshots, and a sanitized source snapshot.",
+    "ref": "https://github.com/yijinchen416-bot/cuhk-shortcut-finder"
+  },
+  "az-900-exam-prep-too-jn8m.bolt.host": {
+    "url": "https://az-900-exam-prep-too-jn8m.bolt.host",
+    "source": "github",
+    "title": "An AI-accelerated, open-source AZ-900 exam prep tool built with React, Tailwind CSS, and Bolt.new. Features smart quizzes with instant explanations, spaced-repetition flashcards, and dynamic readiness",
+    "ref": "https://github.com/Sr7Rama/AZ900-STUDY-AID"
+  },
+  "web3-learning-app-103y.bolt.host": {
+    "url": "https://web3-learning-app-103y.bolt.host",
+    "source": "github",
+    "title": "Web3 Sabi is a beginner learning app that explains Web3 in plain language, with AI images, AI voice and an AI tutor. Built with Bolt.new, Supabase, n8n and Orbio AI.",
+    "ref": "https://github.com/Phayvourdgreat/web3-sabi"
+  },
+  "lovable.nagmani.site": {
+    "url": "https://lovable.nagmani.site",
+    "source": "github",
+    "title": "An open-source Lovable/Bolt.new alternative — AI-powered web app builder that generates and edits projects in real-time through chat. Built with Next.js, Express, and sandboxed AI orchestration.",
+    "ref": "https://github.com/Nagmani001/lovable"
+  },
+  "portfolio-1-priya12.vercel.app": {
+    "url": "https://portfolio-1-priya12.vercel.app",
+    "source": "github",
+    "title": "Personal portfolio — Freelance web developer specializing in AI-assisted website design & development. Built with HTML/CSS/JS using ChatGPT, Claude, Cursor & Bolt.new.",
+    "ref": "https://github.com/priya267e-netizen/Portfolio-"
+  },
+  "cloudshots-technologies.vercel.app": {
+    "url": "https://cloudshots-technologies.vercel.app",
+    "source": "github",
+    "title": "Next.js project built with Bolt.new and Cursor",
+    "ref": "https://github.com/CloudShots/cloudshots-technologies"
+  },
+  "premium-dealership.vercel.app": {
+    "url": "https://premium-dealership.vercel.app",
+    "source": "github",
+    "title": "Professional automobile dealership website built with Bolt.new, Next.js, Supabase, Stripe, and Vercel.",
+    "ref": "https://github.com/DXmanTechLab/premium-dealership"
+  },
+  "brew-haven-mauve.vercel.app": {
+    "url": "https://brew-haven-mauve.vercel.app",
+    "source": "github",
+    "title": "A modern and responsive coffee shop website built with HTML, CSS, and JavaScript. Developed using VS Code with AI assistance from ChatGPT and Bolt.new for design ideas, debugging, and improving the de",
+    "ref": "https://github.com/thakuravinashji/BrewHaven"
+  },
+  "guys-top-10-songs.netlify.app": {
+    "url": "https://guys-top-10-songs.netlify.app/",
+    "source": "github",
+    "title": "Yearly top 10 songs static web app built with bolt.new, cursor (and other AI tools...)",
+    "ref": "https://github.com/GuyHaviv37/top-10-songs"
+  },
+  "premium-todo-app-wit-gf8k.bolt.host": {
+    "url": "https://premium-todo-app-wit-gf8k.bolt.host",
+    "source": "github",
+    "title": "\"Premium task manager ⚡  Built with bolt.new\"",
+    "ref": "https://github.com/fahadiqbal18973/Task_Manager_By_Fahad"
+  },
+  "ecotrack-carbon-footprint-tracker-kappa.vercel.app": {
+    "url": "https://ecotrack-carbon-footprint-tracker-kappa.vercel.app/",
+    "source": "github",
+    "title": "🌍 A modern, gamified web app that helps users track, analyze, and reduce their carbon footprint. Built with Bolt.new, Supabase, and TypeScript, EcoTrack calculates CO₂ emissions from transportation, e",
+    "ref": "https://github.com/JV-Vigneesh/EcoTrack-Carbon-Footprint-Tracker-App"
+  },
+  "mintlify.wiki": {
+    "url": "https://mintlify.wiki/sa4hnd/vibra-code",
+    "source": "github",
+    "title": "Open-Source AI App Builder for Mobile — Build apps with AI like vibecodeapp, rork, lovable & bolt.new but fully open source. Describe what you want → AI builds it → Preview on your phone. Built with C",
+    "ref": "https://github.com/sa4hnd/vibra-code"
+  },
+  "cslylla-bolt-wall-of-70aa.bolt.host": {
+    "url": "https://cslylla-bolt-wall-of-70aa.bolt.host",
+    "source": "github",
+    "title": "Wall of Love App - Simple CRUD built with Bolt.new",
+    "ref": "https://github.com/cslylla/bolt-wall-of-love-app"
+  },
+  "website-personal-ai-vf35.bolt.host": {
+    "url": "https://website-personal-ai-vf35.bolt.host",
+    "source": "github",
+    "title": "An AI chatbot built with Bolt.new combines natural language processing and persistent memory using OpenAI’s Assistant API and Bolt’s auto-generated backend. It enables: - Conversational memory: Tracks",
+    "ref": "https://github.com/suryadipbera1256/Ai-Chatbot-using-bolt-database"
+  },
+  "g3nesis.vercel.app": {
+    "url": "https://g3nesis.vercel.app",
+    "source": "github",
+    "title": "AI-powered UI generator inspired by lovable and bolt.new. Built with Next.js, Tailwind, Shadcn, Prisma and PostgreSQL. Generates components in real time with live preview, authentication, state manage",
+    "ref": "https://github.com/skrodrigo/genesis"
+  },
+  "dream-to-scent-hacka-n0m1.bolt.host": {
+    "url": "https://dream-to-scent-hacka-n0m1.bolt.host",
+    "source": "github",
+    "title": "Transform your dreams into personalized fragrances. This project uses AI reasoning + scent design + visualization to generate unique perfume recipes from dream descriptions. Built with Bolt.new, power",
+    "ref": "https://github.com/Mahesh-Awchar/Dream-to-scent"
+  },
+  "commitrank.ai": {
+    "url": "https://commitrank.ai/",
+    "source": "github",
+    "title": "Rank any GitHub public profile. Just paste the GitHub profile URL below.  Open Source project built with Convex.dev, TanStack on Bolt.new",
+    "ref": "https://github.com/waynesutton/commitrank"
+  },
+  "sage-sunshine-275d16.netlify.app": {
+    "url": "https://sage-sunshine-275d16.netlify.app/",
+    "source": "github",
+    "title": "A demo real-estate and community website built using the Bolt.new no-code platform as part of my personal learning initiative. The project showcases available flats for rent or sale, along with a dedi",
+    "ref": "https://github.com/AdityaParulekar18/Tulip_Park_Demo_2025"
+  },
+  "admy-brand-lilac.vercel.app": {
+    "url": "https://admy-brand-lilac.vercel.app/",
+    "source": "github",
+    "title": "Futuristic AI-powered SaaS landing page and scalable component library. Built with Bolt.new & Next.js — glassmorphic UI, 3D animations, interactive pricing, and advanced AI-driven UX for modern market",
+    "ref": "https://github.com/B4bits/ADmyBRAND"
+  },
+  "beamish-quokka-458251.netlify.app": {
+    "url": "https://beamish-quokka-458251.netlify.app/",
+    "source": "github",
+    "title": "AI-powered web app that decodes handwritten prescriptions, explains medications, calculates BMI, and answers health-related queries—built using Bolt.new with zero code.",
+    "ref": "https://github.com/uttamofficial/Doctor-Decoder"
+  },
+  "matrixforge-ascii-tool.netlify.app": {
+    "url": "https://matrixforge-ascii-tool.netlify.app/",
+    "source": "github",
+    "title": "🎨 MatrixForge ASCII — A fun web tool that converts images into clean ASCII art. Built with Bolt.new",
+    "ref": "https://github.com/KingTroy125/MatrixForge"
+  },
+  "a11y-chess-connection.netlify.app": {
+    "url": "https://a11y-chess-connection.netlify.app/",
+    "source": "github",
+    "title": "Project built with only a single prompt. AI bolt.new",
+    "ref": "https://github.com/githubfacu/A11y-chess-connection"
+  },
+  "java-bolt.vercel.app": {
+    "url": "https://java-bolt.vercel.app",
+    "source": "github",
+    "title": "🚀 AI-powered Java learning platform with interactive mentor, coding challenges, and personalized lessons. Built with React + TypeScript using Bolt.new & GitHub Copilot.",
+    "ref": "https://github.com/hardik44ss/JavaBOLT"
+  },
+  "fashion-five-livid.vercel.app": {
+    "url": "https://fashion-five-livid.vercel.app",
+    "source": "github",
+    "title": "A Sample Fashion Website Built with Bolt.New and Nextjs.",
+    "ref": "https://github.com/artofnuel/fashion"
+  },
+  "artist-portfolio-gamma.vercel.app": {
+    "url": "https://artist-portfolio-gamma.vercel.app",
+    "source": "github",
+    "title": "An Artist Portfolio built with Bolt.new and Reactjs (Vite).",
+    "ref": "https://github.com/artofnuel/Artist-Portfolio"
+  },
+  "colorado-springsplumbing.vercel.app": {
+    "url": "https://colorado-springsplumbing.vercel.app",
+    "source": "github",
+    "title": "A website built for Plumbing Niches, made with Bolt.new and React (Vite).",
+    "ref": "https://github.com/artofnuel/colorado-springsplumbing"
+  },
+  "auto-repairs.vercel.app": {
+    "url": "https://auto-repairs.vercel.app",
+    "source": "github",
+    "title": "A Clean and Minimal Website built with Bolt.new and Reactjs (Vite)",
+    "ref": "https://github.com/artofnuel/auto-repairs"
+  },
+  "ajndkr.com": {
+    "url": "https://ajndkr.com/github-actions-analyzer/",
+    "source": "github",
+    "title": "csv analyzer for github actions usage optimization and cost insights. built with bolt.new",
+    "ref": "https://github.com/ajndkr/github-actions-analyzer"
+  },
+  "zesty-chimera-bb59a4.netlify.app": {
+    "url": "https://zesty-chimera-bb59a4.netlify.app/",
+    "source": "github",
+    "title": "All-in-one freelance business dashboard to manage income, clients, invoices, goals, and expenses — built with one prompt using Bolt.new.",
+    "ref": "https://github.com/beyagency/tracklance-freelancer-dashboard"
+  },
+  "github-profile-viewer-flax.vercel.app": {
+    "url": "https://github-profile-viewer-flax.vercel.app",
+    "source": "github",
+    "title": "A simple web application built with Next.js that allows users to search for and view GitHub profiles. It utilizes the GitHub API to fetch user information and displays it in a clean and organized mann",
+    "ref": "https://github.com/sammy0318/github-profile-viewer"
+  },
+  "bolt-new-task.web.app": {
+    "url": "https://bolt-new-task.web.app/",
+    "source": "github",
+    "title": "A Team & Task Manager app built by Binary Baba with Bolt.new’s AI, React, and Firebase. Features auth, real-time tasks, and live deployment in 20 minutes!\"",
+    "ref": "https://github.com/binary-baba/team-task-managment-ai"
+  },
+  "neodk2004.github.io": {
+    "url": "https://neodk2004.github.io/vibewright/",
+    "source": "github",
+    "title": "Vibewright – You vibe. It builds. Desktop-App für Windows & macOS, die aus einer einzeiligen Idee eine fertige Laufkarte macht (Interview → Bedarfsanalyse → Plan → Werkzeug-Check) und sie mit Claude C",
+    "ref": "https://github.com/neodk2004/vibewright"
+  },
+  "vibe-code-fiancas-casa.vercel.app": {
+    "url": "https://vibe-code-fiancas-casa.vercel.app",
+    "source": "github",
+    "title": "App criado com auxilio do Claude Code",
+    "ref": "https://github.com/LGALima/vibe-code-fiancas-casa"
+  },
+  "aidevops.sh": {
+    "url": "https://www.aidevops.sh",
+    "source": "github",
+    "title": "Vibe-Coding is easy. DevOps is hard. OpenCode & Git token-efficient AI agent automation for your app, business, and personal development. Opinionated tools, services, CLI & API stack for speed, securi",
+    "ref": "https://github.com/marcusquinn/aidevops"
+  },
+  "theshellx.com": {
+    "url": "https://theshellx.com/vibework",
+    "source": "github",
+    "title": "Desktop app for Mistral's Vibe coding agent on Windows, macOS and Linux: projects and sessions, approvals with diffs, git from commit to pull request, a live app preview, an agent browser you watch, a",
+    "ref": "https://github.com/martinsbrezauckis/vibe-work"
+  },
+  "blze.ai": {
+    "url": "https://blze.ai/storage",
+    "source": "github",
+    "title": "Starter kit for vibe coders building apps with file uploads and object storage. This full-stack dashboard template integrates with Backblaze B2 Cloud Storage and includes secure upload flows, file bro",
+    "ref": "https://github.com/backblaze-b2-samples/vibe-coding-starter-kit"
+  },
+  "vibe-delta-orpin.vercel.app": {
+    "url": "https://vibe-delta-orpin.vercel.app",
+    "source": "github",
+    "title": "Vibe coding web app (Next.js)",
+    "ref": "https://github.com/jbposton/vibe"
+  },
+  "vibe-coding-labs.github.io": {
+    "url": "https://vibe-coding-labs.github.io/vibe-focus/",
+    "source": "github",
+    "title": "macOS menu bar app for one-key window focus & restore — move any window to main screen, maximize, and restore with a single hotkey. Integrates with Claude Code hooks for automatic session window manag",
+    "ref": "https://github.com/vibe-coding-labs/vibe-focus"
+  },
+  "ibl.ai": {
+    "url": "https://ibl.ai/join",
+    "source": "github",
+    "title": "Developer toolkit for vibe coding AI apps on the ibl.ai platform. Scaffold a production-ready Next.js app with iblai-app-cli and the @iblai/iblai-js SDK: SSO auth, AI chat, profiles, notifications, an",
+    "ref": "https://github.com/iblai/vibe"
+  },
+  "app-engine-chi.vercel.app": {
+    "url": "https://app-engine-chi.vercel.app",
+    "source": "github",
+    "title": "recreating my own vibe coder",
+    "ref": "https://github.com/lincolnnunnally/AppEngine"
+  },
+  "mbainative-website.vercel.app": {
+    "url": "https://mbainative-website.vercel.app",
+    "source": "github",
+    "title": "web para alojar doctrina sobre un MBA nativo en IA y apps creadas con vibe coding",
+    "ref": "https://github.com/lbt00001-beep/mbainative-website"
+  },
+  "wvw.dev": {
+    "url": "https://wvw.dev",
+    "source": "github",
+    "title": "The distributed app store for vibe-coded projects. Federated, AI-curated, fully static on GitHub Pages.",
+    "ref": "https://github.com/f/wvw.dev"
+  },
+  "nerdquiz-16.netlify.app": {
+    "url": "https://nerdquiz-16.netlify.app/",
+    "source": "github",
+    "title": "Team 16 code project — Vibe Code Tours cohort 1. Optional starter; teams may use their own repo.",
+    "ref": "https://github.com/vibe-code-tours/team-16-app"
+  },
+  "e-code.ai": {
+    "url": "https://e-code.ai",
+    "source": "github",
+    "title": "E-Code — build, ship and scale full-stack apps with AI agents",
+    "ref": "https://github.com/openaxcloud/vibecore"
+  },
+  "smolo-de.github.io": {
+    "url": "https://smolo-de.github.io/TastaturTrainer/",
+    "source": "github",
+    "title": "Lernspiel für Kinder zum Blindschreiben (10-Finger-System) – Deutsch (QWERTZ) & English (US QWERTY), läuft offline im Browser. Vibe-Coding-App mit Claude, ohne Gewähr.",
+    "ref": "https://github.com/smolo-de/TastaturTrainer"
+  },
+  "garbage.yukai.dev": {
+    "url": "http://garbage.yukai.dev/",
+    "source": "github",
+    "title": "Just vibe coded another garbage truck tracking app for the web",
+    "ref": "https://github.com/Yukaii/garbage"
+  },
+  "pavelcz86.github.io": {
+    "url": "https://pavelcz86.github.io/app-pc-konfigurator/",
+    "source": "github",
+    "title": "PC Konfigurátor v JS, vibe coded by Claude",
+    "ref": "https://github.com/PavelCZ86/app-pc-konfigurator"
+  },
+  "vibefortress.com": {
+    "url": "https://vibefortress.com",
+    "source": "github",
+    "title": "Vibe Fortress plugin for Claude Code: security checks for apps built with AI, on your own computer.",
+    "ref": "https://github.com/adidahl/vibefortress-plugin"
+  },
+  "ai-game-maker-umber.vercel.app": {
+    "url": "https://ai-game-maker-umber.vercel.app",
+    "source": "github",
+    "title": "An educational Web app based on DeepSeek, empowering 3rd-4th graders to generate and publish HTML games via \"Vibe Coding\" through natural language AI interaction. (基于 DeepSeek 的教育类 Web 应用，以“Vibe Codin",
+    "ref": "https://github.com/chan15397382589-del/ai-game-maker"
+  },
+  "thisisnic.github.io": {
+    "url": "https://thisisnic.github.io/ellmer-maintenance/",
+    "source": "github",
+    "title": "Vibe-coded app for tracking ellmer info",
+    "ref": "https://github.com/thisisnic/ellmer-maintenance"
+  },
+  "quiblo-iptv.github.io": {
+    "url": "https://quiblo-iptv.github.io/quiblo-wiki/",
+    "source": "github",
+    "title": "A free, open source, vibe coded IPTV player for Android phone and TV. Bring your own playlist - no ads, no accounts, no tracking, no backend.",
+    "ref": "https://github.com/quiblo-iptv/quiblo-app"
+  },
+  "flashflip-three.vercel.app": {
+    "url": "https://flashflip-three.vercel.app",
+    "source": "github",
+    "title": "Companion repo for the 'AI Can Build It' talk: one app built twice, vibe-coded vs engineered with AI",
+    "ref": "https://github.com/Amer-R/flashflip"
+  },
+  "hapi.run": {
+    "url": "https://hapi.run",
+    "source": "github",
+    "title": "App for Codex / Claude Code / Pi / OpenCode / Kimi Code / Grok Build, vibe coding anytime, anywhere",
+    "ref": "https://github.com/tiann/hapi"
+  },
+  "kampung-care.vercel.app": {
+    "url": "https://kampung-care.vercel.app",
+    "source": "github",
+    "title": "Vibe coding end-to-end app development sample work",
+    "ref": "https://github.com/Philipgoh-tech/KampungCare"
+  },
+  "vcatim.github.io": {
+    "url": "https://vcatim.github.io/ca-phe/",
+    "source": "github",
+    "title": "Experimental vibe coding project: App (PWA) for students to manage class schedules, income and expenses, budgets, and goals (React + Vite).",
+    "ref": "https://github.com/vCatim/ca-phe"
+  },
+  "pnnnhan99.github.io": {
+    "url": "https://pnnnhan99.github.io/awesome-free-ai-apis/",
+    "source": "github",
+    "title": "A curated collection of free & free-tier AI APIs for developers, vibe coding, AI apps, and modern software development.",
+    "ref": "https://github.com/pnnnhan99/awesome-free-ai-apis"
+  },
+  "clo.sakura5.app": {
+    "url": "https://clo.sakura5.app",
+    "source": "github",
+    "title": "Bridge for the Vibeclo iPhone app: drive Claude Code on your own computer from your phone. End-to-end encrypted, signed updates.",
+    "ref": "https://github.com/Sakura5-org/vibeclo-bridge"
+  },
+  "lunar-platform.vercel.app": {
+    "url": "https://lunar-platform.vercel.app",
+    "source": "github",
+    "title": "Google AI Capstone: Lunar. A vibe-coded web app for advanced data collection, featuring an online survey builder, conditional logic, and real-time analytics.",
+    "ref": "https://github.com/clayy-esc/Lunar-Platform"
+  }
+}

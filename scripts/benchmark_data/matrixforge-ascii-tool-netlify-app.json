@@ -1,0 +1,26 @@
+{
+  "id": "mwfhvv82-01f6368fd2",
+  "inputUrl": "https://matrixforge-ascii-tool.netlify.app/",
+  "targetUrl": "https://matrixforge-ascii-tool.netlify.app/",
+  "host": "matrixforge-ascii-tool.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:37.779Z",
+  "finishedAt": "2026-11-13T21:34:51.963Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "matrixforge-ascii-tool-netlify-app",
+  "label": "matrixforge-ascii-tool.netlify.app",
+  "group": "harvest"
+}

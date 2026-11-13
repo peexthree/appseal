@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwv6u-9ed880072b",
+  "inputUrl": "https://oriflow.in/",
+  "targetUrl": "https://oriflow.in/",
+  "host": "oriflow.in",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:24.391Z",
+  "finishedAt": "2026-11-13T21:35:29.298Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "oriflow-in",
+  "label": "oriflow.in",
+  "group": "harvest"
+}

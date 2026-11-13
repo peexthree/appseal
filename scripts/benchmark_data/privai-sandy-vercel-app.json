@@ -1,0 +1,26 @@
+{
+  "id": "mwfhxq37-be1709802e",
+  "inputUrl": "https://privai-sandy.vercel.app/",
+  "targetUrl": "https://privai-sandy.vercel.app/",
+  "host": "privai-sandy.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:04.436Z",
+  "finishedAt": "2026-11-13T21:36:05.386Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://privai-sandy.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://privai-sandy.vercel.app/"
+  },
+  "key": "privai-sandy-vercel-app",
+  "label": "privai-sandy.vercel.app",
+  "group": "harvest"
+}

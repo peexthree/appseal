@@ -1,0 +1,26 @@
+{
+  "id": "mwfhphos-cf43ac79cd",
+  "inputUrl": "https://ai-game-maker-umber.vercel.app",
+  "targetUrl": "https://ai-game-maker-umber.vercel.app/",
+  "host": "ai-game-maker-umber.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:40.301Z",
+  "finishedAt": "2026-11-13T21:29:40.761Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): владельцу нужно добавить bypass-правило для User-Agent AppSeal-Scanner…",
+    "en": "Scan failed: сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): владельцу нужно добавить bypass-правило для User-Agent AppSeal-Scanner…"
+  },
+  "key": "ai-game-maker-umber-vercel-app",
+  "label": "ai-game-maker-umber.vercel.app",
+  "group": "harvest"
+}

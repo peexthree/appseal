@@ -1,0 +1,26 @@
+{
+  "id": "mwfhp5sx-737824c58c",
+  "inputUrl": "https://acneally.vercel.app",
+  "targetUrl": "https://acneally.vercel.app/",
+  "host": "acneally.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:24.897Z",
+  "finishedAt": "2026-11-13T21:29:25.408Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): владельцу нужно добавить bypass-правило для User-Agent AppSeal-Scanner…",
+    "en": "Scan failed: сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): владельцу нужно добавить bypass-правило для User-Agent AppSeal-Scanner…"
+  },
+  "key": "acneally-vercel-app",
+  "label": "acneally.vercel.app",
+  "group": "harvest"
+}

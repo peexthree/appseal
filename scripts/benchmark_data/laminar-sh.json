@@ -1,0 +1,26 @@
+{
+  "id": "mwfhv8vv-eb0f910778",
+  "inputUrl": "https://laminar.sh/blog/2026-02-10-rebuilding-my-first-startup-as-an-ai-agent",
+  "targetUrl": "https://laminar.sh/blog/2026-02-10-rebuilding-my-first-startup-as-an-ai-agent",
+  "host": "laminar.sh",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:08.828Z",
+  "finishedAt": "2026-11-13T21:34:10.223Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "laminar-sh",
+  "label": "laminar.sh",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhxjpf-226343aa06",
+  "inputUrl": "https://portfolio-1-priya12.vercel.app",
+  "targetUrl": "https://portfolio-1-priya12.vercel.app/",
+  "host": "portfolio-1-priya12.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:56.163Z",
+  "finishedAt": "2026-11-13T21:35:56.955Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://portfolio-1-priya12.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://portfolio-1-priya12.vercel.app/"
+  },
+  "key": "portfolio-1-priya12-vercel-app",
+  "label": "portfolio-1-priya12.vercel.app",
+  "group": "harvest"
+}

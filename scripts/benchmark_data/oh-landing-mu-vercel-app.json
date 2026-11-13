@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwsao-4cfefd28d7",
+  "inputUrl": "https://oh-landing-mu.vercel.app/",
+  "targetUrl": "https://oh-landing-mu.vercel.app/",
+  "host": "oh-landing-mu.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:20.640Z",
+  "finishedAt": "2026-11-13T21:35:21.357Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://oh-landing-mu.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://oh-landing-mu.vercel.app/"
+  },
+  "key": "oh-landing-mu-vercel-app",
+  "label": "oh-landing-mu.vercel.app",
+  "group": "harvest"
+}

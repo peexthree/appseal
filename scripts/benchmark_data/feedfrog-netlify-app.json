@@ -1,0 +1,26 @@
+{
+  "id": "mwfhtfpx-227863cd88",
+  "inputUrl": "https://feedfrog.netlify.app",
+  "targetUrl": "https://feedfrog.netlify.app/",
+  "host": "feedfrog.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:32:44.374Z",
+  "finishedAt": "2026-11-13T21:32:59.633Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "feedfrog-netlify-app",
+  "label": "feedfrog.netlify.app",
+  "group": "harvest"
+}

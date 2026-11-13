@@ -167,7 +167,8 @@ export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
     const cfg = redisConfig();
     if (cfg) {
       await redis(cfg, ["LPUSH", REGISTRY_KEY, JSON.stringify(entry)]);
-      await redis(cfg, ["LTRIM", REGISTRY_KEY, "0", "199"]);
+      // keep last 600 (sync with REGISTRY_MAX in lib/registry.ts)
+      await redis(cfg, ["LTRIM", REGISTRY_KEY, "0", "599"]);
       return;
     }
     let list: RegistryEntry[] = [];
@@ -177,13 +178,13 @@ export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
       /* first entry */
     }
     list.unshift(entry);
-    await fs.writeFile(REGISTRY_FILE, JSON.stringify(list.slice(0, 200)), "utf-8");
+    await fs.writeFile(REGISTRY_FILE, JSON.stringify(list.slice(0, 600)), "utf-8");
   } catch {
     /* registry push is best-effort */
   }
 }
 
-export async function getRegistryEntries(limit = 200): Promise<RegistryEntry[]> {
+export async function getRegistryEntries(limit = 600): Promise<RegistryEntry[]> {
   const cfg = redisConfig();
   if (cfg) {
     try {

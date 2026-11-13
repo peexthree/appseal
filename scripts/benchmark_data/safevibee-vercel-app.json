@@ -1,0 +1,26 @@
+{
+  "id": "mwfhyqag-db2b007937",
+  "inputUrl": "https://safevibee.vercel.app/",
+  "targetUrl": "https://safevibee.vercel.app/",
+  "host": "safevibee.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:51.352Z",
+  "finishedAt": "2026-11-13T21:36:52.045Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://safevibee.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://safevibee.vercel.app/"
+  },
+  "key": "safevibee-vercel-app",
+  "label": "safevibee.vercel.app",
+  "group": "harvest"
+}

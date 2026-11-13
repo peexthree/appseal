@@ -1,0 +1,26 @@
+{
+  "id": "mwfhweau-66fb140573",
+  "inputUrl": "https://mybodytype.net",
+  "targetUrl": "https://mybodytype.net/",
+  "host": "mybodytype.net",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:02.502Z",
+  "finishedAt": "2026-11-13T21:35:03.586Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "mybodytype-net",
+  "label": "mybodytype.net",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhyheu-97f476fed5",
+  "inputUrl": "https://resumedogs.netlify.app",
+  "targetUrl": "https://resumedogs.netlify.app/",
+  "host": "resumedogs.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:39.847Z",
+  "finishedAt": "2026-11-13T21:36:54.075Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "resumedogs-netlify-app",
+  "label": "resumedogs.netlify.app",
+  "group": "harvest"
+}

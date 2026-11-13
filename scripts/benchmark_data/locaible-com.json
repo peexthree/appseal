@@ -1,0 +1,26 @@
+{
+  "id": "mwfhvj9c-67679ebc7d",
+  "inputUrl": "https://locaible.com/cursor",
+  "targetUrl": "https://locaible.com/cursor",
+  "host": "locaible.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:22.272Z",
+  "finishedAt": "2026-11-13T21:34:22.972Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://locaible.com/cursor",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://locaible.com/cursor"
+  },
+  "key": "locaible-com",
+  "label": "locaible.com",
+  "group": "harvest"
+}

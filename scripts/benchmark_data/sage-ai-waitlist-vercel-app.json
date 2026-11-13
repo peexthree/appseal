@@ -1,0 +1,26 @@
+{
+  "id": "mwfhysrg-befeff600a",
+  "inputUrl": "https://sage-ai-waitlist.vercel.app",
+  "targetUrl": "https://sage-ai-waitlist.vercel.app/",
+  "host": "sage-ai-waitlist.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:54.556Z",
+  "finishedAt": "2026-11-13T21:36:55.253Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://sage-ai-waitlist.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://sage-ai-waitlist.vercel.app/"
+  },
+  "key": "sage-ai-waitlist-vercel-app",
+  "label": "sage-ai-waitlist.vercel.app",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhx33l-b7cc30592d",
+  "inputUrl": "https://personal-blog-onerlaw.vercel.app",
+  "targetUrl": "https://personal-blog-onerlaw.vercel.app/",
+  "host": "personal-blog-onerlaw.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:34.642Z",
+  "finishedAt": "2026-11-13T21:35:35.381Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://personal-blog-onerlaw.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://personal-blog-onerlaw.vercel.app/"
+  },
+  "key": "personal-blog-onerlaw-vercel-app",
+  "label": "personal-blog-onerlaw.vercel.app",
+  "group": "harvest"
+}

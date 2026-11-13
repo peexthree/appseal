@@ -1,0 +1,26 @@
+{
+  "id": "mwfhystv-6f057979d4",
+  "inputUrl": "https://sage-sunshine-275d16.netlify.app/",
+  "targetUrl": "https://sage-sunshine-275d16.netlify.app/",
+  "host": "sage-sunshine-275d16.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:54.643Z",
+  "finishedAt": "2026-11-13T21:37:09.176Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "sage-sunshine-275d16-netlify-app",
+  "label": "sage-sunshine-275d16.netlify.app",
+  "group": "harvest"
+}

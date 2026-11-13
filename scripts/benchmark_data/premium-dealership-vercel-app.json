@@ -1,0 +1,26 @@
+{
+  "id": "mwfhxnmq-989d1063fd",
+  "inputUrl": "https://premium-dealership.vercel.app",
+  "targetUrl": "https://premium-dealership.vercel.app/",
+  "host": "premium-dealership.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:01.250Z",
+  "finishedAt": "2026-11-13T21:36:02.008Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://premium-dealership.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://premium-dealership.vercel.app/"
+  },
+  "key": "premium-dealership-vercel-app",
+  "label": "premium-dealership.vercel.app",
+  "group": "harvest"
+}

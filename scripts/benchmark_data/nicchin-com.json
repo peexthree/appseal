@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwllg-bde68afbee",
+  "inputUrl": "https://nicchin.com/blog/vibe-coded-app-security-study",
+  "targetUrl": "https://nicchin.com/blog/vibe-coded-app-security-study",
+  "host": "nicchin.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:11.956Z",
+  "finishedAt": "2026-11-13T21:35:12.577Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://nicchin.com/blog/vibe-coded-app-security-study",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://nicchin.com/blog/vibe-coded-app-security-study"
+  },
+  "key": "nicchin-com",
+  "label": "nicchin.com",
+  "group": "harvest"
+}

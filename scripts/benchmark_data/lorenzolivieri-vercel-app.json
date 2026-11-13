@@ -1,0 +1,26 @@
+{
+  "id": "mwfhvlh2-c767b15017",
+  "inputUrl": "https://lorenzolivieri.vercel.app",
+  "targetUrl": "https://lorenzolivieri.vercel.app/",
+  "host": "lorenzolivieri.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:25.142Z",
+  "finishedAt": "2026-11-13T21:34:25.850Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://lorenzolivieri.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://lorenzolivieri.vercel.app/"
+  },
+  "key": "lorenzolivieri-vercel-app",
+  "label": "lorenzolivieri.vercel.app",
+  "group": "harvest"
+}

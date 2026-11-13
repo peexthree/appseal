@@ -1,0 +1,26 @@
+{
+  "id": "mwfhppr1-7effaa5949",
+  "inputUrl": "https://akuna.software/introduction",
+  "targetUrl": "https://akuna.software/introduction",
+  "host": "akuna.software",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:50.749Z",
+  "finishedAt": "2026-11-13T21:29:51.504Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "akuna-software",
+  "label": "akuna.software",
+  "group": "harvest"
+}

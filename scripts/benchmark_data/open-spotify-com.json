@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwupl-2b0d6a174e",
+  "inputUrl": "https://open.spotify.com/episode/6RuxZkgUxXXjrT66FlXeme",
+  "targetUrl": "https://open.spotify.com/episode/6RuxZkgUxXXjrT66FlXeme",
+  "host": "open.spotify.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:23.769Z",
+  "finishedAt": "2026-11-13T21:35:24.510Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://open.spotify.com/episode/6RuxZkgUxXXjrT66FlXeme",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://open.spotify.com/episode/6RuxZkgUxXXjrT66FlXeme"
+  },
+  "key": "open-spotify-com",
+  "label": "open.spotify.com",
+  "group": "harvest"
+}

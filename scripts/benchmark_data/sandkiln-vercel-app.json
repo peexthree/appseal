@@ -1,0 +1,26 @@
+{
+  "id": "mwfhyv40-eca5bbc111",
+  "inputUrl": "https://sandkiln.vercel.app/",
+  "targetUrl": "https://sandkiln.vercel.app/",
+  "host": "sandkiln.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:57.601Z",
+  "finishedAt": "2026-11-13T21:36:58.625Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://sandkiln.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://sandkiln.vercel.app/"
+  },
+  "key": "sandkiln-vercel-app",
+  "label": "sandkiln.vercel.app",
+  "group": "harvest"
+}

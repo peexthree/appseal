@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwpye-b6ce409805",
+  "inputUrl": "https://notpptx.com",
+  "targetUrl": "https://notpptx.com/",
+  "host": "notpptx.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:17.606Z",
+  "finishedAt": "2026-11-13T21:35:18.306Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://notpptx.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://notpptx.com/"
+  },
+  "key": "notpptx-com",
+  "label": "notpptx.com",
+  "group": "harvest"
+}

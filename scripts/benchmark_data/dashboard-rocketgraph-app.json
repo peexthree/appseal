@@ -1,0 +1,26 @@
+{
+  "id": "mwfhsdr7-455018deb3",
+  "inputUrl": "https://dashboard.rocketgraph.app",
+  "targetUrl": "https://dashboard.rocketgraph.app/",
+  "host": "dashboard.rocketgraph.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:31:55.171Z",
+  "finishedAt": "2026-11-13T21:31:55.820Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "dashboard-rocketgraph-app",
+  "label": "dashboard.rocketgraph.app",
+  "group": "harvest"
+}

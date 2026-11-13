@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwbs5-b83479b498",
+  "inputUrl": "https://morphllm.com/products/glance",
+  "targetUrl": "https://morphllm.com/products/glance",
+  "host": "morphllm.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:59.237Z",
+  "finishedAt": "2026-11-13T21:35:00.435Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.morphllm.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.morphllm.com/"
+  },
+  "key": "morphllm-com",
+  "label": "morphllm.com",
+  "group": "harvest"
+}

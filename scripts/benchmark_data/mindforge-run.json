@@ -1,0 +1,1246 @@
+{
+  "id": "mwfhw5e7-02b7212e8c",
+  "inputUrl": "https://mindforge.run/",
+  "targetUrl": "https://mindforge.run/",
+  "host": "mindforge.run",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:50.959Z",
+  "finishedAt": "2026-11-13T21:34:58.623Z",
+  "status": "done",
+  "progress": 100,
+  "stage": {
+    "ru": "Готово",
+    "en": "Done"
+  },
+  "score": 84,
+  "grade": "B",
+  "results": [
+    {
+      "id": "env_exposure",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "critical",
+      "penalty": 0,
+      "title": {
+        "ru": "Файл .env не доступен",
+        "en": ".env file is not exposed"
+      },
+      "durationMs": 66
+    },
+    {
+      "id": "git_exposure",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "critical",
+      "penalty": 0,
+      "title": {
+        "ru": "Папка .git не доступна",
+        "en": ".git directory is not exposed"
+      },
+      "durationMs": 180
+    },
+    {
+      "id": "env_variants",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "critical",
+      "penalty": 0,
+      "title": {
+        "ru": "Варианты .env не найдены",
+        "en": "No .env variants exposed"
+      },
+      "durationMs": 191
+    },
+    {
+      "id": "git_config",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "git config не доступен",
+        "en": "git config is not exposed"
+      },
+      "durationMs": 249
+    },
+    {
+      "id": "vcs_others",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "svn не доступен",
+        "en": "svn is not exposed"
+      },
+      "durationMs": 249
+    },
+    {
+      "id": "vcs_others",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "mercurial не доступен",
+        "en": "mercurial is not exposed"
+      },
+      "durationMs": 249
+    },
+    {
+      "id": "ds_store",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": ".DS_Store не найден",
+        "en": ".DS_Store not found"
+      },
+      "durationMs": 249
+    },
+    {
+      "id": "supabase_open_read",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "critical",
+      "penalty": 0,
+      "title": {
+        "ru": "Supabase не используется или не обнаружен",
+        "en": "Supabase not used or not detected"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "client_env_leak",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Приватные env-переменные не найдены в клиенте",
+        "en": "No sensitive env vars leaked to client bundles"
+      },
+      "durationMs": 207
+    },
+    {
+      "id": "source_maps",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Source maps закрыты",
+        "en": "Source maps are not exposed"
+      },
+      "durationMs": 139
+    },
+    {
+      "id": "firebase_open_read",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "critical",
+      "penalty": 0,
+      "title": {
+        "ru": "Firebase RTDB не используется или не обнаружен",
+        "en": "Firebase RTDB not used or not detected"
+      },
+      "durationMs": 236
+    },
+    {
+      "id": "sig_ai_keys",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "ключи ИИ-сервисов не найдены",
+        "en": "No AI service keys found"
+      },
+      "durationMs": 367
+    },
+    {
+      "id": "sig_cloud_keys",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "ключи облачных провайдеров не найдены",
+        "en": "No cloud provider keys found"
+      },
+      "durationMs": 367
+    },
+    {
+      "id": "sig_payment_keys",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "ключи платёжных систем не найдены",
+        "en": "No payment system keys found"
+      },
+      "durationMs": 367
+    },
+    {
+      "id": "sig_comms_tokens",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "токены коммуникационных сервисов не найдены",
+        "en": "No communication service tokens found"
+      },
+      "durationMs": 367
+    },
+    {
+      "id": "sig_email_keys",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "ключи почтовых сервисов не найдены",
+        "en": "No email service keys found"
+      },
+      "durationMs": 367
+    },
+    {
+      "id": "sig_crypto_material",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "криптографические ключи не найдены",
+        "en": "No cryptographic keys found"
+      },
+      "durationMs": 367
+    },
+    {
+      "id": "sig_generic",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "обобщённые захардкоженные секреты не найдены",
+        "en": "No generic hardcoded secrets found"
+      },
+      "durationMs": 367
+    },
+    {
+      "id": "docker_k8s_exposure",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Файлы Docker и Kubernetes не найдены",
+        "en": "No Docker or Kubernetes configuration exposed"
+      },
+      "durationMs": 135
+    },
+    {
+      "id": "manifest_exposure",
+      "category": "secrets",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Манифесты зависимостей не доступны",
+        "en": "No dependency manifests exposed"
+      },
+      "durationMs": 138
+    },
+    {
+      "id": "security_txt",
+      "category": "secrets",
+      "status": "info",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "security.txt не опубликован",
+        "en": "security.txt is not published"
+      },
+      "durationMs": 107,
+      "finding": {
+        "code": "NO_SECURITY_TXT",
+        "detail": {
+          "ru": "RFC 9116 security.txt говорит исследователям, куда сообщать о найденных уязвимостях. Это бесплатный сигнал зрелости: /.well-known/security.txt со строкой Contact.",
+          "en": "RFC 9116 security.txt tells researchers where to report vulnerabilities. A free maturity signal: /.well-known/security.txt with a Contact line."
+        },
+        "evidence": []
+      }
+    },
+    {
+      "id": "hdr_csp",
+      "category": "headers",
+      "status": "warn",
+      "severity": "medium",
+      "penalty": 8,
+      "title": {
+        "ru": "Заголовок CSP не установлен",
+        "en": "CSP header is not set"
+      },
+      "durationMs": 0,
+      "finding": {
+        "code": "HEADER_MISSING",
+        "detail": {
+          "ru": "Content-Security-Policy - главный щит от XSS: ограничивает, откуда грузятся скрипты и куда уходят данные.",
+          "en": "Content-Security-Policy is the main XSS shield: it restricts where scripts load from and where data goes."
+        },
+        "evidence": [
+          "missing: content-security-policy"
+        ]
+      }
+    },
+    {
+      "id": "hdr_xfo",
+      "category": "headers",
+      "status": "warn",
+      "severity": "low",
+      "penalty": 3,
+      "title": {
+        "ru": "Заголовок X-Frame-Options не установлен",
+        "en": "X-Frame-Options header is not set"
+      },
+      "durationMs": 0,
+      "finding": {
+        "code": "HEADER_MISSING",
+        "detail": {
+          "ru": "X-Frame-Options запрещает встраивание сайта в iframe на чужом домене - базовая защита от кликджекинга.",
+          "en": "X-Frame-Options forbids embedding your site in an iframe on another domain - basic clickjacking protection."
+        },
+        "evidence": [
+          "missing: x-frame-options"
+        ]
+      }
+    },
+    {
+      "id": "hdr_permissions",
+      "category": "headers",
+      "status": "warn",
+      "severity": "low",
+      "penalty": 3,
+      "title": {
+        "ru": "Заголовок Permissions-Policy не установлен",
+        "en": "Permissions-Policy header is not set"
+      },
+      "durationMs": 0,
+      "finding": {
+        "code": "HEADER_MISSING",
+        "detail": {
+          "ru": "Permissions-Policy ограничивает доступ к камере, микрофону и геолокации - без него сторонние скрипты и iframe могут запрашивать чувствительные API.",
+          "en": "Permissions-Policy restricts camera, microphone and geolocation - without it third-party scripts and iframes can request sensitive APIs."
+        },
+        "evidence": [
+          "missing: permissions-policy"
+        ]
+      }
+    },
+    {
+      "id": "hdr_coop",
+      "category": "headers",
+      "status": "warn",
+      "severity": "low",
+      "penalty": 2,
+      "title": {
+        "ru": "Заголовок COOP не установлен",
+        "en": "COOP header is not set"
+      },
+      "durationMs": 0,
+      "finding": {
+        "code": "ISOLATION_HEADER_MISSING",
+        "detail": {
+          "ru": "Cross-Origin-Opener-Policy / Embedder-Policy / Resource-Policy изолируют окно браузера от чужих сайтов: защита от атак через window.opener, Spectre и похищение ресурсов.",
+          "en": "Cross-Origin-Opener-Policy / Embedder-Policy / Resource-Policy isolate the browser window from foreign sites: protection against window.opener attacks, Spectre and resource theft."
+        },
+        "evidence": [
+          "missing: cross-origin-opener-policy"
+        ]
+      }
+    },
+    {
+      "id": "hdr_hsts",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "HSTS установлен",
+        "en": "HSTS is set"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "hdr_xcto",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "X-Content-Type-Options установлен",
+        "en": "X-Content-Type-Options is set"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "hdr_referrer",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Referrer-Policy установлен",
+        "en": "Referrer-Policy is set"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "hdr_coep",
+      "category": "headers",
+      "status": "info",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Заголовок COEP не установлен",
+        "en": "COEP header is not set"
+      },
+      "durationMs": 0,
+      "finding": {
+        "code": "ISOLATION_HEADER_MISSING",
+        "detail": {
+          "ru": "Cross-Origin-Opener-Policy / Embedder-Policy / Resource-Policy изолируют окно браузера от чужих сайтов: защита от атак через window.opener, Spectre и похищение ресурсов.",
+          "en": "Cross-Origin-Opener-Policy / Embedder-Policy / Resource-Policy isolate the browser window from foreign sites: protection against window.opener attacks, Spectre and resource theft."
+        },
+        "evidence": [
+          "missing: cross-origin-embedder-policy"
+        ]
+      }
+    },
+    {
+      "id": "hdr_corp",
+      "category": "headers",
+      "status": "info",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Заголовок CORP не установлен",
+        "en": "CORP header is not set"
+      },
+      "durationMs": 0,
+      "finding": {
+        "code": "ISOLATION_HEADER_MISSING",
+        "detail": {
+          "ru": "Cross-Origin-Opener-Policy / Embedder-Policy / Resource-Policy изолируют окно браузера от чужих сайтов: защита от атак через window.opener, Spectre и похищение ресурсов.",
+          "en": "Cross-Origin-Opener-Policy / Embedder-Policy / Resource-Policy isolate the browser window from foreign sites: protection against window.opener attacks, Spectre and resource theft."
+        },
+        "evidence": [
+          "missing: cross-origin-resource-policy"
+        ]
+      }
+    },
+    {
+      "id": "hdr_xss_protection",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Устаревший X-XSS-Protection не используется",
+        "en": "No deprecated X-XSS-Protection header"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "hdr_server_version",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Версия веб-сервера не раскрывается",
+        "en": "Web server version is not disclosed"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "hdr_powered_by",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Технология бэкенда не раскрывается",
+        "en": "Backend technology is not disclosed"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "cookie_secure",
+      "category": "headers",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Флаг Secure в порядке",
+        "en": "Secure flag is OK"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "cookie_httponly",
+      "category": "headers",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Флаг HttpOnly в порядке",
+        "en": "HttpOnly flag is OK"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "cookie_samesite",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Флаг SameSite в порядке",
+        "en": "SameSite flag is OK"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "cors_wildcard",
+      "category": "headers",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "CORS не открыт для всех",
+        "en": "CORS is not open to all origins"
+      },
+      "durationMs": 105
+    },
+    {
+      "id": "cookie_samesite_none",
+      "category": "headers",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "SameSite=None cookie корректны",
+        "en": "SameSite=None cookies are correct"
+      },
+      "durationMs": 105
+    },
+    {
+      "id": "tls_valid",
+      "category": "headers",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "TLS-сертификат валиден (43 дн.)",
+        "en": "TLS certificate valid (43 d)"
+      },
+      "durationMs": 153
+    },
+    {
+      "id": "tls_expiry_soon",
+      "category": "headers",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Сертификат не истекает в ближайшие 2 недели (43 дн.)",
+        "en": "Certificate does not expire within 2 weeks (43 d)"
+      },
+      "durationMs": 153
+    },
+    {
+      "id": "compression",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "HTML сжимается на лету",
+        "en": "HTML is compressed"
+      },
+      "durationMs": 172
+    },
+    {
+      "id": "cache_control_home",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Cache-Control задан",
+        "en": "Cache-Control is set"
+      },
+      "durationMs": 172
+    },
+    {
+      "id": "https_enforced",
+      "category": "headers",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "http:// редиректит на https://",
+        "en": "http:// redirects to https://"
+      },
+      "durationMs": 266
+    },
+    {
+      "id": "host_canonical",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Канонический хост настроен",
+        "en": "Canonical host is configured"
+      },
+      "durationMs": 6267
+    },
+    {
+      "id": "redirect_chain",
+      "category": "headers",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Главная отдаётся без лишних редиректов",
+        "en": "Homepage served without extra redirects"
+      },
+      "durationMs": 6267
+    },
+    {
+      "id": "django_debug_marker",
+      "category": "admin",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "Признаков Django-отладки нет",
+        "en": "No Django debug markers"
+      },
+      "durationMs": 1
+    },
+    {
+      "id": "php_error_markers",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "PHP-ошибок в разметке нет",
+        "en": "No PHP errors in markup"
+      },
+      "durationMs": 1
+    },
+    {
+      "id": "db_error_markers",
+      "category": "admin",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "Ошибок СУБД в разметке нет",
+        "en": "No DB errors in markup"
+      },
+      "durationMs": 1
+    },
+    {
+      "id": "soft404_routing",
+      "category": "admin",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Несуществующие адреса отвечают 404 корректно",
+        "en": "Non-existent URLs correctly return 404"
+      },
+      "durationMs": 252
+    },
+    {
+      "id": "backup_archives",
+      "category": "admin",
+      "status": "pass",
+      "severity": "critical",
+      "penalty": 0,
+      "title": {
+        "ru": "Архивы бэкапов не найдены",
+        "en": "No backup archives found"
+      },
+      "durationMs": 98
+    },
+    {
+      "id": "db_dumps",
+      "category": "admin",
+      "status": "pass",
+      "severity": "critical",
+      "penalty": 0,
+      "title": {
+        "ru": "Дампы БД не найдены",
+        "en": "No database dumps found"
+      },
+      "durationMs": 329
+    },
+    {
+      "id": "bak_files",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Резервные копии кода (.bak/.old) не найдены",
+        "en": "No code backup files found"
+      },
+      "durationMs": 461
+    },
+    {
+      "id": "debug_endpoints",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Отладочные JSON-эндпоинты закрыты",
+        "en": "Debug JSON endpoints are not exposed"
+      },
+      "durationMs": 390
+    },
+    {
+      "id": "admin_generic_open",
+      "category": "admin",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "Панель администратора: стандартные пути не открыты",
+        "en": "Admin panel: standard paths are not exposed"
+      },
+      "durationMs": 525
+    },
+    {
+      "id": "admin_wp_open",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Админка WordPress: стандартные пути не открыты",
+        "en": "WordPress admin: standard paths are not exposed"
+      },
+      "durationMs": 150
+    },
+    {
+      "id": "admin_joomla_open",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Админка Joomla: стандартные пути не открыты",
+        "en": "Joomla admin: standard paths are not exposed"
+      },
+      "durationMs": 151
+    },
+    {
+      "id": "admin_bitrix_open",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Админка Bitrix: стандартные пути не открыты",
+        "en": "Bitrix admin: standard paths are not exposed"
+      },
+      "durationMs": 138
+    },
+    {
+      "id": "swagger_open",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Swagger/OpenAPI схема не открыта",
+        "en": "Swagger / OpenAPI schema is not exposed"
+      },
+      "durationMs": 168
+    },
+    {
+      "id": "graphql_ui_open",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "GraphQL-консоль не открыта",
+        "en": "GraphQL console is not exposed"
+      },
+      "durationMs": 259
+    },
+    {
+      "id": "actuator_root",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Spring Boot Actuator: закрыто",
+        "en": "Spring Boot Actuator: not exposed"
+      },
+      "durationMs": 245
+    },
+    {
+      "id": "actuator_env",
+      "category": "admin",
+      "status": "pass",
+      "severity": "critical",
+      "penalty": 0,
+      "title": {
+        "ru": "Actuator env/heapdump: закрыто",
+        "en": "Actuator env/heapdump: not exposed"
+      },
+      "durationMs": 313
+    },
+    {
+      "id": "laravel_debug",
+      "category": "admin",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "Отладка Laravel: закрыто",
+        "en": "Laravel debug tooling: not exposed"
+      },
+      "durationMs": 385
+    },
+    {
+      "id": "aspnet_debug",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "ASP.NET отладочные страницы: закрыто",
+        "en": "ASP.NET debug pages: not exposed"
+      },
+      "durationMs": 213
+    },
+    {
+      "id": "php_info",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "phpinfo: закрыто",
+        "en": "phpinfo: not exposed"
+      },
+      "durationMs": 385
+    },
+    {
+      "id": "apache_status",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Статус Apache: закрыто",
+        "en": "Apache status: not exposed"
+      },
+      "durationMs": 288
+    },
+    {
+      "id": "wp_debug_log",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "WordPress debug.log: закрыто",
+        "en": "WordPress debug.log: not exposed"
+      },
+      "durationMs": 121
+    },
+    {
+      "id": "drupal_changelog",
+      "category": "admin",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "CHANGELOG Drupal: закрыто",
+        "en": "Drupal CHANGELOG: not exposed"
+      },
+      "durationMs": 124
+    },
+    {
+      "id": "wp_json_users",
+      "category": "admin",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "WP REST перечисление пользователей закрыто",
+        "en": "WP REST user enumeration is closed"
+      },
+      "durationMs": 158
+    },
+    {
+      "id": "xmlrpc_enabled",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "XML-RPC не доступен",
+        "en": "XML-RPC is not exposed"
+      },
+      "durationMs": 229
+    },
+    {
+      "id": "auth_rate_limit",
+      "category": "admin",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Rate limit проверен",
+        "en": "Rate limiting checked"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "directory_listing",
+      "category": "admin",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Листинг каталогов не обнаружен",
+        "en": "No directory listing found"
+      },
+      "durationMs": 140
+    },
+    {
+      "id": "cors_preflight_methods",
+      "category": "admin",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "CORS preflight не разрешает опасных методов для всех",
+        "en": "CORS preflight does not expose destructive methods to arbitrary origins"
+      },
+      "durationMs": 92
+    },
+    {
+      "id": "ph_lorem",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Заглушки «lorem ipsum» не найдены",
+        "en": "No \"lorem ipsum\" placeholders"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "ph_todo",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Заглушки «TODO/FIXME» не найдены",
+        "en": "No \"TODO/FIXME\" placeholders"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "ph_soon",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Заглушки «coming soon / в разработке» не найдены",
+        "en": "No \"coming soon / under construction\" placeholders"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "ph_your_text",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Заглушки «шаблонные заглушки» не найдены",
+        "en": "No \"template placeholders\" placeholders"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "default_page",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "Дефолтных страниц сервера нет",
+        "en": "No server default pages"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "rendered_errors",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Ошибок в разметке не видно",
+        "en": "No visible markup errors"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "tiny_page",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "high",
+      "penalty": 0,
+      "title": {
+        "ru": "Страница содержит полноценную разметку",
+        "en": "The page contains full markup"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "meta_title",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Заголовок страницы заполнен",
+        "en": "Page title is set"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "meta_description",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Meta description заполнена",
+        "en": "Meta description is set"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "meta_viewport",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Viewport-метатег на месте",
+        "en": "Viewport meta tag is set"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "meta_lang",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Язык страницы объявлен (en)",
+        "en": "Page language declared (en)"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "robots_noindex",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Индексация не запрещена",
+        "en": "Indexing is not blocked"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "meta_canonical",
+      "category": "liveness",
+      "status": "info",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Canonical-ссылка не задана",
+        "en": "Canonical link is not set"
+      },
+      "durationMs": 0,
+      "finding": {
+        "code": "NO_CANONICAL",
+        "detail": {
+          "ru": "Без rel=canonical поисковики сами выбирают «главную» версию страницы из дублей (параметры, www, слэши).",
+          "en": "Without rel=canonical search engines pick their own 'primary' copy from duplicates (params, www, slashes)."
+        },
+        "evidence": []
+      }
+    },
+    {
+      "id": "og_title",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "og:title настроен",
+        "en": "og:title is set"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "og_description",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "og:description настроен",
+        "en": "og:description is set"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "og_image",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "og:image настроен",
+        "en": "og:image is set"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "localhost_links",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Ссылок на localhost нет",
+        "en": "No localhost links"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "mixed_content",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Mixed content не найден",
+        "en": "No mixed content"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "sri_missing",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Сторонних <script src> не обнаружено",
+        "en": "No third-party <script src> found"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "jquery_outdated",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "jQuery не найден или актуален",
+        "en": "jQuery not found or up to date"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "img_alt",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Изображений на странице нет - проверка не применима",
+        "en": "No images on the page - check not applicable"
+      },
+      "durationMs": 0
+    },
+    {
+      "id": "broken_links",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "medium",
+      "penalty": 0,
+      "title": {
+        "ru": "Внутренние ссылки живы (проверено 1)",
+        "en": "Internal links alive (1 checked)"
+      },
+      "durationMs": 113
+    },
+    {
+      "id": "favicon",
+      "category": "liveness",
+      "status": "pass",
+      "severity": "low",
+      "penalty": 0,
+      "title": {
+        "ru": "Favicon доступен по умолчанию (/favicon.ico)",
+        "en": "Favicon served by default (/favicon.ico)"
+      },
+      "durationMs": 163
+    }
+  ],
+  "platform": "Lovable",
+  "techPassport": {
+    "stack": "React / Vite (CSR)",
+    "cdnWaf": "Cloudflare WAF / CDN",
+    "pageSizeKb": 13.7,
+    "ttfbMs": 207
+  },
+  "key": "mindforge-run",
+  "label": "mindforge.run",
+  "group": "harvest"
+}

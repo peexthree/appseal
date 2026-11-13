@@ -1,0 +1,26 @@
+{
+  "id": "mwfhxipl-8df6320fd1",
+  "inputUrl": "https://popcornai.art/",
+  "targetUrl": "https://popcornai.art/",
+  "host": "popcornai.art",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:54.873Z",
+  "finishedAt": "2026-11-13T21:35:55.483Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://popcornai.art/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://popcornai.art/"
+  },
+  "key": "popcornai-art",
+  "label": "popcornai.art",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhulh7-81e43a1d7e",
+  "inputUrl": "https://hypeframe.ai",
+  "targetUrl": "https://hypeframe.ai/",
+  "host": "hypeframe.ai",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:33:38.491Z",
+  "finishedAt": "2026-11-13T21:33:39.427Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://hypeframe.ai/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://hypeframe.ai/"
+  },
+  "key": "hypeframe-ai",
+  "label": "hypeframe.ai",
+  "group": "harvest"
+}

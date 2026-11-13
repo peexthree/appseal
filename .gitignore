@@ -60,3 +60,7 @@ tool-results/
 db/custom.db
 .vercel
 .env*
+
+# local file-backend store (scans carry rkeys)
+/db/
+scripts/__pycache__/

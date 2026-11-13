@@ -1,0 +1,26 @@
+{
+  "id": "mwfhynxc-e1b2e2b529",
+  "inputUrl": "https://robo-comic.vercel.app/",
+  "targetUrl": "https://robo-comic.vercel.app/",
+  "host": "robo-comic.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:48.289Z",
+  "finishedAt": "2026-11-13T21:36:49.041Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://robo-comic.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://robo-comic.vercel.app/"
+  },
+  "key": "robo-comic-vercel-app",
+  "label": "robo-comic.vercel.app",
+  "group": "harvest"
+}

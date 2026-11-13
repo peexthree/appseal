@@ -1,0 +1,11 @@
+{
+  "generatedAt": "",
+  "panel": { "total": 0, "done": 0, "error": 0, "api-error": 0, "timeout": 0 },
+  "grades": { "A+": 0, "A": 0, "B": 0, "C": 0, "D": 0, "E": 0 },
+  "avgScore": 0,
+  "medianScore": 0,
+  "gradeACount": 0,
+  "sources": {},
+  "avgScoreBySource": {},
+  "topFails": []
+}

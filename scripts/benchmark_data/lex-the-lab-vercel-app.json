@@ -1,0 +1,26 @@
+{
+  "id": "mwfhvek2-e0ba130a68",
+  "inputUrl": "https://lex-the-lab.vercel.app/languages",
+  "targetUrl": "https://lex-the-lab.vercel.app/languages",
+  "host": "lex-the-lab.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:16.178Z",
+  "finishedAt": "2026-11-13T21:34:16.993Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://lex-the-lab.vercel.app/languages",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://lex-the-lab.vercel.app/languages"
+  },
+  "key": "lex-the-lab-vercel-app",
+  "label": "lex-the-lab.vercel.app",
+  "group": "harvest"
+}

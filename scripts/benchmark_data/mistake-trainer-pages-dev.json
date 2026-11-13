@@ -1,0 +1,26 @@
+{
+  "id": "mwfhw9a3-b31cfedc8b",
+  "inputUrl": "https://mistake-trainer.pages.dev/",
+  "targetUrl": "https://mistake-trainer.pages.dev/",
+  "host": "mistake-trainer.pages.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:55.996Z",
+  "finishedAt": "2026-11-13T21:35:10.028Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "mistake-trainer-pages-dev",
+  "label": "mistake-trainer.pages.dev",
+  "group": "harvest"
+}

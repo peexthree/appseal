@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwj2t-a9f2920788",
+  "inputUrl": "https://news-alert-eta.vercel.app",
+  "targetUrl": "https://news-alert-eta.vercel.app/",
+  "host": "news-alert-eta.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:08.693Z",
+  "finishedAt": "2026-11-13T21:35:09.384Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://news-alert-eta.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://news-alert-eta.vercel.app/"
+  },
+  "key": "news-alert-eta-vercel-app",
+  "label": "news-alert-eta.vercel.app",
+  "group": "harvest"
+}

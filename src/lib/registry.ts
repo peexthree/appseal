@@ -12,7 +12,7 @@ export interface RegistryEntry {
   id: string;
 }
 
-export const REGISTRY_MAX = 200;
+export const REGISTRY_MAX = 600;
 
 /** Keep the newest scan per host, newest first. */
 export function dedupeRegistry(entries: RegistryEntry[]): RegistryEntry[] {

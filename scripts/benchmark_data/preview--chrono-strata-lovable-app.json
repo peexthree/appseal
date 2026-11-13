@@ -1,0 +1,26 @@
+{
+  "id": "mwfhxpxd-fb433a585f",
+  "inputUrl": "https://preview--chrono-strata.lovable.app/shop",
+  "targetUrl": "https://preview--chrono-strata.lovable.app/shop",
+  "host": "preview--chrono-strata.lovable.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:04.226Z",
+  "finishedAt": "2026-11-13T21:36:04.684Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 401",
+    "en": "Scan failed: site responded 401"
+  },
+  "key": "preview--chrono-strata-lovable-app",
+  "label": "preview--chrono-strata.lovable.app",
+  "group": "harvest"
+}

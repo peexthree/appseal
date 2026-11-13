@@ -1,0 +1,26 @@
+{
+  "id": "mwfhqimj-ef04178126",
+  "inputUrl": "https://benjaminshoemaker.github.io/ai_coding_project_base/",
+  "targetUrl": "https://benjaminshoemaker.github.io/ai_coding_project_base/",
+  "host": "benjaminshoemaker.github.io",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:30:28.171Z",
+  "finishedAt": "2026-11-13T21:30:28.938Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "benjaminshoemaker-github-io",
+  "label": "benjaminshoemaker.github.io",
+  "group": "harvest"
+}

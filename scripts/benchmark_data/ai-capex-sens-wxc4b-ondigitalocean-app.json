@@ -1,0 +1,26 @@
+{
+  "id": "mwfhpd7j-6bee37d87e",
+  "inputUrl": "https://ai-capex-sens-wxc4b.ondigitalocean.app/",
+  "targetUrl": "https://ai-capex-sens-wxc4b.ondigitalocean.app/",
+  "host": "ai-capex-sens-wxc4b.ondigitalocean.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:34.496Z",
+  "finishedAt": "2026-11-13T21:29:35.261Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 503",
+    "en": "Scan failed: site responded 503"
+  },
+  "key": "ai-capex-sens-wxc4b-ondigitalocean-app",
+  "label": "ai-capex-sens-wxc4b.ondigitalocean.app",
+  "group": "harvest"
+}

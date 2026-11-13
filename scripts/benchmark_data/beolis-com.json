@@ -1,0 +1,26 @@
+{
+  "id": "mwfhqitg-c34296a207",
+  "inputUrl": "https://beolis.com",
+  "targetUrl": "https://beolis.com/",
+  "host": "beolis.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:30:28.420Z",
+  "finishedAt": "2026-11-13T21:30:37.451Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "beolis-com",
+  "label": "beolis.com",
+  "group": "harvest"
+}

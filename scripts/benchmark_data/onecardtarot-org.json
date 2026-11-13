@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwt7x-52c4f21628",
+  "inputUrl": "https://onecardtarot.org",
+  "targetUrl": "https://onecardtarot.org/",
+  "host": "onecardtarot.org",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:21.837Z",
+  "finishedAt": "2026-11-13T21:35:22.399Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://onecardtarot.org/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://onecardtarot.org/"
+  },
+  "key": "onecardtarot-org",
+  "label": "onecardtarot.org",
+  "group": "harvest"
+}

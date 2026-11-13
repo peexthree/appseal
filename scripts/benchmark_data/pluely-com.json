@@ -1,0 +1,26 @@
+{
+  "id": "mwfhxbwj-e27cbaac25",
+  "inputUrl": "https://pluely.com/downloads",
+  "targetUrl": "https://pluely.com/downloads",
+  "host": "pluely.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:46.052Z",
+  "finishedAt": "2026-11-13T21:35:46.693Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://pluely.com/downloads",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://pluely.com/downloads"
+  },
+  "key": "pluely-com",
+  "label": "pluely.com",
+  "group": "harvest"
+}

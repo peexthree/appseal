@@ -1,0 +1,26 @@
+{
+  "id": "mwfhphvk-146a3de36f",
+  "inputUrl": "https://ai-roast.jamatrix.io/",
+  "targetUrl": "https://ai-roast.jamatrix.io/",
+  "host": "ai-roast.jamatrix.io",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:40.545Z",
+  "finishedAt": "2026-11-13T21:29:40.909Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): владельцу нужно добавить bypass-правило для User-Agent AppSeal-Scanner…",
+    "en": "Scan failed: сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): владельцу нужно добавить bypass-правило для User-Agent AppSeal-Scanner…"
+  },
+  "key": "ai-roast-jamatrix-io",
+  "label": "ai-roast.jamatrix.io",
+  "group": "harvest"
+}

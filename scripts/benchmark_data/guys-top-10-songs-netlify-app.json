@@ -1,0 +1,26 @@
+{
+  "id": "mwfhudba-ecd744598b",
+  "inputUrl": "https://guys-top-10-songs.netlify.app/",
+  "targetUrl": "https://guys-top-10-songs.netlify.app/",
+  "host": "guys-top-10-songs.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:33:27.910Z",
+  "finishedAt": "2026-11-13T21:33:42.399Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "guys-top-10-songs-netlify-app",
+  "label": "guys-top-10-songs.netlify.app",
+  "group": "harvest"
+}

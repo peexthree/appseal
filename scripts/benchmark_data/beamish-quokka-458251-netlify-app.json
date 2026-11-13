@@ -1,0 +1,26 @@
+{
+  "id": "mwfhqidi-006e8a7cce",
+  "inputUrl": "https://beamish-quokka-458251.netlify.app/",
+  "targetUrl": "https://beamish-quokka-458251.netlify.app/",
+  "host": "beamish-quokka-458251.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:30:27.849Z",
+  "finishedAt": "2026-11-13T21:30:42.425Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "beamish-quokka-458251-netlify-app",
+  "label": "beamish-quokka-458251.netlify.app",
+  "group": "harvest"
+}

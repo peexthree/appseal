@@ -1,0 +1,26 @@
+{
+  "id": "mwfhp5s8-bfae5057c6",
+  "inputUrl": "https://a11y-chess-connection.netlify.app/",
+  "targetUrl": "https://a11y-chess-connection.netlify.app/",
+  "host": "a11y-chess-connection.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:24.873Z",
+  "finishedAt": "2026-11-13T21:29:39.426Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "a11y-chess-connection-netlify-app",
+  "label": "a11y-chess-connection.netlify.app",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhv79m-1ff2909c87",
+  "inputUrl": "https://kron-lstm.vercel.app/",
+  "targetUrl": "https://kron-lstm.vercel.app/",
+  "host": "kron-lstm.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:06.730Z",
+  "finishedAt": "2026-11-13T21:34:07.507Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://kron-lstm.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://kron-lstm.vercel.app/"
+  },
+  "key": "kron-lstm-vercel-app",
+  "label": "kron-lstm.vercel.app",
+  "group": "harvest"
+}

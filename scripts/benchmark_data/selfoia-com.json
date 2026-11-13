@@ -1,0 +1,26 @@
+{
+  "id": "mwfhz4r1-234da37c91",
+  "inputUrl": "https://selfoia.com/checklist",
+  "targetUrl": "https://selfoia.com/checklist",
+  "host": "selfoia.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:10.093Z",
+  "finishedAt": "2026-11-13T21:37:10.938Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://selfoia.com/checklist",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://selfoia.com/checklist"
+  },
+  "key": "selfoia-com",
+  "label": "selfoia.com",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhxvj3-0c044b85f6",
+  "inputUrl": "https://promptle.quest/",
+  "targetUrl": "https://promptle.quest/",
+  "host": "promptle.quest",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:11.488Z",
+  "finishedAt": "2026-11-13T21:36:25.895Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "promptle-quest",
+  "label": "promptle.quest",
+  "group": "harvest"
+}

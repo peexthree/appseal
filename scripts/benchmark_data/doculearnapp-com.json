@@ -1,0 +1,26 @@
+{
+  "id": "mwfhsuv0-2cabbe43e5",
+  "inputUrl": "https://doculearnapp.com",
+  "targetUrl": "https://doculearnapp.com/",
+  "host": "doculearnapp.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:32:17.341Z",
+  "finishedAt": "2026-11-13T21:32:32.001Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "doculearnapp-com",
+  "label": "doculearnapp.com",
+  "group": "harvest"
+}
