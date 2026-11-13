@@ -49,7 +49,10 @@ export async function GET(req: NextRequest) {
       });
     } catch {
       // fallback to redirect if file read fails
-      return Response.redirect(new URL(`/${trophyFile}`, req.url), 307);
+      return Response.redirect(
+        new URL(`/${TROPHY_FILE[grade as keyof typeof TROPHY_FILE] ?? "E.png"}`, req.url),
+        307,
+      );
     }
   }
 
