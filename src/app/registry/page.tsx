@@ -152,9 +152,14 @@ export default async function RegistryPage() {
 
       <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 py-8 text-center sm:flex-row sm:px-6 sm:text-left">
-          <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} AppSeal · независимый слой доверия для приложений, собранных с ИИ
-          </p>
+          <div className="space-y-1">
+            <p className="text-xs text-slate-500">
+              © {new Date().getFullYear()} AppSeal · независимый слой доверия для приложений, собранных с ИИ
+            </p>
+            <p className="font-mono text-[10px] text-slate-700">
+              <a href="/" className="transition hover:text-slate-500">главная</a> · <a href="/bot" className="transition hover:text-slate-500">робот</a> · <a href="/legal" className="transition hover:text-slate-500">правила</a>
+            </p>
+          </div>
           <div className="shrink-0 transition-transform hover:scale-[1.02]">
             <a
               href="/?report=mweys4fr-0d7b05c638"

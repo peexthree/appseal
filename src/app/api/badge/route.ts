@@ -1,11 +1,22 @@
 import { NextRequest } from "next/server";
 import { getScan } from "@/lib/scanner/store";
-import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
+import { GRADE_META } from "@/lib/scanner/grade";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Whitelist of trophy images per grade. Kept in-file on purpose: the file
+ *  path must never depend on any externally influenced value. */
+const TROPHY_FILE = {
+  "A+": "Aplus.png",
+  A: "A.png",
+  B: "B.png",
+  C: "C.png",
+  D: "D.png",
+  E: "E.png",
+} as const;
 
 /** Badge endpoint:
  *  - style=trophy | format=png -> 512x512 3D trophy PNG
@@ -23,9 +34,12 @@ export async function GET(req: NextRequest) {
 
   // 3D Trophy mode: return the 512x512 transparent PNG image
   if (style === "trophy" || style === "png") {
-    const trophyFile = getTrophyPath(grade).replace(/^\//, "");
-    const filePath = path.join(process.cwd(), "public", trophyFile);
     try {
+      const root = path.resolve("public");
+      const filePath = path.resolve(root, TROPHY_FILE[grade as keyof typeof TROPHY_FILE] ?? "E.png");
+      if (!filePath.startsWith(root + path.sep)) {
+        return new Response("Not found", { status: 404 });
+      }
       const buffer = await fs.readFile(filePath);
       return new Response(buffer, {
         headers: {
