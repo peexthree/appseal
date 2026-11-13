@@ -3,8 +3,19 @@ import fontkit from "@pdf-lib/fontkit";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { ScanResult, CheckResult, Localized, CategoryId } from "./types.ts";
-import { GRADE_META, SEVERITY_META, STATUS_LABEL, getTrophyPath } from "./grade.ts";
+import { GRADE_META, SEVERITY_META, STATUS_LABEL } from "./grade.ts";
 import { buildFixPrompt } from "../fix-prompt.ts";
+
+/** Whitelist of trophy images per grade. Kept in-file on purpose: the file
+ *  path must never depend on any externally influenced value. */
+const TROPHY_FILE = {
+  "A+": "Aplus.png",
+  A: "A.png",
+  B: "B.png",
+  C: "C.png",
+  D: "D.png",
+  E: "E.png",
+} as const;
 
 // DejaVu fonts ship with the repo under assets/fonts (statically scoped so
 // Next.js traces only this folder); system paths are a dev fallback.
@@ -170,8 +181,9 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   // Trophy image embedding
   let trophyDrawn = false;
   try {
-    const trophyRel = getTrophyPath(scan.grade).replace(/^\//, "");
-    const trophyPath = path.join(process.cwd(), "public", trophyRel);
+    const root = path.resolve("public");
+    const trophyPath = path.resolve(root, TROPHY_FILE[scan.grade as keyof typeof TROPHY_FILE] ?? "E.png");
+    if (!trophyPath.startsWith(root + path.sep)) throw new Error("path escapes public root");
     const trophyBytes = await fs.readFile(trophyPath);
     const trophyImg = await pdf.embedPng(trophyBytes);
     page.drawImage(trophyImg, {

@@ -122,7 +122,7 @@ export default function BotPage() {
               © {new Date().getFullYear()} AppSeal · Crawler & Scanner Documentation
             </p>
             <p className="font-mono text-[10px] text-slate-700">
-              <Link href="/" className="transition hover:text-slate-500">главная</Link> · <Link href="/registry" className="transition hover:text-slate-500">реестр</Link>
+              <Link href="/" className="transition hover:text-slate-500">главная</Link> · <Link href="/registry" className="transition hover:text-slate-500">реестр</Link> · <Link href="/legal" className="transition hover:text-slate-500">правила</Link>
             </p>
           </div>
           <div className="shrink-0 transition-transform hover:scale-[1.02]">

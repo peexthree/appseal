@@ -528,7 +528,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
               © {new Date().getFullYear()} AppSeal · {t(lang, "footerText")}
             </p>
             <p className="font-mono text-[10px] text-slate-700">
-              MVP v0.3 · <a href="/registry" className="transition hover:text-slate-400">реестр</a> · <a href="/bot" className="transition hover:text-slate-400">робот (bot)</a> · Next.js · external black-box scanner
+              MVP v0.3 · <a href="/registry" className="transition hover:text-slate-400">реестр</a> · <a href="/bot" className="transition hover:text-slate-400">робот (bot)</a> · <a href="/legal" className="transition hover:text-slate-400">правила</a> · Next.js · external black-box scanner
             </p>
           </div>
           <div className="shrink-0 transition-transform hover:scale-[1.02]">

@@ -1,12 +1,23 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { getScan } from "@/lib/scanner/store";
-import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
+import { GRADE_META } from "@/lib/scanner/grade";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Whitelist of trophy images per grade. Kept in-file on purpose: the file
+ *  path must never depend on any externally influenced value. */
+const TROPHY_FILE = {
+  "A+": "Aplus.png",
+  A: "A.png",
+  B: "B.png",
+  C: "C.png",
+  D: "D.png",
+  E: "E.png",
+} as const;
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
@@ -20,8 +31,9 @@ export async function GET(req: NextRequest) {
   // Read trophy image as base64
   let trophyBase64 = "";
   try {
-    const trophyFile = getTrophyPath(grade).replace(/^\//, "");
-    const filePath = path.join(process.cwd(), "public", trophyFile);
+    const root = path.resolve("public");
+    const filePath = path.resolve(root, TROPHY_FILE[grade as keyof typeof TROPHY_FILE] ?? "E.png");
+    if (!filePath.startsWith(root + path.sep)) throw new Error("path escapes public root");
     const buf = await fs.readFile(filePath);
     trophyBase64 = `data:image/png;base64,${buf.toString("base64")}`;
   } catch {
