@@ -1,0 +1,26 @@
+{
+  "id": "mwfhyfpa-d87829314d",
+  "inputUrl": "https://reeroll.com",
+  "targetUrl": "https://reeroll.com/",
+  "host": "reeroll.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:37.630Z",
+  "finishedAt": "2026-11-13T21:36:38.063Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://reeroll.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://reeroll.com/"
+  },
+  "key": "reeroll-com",
+  "label": "reeroll.com",
+  "group": "harvest"
+}

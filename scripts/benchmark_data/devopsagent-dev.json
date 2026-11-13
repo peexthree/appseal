@@ -1,0 +1,26 @@
+{
+  "id": "mwfhsqgi-84f45d963f",
+  "inputUrl": "https://devopsagent.dev",
+  "targetUrl": "https://devopsagent.dev/",
+  "host": "devopsagent.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:32:11.635Z",
+  "finishedAt": "2026-11-13T21:32:16.408Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "devopsagent-dev",
+  "label": "devopsagent.dev",
+  "group": "harvest"
+}

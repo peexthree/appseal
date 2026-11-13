@@ -1,0 +1,26 @@
+{
+  "id": "mwfhv9r6-1d37308c46",
+  "inputUrl": "https://lattafaluxuryretreat.netlify.app/",
+  "targetUrl": "https://lattafaluxuryretreat.netlify.app/",
+  "host": "lattafaluxuryretreat.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:09.954Z",
+  "finishedAt": "2026-11-13T21:34:24.191Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "lattafaluxuryretreat-netlify-app",
+  "label": "lattafaluxuryretreat.netlify.app",
+  "group": "harvest"
+}

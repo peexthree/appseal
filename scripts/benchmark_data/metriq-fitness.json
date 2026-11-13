@@ -1,0 +1,26 @@
+{
+  "id": "mwfhvzpk-c6546bc7e7",
+  "inputUrl": "https://metriq.fitness",
+  "targetUrl": "https://metriq.fitness/",
+  "host": "metriq.fitness",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:43.593Z",
+  "finishedAt": "2026-11-13T21:34:44.325Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://metriq.fitness/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://metriq.fitness/"
+  },
+  "key": "metriq-fitness",
+  "label": "metriq.fitness",
+  "group": "harvest"
+}

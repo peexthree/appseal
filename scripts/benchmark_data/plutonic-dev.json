@@ -1,0 +1,26 @@
+{
+  "id": "mwfhxebz-40b8215d8d",
+  "inputUrl": "https://plutonic.dev",
+  "targetUrl": "https://plutonic.dev/",
+  "host": "plutonic.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:49.200Z",
+  "finishedAt": "2026-11-13T21:36:03.448Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "plutonic-dev",
+  "label": "plutonic.dev",
+  "group": "harvest"
+}

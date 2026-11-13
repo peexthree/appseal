@@ -1,0 +1,26 @@
+{
+  "id": "mwfhuxq5-76b47fdcd0",
+  "inputUrl": "https://kampung-care.vercel.app",
+  "targetUrl": "https://kampung-care.vercel.app/",
+  "host": "kampung-care.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:33:54.366Z",
+  "finishedAt": "2026-11-13T21:33:55.128Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://kampung-care.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://kampung-care.vercel.app/"
+  },
+  "key": "kampung-care-vercel-app",
+  "label": "kampung-care.vercel.app",
+  "group": "harvest"
+}

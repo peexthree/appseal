@@ -1,0 +1,26 @@
+{
+  "id": "mwfhxgac-6646c69b31",
+  "inputUrl": "https://pneuma.computer",
+  "targetUrl": "https://pneuma.computer/",
+  "host": "pneuma.computer",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:51.732Z",
+  "finishedAt": "2026-11-13T21:35:52.357Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 502",
+    "en": "Scan failed: site responded 502"
+  },
+  "key": "pneuma-computer",
+  "label": "pneuma.computer",
+  "group": "harvest"
+}

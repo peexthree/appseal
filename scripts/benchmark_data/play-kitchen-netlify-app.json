@@ -1,0 +1,26 @@
+{
+  "id": "mwfhx7zo-b5a96a6b4e",
+  "inputUrl": "https://play-kitchen.netlify.app/",
+  "targetUrl": "https://play-kitchen.netlify.app/",
+  "host": "play-kitchen.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:40.980Z",
+  "finishedAt": "2026-11-13T21:35:55.395Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "play-kitchen-netlify-app",
+  "label": "play-kitchen.netlify.app",
+  "group": "harvest"
+}

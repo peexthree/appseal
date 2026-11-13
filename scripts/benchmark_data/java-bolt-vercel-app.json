@@ -1,0 +1,26 @@
+{
+  "id": "mwfhustv-244f972839",
+  "inputUrl": "https://java-bolt.vercel.app",
+  "targetUrl": "https://java-bolt.vercel.app/",
+  "host": "java-bolt.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:33:48.020Z",
+  "finishedAt": "2026-11-13T21:33:48.794Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://java-bolt.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://java-bolt.vercel.app/"
+  },
+  "key": "java-bolt-vercel-app",
+  "label": "java-bolt.vercel.app",
+  "group": "harvest"
+}

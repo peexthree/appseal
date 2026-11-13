@@ -1,0 +1,26 @@
+{
+  "id": "mwfhp5rx-fcbdfa8ee1",
+  "inputUrl": "https://100toolkit.com/claudepreview",
+  "targetUrl": "https://100toolkit.com/claudepreview",
+  "host": "100toolkit.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:24.861Z",
+  "finishedAt": "2026-11-13T21:29:39.427Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "100toolkit-com",
+  "label": "100toolkit.com",
+  "group": "harvest"
+}

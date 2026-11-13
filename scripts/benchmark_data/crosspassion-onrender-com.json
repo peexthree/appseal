@@ -1,0 +1,26 @@
+{
+  "id": "mwfhs48y-4ca8a6dbcb",
+  "inputUrl": "https://crosspassion.onrender.com/",
+  "targetUrl": "https://crosspassion.onrender.com/",
+  "host": "crosspassion.onrender.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:31:42.851Z",
+  "finishedAt": "2026-11-13T21:31:55.378Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: timeout",
+    "en": "Scan failed: site unreachable: timeout"
+  },
+  "key": "crosspassion-onrender-com",
+  "label": "crosspassion.onrender.com",
+  "group": "harvest"
+}

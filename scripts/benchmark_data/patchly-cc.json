@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwzda-f6643e6938",
+  "inputUrl": "https://patchly.cc/",
+  "targetUrl": "https://patchly.cc/",
+  "host": "patchly.cc",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:29.807Z",
+  "finishedAt": "2026-11-13T21:35:30.509Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://patchly.cc/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://patchly.cc/"
+  },
+  "key": "patchly-cc",
+  "label": "patchly.cc",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhqxeo-661f510947",
+  "inputUrl": "https://calea.lovable.app",
+  "targetUrl": "https://calea.lovable.app/",
+  "host": "calea.lovable.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:30:47.328Z",
+  "finishedAt": "2026-11-13T21:30:47.894Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "calea-lovable-app",
+  "label": "calea.lovable.app",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhv86v-b9728dec1f",
+  "inputUrl": "https://la-street-sweeping-tickets.vercel.app",
+  "targetUrl": "https://la-street-sweeping-tickets.vercel.app/",
+  "host": "la-street-sweeping-tickets.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:07.928Z",
+  "finishedAt": "2026-11-13T21:34:08.642Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://la-street-sweeping-tickets.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://la-street-sweeping-tickets.vercel.app/"
+  },
+  "key": "la-street-sweeping-tickets-vercel-app",
+  "label": "la-street-sweeping-tickets.vercel.app",
+  "group": "harvest"
+}

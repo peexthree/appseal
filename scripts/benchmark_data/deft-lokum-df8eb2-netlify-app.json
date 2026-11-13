@@ -1,0 +1,26 @@
+{
+  "id": "mwfhshbi-d593f4788e",
+  "inputUrl": "https://deft-lokum-df8eb2.netlify.app/",
+  "targetUrl": "https://deft-lokum-df8eb2.netlify.app/",
+  "host": "deft-lokum-df8eb2.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:31:59.790Z",
+  "finishedAt": "2026-11-13T21:32:11.791Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 429",
+    "en": "Scan failed: site responded 429"
+  },
+  "key": "deft-lokum-df8eb2-netlify-app",
+  "label": "deft-lokum-df8eb2.netlify.app",
+  "group": "harvest"
+}

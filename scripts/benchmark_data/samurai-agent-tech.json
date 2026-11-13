@@ -1,0 +1,26 @@
+{
+  "id": "mwfhyt5m-dec8d14453",
+  "inputUrl": "https://samurai-agent.tech/",
+  "targetUrl": "https://samurai-agent.tech/",
+  "host": "samurai-agent.tech",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:55.067Z",
+  "finishedAt": "2026-11-13T21:36:55.834Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://samurai-agent.tech/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://samurai-agent.tech/"
+  },
+  "key": "samurai-agent-tech",
+  "label": "samurai-agent.tech",
+  "group": "harvest"
+}

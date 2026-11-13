@@ -1,0 +1,26 @@
+{
+  "id": "mwfhyxvy-1a096520b7",
+  "inputUrl": "https://secbear.github.io/neuron/",
+  "targetUrl": "https://secbear.github.io/neuron/",
+  "host": "secbear.github.io",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:01.198Z",
+  "finishedAt": "2026-11-13T21:37:01.730Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "secbear-github-io",
+  "label": "secbear.github.io",
+  "group": "harvest"
+}

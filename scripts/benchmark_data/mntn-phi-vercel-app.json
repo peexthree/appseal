@@ -1,0 +1,26 @@
+{
+  "id": "mwfhw9hr-129a1db582",
+  "inputUrl": "https://mntn-phi.vercel.app",
+  "targetUrl": "https://mntn-phi.vercel.app/",
+  "host": "mntn-phi.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:56.271Z",
+  "finishedAt": "2026-11-13T21:34:56.956Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://mntn-phi.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://mntn-phi.vercel.app/"
+  },
+  "key": "mntn-phi-vercel-app",
+  "label": "mntn-phi.vercel.app",
+  "group": "harvest"
+}

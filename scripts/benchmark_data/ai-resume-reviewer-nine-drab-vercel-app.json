@@ -1,0 +1,26 @@
+{
+  "id": "mwfhphtd-eb6d389b9a",
+  "inputUrl": "https://ai-resume-reviewer-nine-drab.vercel.app",
+  "targetUrl": "https://ai-resume-reviewer-nine-drab.vercel.app/",
+  "host": "ai-resume-reviewer-nine-drab.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:40.465Z",
+  "finishedAt": "2026-11-13T21:29:40.897Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): владельцу нужно добавить bypass-правило для User-Agent AppSeal-Scanner…",
+    "en": "Scan failed: сайт закрыт бот-челленджем Vercel (Firewall → Attack Challenge Mode): владельцу нужно добавить bypass-правило для User-Agent AppSeal-Scanner…"
+  },
+  "key": "ai-resume-reviewer-nine-drab-vercel-app",
+  "label": "ai-resume-reviewer-nine-drab.vercel.app",
+  "group": "harvest"
+}

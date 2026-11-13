@@ -1,0 +1,26 @@
+{
+  "id": "mwfhx6qv-ec347f0179",
+  "inputUrl": "https://play-bot-or-not.vercel.app/",
+  "targetUrl": "https://play-bot-or-not.vercel.app/",
+  "host": "play-bot-or-not.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:39.368Z",
+  "finishedAt": "2026-11-13T21:35:40.193Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://play-bot-or-not.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://play-bot-or-not.vercel.app/"
+  },
+  "key": "play-bot-or-not-vercel-app",
+  "label": "play-bot-or-not.vercel.app",
+  "group": "harvest"
+}

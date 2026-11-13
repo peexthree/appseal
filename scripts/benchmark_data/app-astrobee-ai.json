@@ -1,0 +1,26 @@
+{
+  "id": "mwfhpufq-5020173df6",
+  "inputUrl": "https://app.astrobee.ai/",
+  "targetUrl": "https://app.astrobee.ai/",
+  "host": "app.astrobee.ai",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:29:56.822Z",
+  "finishedAt": "2026-11-13T21:29:57.287Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "app-astrobee-ai",
+  "label": "app.astrobee.ai",
+  "group": "harvest"
+}

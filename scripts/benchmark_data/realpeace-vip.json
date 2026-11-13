@@ -1,0 +1,26 @@
+{
+  "id": "mwfhyenu-c213af07d2",
+  "inputUrl": "https://realpeace.vip/",
+  "targetUrl": "https://realpeace.vip/",
+  "host": "realpeace.vip",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:36.282Z",
+  "finishedAt": "2026-11-13T21:36:36.889Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "realpeace-vip",
+  "label": "realpeace.vip",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhuoeb-5511fe952b",
+  "inputUrl": "https://indx.sh",
+  "targetUrl": "https://indx.sh/",
+  "host": "indx.sh",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:33:42.276Z",
+  "finishedAt": "2026-11-13T21:33:51.643Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "indx-sh",
+  "label": "indx.sh",
+  "group": "harvest"
+}

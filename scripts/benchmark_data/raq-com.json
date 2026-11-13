@@ -1,0 +1,26 @@
+{
+  "id": "mwfhyc4u-e7537e69f7",
+  "inputUrl": "https://raq.com/real-world-test",
+  "targetUrl": "https://raq.com/real-world-test",
+  "host": "raq.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:33.006Z",
+  "finishedAt": "2026-11-13T21:36:33.424Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "raq-com",
+  "label": "raq.com",
+  "group": "harvest"
+}

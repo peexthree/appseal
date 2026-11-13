@@ -1,0 +1,26 @@
+{
+  "id": "mwfhtvpn-ee3d93b303",
+  "inputUrl": "https://foundercounsel.vercel.app",
+  "targetUrl": "https://foundercounsel.vercel.app/",
+  "host": "foundercounsel.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:33:05.099Z",
+  "finishedAt": "2026-11-13T21:33:05.865Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "foundercounsel-vercel-app",
+  "label": "foundercounsel.vercel.app",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfhujcz-aa5731e667",
+  "inputUrl": "https://howbadis.it",
+  "targetUrl": "https://howbadis.it/",
+  "host": "howbadis.it",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:33:35.747Z",
+  "finishedAt": "2026-11-13T21:33:36.621Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://howbadis.it/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://howbadis.it/"
+  },
+  "key": "howbadis-it",
+  "label": "howbadis.it",
+  "group": "harvest"
+}

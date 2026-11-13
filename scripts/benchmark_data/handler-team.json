@@ -1,0 +1,26 @@
+{
+  "id": "mwfhue5c-9bbbc8689d",
+  "inputUrl": "https://handler.team/",
+  "targetUrl": "https://handler.team/",
+  "host": "handler.team",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:33:28.993Z",
+  "finishedAt": "2026-11-13T21:33:29.540Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 525",
+    "en": "Scan failed: site responded 525"
+  },
+  "key": "handler-team",
+  "label": "handler.team",
+  "group": "harvest"
+}

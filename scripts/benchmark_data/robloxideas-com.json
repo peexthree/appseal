@@ -1,0 +1,26 @@
+{
+  "id": "mwfhylqh-6701dcdaa4",
+  "inputUrl": "https://robloxideas.com/",
+  "targetUrl": "https://robloxideas.com/",
+  "host": "robloxideas.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:45.449Z",
+  "finishedAt": "2026-11-13T21:36:45.978Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://robloxideas.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://robloxideas.com/"
+  },
+  "key": "robloxideas-com",
+  "label": "robloxideas.com",
+  "group": "harvest"
+}

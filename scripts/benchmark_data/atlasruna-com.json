@@ -1,0 +1,26 @@
+{
+  "id": "mwfhq6fq-e33575b3f0",
+  "inputUrl": "https://atlasruna.com/",
+  "targetUrl": "https://atlasruna.com/",
+  "host": "atlasruna.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:30:12.375Z",
+  "finishedAt": "2026-11-13T21:30:21.479Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "atlasruna-com",
+  "label": "atlasruna.com",
+  "group": "harvest"
+}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import { track } from "@vercel/analytics";
 import { AnimatePresence, animate, motion } from "framer-motion";
 import type { Lang, ScanResult, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META } from "@/lib/scanner/types";
@@ -209,6 +210,7 @@ export function ScannerPage({
     setScan(null);
     setScanId(null);
     setPhase("scanning");
+    track("scan_submit", { demo: target.startsWith("demo://"), lang });
     try {
       const res = await fetch("/api/scan", {
         method: "POST",
@@ -394,7 +396,7 @@ export function ScannerPage({
         <div className="mx-auto flex h-20 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <a href="/" className="group flex shrink-0 items-center gap-3" aria-label="AppSeal home">
             <img
-              src="/ico.svg"
+              src="/ico.png"
               alt="AppSeal"
               width={56}
               height={56}
@@ -605,7 +607,10 @@ export function ScannerPage({
                 {DEMO_CHIPS.map((c) => (
                   <button
                     key={c.target}
-                    onClick={() => void startScan(c.target)}
+                    onClick={() => {
+                      track("chip_scan", { target: c.target });
+                      void startScan(c.target);
+                    }}
                     className="appseal-chip inline-flex items-center gap-2 rounded-full border border-slate-700 bg-[#111827] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
                     style={{ "--grade-color": GRADE_META[c.grade].color } as CSSProperties}
                   >

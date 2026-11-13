@@ -1,0 +1,26 @@
+{
+  "id": "mwfhuaun-d64c7c0192",
+  "inputUrl": "https://green-sahara-client.vercel.app/",
+  "targetUrl": "https://green-sahara-client.vercel.app/",
+  "host": "green-sahara-client.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:33:24.720Z",
+  "finishedAt": "2026-11-13T21:33:25.450Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://green-sahara-client.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://green-sahara-client.vercel.app/"
+  },
+  "key": "green-sahara-client-vercel-app",
+  "label": "green-sahara-client.vercel.app",
+  "group": "harvest"
+}

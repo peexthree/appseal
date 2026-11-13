@@ -1,0 +1,26 @@
+{
+  "id": "mwfhy5mm-0699cb2fb6",
+  "inputUrl": "https://quiet-hci.pages.dev",
+  "targetUrl": "https://quiet-hci.pages.dev/",
+  "host": "quiet-hci.pages.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:24.574Z",
+  "finishedAt": "2026-11-13T21:36:38.613Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "quiet-hci-pages-dev",
+  "label": "quiet-hci.pages.dev",
+  "group": "harvest"
+}

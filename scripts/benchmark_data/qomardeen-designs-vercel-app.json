@@ -1,0 +1,26 @@
+{
+  "id": "mwfhy2ot-9db5d125e6",
+  "inputUrl": "https://qomardeen-designs.vercel.app",
+  "targetUrl": "https://qomardeen-designs.vercel.app/",
+  "host": "qomardeen-designs.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:20.766Z",
+  "finishedAt": "2026-11-13T21:36:21.511Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://qomardeen-designs.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://qomardeen-designs.vercel.app/"
+  },
+  "key": "qomardeen-designs-vercel-app",
+  "label": "qomardeen-designs.vercel.app",
+  "group": "harvest"
+}

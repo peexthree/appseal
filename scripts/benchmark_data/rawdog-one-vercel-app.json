@@ -1,0 +1,26 @@
+{
+  "id": "mwfhyei1-1d670353e1",
+  "inputUrl": "https://rawdog-one.vercel.app/",
+  "targetUrl": "https://rawdog-one.vercel.app/",
+  "host": "rawdog-one.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:36:36.073Z",
+  "finishedAt": "2026-11-13T21:36:36.882Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://rawdog-one.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://rawdog-one.vercel.app/"
+  },
+  "key": "rawdog-one-vercel-app",
+  "label": "rawdog-one.vercel.app",
+  "group": "harvest"
+}

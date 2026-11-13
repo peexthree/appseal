@@ -1,0 +1,26 @@
+{
+  "id": "mwfhvo69-571ecdd899",
+  "inputUrl": "https://mailtion-waitlist.vercel.app",
+  "targetUrl": "https://mailtion-waitlist.vercel.app/",
+  "host": "mailtion-waitlist.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:28.641Z",
+  "finishedAt": "2026-11-13T21:34:29.344Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://mailtion-waitlist.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://mailtion-waitlist.vercel.app/"
+  },
+  "key": "mailtion-waitlist-vercel-app",
+  "label": "mailtion-waitlist.vercel.app",
+  "group": "harvest"
+}

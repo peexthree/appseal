@@ -1,0 +1,26 @@
+{
+  "id": "mwfhs2jb-728162ea99",
+  "inputUrl": "https://creator-connection-galaxy.lovable.app/",
+  "targetUrl": "https://creator-connection-galaxy.lovable.app/",
+  "host": "creator-connection-galaxy.lovable.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:31:40.631Z",
+  "finishedAt": "2026-11-13T21:31:41.017Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 404",
+    "en": "Scan failed: site responded 404"
+  },
+  "key": "creator-connection-galaxy-lovable-app",
+  "label": "creator-connection-galaxy.lovable.app",
+  "group": "harvest"
+}

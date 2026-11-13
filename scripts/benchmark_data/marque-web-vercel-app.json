@@ -1,0 +1,26 @@
+{
+  "id": "mwfhvthc-5c008767df",
+  "inputUrl": "https://marque-web.vercel.app/",
+  "targetUrl": "https://marque-web.vercel.app/",
+  "host": "marque-web.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:34:35.521Z",
+  "finishedAt": "2026-11-13T21:34:36.216Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://marque-web.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://marque-web.vercel.app/"
+  },
+  "key": "marque-web-vercel-app",
+  "label": "marque-web.vercel.app",
+  "group": "harvest"
+}

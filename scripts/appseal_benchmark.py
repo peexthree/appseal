@@ -41,34 +41,39 @@ PANEL = [
 ]
 
 
-def post_scan(url: str) -> str:
+def post_scan(url: str) -> tuple[str, str]:
     # fixed local API endpoint; URL is a compile-time literal (static-analysis
-    # friendly), payload passed via data (urllib issues POST automatically)
+    # friendly), payload passed via data (urllib issues POST automatically);
+    # rkey unlocks the full report (results list) for the saved JSON
     payload = json.dumps({"url": url, "lang": "ru"}).encode()
-    return json.load(
+    d = json.load(
         urllib.request.urlopen("http://127.0.0.1:3000/api/scan", data=payload, timeout=20)
-    )["id"]
+    )
+    return d["id"], d.get("rkey", "")
 
 
 SCAN_ID_RE = re.compile(r"^[a-z0-9-]{6,40}$")
+RK_RE = re.compile(r"^[a-f0-9]{32}$")
 
 
-def get_scan(scan_id: str) -> dict:
+def get_scan(scan_id: str, rkey: str = "") -> dict:
     if not SCAN_ID_RE.fullmatch(scan_id):
         raise ValueError(f"invalid scan id: {scan_id!r}")
+    if rkey and RK_RE.fullmatch(rkey):
+        return json.load(urllib.request.urlopen(f"{API}/api/scan/{scan_id}?key={rkey}", timeout=20))
     return json.load(urllib.request.urlopen(f"{API}/api/scan/{scan_id}", timeout=20))
 
 
 def scan_target(key: str, group: str, label: str, url: str, timeout_s: int = 150) -> dict:
     t0 = time.time()
     try:
-        scan_id = post_scan(url)
+        scan_id, rkey = post_scan(url)
     except Exception as e:  # API unreachable
         return {"key": key, "label": label, "group": group, "url": url,
                 "status": "api-error", "error": str(e)}
     while time.time() - t0 < timeout_s:
         time.sleep(3)
-        d = get_scan(scan_id)
+        d = get_scan(scan_id, rkey)
         if d["status"] in ("done", "error"):
             d["key"], d["label"], d["group"] = key, label, group
             (OUT_DIR / f"{key}.json").write_text(
@@ -110,6 +115,7 @@ def main() -> None:
     ap.add_argument("--file", default="", help="text file with one URL per line")
     ap.add_argument("--tag", default="pilot", help="group label for --file targets")
     ap.add_argument("--limit", type=int, default=0, help="max targets from --file")
+    ap.add_argument("--workers", type=int, default=3, help="parallel scans")
     args = ap.parse_args()
 
     if args.list:
@@ -128,7 +134,7 @@ def main() -> None:
     print(f"scanning {len(todo)} target(s)…")
 
     results = []
-    with cf.ThreadPoolExecutor(max_workers=3) as ex:
+    with cf.ThreadPoolExecutor(max_workers=max(1, args.workers)) as ex:
         futs = [ex.submit(scan_target, *t) for t in todo]
         for f in cf.as_completed(futs):
             d = f.result()

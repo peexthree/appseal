@@ -1,0 +1,26 @@
+{
+  "id": "mwfhwgtv-2c4e5c768a",
+  "inputUrl": "https://nerdquiz-16.netlify.app/",
+  "targetUrl": "https://nerdquiz-16.netlify.app/",
+  "host": "nerdquiz-16.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:35:05.779Z",
+  "finishedAt": "2026-11-13T21:35:20.121Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "nerdquiz-16-netlify-app",
+  "label": "nerdquiz-16.netlify.app",
+  "group": "harvest"
+}

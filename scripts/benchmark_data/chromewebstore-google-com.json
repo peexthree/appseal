@@ -1,0 +1,26 @@
+{
+  "id": "mwfhr8wb-07c2dbd8b5",
+  "inputUrl": "https://chromewebstore.google.com/detail/daysift-â-find-any-tab-in/llnlmmjddpfmjjkhpbjkdpcclgncajag",
+  "targetUrl": "https://chromewebstore.google.com/detail/daysift-%C3%A2%C2%80%C2%93-find-any-tab-in/llnlmmjddpfmjjkhpbjkdpcclgncajag",
+  "host": "chromewebstore.google.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:31:02.220Z",
+  "finishedAt": "2026-11-13T21:31:16.640Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "chromewebstore-google-com",
+  "label": "chromewebstore.google.com",
+  "group": "harvest"
+}

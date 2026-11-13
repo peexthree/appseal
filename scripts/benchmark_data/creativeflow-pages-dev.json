@@ -1,0 +1,26 @@
+{
+  "id": "mwfhs0rv-5a94bb3874",
+  "inputUrl": "https://creativeflow.pages.dev/",
+  "targetUrl": "https://creativeflow.pages.dev/",
+  "host": "creativeflow.pages.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:31:38.347Z",
+  "finishedAt": "2026-11-13T21:31:52.381Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "creativeflow-pages-dev",
+  "label": "creativeflow.pages.dev",
+  "group": "harvest"
+}
