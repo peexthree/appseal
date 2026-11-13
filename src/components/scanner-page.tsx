@@ -2,20 +2,27 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import type { Lang, ScanResult } from "@/lib/scanner/types";
+import type { Lang, ScanResult, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META } from "@/lib/scanner/types";
+import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
 import { t, list } from "@/lib/i18n";
 import { ReportView } from "@/components/report-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check } from "@/components/icons/appseal-icons";
+import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check, Copy } from "@/components/icons/appseal-icons";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
+/** exact check counts per category - from the engine, demo scan = 97 total */
 const CHECK_CATEGORIES = [
   {
     icon: <KeyRound className="h-5 w-5" />,
     key: "secrets" as const,
+    count: { ru: "21 сигнатура", en: "21 signatures" },
+    extra: {
+      ru: "+ ещё 17 проверок: git config, .svn/.hg, .DS_Store, Firebase, Supabase, манифесты, security.txt, source maps, сигнатуры AI-ключей (OpenAI, Anthropic), AWS, Stripe, Telegram Bot Token, crypto, generic",
+      en: "+ 17 more checks: git config, .svn/.hg, .DS_Store, Firebase, Supabase, manifests, security.txt, source maps, AI key signatures (OpenAI, Anthropic), AWS, Stripe, Telegram Bot Token, crypto, generic",
+    },
     items: {
       ru: "Открытые .env и .git|Ключи API в клиентском JS|Firebase/Supabase без правил|Дампы и бэкапы по прямой ссылке",
       en: "Open .env and .git|API keys in client JS|Firebase/Supabase with no rules|Dumps and backups at direct URLs",
@@ -24,6 +31,11 @@ const CHECK_CATEGORIES = [
   {
     icon: <ShieldHeaders className="h-5 w-5" />,
     key: "headers" as const,
+    count: { ru: "26 правил", en: "26 rules" },
+    extra: {
+      ru: "+ ещё 22 проверки: COOP/COEP/CORP, срок TLS, цепочка редиректов, HTTPS-редирект, сжатие, cookie-флаги по одному, версия сервера, Permissions-Policy, X-Content-Type-Options, Referrer-Policy",
+      en: "+ 22 more checks: COOP/COEP/CORP, TLS expiry, redirect chain, HTTPS redirect, compression, cookie flags one by one, server version, Permissions-Policy, X-Content-Type-Options, Referrer-Policy",
+    },
     items: {
       ru: "CSP, HSTS, X-Frame-Options|CORS «для всех»|Протухший TLS-сертификат|Cookie без защитных флагов",
       en: "CSP, HSTS, X-Frame-Options|CORS \"for everyone\"|Expired TLS certificate|Cookies without protective flags",
@@ -32,6 +44,11 @@ const CHECK_CATEGORIES = [
   {
     icon: <Lock className="h-5 w-5" />,
     key: "admin" as const,
+    count: { ru: "27 эндпоинтов", en: "27 endpoints" },
+    extra: {
+      ru: "+ ещё 23 проверки: swagger/graphql, wp-json users, xmlrpc, Spring actuator, Laravel/ASP.NET/PHP debug, wp-debug/drupal, архивы и дампы, .bak, dir listing, дефолтные страницы",
+      en: "+ 23 more checks: swagger/graphql, wp-json users, xmlrpc, Spring actuator, Laravel/ASP.NET/PHP debug, wp-debug/drupal, archives and dumps, .bak, dir listing, default pages",
+    },
     items: {
       ru: "Админ-панели на стандартных путях|Отладочные эндпоинты на проде|Бэкапы баз в веб-корне|Доступ без rate limit",
       en: "Admin panels on standard paths|Debug endpoints in production|DB backups in the web root|Access without rate limiting",
@@ -40,12 +57,27 @@ const CHECK_CATEGORIES = [
   {
     icon: <Activity className="h-5 w-5" />,
     key: "liveness" as const,
+    count: { ru: "23 паттерна", en: "23 patterns" },
+    extra: {
+      ru: "+ ещё 19 проверок: soft-404, ошибки Django/PHP/СУБД в разметке, favicon, OG-теги, mixed content, SRI, версия jQuery, alt у изображений, каноникл",
+      en: "+ 19 more checks: soft-404, Django/PHP/DB errors in markup, favicon, OG tags, mixed content, SRI, jQuery version, img alt, canonical",
+    },
     items: {
       ru: "Шаблонные фразы и заглушки|Ошибки «undefined» в разметке|Битые внутренние ссылки|Пустые title и description",
       en: "Template phrases and placeholders|\"undefined\" rendered in markup|Broken internal links|Empty title and description",
     },
   },
 ];
+
+/** one-click demo targets - real past scans, the E one is the deliberately vulnerable fixture */
+const DEMO_CHIPS: { target: string; grade: Grade; score: number }[] = [
+  { target: "akulenok-tmz.ru", grade: "A", score: 97 },
+  { target: "appseal.online", grade: "A+", score: 100 },
+  { target: "demo://app", grade: "E", score: 0 },
+];
+
+/** the re-scan of the aqua center case (A/97), public verification view */
+const CASE_REPORT_ID = "mwehe0wu-6f339614bd";
 
 export function ScannerPage({
   initialScan,
@@ -57,6 +89,8 @@ export function ScannerPage({
 }) {
   const [lang, setLang] = useState<Lang>("ru");
   const [phase, setPhase] = useState<Phase>(initialScan ? "report" : "form");
+  const [showGrade, setShowGrade] = useState<Grade>("A+");
+  const [caseCopied, setCaseCopied] = useState(false);
   const [url, setUrl] = useState("");
   const [consent, setConsent] = useState(true);
   const [scanId, setScanId] = useState<string | null>(null);
@@ -356,17 +390,76 @@ export function ScannerPage({
                     : "By starting the scan, you confirm that you are the owner/developer of the resource or have authorization. The scan runs in passive mode reading public HTTP responses."}
                 </span>
               </label>
+
+              {/* one-click demo scans: real past results, no typing needed */}
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                <span className="text-[11px] font-semibold text-slate-500">{t(lang, "demoChipsTitle")}</span>
+                {DEMO_CHIPS.map((c) => (
+                  <button
+                    key={c.target}
+                    onClick={() => void startScan(c.target)}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-[#111827] px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-800"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: GRADE_META[c.grade].color }} />
+                    <span className="font-mono">{c.target}</span>
+                    <span className="font-mono font-bold" style={{ color: GRADE_META[c.grade].color }}>
+                      {c.grade} · {c.score}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
+          {/* interactive grade showcase: the trophy changes glow per rank */}
           {phase === "form" && (
-            <div className="mt-3 text-center">
-              <button
-                onClick={() => void startScan("demo://app")}
-                className="text-sm text-slate-500 underline decoration-dotted underline-offset-4 transition hover:text-sky-400"
-              >
-                {t(lang, "demoBtn")} →
-              </button>
+            <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-slate-800 bg-[#111827]/70 p-5 sm:p-6">
+              <p className="text-center text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                {t(lang, "showcaseHint")}
+              </p>
+              <div className="mt-4 flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
+                <motion.img
+                  key={showGrade}
+                  src={getTrophyPath(showGrade)}
+                  alt={`AppSeal grade ${showGrade}`}
+                  width={112}
+                  height={112}
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1, filter: `drop-shadow(0 0 22px ${GRADE_META[showGrade].color}66)` }}
+                  transition={{ duration: 0.35 }}
+                  className="h-28 w-28 shrink-0 object-contain"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap justify-center gap-1.5 sm:justify-start">
+                    {(["A+", "A", "B", "C", "D", "E"] as Grade[]).map((g) => {
+                      const m = GRADE_META[g];
+                      const active = g === showGrade;
+                      return (
+                        <button
+                          key={g}
+                          onClick={() => setShowGrade(g)}
+                          className="rounded-lg border px-2.5 py-1 font-display text-sm font-extrabold transition"
+                          style={
+                            active
+                              ? { color: m.color, borderColor: `${m.color}66`, backgroundColor: `${m.color}14` }
+                              : { color: "#64748b", borderColor: "rgba(30,41,59,0.8)" }
+                          }
+                          aria-pressed={active}
+                        >
+                          {g}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-3 text-sm font-bold" style={{ color: GRADE_META[showGrade].color }}>
+                    {GRADE_META[showGrade].label[lang]}
+                    <span className="ml-2 font-mono text-xs text-slate-500">
+                      {GRADE_META[showGrade].minScore}-{GRADE_META[showGrade].maxScore}
+                    </span>
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-400">{GRADE_META[showGrade].description[lang]}</p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -510,21 +603,65 @@ export function ScannerPage({
           </h2>
           <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "caseSub")}</p>
           <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-sky-900/40 bg-sky-400/[0.04] p-6 sm:p-8">
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                { ti: t(lang, "caseStep1t"), n: t(lang, "caseStep1n"), d: t(lang, "caseStep1d") },
-                { ti: t(lang, "caseStep2t"), n: t(lang, "caseStep2n"), d: t(lang, "caseStep2d") },
-                { ti: t(lang, "caseStep3t"), n: t(lang, "caseStep3n"), d: t(lang, "caseStep3d") },
-              ].map((s, i) => (
-                <div key={i} className="rounded-xl border border-slate-800 bg-[#111827] p-5 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{s.ti}</p>
-                  <p className="font-display mt-2 text-2xl font-extrabold text-sky-400">{s.n}</p>
-                  <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{s.d}</p>
-                </div>
-              ))}
+            {/* timeline: lime 86 -> emerald 97 */}
+            <div className="grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
+              <div className="rounded-xl border border-slate-800 bg-[#111827] p-5 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t(lang, "caseStep1t")}</p>
+                <p className="font-display mt-2 text-2xl font-extrabold text-lime-400">{t(lang, "caseStep1n")}</p>
+                <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{t(lang, "caseStep1d")}</p>
+              </div>
+              <div className="hidden items-center justify-center text-slate-600 sm:flex" aria-hidden>
+                <ArrowRight className="h-4 w-4" />
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-[#111827] p-5 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t(lang, "caseStep2t")}</p>
+                <p className="font-display mt-2 text-2xl font-extrabold text-slate-300">{t(lang, "caseStep2n")}</p>
+                <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{t(lang, "caseStep2d")}</p>
+              </div>
+              <div className="hidden items-center justify-center text-slate-600 sm:flex" aria-hidden>
+                <ArrowRight className="h-4 w-4" />
+              </div>
+              <div className="rounded-xl border border-emerald-900/50 bg-emerald-500/[0.05] p-5 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t(lang, "caseStep3t")}</p>
+                <p className="font-display mt-2 text-2xl font-extrabold text-emerald-400">{t(lang, "caseStep3n")}</p>
+                <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{t(lang, "caseStep3d")}</p>
+              </div>
             </div>
+
+            {/* mini-terminal with the real fix-prompt fragment */}
+            <div className="mt-6 overflow-hidden rounded-xl border border-slate-800 bg-[#070b13]">
+              <div className="flex items-center gap-1.5 border-b border-slate-800 px-4 py-2.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+                <span className="ml-2 font-mono text-[11px] text-slate-500">fix-prompt.txt</span>
+                <button
+                  onClick={() => {
+                    void navigator.clipboard.writeText(t(lang, "casePrompt"));
+                    setCaseCopied(true);
+                    setTimeout(() => setCaseCopied(false), 2000);
+                  }}
+                  className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-2 py-1 text-[10px] font-semibold text-slate-400 transition hover:border-sky-500/50 hover:text-sky-400"
+                >
+                  {caseCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                  {caseCopied ? t(lang, "copied") : t(lang, "copyBtn")}
+                </button>
+              </div>
+              <pre className="overflow-x-auto p-4 font-mono text-[11px] leading-relaxed text-slate-300">
+                {t(lang, "casePrompt")}
+              </pre>
+            </div>
+
             <p className="mt-6 text-[13px] leading-relaxed text-slate-400">{t(lang, "caseBody")}</p>
             <p className="font-display mt-4 text-sm font-bold text-sky-300">{t(lang, "caseQuote")}</p>
+            <a
+              href={`/?report=${CASE_REPORT_ID}`}
+              target="_blank"
+              rel="noopener"
+              className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-sky-400 underline decoration-dotted underline-offset-4 transition hover:text-sky-300"
+            >
+              {t(lang, "caseReportLink")}
+            </a>
           </div>
         </section>
 
@@ -574,6 +711,9 @@ export function ScannerPage({
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
                     {CATEGORY_META[c.key].title[lang]}
                   </h3>
+                  <span className="ml-auto shrink-0 rounded border border-slate-700 bg-[#090d16] px-2 py-0.5 font-mono text-[10px] font-semibold text-sky-400">
+                    [{c.count[lang]}]
+                  </span>
                 </div>
                 <ul className="mt-4 space-y-2">
                   {c.items[lang].split("|").map((item) => (
@@ -583,6 +723,9 @@ export function ScannerPage({
                     </li>
                   ))}
                 </ul>
+                <p className="mt-4 rounded-lg border border-slate-800/80 bg-[#090d16]/60 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
+                  {c.extra[lang]}
+                </p>
               </div>
             ))}
           </div>
@@ -594,22 +737,30 @@ export function ScannerPage({
             {t(lang, "pricingTitle")}
           </h2>
           <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "pricingSub")}</p>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
             {[
-              { name: t(lang, "planFree"), price: t(lang, "planFreePrice"), feats: list(lang, "planFreeFeats"), hi: false, cta: t(lang, "planFreeCta"), soon: false, lp: false },
-              { name: t(lang, "planLP"), price: t(lang, "planLPPrice"), feats: list(lang, "planLPFeats"), hi: true, cta: t(lang, "planLPCta"), soon: false, lp: true },
-              { name: t(lang, "planPlatform"), price: t(lang, "planPlatformPrice"), feats: list(lang, "planPlatformFeats"), hi: false, cta: t(lang, "planSoonCta"), soon: true, lp: false },
+              { name: t(lang, "planFree"), price: t(lang, "planFreePrice"), sub: "", feats: list(lang, "planFreeFeats"), hi: false, cta: t(lang, "planFreeCta"), kind: "free" as const },
+              { name: t(lang, "planLP"), price: t(lang, "planLPPrice"), sub: t(lang, "planLPSub"), feats: list(lang, "planLPFeats"), hi: true, cta: t(lang, "planLPCta"), kind: "lp" as const },
+              { name: t(lang, "planPlatform"), price: t(lang, "planPlatformPrice"), sub: "", feats: list(lang, "planPlatformFeats"), hi: false, cta: t(lang, "planPlatformCta"), kind: "platform" as const },
             ].map((p) => (
               <div
                 key={p.name}
-                className={`flex flex-col rounded-2xl border p-6 ${
-                  p.hi ? "border-indigo-500/60 bg-indigo-500/5" : "border-slate-800 bg-[#111827]"
+                className={`relative flex flex-col rounded-2xl border p-6 ${
+                  p.hi
+                    ? "border-emerald-500/40 bg-emerald-500/[0.04] shadow-[0_0_44px_-14px_rgba(52,211,153,0.4)]"
+                    : "border-slate-800 bg-[#111827]"
                 }`}
               >
+                {p.hi && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#090d16] shadow-[0_0_20px_-4px_rgba(52,211,153,0.6)]">
+                    {t(lang, "planMostPopular")}
+                  </span>
+                )}
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{p.name}</p>
-                <p className={`font-display mt-2 text-3xl font-extrabold ${p.hi ? "text-indigo-400" : "text-slate-100"}`}>
+                <p className={`font-display mt-2 text-3xl font-extrabold ${p.hi ? "text-emerald-400" : "text-slate-100"}`}>
                   {p.price}
                 </p>
+                {p.sub && <p className="mt-1 text-[11px] leading-snug text-slate-500">{p.sub}</p>}
                 <ul className="mt-4 flex-1 space-y-2">
                   {p.feats.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-[13px] text-slate-300">
@@ -618,14 +769,14 @@ export function ScannerPage({
                     </li>
                   ))}
                 </ul>
-                {p.lp ? (
+                {p.kind === "lp" ? (
                   <div className="mt-5 space-y-2">
                     <input
                       value={lpHost}
                       onChange={(e) => setLpHost(e.target.value)}
                       placeholder={t(lang, "lpDomainPh")}
                       aria-label="Pass domain"
-                      className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
+                      className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
                     />
                     <input
                       value={lpEmail}
@@ -633,10 +784,10 @@ export function ScannerPage({
                       placeholder={t(lang, "lpEmailPh")}
                       type="email"
                       aria-label="Pass email"
-                      className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
+                      className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
                     />
                     <Button
-                      className="w-full bg-indigo-500 text-white hover:bg-indigo-400"
+                      className="w-full bg-emerald-400 text-[#090d16] hover:bg-emerald-300"
                       onClick={buyPass}
                       disabled={lpBusy}
                     >
@@ -646,10 +797,13 @@ export function ScannerPage({
                     <p className="text-[10px] leading-relaxed text-slate-500">{t(lang, "lpNote")}</p>
                     {lpErr && <p className="text-[11px] leading-snug text-red-400">{lpErr}</p>}
                   </div>
-                ) : p.soon ? (
-                  <Button variant="outline" disabled className="mt-5 w-full border-slate-700 text-slate-500">
-                    {p.cta}
-                  </Button>
+                ) : p.kind === "platform" ? (
+                  <a
+                    href="mailto:linedrop@yandex.ru?subject=AppSeal%20Platform"
+                    className="mt-5 inline-flex w-full items-center justify-center rounded-md border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
+                  >
+                    {p.cta} →
+                  </a>
                 ) : (
                   <Button
                     className="mt-5 w-full bg-sky-400 text-[#090d16] hover:bg-sky-300"
@@ -659,7 +813,7 @@ export function ScannerPage({
                     }}
                   >
                     <Zap className="h-4 w-4" />
-                    {p.cta}
+                    {p.cta} ↑
                   </Button>
                 )}
               </div>
@@ -690,22 +844,33 @@ export function ScannerPage({
 
       {/* footer */}
       <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 py-8 text-center sm:flex-row sm:px-6 sm:text-left">
-          <div className="space-y-1">
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-5 px-4 py-8 text-center sm:flex-row sm:px-6 sm:text-left">
+          <div className="space-y-1.5">
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} AppSeal · {t(lang, "footerText")}
             </p>
-            <p className="font-mono text-[10px] text-slate-700">
-              MVP v0.3 · <a href="/registry" className="transition hover:text-slate-400">реестр</a> · <a href="/bot" className="transition hover:text-slate-400">робот (bot)</a> · <a href="/legal" className="transition hover:text-slate-400">правила</a> · Next.js · external black-box scanner
+            <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 font-mono text-[10px] text-slate-700 sm:justify-start">
+              <span>{t(lang, "footerEngine")}</span>
+              <span>·</span>
+              <a href="/registry" className="transition hover:text-slate-400">реестр</a>
+              <span>·</span>
+              <a href="/bot" className="transition hover:text-slate-400">робот (bot)</a>
+              <span>·</span>
+              <a href="/legal" className="transition hover:text-slate-400">правила</a>
+              <span>·</span>
+              <span className="inline-flex items-center gap-1.5 text-emerald-500/90">
+                <span className="appseal-pulse h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                {t(lang, "footerStatus")}
+              </span>
             </p>
           </div>
-          <div className="shrink-0 transition-transform hover:scale-[1.02]">
+          <div className="shrink-0 text-center">
             <a
               href="/?report=mweys4fr-0d7b05c638"
               target="_blank"
               rel="noopener"
               title="AppSeal Security Verified: Grade A+ (100/100)"
-              className="inline-block"
+              className="inline-block transition-transform hover:scale-[1.02]"
             >
               <img
                 src="/api/badge?id=mweys4fr-0d7b05c638"
@@ -715,6 +880,9 @@ export function ScannerPage({
                 className="h-[44px] w-[228px] drop-shadow-[0_4px_16px_rgba(192,132,252,0.18)]"
               />
             </a>
+            <p className="mt-1.5 max-w-[228px] text-[10px] leading-snug text-slate-600">
+              {t(lang, "footerBadgeNote")}
+            </p>
           </div>
         </div>
       </footer>
