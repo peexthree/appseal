@@ -7,9 +7,15 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
+  const key = req.nextUrl.searchParams.get("key") ?? "";
   const scan = await getScan(id);
   if (!scan || scan.status !== "done") {
     return new Response("report not ready", { status: 404 });
+  }
+  // the PDF lists every finding: serve it only to the scan initiator
+  // holding the report key (bare ids must stay on the public view)
+  if (!scan.rkey || scan.rkey !== key) {
+    return new Response("forbidden", { status: 403 });
   }
   const bytes = await buildReportPdf(scan);
   const safeHost = scan.host.replace(/[^a-z0-9.-]/gi, "");
