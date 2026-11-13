@@ -89,15 +89,17 @@ export async function POST(req: NextRequest) {
     // function alive (waitUntil) within maxDuration, locally it just works
     after(async () => {
       // runScan never throws: the final record lands in the store; its return
-      // value feeds the public registry (issue #2 GTM). Demo scans excluded.
+      // value feeds the public registry. Demo scans excluded; the registry is
+      // a curated showcase - only A/A+ hosts make it in.
       const fin = await runScan(scan);
-      if (fin && !scan.isDemo) {
+      if (fin && !scan.isDemo && (fin.grade === "A+" || fin.grade === "A")) {
         await pushRegistryEntry({
           host: fin.host,
           grade: fin.grade,
           score: fin.score,
           ts: Date.now(),
           id: scan.id,
+          desc: fin.pageTitle,
         });
       }
     });

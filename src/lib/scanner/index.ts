@@ -85,7 +85,9 @@ export function normalizeInputUrl(input: string): { url: string; isDemo: boolean
  * are recorded into the scan record.
  * Returns the final outcome on success (for the registry feed) or null.
  */
-export async function runScan(scan: ScanResult): Promise<{ host: string; grade: string; score: number } | null> {
+export async function runScan(
+  scan: ScanResult,
+): Promise<{ host: string; grade: string; score: number; pageTitle?: string } | null> {
   try {
     await setProgress(scan.id, {
       stage: { ru: "Загружаем главную страницу…", en: "Loading the homepage…" },
@@ -323,7 +325,16 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
       techPassport,
       host: scan.isDemo ? "demo-app" : host,
     });
-    return { host: scan.isDemo ? "demo-app" : host, grade, score };
+    // page title travels with the return value: the registry uses it as the
+    // entry's short description
+    const titleMatch = home.body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+    const pageTitle = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim().slice(0, 120) : "";
+    return {
+      host: scan.isDemo ? "demo-app" : host,
+      grade,
+      score,
+      pageTitle: pageTitle || undefined,
+    };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     await updateScan(scan.id, {
