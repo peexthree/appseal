@@ -55,17 +55,19 @@ export interface FetchOutcome {
   bodyBytes: number;
   url: string; // final URL after redirects
   contentType: string;
+  durationMs: number;
 }
 
 export async function safeFetch(
   url: string,
   opts: {
-    method?: "GET" | "HEAD";
+    method?: "GET" | "HEAD" | "OPTIONS";
     timeoutMs?: number;
     headers?: Record<string, string>;
     maxBody?: number;
   } = {},
 ): Promise<FetchOutcome> {
+  const t0 = Date.now();
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT;
   const maxBody = opts.maxBody ?? MAX_BODY;
   const ctrl = new AbortController();
@@ -76,7 +78,7 @@ export async function safeFetch(
       redirect: "follow",
       signal: ctrl.signal,
       headers: {
-        "user-agent": "Mozilla/5.0 (compatible; AppSeal-Scanner/0.3; +https://appseal.io/bot)",
+        "user-agent": "Mozilla/5.0 (compatible; AppSeal-Scanner/0.3; +https://appseal.online/bot)",
         accept: "*/*",
         ...(opts.headers ?? {}),
       },
@@ -117,6 +119,7 @@ export async function safeFetch(
       bodyBytes,
       url: res.url || url,
       contentType: res.headers.get("content-type") ?? "",
+      durationMs: Date.now() - t0,
     };
   } catch (e) {
     const msg = e instanceof Error ? (e.name === "AbortError" ? "timeout" : e.message) : String(e);
@@ -130,6 +133,7 @@ export async function safeFetch(
       bodyBytes: 0,
       url,
       contentType: "",
+      durationMs: Date.now() - t0,
     };
   } finally {
     clearTimeout(t);

@@ -1,9 +1,10 @@
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { ScanResult, CheckResult, Localized } from "./types";
-import { GRADE_META, SEVERITY_META, STATUS_LABEL } from "./grade";
+import type { ScanResult, CheckResult, Localized, CategoryId } from "./types.ts";
+import { GRADE_META, SEVERITY_META, STATUS_LABEL, getTrophyPath } from "./grade.ts";
+import { buildFixPrompt } from "../fix-prompt.ts";
 
 // DejaVu fonts ship with the repo under assets/fonts (statically scoped so
 // Next.js traces only this folder); system paths are a dev fallback.
@@ -52,6 +53,18 @@ const C = {
   med: rgb(0.96, 0.62, 0.04),
   low: rgb(0.55, 0.57, 0.6),
   ok: rgb(0.06, 0.72, 0.51),
+  heroDark: rgb(0.035, 0.05, 0.086), // #090D16
+  heroBox: rgb(0.067, 0.094, 0.153),  // #111827
+  heroBorder: rgb(0.12, 0.16, 0.23),  // #1F2937
+  heroText: rgb(0.95, 0.96, 0.98),
+  heroMut: rgb(0.58, 0.64, 0.72),
+};
+
+const CAT_TITLES: Record<CategoryId, { ru: string; en: string }> = {
+  secrets: { ru: "Секреты и утечки", en: "Secrets & Leaks" },
+  headers: { ru: "Заголовки и TLS", en: "Headers & TLS" },
+  admin: { ru: "Админки и доступ", en: "Admin & Auth" },
+  liveness: { ru: "Живость и контент", en: "Liveness & Content" },
 };
 
 function sevColor(s: string) {
@@ -88,11 +101,6 @@ function wrap(text: string, font: PDFFont, size: number, maxW: number): string[]
   return lines;
 }
 
-interface Cursor {
-  y: number;
-  page: PDFPage;
-}
-
 function newPage(pdf: PDFDocument, fonts: { reg: PDFFont; bold: PDFFont; mono: PDFFont }, lang: "ru" | "en", pageNo: number): PDFPage {
   const page = pdf.addPage(A4);
   page.drawText("AppSeal", { x: M, y: 26, size: 8, font: fonts.bold, color: C.mut });
@@ -118,7 +126,7 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   const lang = scan.lang;
   pdf.setTitle(`AppSeal report — ${scan.host}`);
   pdf.setAuthor("AppSeal");
-  pdf.setSubject(lang === "ru" ? "Отчёт техосмотра ИИ-собранного приложения" : "Trust report for an AI-built application");
+  pdf.setSubject(lang === "ru" ? "Отчёт техосмотра приложения" : "Trust report for application");
 
   let pageNo = 1;
   let page = newPage(pdf, { reg, bold, mono }, lang, pageNo);
@@ -146,41 +154,192 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     y -= o.gap ?? 0;
   };
 
-  /* ---------------- header band ---------------- */
-  const gm = GRADE_META[scan.grade];
-  page.drawRectangle({ x: M, y: A4[1] - M - 118, width: CW, height: 118, color: C.bgSoft });
-  // grade box
-  page.drawRectangle({ x: M + 18, y: A4[1] - M - 100, width: 82, height: 82, color: hex2rgb(gm.color) });
-  const gsize = scan.grade.length > 1 ? 36 : 42;
-  page.drawText(scan.grade, {
-    x: M + 18 + (82 - bold.widthOfTextAtSize(scan.grade, gsize)) / 2,
-    y: A4[1] - M - 100 + (82 - gsize) / 2 + (scan.grade.length > 1 ? 6 : 8),
-    size: gsize,
-    font: bold,
-    color: rgb(1, 1, 1),
+  /* ---------------- Dark Hero Header with 3D Trophy ---------------- */
+  const gm = GRADE_META[scan.grade] ?? GRADE_META["E"];
+  const heroH = 126;
+  page.drawRectangle({ x: M, y: A4[1] - M - heroH, width: CW, height: heroH, color: C.heroDark });
+  page.drawRectangle({
+    x: M,
+    y: A4[1] - M - heroH,
+    width: CW,
+    height: heroH,
+    borderColor: C.heroBorder,
+    borderWidth: 0.8,
   });
-  page.drawText(lang === "ru" ? "ПЕЧАТЬ ДОВЕРИЯ ПРИЛОЖЕНИЯ" : "APP TRUST SEAL", {
-    x: M + 118,
-    y: A4[1] - M - 26,
+
+  // Trophy image embedding
+  let trophyDrawn = false;
+  try {
+    const trophyRel = getTrophyPath(scan.grade).replace(/^\//, "");
+    const trophyPath = path.join(process.cwd(), "public", trophyRel);
+    const trophyBytes = await fs.readFile(trophyPath);
+    const trophyImg = await pdf.embedPng(trophyBytes);
+    page.drawImage(trophyImg, {
+      x: M + 14,
+      y: A4[1] - M - heroH + 20,
+      width: 84,
+      height: 84,
+    });
+    trophyDrawn = true;
+  } catch {
+    // fallback if file not accessible
+  }
+
+  if (!trophyDrawn) {
+    page.drawRectangle({ x: M + 18, y: A4[1] - M - 100, width: 80, height: 80, color: hex2rgb(gm.color) });
+    const gsize = scan.grade.length > 1 ? 36 : 42;
+    page.drawText(scan.grade, {
+      x: M + 18 + (80 - bold.widthOfTextAtSize(scan.grade, gsize)) / 2,
+      y: A4[1] - M - 100 + (80 - gsize) / 2 + (scan.grade.length > 1 ? 6 : 8),
+      size: gsize,
+      font: bold,
+      color: rgb(1, 1, 1),
+    });
+  }
+
+  // Floating score pill under trophy
+  const scoreTxt = `${scan.score}/100`;
+  const pillW = bold.widthOfTextAtSize(scoreTxt, 9) + 12;
+  page.drawRectangle({
+    x: M + 14 + (84 - pillW) / 2,
+    y: A4[1] - M - heroH + 8,
+    width: pillW,
+    height: 14,
+    color: C.heroBox,
+    borderColor: hex2rgb(gm.color),
+    borderWidth: 0.8,
+  });
+  page.drawText(scoreTxt, {
+    x: M + 14 + (84 - pillW) / 2 + 6,
+    y: A4[1] - M - heroH + 11.5,
+    size: 9,
+    font: bold,
+    color: hex2rgb(gm.color),
+  });
+
+  // Hero text info
+  const textX = M + 114;
+  page.drawText(lang === "ru" ? "ПЕЧАТЬ ДОВЕРИЯ APPSEAL" : "APPSEAL TRUST REPORT", {
+    x: textX,
+    y: A4[1] - M - 24,
     size: 8,
     font: bold,
-    color: C.mut,
+    color: rgb(0.22, 0.74, 0.97),
   });
-  page.drawText(`${scan.host}`, { x: M + 118, y: A4[1] - M - 52, size: 16, font: bold, color: C.ink });
+  page.drawText(`${scan.host}`, {
+    x: textX,
+    y: A4[1] - M - 46,
+    size: 15,
+    font: bold,
+    color: C.heroText,
+  });
   page.drawText(
-    (lang === "ru" ? "Оценка: " : "Score: ") + `${scan.score}/100 — ${t(gm.label, lang)}`,
-    { x: M + 118, y: A4[1] - M - 72, size: 10.5, font: reg, color: hex2rgb(gm.color) },
+    (lang === "ru" ? "Класс " : "Grade ") + `${scan.grade} (${scan.score}/100) — ${t(gm.label, lang)}`,
+    {
+      x: textX,
+      y: A4[1] - M - 64,
+      size: 10,
+      font: bold,
+      color: hex2rgb(gm.color),
+    },
   );
   page.drawText(
     (lang === "ru" ? "Дата: " : "Date: ") +
       new Date(scan.finishedAt || scan.startedAt).toISOString().slice(0, 16).replace("T", " ") +
       " UTC" +
       (scan.platform ? `   ${lang === "ru" ? "Платформа: " : "Platform: "}${scan.platform}` : ""),
-    { x: M + 118, y: A4[1] - M - 90, size: 8.5, font: reg, color: C.mut },
+    {
+      x: textX,
+      y: A4[1] - M - 80,
+      size: 8.5,
+      font: reg,
+      color: C.heroMut,
+    },
   );
-  y = A4[1] - M - 134;
 
-  /* ---------------- summary ---------------- */
+  // TechPassport meta line if present
+  if (scan.techPassport) {
+    const tp = scan.techPassport;
+    const tpStr = `⚡ ${tp.stack}   🛡 ${tp.cdnWaf}   📦 ${tp.pageSizeKb} KB   ⏱ ${tp.ttfbMs} ms TTFB`;
+    page.drawText(tpStr, {
+      x: textX,
+      y: A4[1] - M - 98,
+      size: 7.6,
+      font: mono,
+      color: rgb(0.7, 0.75, 0.82),
+    });
+  }
+
+  y = A4[1] - M - heroH - 18;
+
+  /* ---------------- 4 Category Progress / Radar Bars ---------------- */
+  const cats: CategoryId[] = ["secrets", "headers", "admin", "liveness"];
+  const gap = 8;
+  const cardW = (CW - gap * 3) / 4;
+  const cardH = 38;
+
+  for (let i = 0; i < cats.length; i++) {
+    const cat = cats[i];
+    const catItems = scan.results.filter((r) => r.category === cat);
+    const passed = catItems.filter((r) => r.status === "pass").length;
+    const failed = catItems.filter((r) => r.status === "fail").length;
+    const total = catItems.length || 6;
+    const cx = M + i * (cardW + gap);
+    const cy = y - cardH;
+
+    page.drawRectangle({
+      x: cx,
+      y: cy,
+      width: cardW,
+      height: cardH,
+      color: C.bgSoft,
+      borderColor: C.line,
+      borderWidth: 0.6,
+    });
+
+    const title = CAT_TITLES[cat][lang];
+    page.drawText(title, {
+      x: cx + 6,
+      y: cy + cardH - 12,
+      size: 7.2,
+      font: bold,
+      color: C.ink,
+    });
+
+    const statusTxt = `${passed}/${total}`;
+    const scoreColor = failed > 0 ? C.crit : passed === total ? C.ok : C.med;
+    page.drawText(statusTxt, {
+      x: cx + cardW - bold.widthOfTextAtSize(statusTxt, 7.5) - 6,
+      y: cy + cardH - 12,
+      size: 7.5,
+      font: bold,
+      color: scoreColor,
+    });
+
+    const barW = cardW - 12;
+    const barH = 4;
+    const barY = cy + 8;
+    page.drawRectangle({
+      x: cx + 6,
+      y: barY,
+      width: barW,
+      height: barH,
+      color: rgb(0.88, 0.9, 0.92),
+    });
+    if (passed > 0) {
+      page.drawRectangle({
+        x: cx + 6,
+        y: barY,
+        width: Math.round((passed / total) * barW),
+        height: barH,
+        color: scoreColor,
+      });
+    }
+  }
+
+  y -= cardH + 16;
+
+  /* ---------------- Summary ---------------- */
   const fails = scan.results.filter((r) => r.status === "fail");
   const warns = scan.results.filter((r) => r.status === "warn");
   const passes = scan.results.filter((r) => r.status === "pass").length;
@@ -208,7 +367,7 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     );
   }
 
-  /* ---------------- findings ---------------- */
+  /* ---------------- Findings ---------------- */
   const ordered: CheckResult[] = [
     ...fails,
     ...warns,
@@ -240,7 +399,59 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     y -= 8;
   }
 
-  /* ---------------- footer note ---------------- */
+  /* ---------------- AI Fix Prompt Block ---------------- */
+  if (scan.score < 100 || scan.grade !== "A+") {
+    ensure(130);
+    page.drawLine({ start: { x: M, y: y - 4 }, end: { x: A4[0] - M, y: y - 4 }, thickness: 0.7, color: C.line });
+    y -= 14;
+
+    text(
+      lang === "ru"
+        ? "ИНСТРУКЦИЯ ДЛЯ ИИ-АВТОФИКСА (CURSOR / CLAUDE / CHATGPT)"
+        : "AI AUTOFIX INSTRUCTION (CURSOR / CLAUDE / COPILOT)",
+      { size: 9, font: bold, color: hex2rgb(gm.color), gap: 3 },
+    );
+    text(
+      lang === "ru"
+        ? "Скопируйте этот контекст и передайте вашему ИИ-редактору кода для автоматического устранения замечаний:"
+        : "Provide this context snippet to your AI coding agent to resolve the reported findings:",
+      { size: 8, color: C.mut, gap: 6 },
+    );
+
+    const fullPrompt = buildFixPrompt(scan, lang);
+    const snippetLines = fullPrompt.split("\n").slice(0, 14);
+    const boxH = Math.min(snippetLines.length * 11 + 14, 160);
+    ensure(boxH + 10);
+
+    page.drawRectangle({
+      x: M,
+      y: y - boxH,
+      width: CW,
+      height: boxH,
+      color: C.bgSoft,
+      borderColor: C.line,
+      borderWidth: 0.7,
+    });
+
+    let py = y - 12;
+    for (const pline of snippetLines) {
+      if (py < y - boxH + 8) break;
+      const truncated = mono.widthOfTextAtSize(pline, 6.8) > CW - 20 
+        ? pline.slice(0, 85) + "…" 
+        : pline;
+      page.drawText(truncated, {
+        x: M + 10,
+        y: py,
+        size: 6.8,
+        font: mono,
+        color: C.ink,
+      });
+      py -= 10.5;
+    }
+    y -= boxH + 12;
+  }
+
+  /* ---------------- Footer Note ---------------- */
   ensure(60);
   page.drawLine({ start: { x: M, y: y - 6 }, end: { x: A4[0] - M, y: y - 6 }, thickness: 0.7, color: C.line });
   text(

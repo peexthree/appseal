@@ -256,3 +256,85 @@ export async function checkTls(ctx: Ctx): Promise<CheckResult> {
     en: `TLS certificate valid (${days} d)`,
   }, undefined, Date.now() - t0);
 }
+
+/* ------------------------------------------------------------------ */
+/* Server & technology fingerprinting leak                            */
+/* ------------------------------------------------------------------ */
+
+export async function checkServerFingerprint(ctx: Ctx): Promise<CheckResult> {
+  const t0 = Date.now();
+  const evidence: string[] = [];
+
+  const server = ctx.homeHeaders["server"] ?? "";
+  const poweredBy = ctx.homeHeaders["x-powered-by"] ?? "";
+  const aspnet = ctx.homeHeaders["x-aspnet-version"] ?? "";
+
+  // detailed software version detection (e.g., Apache/2.4.41, PHP/8.1, Express, nginx/1.18.0)
+  if (poweredBy) {
+    evidence.push(`X-Powered-By: ${poweredBy}`);
+  }
+  if (aspnet) {
+    evidence.push(`X-AspNet-Version: ${aspnet}`);
+  }
+  if (server && /\d+\.\d+/.test(server) && !/cloudflare/i.test(server)) {
+    evidence.push(`Server: ${server}`);
+  }
+
+  if (evidence.length > 0) {
+    return done(
+      "server_fingerprint",
+      "warn",
+      "low",
+      3,
+      { ru: "Утечка версий ПО в заголовках (Server / X-Powered-By)", en: "Server and tech stack version leakage" },
+      {
+        code: "SERVER_FINGERPRINT",
+        detail: {
+          ru: "Заголовки Server или X-Powered-By раскрывают точные версии бэкенда и веб-сервера. Это позволяет атакующим находить готовые эксплойты под используемый софт.",
+          en: "Server or X-Powered-By headers expose exact backend framework and web server versions, easing targeted vulnerability searches.",
+        },
+        evidence,
+      },
+      Date.now() - t0,
+    );
+  }
+
+  return done("server_fingerprint", "pass", "low", 0, {
+    ru: "Заголовки не выдают точных версий стека",
+    en: "No backend technology versions leaked in headers",
+  }, undefined, Date.now() - t0);
+}
+
+/* ------------------------------------------------------------------ */
+/* Permissions-Policy header                                          */
+/* ------------------------------------------------------------------ */
+
+export async function checkPermissionsPolicy(ctx: Ctx): Promise<CheckResult> {
+  const t0 = Date.now();
+  const pp = ctx.homeHeaders["permissions-policy"] || ctx.homeHeaders["feature-policy"];
+
+  if (!pp) {
+    return done(
+      "permissions_policy",
+      "warn",
+      "low",
+      3,
+      { ru: "Заголовок Permissions-Policy отсутствует", en: "Permissions-Policy header missing" },
+      {
+        code: "NO_PERMISSIONS_POLICY",
+        detail: {
+          ru: "Заголовок Permissions-Policy не настроен: сторонние скрипты и вложенные iframe могут запрашивать доступ к камере, микрофону, геолокации и датчикам без строгих ограничений.",
+          en: "Permissions-Policy header is missing: third-party scripts or embedded iframes could request camera, microphone, or geolocation without strict origin restrictions.",
+        },
+        evidence: ["Permissions-Policy header not present in response"],
+      },
+      Date.now() - t0,
+    );
+  }
+
+  return done("permissions_policy", "pass", "low", 0, {
+    ru: "Permissions-Policy настроен",
+    en: "Permissions-Policy is configured",
+  }, undefined, Date.now() - t0);
+}
+

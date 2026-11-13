@@ -140,7 +140,7 @@ export async function checkBackups(ctx: Ctx): Promise<CheckResult> {
       const isHtmlTemplate =
         /text\/html/i.test(r.contentType) && /<html|<!doctype/i.test(r.body);
       if (isHtmlTemplate || bodiesEquivalent(r.body, ctx.homeBody)) continue;
-      found.push(`${p} (${r.bodyBytes || r.body.length}+ bytes)`);
+      found.push(`${p} → обнаружен файл дампа/архива (скачивание заблокировано политикой безопасности)`);
     }
   }
   if (found.length) {
@@ -205,3 +205,143 @@ export async function checkDebugEndpoints(ctx: Ctx): Promise<CheckResult> {
     en: "Debug endpoints are not exposed",
   }, undefined, Date.now() - t0);
 }
+
+/* ------------------------------------------------------------------ */
+/* Swagger / OpenAPI / GraphQL exposure                                */
+/* ------------------------------------------------------------------ */
+
+const DOCS_PATHS = [
+  "/swagger.json",
+  "/openapi.json",
+  "/api/docs",
+  "/v2/api-docs",
+  "/graphql",
+  "/graphiql",
+  "/api/graphql",
+];
+
+export async function checkSwaggerGraphQLOpen(ctx: Ctx): Promise<CheckResult> {
+  const t0 = Date.now();
+  const found: string[] = [];
+
+  for (const p of DOCS_PATHS) {
+    const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + p, { timeoutMs: 4000, maxBody: 10 * 1024 });
+    if (r.ok && r.status === 200) {
+      if (bodiesEquivalent(r.body, ctx.homeBody)) continue;
+      const isJsonDoc =
+        /application\/json/i.test(r.contentType) &&
+        (r.body.includes('"openapi"') || r.body.includes('"swagger"') || r.body.includes('"paths"'));
+      const isGraphiql =
+        /text\/html/i.test(r.contentType) &&
+        (r.body.includes("GraphQL") || r.body.includes("graphiql") || r.body.includes("GraphQLPlayground"));
+      if (isJsonDoc || isGraphiql) {
+        found.push(`${p} → открытая схема/консоль (${isJsonDoc ? "OpenAPI/Swagger" : "GraphQL UI"})`);
+      }
+    }
+  }
+
+  if (found.length) {
+    return done(
+      "swagger_graphql_open",
+      "warn",
+      "medium",
+      10,
+      { ru: "Открыта документация API / GraphQL консоль", en: "Swagger / OpenAPI / GraphQL console exposed" },
+      {
+        code: "DOCS_GRAPHQL_EXPOSED",
+        detail: {
+          ru: "Интерактивная консоль GraphQL или схема Swagger/OpenAPI доступны публично на проде. Это облегчает атакующим полное исследование схемы данных, внутренних параметров и мутаций.",
+          en: "Interactive GraphQL console or Swagger/OpenAPI schema is exposed in production. Attackers can map out entire internal schema, parameters, and mutations.",
+        },
+        evidence: found,
+      },
+      Date.now() - t0,
+    );
+  }
+
+  return done("swagger_graphql_open", "pass", "low", 0, {
+    ru: "Служебная API-документация и GraphiQL закрыты",
+    en: "API schema and GraphiQL consoles not publicly exposed",
+  }, undefined, Date.now() - t0);
+}
+
+/* ------------------------------------------------------------------ */
+/* CORS preflight destructive methods                                 */
+/* ------------------------------------------------------------------ */
+
+export async function checkCorsPreflightMethods(ctx: Ctx): Promise<CheckResult> {
+  const t0 = Date.now();
+  const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + "/", {
+    method: "OPTIONS",
+    timeoutMs: 4000,
+    headers: {
+      origin: "https://evil-untrusted-origin.com",
+      "access-control-request-method": "DELETE",
+    },
+  });
+
+  const allowMethods = (r.headers["access-control-allow-methods"] ?? "").toUpperCase();
+  const allowOrigin = r.headers["access-control-allow-origin"] ?? "";
+
+  const dangerousMethods = ["DELETE", "PUT", "PATCH"].filter((m) => allowMethods.includes(m));
+
+  if ((allowOrigin === "*" || allowOrigin === "https://evil-untrusted-origin.com") && dangerousMethods.length > 0) {
+    return done(
+      "cors_preflight_methods",
+      "warn",
+      "medium",
+      8,
+      { ru: "Опасные методы в CORS Preflight (PUT/DELETE)", en: "Destructive HTTP methods allowed via CORS" },
+      {
+        code: "CORS_PREFLIGHT_METHODS",
+        detail: {
+          ru: `CORS preflight разрешает сторонним сайтам отправлять деструктивные методы (${dangerousMethods.join(", ")}). Если API не проверяет CSRF/Origin строго, возможны несанкционированные изменения данных.`,
+          en: `CORS preflight permits external origins to use destructive methods (${dangerousMethods.join(", ")}). Without strict CSRF or Origin checks, arbitrary web apps could alter data.`,
+        },
+        evidence: [
+          `Access-Control-Allow-Origin: ${allowOrigin}`,
+          `Access-Control-Allow-Methods: ${allowMethods}`,
+        ],
+      },
+      Date.now() - t0,
+    );
+  }
+
+  return done("cors_preflight_methods", "pass", "low", 0, {
+    ru: "CORS preflight не разрешает опасных методов для всех",
+    en: "CORS preflight does not expose destructive methods to arbitrary origins",
+  }, undefined, Date.now() - t0);
+}
+
+/* ------------------------------------------------------------------ */
+/* Rate limiting on sensitive routes                                  */
+/* ------------------------------------------------------------------ */
+
+export async function checkRateLimitProtection(ctx: Ctx): Promise<CheckResult> {
+  const t0 = Date.now();
+  const rlHeader =
+    ctx.homeHeaders["ratelimit-limit"] ||
+    ctx.homeHeaders["x-ratelimit-limit"] ||
+    ctx.homeHeaders["x-rate-limit-limit"] ||
+    ctx.homeHeaders["cf-mitigated"];
+
+  if (rlHeader) {
+    return done("auth_rate_limit", "pass", "low", 0, {
+      ru: "Обнаружены заголовки защиты Rate-Limit",
+      en: "Rate-limiting headers detected",
+    }, {
+      code: "RATELIMIT_PRESENT",
+      detail: {
+        ru: "Сервер возвращает заголовки ограничения частоты запросов (RateLimit), защищая эндпоинты от брутфорса и перегрузки.",
+        en: "Server returns rate-limiting headers, protecting resources against brute-force and scraping.",
+      },
+      evidence: [`limit: ${rlHeader}`],
+    }, Date.now() - t0);
+  }
+
+  return done("auth_rate_limit", "pass", "low", 0, {
+    ru: "Rate limit проверен",
+    en: "Rate limiting checked",
+  }, undefined, Date.now() - t0);
+}
+

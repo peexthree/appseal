@@ -69,7 +69,7 @@ export const DICT = {
     ru: "Реальный домен, реальный деплой, реальный ИИ-агент · ноябрь 2026",
     en: "A real domain, a real deploy, a real AI agent · November 2026",
   },
-  caseStep1t: { ru: "Техосмотр", en: "Trust scan" },
+  caseStep1t: { ru: "Первичный аудит", en: "Initial audit" },
   caseStep1n: { ru: "A · 86", en: "A · 86" },
   caseStep1d: {
     ru: "3 замечания: X-Frame-Options, CORS «для всех», пустой title",
@@ -81,14 +81,14 @@ export const DICT = {
     ru: "агент закрыл два пункта одним конфиг-коммитом",
     en: "the agent fixed two findings with one config commit",
   },
-  caseStep3t: { ru: "Повторный осмотр", en: "Re-scan" },
+  caseStep3t: { ru: "Повторный скан", en: "Re-scan" },
   caseStep3n: { ru: "A · 97", en: "A · 97" },
   caseStep3d: {
     ru: "заголовки на месте, CORS явный",
     en: "headers in place, CORS explicit",
   },
   caseBody: {
-    ru: "Сайт семейного аквацентра собран с ИИ и живёт на Vercel. Внешний скан без доступа к коду нашёл типовые дыры деплоя. Кнопка «Промпт для ИИ-агента» скопировала отчёт, агент той же сессии внёс правки, повторный осмотр подтвердил результат.",
+    ru: "Сайт семейного аквацентра собран с ИИ и живёт на Vercel. Внешний скан без доступа к коду нашёл типовые дыры деплоя. Кнопка «Промпт для ИИ-агента» скопировала отчёт, агент той же сессии внёс правки, повторный скан подтвердил результат.",
     en: "A family aqua center site built with AI, hosted on Vercel. The external black-box scan found typical deploy holes. The built-in 'prompt for your AI agent' button copied the report, an agent applied the fixes, and the re-scan confirmed the result.",
   },
   caseQuote: {

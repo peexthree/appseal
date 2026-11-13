@@ -3,10 +3,40 @@ import { computeScore } from "./grade";
 import { saveScan, updateScan } from "./store";
 import { isClientRenderShell, safeFetch, truncate } from "./fetcher";
 import { renderPage, shouldRender } from "./render";
-import { checkEnvExposure, checkGitExposure, checkSecretsInSource, checkBaaSOpenRead, checkSourceMaps } from "./checks/secrets";
-import { checkSecurityHeaders, checkCors, checkCookies, checkTls } from "./checks/headers";
-import { checkAdminExposure, checkBackups, checkDebugEndpoints } from "./checks/admin";
-import { checkPlaceholder, checkRenderedErrors, checkBrokenLinks, checkMetaHealth, detectPlatform } from "./checks/liveness";
+import {
+  checkEnvExposure,
+  checkGitExposure,
+  checkSecretsInSource,
+  checkBaaSOpenRead,
+  checkClientEnvLeak,
+  checkDockerK8sExposure,
+} from "./checks/secrets";
+import {
+  checkSecurityHeaders,
+  checkCors,
+  checkCookies,
+  checkTls,
+  checkServerFingerprint,
+  checkPermissionsPolicy,
+} from "./checks/headers";
+import {
+  checkAdminExposure,
+  checkBackups,
+  checkDebugEndpoints,
+  checkSwaggerGraphQLOpen,
+  checkCorsPreflightMethods,
+  checkRateLimitProtection,
+} from "./checks/admin";
+import {
+  checkPlaceholder,
+  checkRenderedErrors,
+  checkBrokenLinks,
+  checkMetaHealth,
+  checkMixedContentDom,
+  checkOpenGraphHealth,
+  detectPlatform,
+  detectTechPassport,
+} from "./checks/liveness";
 
 const DEMO_HOST = "http://127.0.0.1:3210";
 
@@ -31,7 +61,7 @@ export function normalizeInputUrl(input: string): { url: string; isDemo: boolean
 }
 
 /**
- * Runs a full scan for the given scan id (already saved as "queued").
+ * Runs a full 24-check scan for the given scan id (already saved as "queued").
  * Never throws: errors are recorded into the scan record.
  * Returns the final outcome on success (for the registry feed) or null.
  */
@@ -39,7 +69,7 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
   try {
     await setProgress(scan.id, {
       stage: { ru: "Загружаем главную страницу…", en: "Loading the homepage…" },
-      progress: 8,
+      progress: 6,
     });
 
     const { url, isDemo } = { url: scan.targetUrl, isDemo: scan.isDemo };
@@ -48,15 +78,34 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
     const origin = parsed.origin;
     const isHttp = parsed.protocol === "http:";
 
+    // Check robots.txt opt-out for public targets
+    if (!isDemo) {
+      try {
+        const rob = await safeFetch(`${origin}/robots.txt`, { timeoutMs: 4000, maxBody: 32 * 1024 });
+        if (rob.ok && rob.status === 200 && rob.body) {
+          const uaBlocks = rob.body.split(/User-agent:\s*/i);
+          for (const block of uaBlocks) {
+            const lines = block.split("\n").map((l) => l.trim());
+            const agent = lines[0]?.toLowerCase() ?? "";
+            if (agent.includes("appseal-scanner") || agent.includes("appseal")) {
+              const hasDisallowAll = lines.some((l) => /^disallow:\s*\/\s*$/i.test(l));
+              if (hasDisallowAll) {
+                throw new Error("сайт запретил сканирование через robots.txt (User-agent: AppSeal-Scanner; Disallow: /)");
+              }
+            }
+          }
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message.includes("robots.txt")) throw e;
+      }
+    }
+
     const home = await safeFetch(url, { timeoutMs: 12000 });
     if (!home.ok && home.status === 0) {
-      // try https fallback once
       if (isHttp === false) throw new Error("site unreachable: " + (home.error ?? home.status));
       throw new Error("site unreachable: " + (home.error ?? home.status));
     }
     if (home.status >= 400) {
-      // bot-mitigation is the most common 403 from hosting firewalls - name it
-      // and tell the owner the exact opt-out (openai.com lesson from report #1)
       const mitigated = (home.headers["x-vercel-mitigated"] ?? "").toLowerCase();
       if (mitigated.includes("challenge") || home.headers["x-vercel-challenge-token"]) {
         throw new Error(
@@ -65,9 +114,7 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
         );
       }
       if (home.status === 403) {
-        throw new Error(
-          "site responded 403 (WAF/bot protection) @ " + (home.url || url),
-        );
+        throw new Error("site responded 403 (WAF/bot protection) @ " + (home.url || url));
       }
       throw new Error(`site responded ${home.status}`);
     }
@@ -79,19 +126,16 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
       homeHeaders: home.headers,
       isHttp: (home.url || url).startsWith("http://"),
       csr: isClientRenderShell(home.body),
-      // path probes are relative to the demo base when scanning the fixture
       basePath: scan.isDemo ? new URL(url).pathname.replace(/\/+$/, "") : "",
     };
 
     if (shouldRender(ctx.csr, scan.isDemo)) {
-      // v0.3: CSR shell - render in headless chromium and re-run content
-      // checks against the hydrated DOM; on failure keep the raw body
       await setProgress(scan.id, {
         stage: {
-          ru: "Приложение рендерится на клиенте - загружаем через браузер…",
-          en: "App is client-rendered - loading it in a browser…",
+          ru: "Приложение рендерится на клиенте — загружаем через браузер…",
+          en: "App is client-rendered — loading it in a browser…",
         },
-        progress: 9,
+        progress: 8,
       });
       const rendered = await renderPage(url);
       if (rendered) {
@@ -103,37 +147,60 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
     if (ctx.csr) {
       await setProgress(scan.id, {
         stage: {
-          ru: "Приложение рендерится на клиенте - часть проверок будет пропущена честно",
-          en: "App is client-rendered - some checks are skipped honestly",
+          ru: "Приложение рендерится на клиенте — часть проверок будет пропущена честно",
+          en: "App is client-rendered — some checks are skipped honestly",
         },
-        progress: 9,
+        progress: 8,
       });
     }
 
+    // 24 checks across 4 categories: exactly 6 per category
     const all: { fn: () => Promise<CheckResult>; id: string }[] = [
+      // 1. Secrets & leaks (6)
       { fn: () => checkEnvExposure(ctx), id: "env_exposure" },
       { fn: () => checkGitExposure(ctx), id: "git_exposure" },
       { fn: () => checkSecretsInSource(ctx), id: "secrets_in_source" },
       { fn: () => checkBaaSOpenRead(ctx), id: "baas_open_read" },
-      { fn: () => checkSourceMaps(ctx), id: "source_maps" },
+      { fn: () => checkClientEnvLeak(ctx), id: "client_env_leak" },
+      { fn: () => checkDockerK8sExposure(ctx), id: "docker_k8s_exposure" },
+
+      // 2. Headers & TLS (6)
       { fn: () => checkSecurityHeaders(ctx), id: "security_headers" },
       { fn: () => checkCors(ctx), id: "cors_wildcard" },
       { fn: () => checkCookies(ctx), id: "cookie_flags" },
       { fn: () => checkTls(ctx), id: "tls_cert" },
+      { fn: () => checkServerFingerprint(ctx), id: "server_fingerprint" },
+      { fn: () => checkPermissionsPolicy(ctx), id: "permissions_policy" },
+
+      // 3. Admin & Auth (6)
       { fn: () => checkAdminExposure(ctx), id: "admin_exposure" },
       { fn: () => checkBackups(ctx), id: "backup_files" },
       { fn: () => checkDebugEndpoints(ctx), id: "debug_endpoints" },
+      { fn: () => checkSwaggerGraphQLOpen(ctx), id: "swagger_graphql_open" },
+      { fn: () => checkCorsPreflightMethods(ctx), id: "cors_preflight_methods" },
+      { fn: () => checkRateLimitProtection(ctx), id: "auth_rate_limit" },
+
+      // 4. Liveness & Content (6)
       { fn: () => checkPlaceholder(ctx), id: "placeholder_content" },
       { fn: () => checkRenderedErrors(ctx), id: "rendered_errors" },
       { fn: () => checkBrokenLinks(ctx), id: "broken_links" },
       { fn: () => checkMetaHealth(ctx), id: "meta_health" },
+      { fn: () => checkMixedContentDom(ctx), id: "mixed_content_dom" },
+      { fn: () => checkOpenGraphHealth(ctx), id: "open_graph_health" },
     ];
 
-    // run first (cheap, home-page-only) checks sequentially to publish progress,
-    // then heavy ones with a concurrency of 4
     const results: CheckResult[] = [];
     let doneCount = 0;
-    const LIGHT_IDS = new Set(["placeholder_content", "rendered_errors", "meta_health"]);
+    const LIGHT_IDS = new Set([
+      "placeholder_content",
+      "rendered_errors",
+      "meta_health",
+      "server_fingerprint",
+      "permissions_policy",
+      "mixed_content_dom",
+      "open_graph_health",
+      "auth_rate_limit",
+    ]);
 
     const runOne = async (fn: () => Promise<CheckResult>) => {
       try {
@@ -169,12 +236,12 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
       });
     };
 
-    // light checks first (no extra fetches beyond home)
+    // run light checks first
     for (const item of all.filter((a) => LIGHT_IDS.has(a.id))) {
       await runOne(item.fn);
     }
 
-    // heavy checks, concurrency 4
+    // run heavy probes with concurrency 4
     const heavy = all.filter((a) => !LIGHT_IDS.has(a.id));
     const queue = [...heavy];
     const workers = Array.from({ length: 4 }, async () => {
@@ -187,6 +254,7 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
     await Promise.all(workers);
 
     const platform = detectPlatform(home.body, host);
+    const techPassport = detectTechPassport(home.body, home.headers, host, home.bodyBytes, home.durationMs);
     const { score, grade } = computeScore(results);
 
     results.sort((a, b) => {
@@ -194,7 +262,6 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
       if (cat[a.category] !== cat[b.category]) return cat[a.category] - cat[b.category];
       const sevRank = (r: CheckResult) => (r.status === "fail" ? 0 : r.status === "warn" ? 1 : 2);
       if (sevRank(a) !== sevRank(b)) return sevRank(a) - sevRank(b);
-      // heavier penalty first within the same category+status group
       return b.penalty - a.penalty;
     });
 
@@ -207,6 +274,7 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
       grade,
       results,
       platform: platform ?? undefined,
+      techPassport,
       host: scan.isDemo ? "demo-app" : host,
     });
     return { host: scan.isDemo ? "demo-app" : host, grade, score };
