@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { AnimatePresence, animate, motion } from "framer-motion";
 import type { Lang, ScanResult, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META } from "@/lib/scanner/types";
@@ -9,7 +10,10 @@ import { t, list } from "@/lib/i18n";
 import { ReportView } from "@/components/report-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check, Copy, Send, Menu, X } from "@/components/icons/appseal-icons";
+import { Reveal } from "@/components/reveal";
+import { SectionHead } from "@/components/section-head";
+import { Stat } from "@/components/stat";
+import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check, Copy, Send, Menu, X, ChevronDown } from "@/components/icons/appseal-icons";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
@@ -79,6 +83,37 @@ const DEMO_CHIPS: { target: string; grade: Grade; score: number }[] = [
 /** the re-scan of the aqua center case (A/97), public verification view */
 const CASE_REPORT_ID = "mwehe0wu-6f339614bd";
 
+/** ticker under the hero: real engine check names, language-neutral */
+const CHECK_TICKER = [
+  "CSP", "HSTS", ".env", ".git", "CORS", "TLS expiry", "cookie flags", "swagger",
+  "actuator", "wp-json", "mixed content", "SRI", "soft-404", "X-Frame-Options",
+  "Referrer-Policy", "COOP", "dir listing", "source maps",
+];
+
+/** section eyebrow pills, per language */
+const EYEBROWS = {
+  stats: { ru: "Почему", en: "Why" },
+  how: { ru: "Процесс", en: "Process" },
+  case: { ru: "Кейс", en: "Case" },
+  engine: { ru: "Движок", en: "Engine" },
+  pricing: { ru: "Тарифы", en: "Pricing" },
+  faq: { ru: "FAQ", en: "FAQ" },
+};
+
+/** animated stat cards: value, suffix and decimal precision */
+const STATS: { value: number; suffix: string; decimals: number; label: "stat1" | "stat2" | "stat3" }[] = [
+  { value: 45, suffix: "%", decimals: 0, label: "stat1" },
+  { value: 40, suffix: "%", decimals: 0, label: "stat2" },
+  { value: 1.3, suffix: "M", decimals: 1, label: "stat3" },
+];
+
+/** decorative registry rows for the CTA banner (static, no API calls) */
+const REGISTRY_DECOR: { host: string; color: string }[] = [
+  { host: "akulenok-tmz.ru", color: "#34D399" },
+  { host: "appseal.online", color: "#C084FC" },
+  { host: "demo://app", color: "#F87171" },
+];
+
 export function ScannerPage({
   initialScan,
   initialReportKey,
@@ -107,7 +142,30 @@ export function ScannerPage({
   const [bootPct, setBootPct] = useState(0);
   const [bootStage, setBootStage] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [faqOpen, setFaqOpen] = useState<number[]>([]);
   const reportRef = useRef<HTMLDivElement>(null);
+
+  // compact header once the page is scrolled a bit (rAF-throttled)
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 8);
+        raf = 0;
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  const toggleFaq = (i: number) =>
+    setFaqOpen((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]));
 
   useEffect(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem("appseal-lang") : null;
@@ -274,7 +332,17 @@ export function ScannerPage({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
+    <div className="flex min-h-screen flex-col overflow-x-clip bg-[#090d16] text-slate-100">
+      {/* ambient layer: aurora + noise, purely decorative */}
+      <div className="appseal-ambient" aria-hidden>
+        <div className="appseal-aurora">
+          <span className="appseal-aurora-a" />
+          <span className="appseal-aurora-b" />
+          <span className="appseal-aurora-c" />
+        </div>
+        <div className="appseal-noise" />
+      </div>
+
       {/* fake boot splash: playful SaaS-style loader, ~1.2s */}
       <AnimatePresence>
         {booting && (
@@ -306,7 +374,16 @@ export function ScannerPage({
       </AnimatePresence>
 
       {/* header */}
-      <header className="sticky top-0 z-40 border-b border-slate-800/60 bg-[#090d16]/75 backdrop-blur-xl">
+      <header
+        className={`sticky top-0 z-40 transition-colors duration-300 ${
+          scrolled ? "bg-[#090d16]/90 backdrop-blur-2xl" : "bg-[#090d16]/75 backdrop-blur-xl"
+        }`}
+      >
+        {/* gradient bottom edge instead of a flat border */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-sky-400/40 to-transparent"
+        />
         <div className="mx-auto flex h-20 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
           <a href="/" className="group flex shrink-0 items-center gap-3" aria-label="AppSeal home">
             <img
@@ -421,7 +498,7 @@ export function ScannerPage({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">
+      <main className="relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">
         {/* Launch Pass status (returning from YooKassa) */}
         {(passInfo || paidPending) && (
           <div
@@ -459,7 +536,7 @@ export function ScannerPage({
             </p>
             <h1 className="font-display mt-4 text-4xl font-extrabold leading-tight tracking-tight text-slate-50 sm:text-5xl">
               {t(lang, "heroTitle")}{" "}
-              <span className="text-sky-400">{t(lang, "heroTitleAccent")}</span>
+              <span className="appseal-gradient-text">{t(lang, "heroTitleAccent")}</span>
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-slate-400">
               {t(lang, "heroSub")}
@@ -468,32 +545,37 @@ export function ScannerPage({
 
           {phase === "form" && (
             <div className="mx-auto mt-8 max-w-2xl">
-              <form
-                className="flex flex-col gap-3 sm:flex-row"
-                style={{ filter: "drop-shadow(0 0 24px rgba(56,189,248,0.22))" }}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (url.trim() && consent) void startScan(url.trim());
-                }}
-              >
-                <Input
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder={t(lang, "inputPlaceholder")}
-                  className="h-12 flex-1 border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
-                  inputMode="url"
-                  aria-label="App URL"
-                  required
-                />
-                <Button
-                  type="submit"
-                  disabled={!consent}
-                  className="h-12 bg-sky-400 px-6 text-base font-bold text-[#090d16] shadow-[0_0_30px_-5px_rgba(56,189,248,0.5)] hover:bg-sky-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <Zap className="h-4 w-4" />
-                  {t(lang, "scanBtn")}
-                </Button>
-              </form>
+              <Reveal>
+                <div className="appseal-ring">
+                  <div className="rounded-[15px] bg-[#0b101c] p-3">
+                    <form
+                      className="flex flex-col gap-3 sm:flex-row"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (url.trim() && consent) void startScan(url.trim());
+                      }}
+                    >
+                      <Input
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        placeholder={t(lang, "inputPlaceholder")}
+                        className="h-12 flex-1 border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
+                        inputMode="url"
+                        aria-label="App URL"
+                        required
+                      />
+                      <Button
+                        type="submit"
+                        disabled={!consent}
+                        className="h-12 bg-sky-400 px-6 text-base font-bold text-[#090d16] shadow-[0_0_30px_-5px_rgba(56,189,248,0.5)] hover:bg-sky-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Zap className="h-4 w-4" />
+                        {t(lang, "scanBtn")}
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              </Reveal>
 
               {/* Consent & legal checkbox (152-FZ & passive scan notice) */}
               <label className="mt-3.5 flex items-start gap-2.5 text-left cursor-pointer select-none px-1">
@@ -517,7 +599,8 @@ export function ScannerPage({
                   <button
                     key={c.target}
                     onClick={() => void startScan(c.target)}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-[#111827] px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-800"
+                    className="appseal-chip inline-flex items-center gap-2 rounded-full border border-slate-700 bg-[#111827] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+                    style={{ "--grade-color": GRADE_META[c.grade].color } as CSSProperties}
                   >
                     <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: GRADE_META[c.grade].color }} />
                     <span className="font-mono">{c.target}</span>
@@ -532,22 +615,33 @@ export function ScannerPage({
 
           {/* interactive grade showcase: the trophy changes glow per rank */}
           {phase === "form" && (
-            <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-slate-800 bg-[#111827]/70 p-5 sm:p-6">
+            <div className="appseal-card mx-auto mt-6 max-w-2xl rounded-2xl p-5 sm:p-6">
               <p className="text-center text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
                 {t(lang, "showcaseHint")}
               </p>
               <div className="mt-4 flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
-                <motion.img
-                  key={showGrade}
-                  src={getTrophyPath(showGrade)}
-                  alt={`AppSeal grade ${showGrade}`}
-                  width={112}
-                  height={112}
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1, filter: `drop-shadow(0 0 22px ${GRADE_META[showGrade].color}66)` }}
-                  transition={{ duration: 0.35 }}
-                  className="h-28 w-28 shrink-0 object-contain"
-                />
+                <div className="relative flex shrink-0 items-center justify-center">
+                  {/* soft radial glow behind the trophy, follows the active grade */}
+                  <motion.span
+                    aria-hidden
+                    className="absolute h-36 w-36 rounded-full blur-2xl"
+                    initial={false}
+                    animate={{ backgroundColor: `${GRADE_META[showGrade].color}24` }}
+                    transition={{ duration: 0.6 }}
+                    style={{ backgroundColor: `${GRADE_META["A+"].color}24` }}
+                  />
+                  <motion.img
+                    key={showGrade}
+                    src={getTrophyPath(showGrade)}
+                    alt={`AppSeal grade ${showGrade}`}
+                    width={112}
+                    height={112}
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1, filter: `drop-shadow(0 0 22px ${GRADE_META[showGrade].color}66)` }}
+                    transition={{ duration: 0.35 }}
+                    className="relative h-28 w-28 object-contain"
+                  />
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap justify-center gap-1.5 sm:justify-start">
                     {(["A+", "A", "B", "C", "D", "E"] as Grade[]).map((g) => {
@@ -583,7 +677,7 @@ export function ScannerPage({
           )}
 
           {phase === "scanning" && (
-            <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:p-8">
+            <div className="appseal-card mx-auto mt-8 max-w-2xl rounded-2xl p-6 sm:p-8">
               <div className="flex items-center gap-3">
                 <span className="appseal-pulse flex h-3 w-3 rounded-full bg-sky-400" />
                 <p className="font-semibold text-slate-100">{t(lang, "scanning")}</p>
@@ -671,45 +765,74 @@ export function ScannerPage({
           </div>
         </section>
 
+        {/* ticker: real check names drifting by (decorative, duplicated for the loop) */}
+        <div className="appseal-fade-x border-y border-slate-800/60 py-3.5" aria-hidden>
+          <div className="appseal-marquee">
+            {[0, 1].map((copy) => (
+              <ul
+                key={copy}
+                className="flex shrink-0 items-center gap-7 pr-7 font-mono text-[11px] text-slate-600"
+              >
+                {CHECK_TICKER.map((name) => (
+                  <li key={name} className="flex items-center gap-7">
+                    {name}
+                    <span className="h-1 w-1 rounded-full bg-sky-400/60" />
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </div>
+        </div>
+
         {/* stats */}
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "statsTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
-            {t(lang, "statsTitle")}
-          </h2>
+          <SectionHead eyebrow={EYEBROWS.stats[lang]} title={t(lang, "statsTitle")} />
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {[
-              { n: "45%", s: t(lang, "stat1") },
-              { n: "40%", s: t(lang, "stat2") },
-              { n: "1.3M", s: t(lang, "stat3") },
-            ].map((x) => (
-              <div key={x.n} className="rounded-2xl border border-slate-800 bg-[#111827] p-6 text-center">
-                <p className="font-display text-4xl font-extrabold text-sky-400">{x.n}</p>
-                <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{x.s}</p>
-              </div>
+            {STATS.map((s, i) => (
+              <Reveal key={s.label} delay={i * 0.08} className="h-full">
+                <div className="appseal-card h-full rounded-2xl p-6 text-center">
+                  <p className="font-display text-5xl font-extrabold">
+                    <Stat value={s.value} suffix={s.suffix} decimals={s.decimals} className="appseal-gradient-text" />
+                  </p>
+                  <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{t(lang, s.label)}</p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </section>
 
         {/* how it works */}
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "howTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
-            {t(lang, "howTitle")}
-          </h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <SectionHead eyebrow={EYEBROWS.how[lang]} title={t(lang, "howTitle")} />
+          <div className="mt-8 grid gap-4 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:gap-3">
             {[
               { icon: <Globe className="h-5 w-5" />, n: "01", ti: t(lang, "how1Title"), tx: t(lang, "how1Text") },
               { icon: <Zap className="h-5 w-5" />, n: "02", ti: t(lang, "how2Title"), tx: t(lang, "how2Text") },
               { icon: <FileCheck2 className="h-5 w-5" />, n: "03", ti: t(lang, "how3Title"), tx: t(lang, "how3Text") },
-            ].map((x) => (
-              <div key={x.n} className="rounded-2xl border border-slate-800 bg-[#111827] p-6">
-                <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-400/10 text-sky-400">
-                    {x.icon}
-                  </span>
-                  <span className="font-mono text-xs text-slate-600">{x.n}</span>
-                </div>
-                <h3 className="font-display mt-4 text-base font-bold text-slate-100">{x.ti}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{x.tx}</p>
+            ].map((x, i) => (
+              <div key={x.n} className="contents">
+                {i > 0 && (
+                  <Reveal delay={i * 0.08 + 0.04} className="hidden md:block">
+                    <div className="flex h-full items-center justify-center text-slate-600" aria-hidden>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </Reveal>
+                )}
+                <Reveal delay={i * 0.08} className="h-full">
+                  <div className="appseal-card relative h-full overflow-hidden rounded-2xl p-6">
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute right-5 top-2 select-none font-mono text-5xl font-extrabold text-slate-800"
+                    >
+                      {x.n}
+                    </span>
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-400/10 text-sky-400">
+                      {x.icon}
+                    </span>
+                    <h3 className="font-display mt-4 text-base font-bold text-slate-100">{x.ti}</h3>
+                    <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{x.tx}</p>
+                  </div>
+                </Reveal>
               </div>
             ))}
           </div>
@@ -717,35 +840,55 @@ export function ScannerPage({
 
         {/* first real case */}
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "caseTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
-            {t(lang, "caseTitle")}
-          </h2>
-          <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "caseSub")}</p>
-          <div className="mx-auto mt-8 max-w-3xl rounded-2xl border border-sky-900/40 bg-sky-400/[0.04] p-6 sm:p-8">
-            {/* timeline: lime 86 -> emerald 97 */}
-            <div className="grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
-              <div className="rounded-xl border border-slate-800 bg-[#111827] p-5 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t(lang, "caseStep1t")}</p>
-                <p className="font-display mt-2 text-2xl font-extrabold text-lime-400">{t(lang, "caseStep1n")}</p>
-                <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{t(lang, "caseStep1d")}</p>
-              </div>
-              <div className="hidden items-center justify-center text-slate-600 sm:flex" aria-hidden>
-                <ArrowRight className="h-4 w-4" />
-              </div>
-              <div className="rounded-xl border border-slate-800 bg-[#111827] p-5 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t(lang, "caseStep2t")}</p>
-                <p className="font-display mt-2 text-2xl font-extrabold text-slate-300">{t(lang, "caseStep2n")}</p>
-                <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{t(lang, "caseStep2d")}</p>
-              </div>
-              <div className="hidden items-center justify-center text-slate-600 sm:flex" aria-hidden>
-                <ArrowRight className="h-4 w-4" />
-              </div>
-              <div className="rounded-xl border border-emerald-900/50 bg-emerald-500/[0.05] p-5 text-center">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t(lang, "caseStep3t")}</p>
-                <p className="font-display mt-2 text-2xl font-extrabold text-emerald-400">{t(lang, "caseStep3n")}</p>
-                <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{t(lang, "caseStep3d")}</p>
-              </div>
-            </div>
+          <SectionHead eyebrow={EYEBROWS.case[lang]} title={t(lang, "caseTitle")} sub={t(lang, "caseSub")} />
+          <Reveal className="mt-8">
+            <div className="appseal-ring mx-auto max-w-3xl">
+              <div className="rounded-[15px] bg-[#0b101c] p-6 sm:p-8">
+                {/* timeline: lime 86 -> emerald 97, revealed step by step */}
+                <div className="grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
+                  {[
+                    {
+                      d: 0,
+                      cls: "rounded-xl border border-slate-800 bg-[#111827] p-5 text-center",
+                      t: "caseStep1t" as const,
+                      n: "caseStep1n" as const,
+                      nc: "text-lime-400",
+                      dKey: "caseStep1d" as const,
+                    },
+                    {
+                      d: 0.06,
+                      cls: "rounded-xl border border-slate-800 bg-[#111827] p-5 text-center",
+                      t: "caseStep2t" as const,
+                      n: "caseStep2n" as const,
+                      nc: "text-slate-300",
+                      dKey: "caseStep2d" as const,
+                    },
+                    {
+                      d: 0.12,
+                      cls: "relative rounded-xl border border-emerald-900/50 bg-emerald-500/[0.05] p-5 text-center",
+                      t: "caseStep3t" as const,
+                      n: "caseStep3n" as const,
+                      nc: "text-emerald-400",
+                      dKey: "caseStep3d" as const,
+                    },
+                  ].flatMap((step, idx) => [
+                    idx > 0 && (
+                      <Reveal key={`arrow-${idx}`} delay={step.d - 0.03}>
+                        <div className="hidden h-full items-center justify-center text-slate-600 sm:flex" aria-hidden>
+                          <ArrowRight className="h-4 w-4" />
+                        </div>
+                      </Reveal>
+                    ),
+                    <Reveal key={step.t} delay={step.d} className="h-full">
+                      <div className={`h-full ${step.cls}`}>
+                        {idx === 2 && <span aria-hidden className="appseal-glow-once" />}
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t(lang, step.t)}</p>
+                        <p className={`font-display mt-2 text-2xl font-extrabold ${step.nc}`}>{t(lang, step.n)}</p>
+                        <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{t(lang, step.dKey)}</p>
+                      </div>
+                    </Reveal>,
+                  ])}
+                </div>
 
             {/* mini-terminal with the real fix-prompt fragment */}
             <div className="mt-6 overflow-hidden rounded-xl border border-slate-800 bg-[#070b13]">
@@ -772,21 +915,25 @@ export function ScannerPage({
             </div>
 
             <p className="mt-6 text-[13px] leading-relaxed text-slate-400">{t(lang, "caseBody")}</p>
-            <p className="font-display mt-4 text-sm font-bold text-sky-300">{t(lang, "caseQuote")}</p>
-            <a
-              href={`/?report=${CASE_REPORT_ID}`}
-              target="_blank"
-              rel="noopener"
-              className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-sky-400 underline decoration-dotted underline-offset-4 transition hover:text-sky-300"
-            >
-              {t(lang, "caseReportLink")}
-            </a>
-          </div>
+                <p className="font-display mt-4 text-sm font-bold text-sky-300">{t(lang, "caseQuote")}</p>
+                <a
+                  href={`/?report=${CASE_REPORT_ID}`}
+                  target="_blank"
+                  rel="noopener"
+                  className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-sky-400 underline decoration-dotted underline-offset-4 transition hover:text-sky-300"
+                >
+                  {t(lang, "caseReportLink")}
+                </a>
+              </div>
+            </div>
+          </Reveal>
         </section>
 
         {/* public registry: prominent placement after the proof case */}
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "issue2Title")}>
-          <div className="mx-auto max-w-3xl rounded-2xl border border-sky-900/40 bg-sky-400/[0.04] p-6 text-center sm:p-10">
+          <Reveal>
+            <div className="appseal-ring mx-auto max-w-3xl">
+              <div className="rounded-[15px] bg-[#0b101c] p-6 text-center sm:p-10">
             <h2 className="font-display text-2xl font-bold text-slate-100">
               {t(lang, "issue2Title")}
             </h2>
@@ -811,144 +958,159 @@ export function ScannerPage({
                 {t(lang, "issue2CtaRegistry")} →
               </a>
             </div>
-          </div>
+
+            {/* decorative hint of registry contents: host + grade dot (static) */}
+            <div aria-hidden className="mx-auto mt-8 flex max-w-xs flex-col gap-2 font-mono text-[11px] text-slate-600">
+              {REGISTRY_DECOR.map((r) => (
+                <div key={r.host} className="flex items-center justify-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: r.color }} />
+                  <span>{r.host}</span>
+                </div>
+              ))}
+              <div className="flex items-center justify-center gap-2 text-slate-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
+                <span>···</span>
+              </div>
+            </div>
+              </div>
+            </div>
+          </Reveal>
         </section>
 
         {/* what we check */}
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "checksTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
-            {t(lang, "checksTitle")}
-          </h2>
-          <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "checksSub")}</p>
+          <SectionHead eyebrow={EYEBROWS.engine[lang]} title={t(lang, "checksTitle")} sub={t(lang, "checksSub")} />
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {CHECK_CATEGORIES.map((c) => (
-              <div key={c.key} className="rounded-2xl border border-slate-800 bg-[#111827] p-6">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-400/10 text-sky-400">
-                    {c.icon}
-                  </span>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-                    {CATEGORY_META[c.key].title[lang]}
-                  </h3>
-                  <span className="ml-auto shrink-0 rounded border border-slate-700 bg-[#090d16] px-2 py-0.5 font-mono text-[10px] font-semibold text-sky-400">
-                    [{c.count[lang]}]
-                  </span>
+            {CHECK_CATEGORIES.map((c, i) => (
+              <Reveal key={c.key} delay={(i % 2) * 0.08} className="h-full">
+                <div className="appseal-card h-full rounded-2xl p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-400/10 text-sky-400">
+                      {c.icon}
+                    </span>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
+                      {CATEGORY_META[c.key].title[lang]}
+                    </h3>
+                    <span className="appseal-count-badge ml-auto shrink-0 rounded border border-slate-700 bg-[#090d16] px-2 py-0.5 font-mono text-[10px] font-semibold text-sky-400">
+                      [{c.count[lang]}]
+                    </span>
+                  </div>
+                  <ul className="mt-4 space-y-2">
+                    {c.items[lang].split("|").map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-[13px] text-slate-400">
+                        <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400/70" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-4 rounded-lg border border-slate-800/80 bg-[#090d16]/60 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
+                    {c.extra[lang]}
+                  </p>
                 </div>
-                <ul className="mt-4 space-y-2">
-                  {c.items[lang].split("|").map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-[13px] text-slate-400">
-                      <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400/70" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-4 rounded-lg border border-slate-800/80 bg-[#090d16]/60 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
-                  {c.extra[lang]}
-                </p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </section>
 
         {/* pricing */}
         <section id="pricing" className="scroll-mt-16 border-t border-slate-800/70 py-14" aria-label={t(lang, "pricingTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
-            {t(lang, "pricingTitle")}
-          </h2>
-          <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "pricingSub")}</p>
+          <SectionHead eyebrow={EYEBROWS.pricing[lang]} title={t(lang, "pricingTitle")} sub={t(lang, "pricingSub")} />
           <div className="mt-10 grid gap-4 md:grid-cols-2">
-            {[
-              { name: t(lang, "planFree"), price: t(lang, "planFreePrice"), sub: "", feats: list(lang, "planFreeFeats"), hi: false, cta: t(lang, "planFreeCta"), kind: "free" as const },
-              { name: t(lang, "planLP"), price: t(lang, "planLPPrice"), sub: t(lang, "planLPSub"), feats: list(lang, "planLPFeats"), hi: true, cta: t(lang, "planLPCta"), kind: "lp" as const },
-            ].map((p) => (
-              <div
-                key={p.name}
-                className={`relative flex flex-col rounded-2xl border p-6 ${
-                  p.hi
-                    ? "border-emerald-500/40 bg-emerald-500/[0.04] shadow-[0_0_44px_-14px_rgba(52,211,153,0.4)]"
-                    : "border-slate-800 bg-[#111827]"
-                }`}
-              >
-                {p.hi && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#090d16] shadow-[0_0_20px_-4px_rgba(52,211,153,0.6)]">
-                    {t(lang, "planMostPopular")}
-                  </span>
-                )}
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{p.name}</p>
-                <p className={`font-display mt-2 text-3xl font-extrabold ${p.hi ? "text-emerald-400" : "text-slate-100"}`}>
-                  {p.price}
-                </p>
-                {p.sub && <p className="mt-1 text-[11px] leading-snug text-slate-500">{p.sub}</p>}
+            {/* Free plan */}
+            <Reveal className="h-full">
+              <div className="appseal-card flex h-full flex-col rounded-2xl p-6">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t(lang, "planFree")}</p>
+                <p className="font-display mt-2 text-3xl font-extrabold text-slate-100">{t(lang, "planFreePrice")}</p>
                 <ul className="mt-4 flex-1 space-y-2">
-                  {p.feats.map((f) => (
+                  {list(lang, "planFreeFeats").map((f) => (
                     <li key={f} className="flex items-start gap-2 text-[13px] text-slate-300">
                       <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400" />
                       {f}
                     </li>
                   ))}
                 </ul>
-                {p.kind === "lp" ? (
-                  <div className="mt-5 space-y-2">
-                    <input
-                      value={lpHost}
-                      onChange={(e) => setLpHost(e.target.value)}
-                      placeholder={t(lang, "lpDomainPh")}
-                      aria-label="Pass domain"
-                      className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
-                    />
-                    <Button
-                      className="w-full bg-emerald-400 text-[#090d16] hover:bg-emerald-300"
-                      onClick={buyPass}
-                      disabled={lpBusy}
-                    >
-                      <Zap className="h-4 w-4" />
-                      {lpBusy ? "…" : p.cta}
-                    </Button>
-                    <p className="text-[10px] leading-relaxed text-slate-500">{t(lang, "lpNote")}</p>
-                    {lpErr && <p className="text-[11px] leading-snug text-red-400">{lpErr}</p>}
-                  </div>
-                ) : (
-                  <Button
-                    className="mt-5 w-full bg-sky-400 text-[#090d16] hover:bg-sky-300"
-                    onClick={() => {
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                      document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
-                    }}
-                  >
-                    <Zap className="h-4 w-4" />
-                    {p.cta} ↑
-                  </Button>
-                )}
+                <Button
+                  className="mt-5 w-full bg-sky-400 text-[#090d16] hover:bg-sky-300"
+                  onClick={() => {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
+                  }}
+                >
+                  <Zap className="h-4 w-4" />
+                  {t(lang, "planFreeCta")} ↑
+                </Button>
               </div>
-            ))}
+            </Reveal>
+            {/* Launch Pass: animated emerald ring frame, featured */}
+            <Reveal delay={0.08} className="h-full">
+              <div className="relative h-full">
+                <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#090d16] shadow-[0_0_20px_-4px_rgba(52,211,153,0.6)]">
+                  {t(lang, "planMostPopular")}
+                </span>
+                <div className="appseal-ring appseal-ring-emerald h-full">
+                  <div className="flex h-full flex-col rounded-[15px] bg-[#0b101c] p-6 shadow-[0_0_44px_-14px_rgba(52,211,153,0.4)]">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t(lang, "planLP")}</p>
+                    <p className="font-display mt-2 text-3xl font-extrabold text-emerald-400">{t(lang, "planLPPrice")}</p>
+                    <p className="mt-1 text-[11px] leading-snug text-slate-500">{t(lang, "planLPSub")}</p>
+                    <ul className="mt-4 flex-1 space-y-2">
+                      {list(lang, "planLPFeats").map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-[13px] text-slate-300">
+                          <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-5 space-y-2">
+                      <input
+                        value={lpHost}
+                        onChange={(e) => setLpHost(e.target.value)}
+                        placeholder={t(lang, "lpDomainPh")}
+                        aria-label="Pass domain"
+                        className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
+                      />
+                      <Button
+                        className="w-full bg-emerald-400 text-[#090d16] hover:bg-emerald-300"
+                        onClick={buyPass}
+                        disabled={lpBusy}
+                      >
+                        <Zap className="h-4 w-4" />
+                        {lpBusy ? "…" : t(lang, "planLPCta")}
+                      </Button>
+                      <p className="text-[10px] leading-relaxed text-slate-500">{t(lang, "lpNote")}</p>
+                      {lpErr && <p className="text-[11px] leading-snug text-red-400">{lpErr}</p>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Reveal>
           </div>
           {/* platform: contact row instead of a third pricing card */}
-          <div className="mt-4 rounded-2xl border border-slate-800 bg-[#111827] p-5 sm:p-6">
-            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-              <div className="min-w-0">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Platform · <span className="font-mono normal-case tracking-normal">{t(lang, "planPlatformPrice")}</span>
-                </p>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">{t(lang, "platformRowText")}</p>
+          <Reveal className="mt-4">
+            <div className="appseal-card rounded-2xl p-5 sm:p-6">
+              <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Platform · <span className="font-mono normal-case tracking-normal">{t(lang, "planPlatformPrice")}</span>
+                  </p>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">{t(lang, "platformRowText")}</p>
+                </div>
+                <a
+                  href="https://t.me/peexthree"
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex shrink-0 items-center gap-2 rounded-md bg-sky-400 px-5 py-2.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
+                >
+                  <Send className="h-4 w-4" />
+                  {t(lang, "telegramCta")}
+                </a>
               </div>
-              <a
-                href="https://t.me/peexthree"
-                target="_blank"
-                rel="noopener"
-                className="inline-flex shrink-0 items-center gap-2 rounded-md bg-sky-400 px-5 py-2.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
-              >
-                <Send className="h-4 w-4" />
-                {t(lang, "telegramCta")}
-              </a>
             </div>
-          </div>
+          </Reveal>
         </section>
 
         {/* FAQ */}
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "faqTitle")}>
-          <h2 className="font-display text-center text-2xl font-bold text-slate-100">
-            {t(lang, "faqTitle")}
-          </h2>
+          <SectionHead eyebrow={EYEBROWS.faq[lang]} title={t(lang, "faqTitle")} />
           <div className="mx-auto mt-8 max-w-3xl space-y-3">
             {(
               [
@@ -962,23 +1124,50 @@ export function ScannerPage({
                 ["faq8Q", "faq8A"],
               ] as const
             ).map(
-              ([q, a]) => (
-                <details key={q} className="group rounded-xl border border-slate-800 bg-[#111827] p-5">
-                  <summary className="cursor-pointer list-none text-sm font-semibold text-slate-100 marker:hidden">
-                    <span className="mr-2 text-sky-400 transition group-open:rotate-90 inline-block">▸</span>
-                    {t(lang, q)}
-                  </summary>
-                  <p className="mt-3 pl-6 text-[13px] leading-relaxed text-slate-400">{t(lang, a)}</p>
-                </details>
-              ),
+              ([q, a], i) => {
+                const open = faqOpen.includes(i);
+                return (
+                  <Reveal key={q} delay={Math.min(i * 0.04, 0.2)}>
+                    <div className="appseal-card rounded-xl p-5">
+                      <button
+                        onClick={() => toggleFaq(i)}
+                        aria-expanded={open}
+                        className="flex w-full items-start gap-3 text-left text-sm font-semibold text-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400"
+                      >
+                        <ChevronDown
+                          className={`mt-0.5 h-4 w-4 shrink-0 text-sky-400 transition-transform duration-300 ${
+                            open ? "rotate-180" : ""
+                          }`}
+                        />
+                        <span>{t(lang, q)}</span>
+                      </button>
+                      {/* smooth height via the grid-rows trick */}
+                      <div
+                        className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                        }`}
+                      >
+                        <div className="overflow-hidden">
+                          <p className="pl-7 pt-3 text-[13px] leading-relaxed text-slate-400">{t(lang, a)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </Reveal>
+                );
+              },
             )}
           </div>
         </section>
       </main>
 
       {/* footer */}
-      <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-5 px-4 py-8 text-center sm:flex-row sm:px-6 sm:text-left">
+      <footer className="relative z-10 mt-auto bg-[#070b13]">
+        {/* gradient top edge, mirrors the header */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/40 to-transparent"
+        />
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-5 px-4 py-10 text-center sm:flex-row sm:px-6 sm:text-left">
           <div className="space-y-1.5">
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} AppSeal · {t(lang, "footerText")}
