@@ -72,10 +72,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ status: payment.status });
   }
   const meta = payment.metadata ?? {};
-  // idempotent: reuse the stored pass if the webhook already activated it
+  // idempotent: reuse the stored pass if the webhook already activated it.
+  // The payer email stays with YooKassa (receipt); we store no personal data.
   const existing = await getPassByPayment(payment.id);
-  const pass = existing ?? (await activatePass(payment.id, meta.host ?? "", meta.email ?? ""));
-  if (!pass.host || !pass.email) {
+  const pass = existing ?? (await activatePass(payment.id, meta.host ?? ""));
+  if (!pass.host) {
     return NextResponse.json({ status: "succeeded", host: "", until: "" });
   }
   return NextResponse.json({ status: "succeeded", host: pass.host, until: pass.until });

@@ -128,12 +128,12 @@ export default function LegalPage() {
                   cookie-файлы и системы веб-аналитики.
                 </li>
                 <li>
-                  Исключение - покупка Launch Pass: для оформления платежа, чека и доступа к
-                  пропуску обрабатывается адрес электронной почты плательщика и домен, на который
-                  оформлен пропуск. Данные передаются платёжному провайдеру ЮKassa
-                  (формирование чека) и хранятся у оператора не дольше 1 года с последней
-                  активности по пропуску. Эти данные не публикуются и не передаются третьим лицам,
-                  кроме ЮKassa и налоговых органов.
+                  Исключение - покупка Launch Pass: адрес электронной почты плательщика
+                  обрабатывается только транзитом и передаётся платёжному провайдеру ЮKassa для
+                  формирования чека и идентификации платежа. Оператор электронную почту не хранит:
+                  у оператора остаются лишь неперсональные данные - идентификатор платежа, домен
+                  пропуска и срок его действия (в течение 8 дней). Оператор не публикует эти
+                  сведения и не передаёт их третьим лицам, кроме ЮKassa и налоговых органов.
                 </li>
                 <li>
                   В localStorage браузера хранится только выбранный язык интерфейса. Эти данные не
@@ -233,8 +233,9 @@ export default function LegalPage() {
                 </li>
                 <li>
                   No accounts, no forms, no cookies, no analytics (exception: the buyer&apos;s email
-                  when purchasing the Launch Pass - processed for the payment, the receipt and pass
-                  access, shared with the payment provider YooKassa only). Only the chosen UI
+                  during a Launch Pass purchase is processed in transit and handed to the payment
+                  provider YooKassa for the receipt - the operator does not store it; only the
+                  payment id, pass domain and expiry stay on our side). Only the chosen UI
                   language is kept in your browser. Scan results (domain, date, grade) may be
                   published in the public registry; domain owners may request removal by email
                   (processed within 3 business days). Request logs are handled by infrastructure

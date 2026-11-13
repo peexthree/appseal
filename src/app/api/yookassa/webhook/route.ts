@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
     if (meta.kind !== "lpass") {
       return NextResponse.json({ ok: true });
     }
-    await activatePass(payment.id, meta.host ?? "", meta.email ?? "");
+    // no personal data is stored: the payer email lives in YooKassa only
+    await activatePass(payment.id, meta.host ?? "");
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: true });
