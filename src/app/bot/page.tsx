@@ -116,13 +116,32 @@ export default function BotPage() {
       </main>
 
       <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-2 px-4 py-6 text-center sm:flex-row sm:px-6 sm:text-left">
-          <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} AppSeal · Crawler & Scanner Documentation
-          </p>
-          <p className="font-mono text-[10px] text-slate-700">
-            <Link href="/" className="transition hover:text-slate-500">главная</Link> · <Link href="/registry" className="transition hover:text-slate-500">реестр</Link>
-          </p>
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 py-8 text-center sm:flex-row sm:px-6 sm:text-left">
+          <div className="space-y-1">
+            <p className="text-xs text-slate-500">
+              © {new Date().getFullYear()} AppSeal · Crawler & Scanner Documentation
+            </p>
+            <p className="font-mono text-[10px] text-slate-700">
+              <Link href="/" className="transition hover:text-slate-500">главная</Link> · <Link href="/registry" className="transition hover:text-slate-500">реестр</Link>
+            </p>
+          </div>
+          <div className="shrink-0 transition-transform hover:scale-[1.02]">
+            <a
+              href="/?report=mweys4fr-0d7b05c638"
+              target="_blank"
+              rel="noopener"
+              title="AppSeal Security Verified: Grade A+ (100/100)"
+              className="inline-block"
+            >
+              <img
+                src="/api/badge?id=mweys4fr-0d7b05c638"
+                alt="AppSeal Verified: Grade A+"
+                width={228}
+                height={44}
+                className="h-[44px] w-[228px] drop-shadow-[0_4px_16px_rgba(192,132,252,0.18)]"
+              />
+            </a>
+          </div>
         </div>
       </footer>
     </div>
