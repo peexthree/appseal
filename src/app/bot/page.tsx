@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ShieldCheck, Lock, Activity, KeyRound } from "@/components/icons/appseal-icons";
 
 export const metadata: Metadata = {
-  title: "AppSeal Scanner Bot — Политика сканирования и Opt-out",
+  title: "AppSeal Scanner Bot - Политика сканирования и Opt-out",
   description:
     "Информация о краулере AppSeal-Scanner: частота запросов, пассивный режим проверки безопасности и правила исключения через robots.txt.",
 };
@@ -67,7 +67,7 @@ export default function BotPage() {
                 Что это за робот?
               </h2>
               <p className="mt-2 text-slate-300">
-                <strong className="text-slate-100">AppSeal-Scanner</strong> — это автоматизированный сканер внешней гигиены веб-приложений. 
+                <strong className="text-slate-100">AppSeal-Scanner</strong> - это автоматизированный сканер внешней гигиены веб-приложений.
                 Он запускается разработчиками или владельцами ресурсов для аудита базовой конфигурации безопасности перед релизом (наличие HTTPS, заголовки защиты, отсутствие открытых служебных файлов, утечек ключей и битых страниц).
               </p>
             </section>

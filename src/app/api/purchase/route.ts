@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 
 const PASS_PRICE_RUB = "490.00";
 const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // return URL is pinned to our own origin - YooKassa sends the payer back here
 const SITE_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || "https://appseal.online";
 
@@ -18,26 +17,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "payments unavailable" }, { status: 503 });
   }
   try {
-    const body = (await req.json()) as { host?: string; email?: string; nonce?: string; lang?: Lang };
+    const body = (await req.json()) as { host?: string; nonce?: string; lang?: Lang };
     const host = (body.host ?? "").trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/^www\./i, "");
-    const email = (body.email ?? "").trim();
     const nonce = (body.nonce ?? "").trim();
     if (!HOST_RE.test(host)) {
       return NextResponse.json({ error: "invalid host" }, { status: 400 });
-    }
-    if (!EMAIL_RE.test(email)) {
-      return NextResponse.json({ error: "invalid email" }, { status: 400 });
     }
     if (!/^[a-z0-9-]{8,64}$/i.test(nonce)) {
       return NextResponse.json({ error: "invalid nonce" }, { status: 400 });
     }
 
+    // no receipt here: YooKassa asks the payer for the receipt email on the
+    // checkout page, so no personal data ever reaches our server
     const payment = await createPayment({
       amountRub: PASS_PRICE_RUB,
       description: `AppSeal Launch Pass - неделя безлимитных проверок ${host}`,
       returnUrl: `${SITE_ORIGIN}/?paid=${encodeURIComponent(nonce)}`,
-      metadata: { kind: "lpass", host, email, nonce },
-      receiptEmail: email,
+      metadata: { kind: "lpass", host, nonce },
     });
     const url = payment.confirmation?.confirmation_url;
     if (!url) {

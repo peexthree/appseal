@@ -153,8 +153,8 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
     if (shouldRender(ctx.csr, scan.isDemo)) {
       await setProgress(scan.id, {
         stage: {
-          ru: "Приложение рендерится на клиенте — загружаем через браузер…",
-          en: "App is client-rendered — loading it in a browser…",
+          ru: "Приложение рендерится на клиенте - загружаем через браузер...",
+          en: "App is client-rendered - loading it in a browser...",
         },
         progress: 8,
       });
@@ -168,8 +168,8 @@ export async function runScan(scan: ScanResult): Promise<{ host: string; grade: 
     if (ctx.csr) {
       await setProgress(scan.id, {
         stage: {
-          ru: "Приложение рендерится на клиенте — часть проверок будет пропущена честно",
-          en: "App is client-rendered — some checks are skipped honestly",
+          ru: "Приложение рендерится на клиенте - часть проверок будет пропущена честно",
+          en: "App is client-rendered - some checks are skipped honestly",
         },
         progress: 8,
       });

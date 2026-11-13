@@ -27,7 +27,7 @@ async function readCapped(
       }
     }
   } catch {
-    /* stream error — keep what we have */
+    /* stream error - keep what we have */
   } finally {
     try {
       await reader.cancel();

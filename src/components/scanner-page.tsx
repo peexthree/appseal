@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, animate, motion } from "framer-motion";
 import type { Lang, ScanResult, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META } from "@/lib/scanner/types";
 import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
@@ -9,7 +9,7 @@ import { t, list } from "@/lib/i18n";
 import { ReportView } from "@/components/report-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check, Copy } from "@/components/icons/appseal-icons";
+import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check, Copy, Send } from "@/components/icons/appseal-icons";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
@@ -101,9 +101,11 @@ export function ScannerPage({
   const [passInfo, setPassInfo] = useState<{ host: string; until: string } | null>(null);
   const [paidPending, setPaidPending] = useState(false);
   const [lpHost, setLpHost] = useState("");
-  const [lpEmail, setLpEmail] = useState("");
   const [lpBusy, setLpBusy] = useState(false);
   const [lpErr, setLpErr] = useState("");
+  const [booting, setBooting] = useState(true);
+  const [bootPct, setBootPct] = useState(0);
+  const [bootStage, setBootStage] = useState(0);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -123,6 +125,23 @@ export function ScannerPage({
       /* private mode */
     }
   };
+
+  // playful fake boot: 1.2s splash with a progress bar, once per page load.
+  // skipped entirely for reduced-motion users
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setBooting(false);
+      return;
+    }
+    const ctrl = animate(0, 100, { duration: 1.1, ease: "easeInOut", onUpdate: (v) => setBootPct(Math.round(v)) });
+    const stages = setInterval(() => setBootStage((s) => (s + 1) % 3), 360);
+    const done = setTimeout(() => setBooting(false), 1350);
+    return () => {
+      ctrl.stop();
+      clearInterval(stages);
+      clearTimeout(done);
+    };
+  }, []);
 
   const startScan = useCallback(async (target: string) => {
     setError("");
@@ -183,13 +202,8 @@ export function ScannerPage({
   const buyPass = async () => {
     setLpErr("");
     const host = lpHost.trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/^www\./i, "");
-    const email = lpEmail.trim();
     if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(host)) {
       setLpErr(t(lang, "lpDomainBad"));
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-      setLpErr(t(lang, "lpEmailBad"));
       return;
     }
     setLpBusy(true);
@@ -200,7 +214,7 @@ export function ScannerPage({
       const res = await fetch("/api/purchase", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ host, email, nonce, lang }),
+        body: JSON.stringify({ host, nonce, lang }),
       });
       const d = (await res.json().catch(() => ({}))) as { confirmationUrl?: string; error?: string };
       if (!res.ok || !d.confirmationUrl) {
@@ -260,46 +274,92 @@ export function ScannerPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
+      {/* fake boot splash: playful SaaS-style loader, ~1.2s */}
+      <AnimatePresence>
+        {booting && (
+          <motion.div
+            key="boot"
+            exit={{ opacity: 0, transition: { duration: 0.3 } }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#090d16]"
+          >
+            <div className="w-64 text-center">
+              <motion.img
+                src="/ico.svg"
+                alt=""
+                width={56}
+                height={56}
+                animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }}
+                transition={{ repeat: Infinity, duration: 1.15 }}
+                className="mx-auto h-14 w-14 object-contain drop-shadow-[0_0_26px_rgba(56,189,248,0.45)]"
+              />
+              <p className="font-display mt-4 text-lg font-extrabold tracking-tight text-slate-100">AppSeal</p>
+              <div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-800">
+                <div className="h-full rounded-full bg-sky-400 transition-all duration-150" style={{ width: `${bootPct}%` }} />
+              </div>
+              <p className="mt-2 font-mono text-[11px] text-slate-500">
+                {bootStage === 0 ? t(lang, "bootStage1") : bootStage === 1 ? t(lang, "bootStage2") : t(lang, "bootStage3")} {bootPct}%
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* header */}
-      <header className="sticky top-0 z-40 border-b border-slate-800/70 bg-[#090d16]/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <a href="/" className="flex items-center gap-2.5" aria-label="AppSeal home">
+      <header className="sticky top-0 z-40 bg-[#090d16]/75 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+          <a href="/" className="group flex items-center gap-2.5" aria-label="AppSeal home">
             <img
               src="/ico.svg"
               alt="AppSeal"
               width={28}
               height={28}
-              className="h-7 w-7 object-contain drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)] transition-transform hover:scale-105"
+              className="h-7 w-7 object-contain drop-shadow-[0_0_10px_rgba(56,189,248,0.45)] transition-transform group-hover:scale-110"
             />
             <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
           </a>
-          <nav className="flex items-center gap-4" aria-label="Site">
-            <a href="/registry" className="hidden text-xs font-semibold text-slate-400 transition hover:text-slate-200 sm:block">
-              {t(lang, "navRegistry")}
-            </a>
-            <a href="#pricing" className="hidden text-xs font-semibold text-slate-400 transition hover:text-slate-200 sm:block">
-              {t(lang, "navPricing")}
-            </a>
-            <a href="/legal" className="hidden text-xs font-semibold text-slate-400 transition hover:text-slate-200 sm:block">
-              {t(lang, "navLegal")}
-            </a>
-          </nav>
-          <nav className="flex items-center gap-1" aria-label="Language">
-            <Globe className="mr-1 h-3.5 w-3.5 text-slate-600" />
-            {(["ru", "en"] as Lang[]).map((l) => (
-              <button
-                key={l}
-                onClick={() => switchLang(l)}
-                className={`rounded-md px-2.5 py-1 text-xs font-bold uppercase transition ${
-                  lang === l ? "bg-slate-800 text-sky-400" : "text-slate-500 hover:text-slate-300"
-                }`}
-                aria-pressed={lang === l}
+          <nav className="hidden items-center gap-1 sm:flex" aria-label="Site">
+            {[
+              { href: "/registry", label: t(lang, "navRegistry") },
+              { href: "#pricing", label: t(lang, "navPricing") },
+              { href: "/legal", label: t(lang, "navLegal") },
+            ].map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-slate-800/70 hover:text-slate-100"
               >
-                {l}
-              </button>
+                {item.label}
+              </a>
             ))}
           </nav>
+          <div className="flex items-center gap-2.5">
+            <a
+              href="/?report=mweys4fr-0d7b05c638"
+              target="_blank"
+              rel="noopener"
+              title="AppSeal Security Verified: Grade A+ (100/100)"
+              className="hidden items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-mono text-[10px] font-bold text-emerald-400 transition hover:border-emerald-400/60 md:inline-flex"
+            >
+              <span className="appseal-pulse h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              A+ · 100
+            </a>
+            <nav className="flex items-center rounded-full border border-slate-800 bg-slate-900/60 p-0.5" aria-label="Language">
+              {(["ru", "en"] as Lang[]).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => switchLang(l)}
+                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase transition ${
+                    lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-500 hover:text-slate-300"
+                  }`}
+                  aria-pressed={lang === l}
+                >
+                  {l}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-emerald-400/30 via-sky-500/60 to-purple-500/30" />
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">
@@ -737,11 +797,10 @@ export function ScannerPage({
             {t(lang, "pricingTitle")}
           </h2>
           <p className="mt-2 text-center text-sm text-slate-500">{t(lang, "pricingSub")}</p>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
             {[
               { name: t(lang, "planFree"), price: t(lang, "planFreePrice"), sub: "", feats: list(lang, "planFreeFeats"), hi: false, cta: t(lang, "planFreeCta"), kind: "free" as const },
               { name: t(lang, "planLP"), price: t(lang, "planLPPrice"), sub: t(lang, "planLPSub"), feats: list(lang, "planLPFeats"), hi: true, cta: t(lang, "planLPCta"), kind: "lp" as const },
-              { name: t(lang, "planPlatform"), price: t(lang, "planPlatformPrice"), sub: "", feats: list(lang, "planPlatformFeats"), hi: false, cta: t(lang, "planPlatformCta"), kind: "platform" as const },
             ].map((p) => (
               <div
                 key={p.name}
@@ -778,14 +837,6 @@ export function ScannerPage({
                       aria-label="Pass domain"
                       className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
                     />
-                    <input
-                      value={lpEmail}
-                      onChange={(e) => setLpEmail(e.target.value)}
-                      placeholder={t(lang, "lpEmailPh")}
-                      type="email"
-                      aria-label="Pass email"
-                      className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
-                    />
                     <Button
                       className="w-full bg-emerald-400 text-[#090d16] hover:bg-emerald-300"
                       onClick={buyPass}
@@ -797,13 +848,6 @@ export function ScannerPage({
                     <p className="text-[10px] leading-relaxed text-slate-500">{t(lang, "lpNote")}</p>
                     {lpErr && <p className="text-[11px] leading-snug text-red-400">{lpErr}</p>}
                   </div>
-                ) : p.kind === "platform" ? (
-                  <a
-                    href="mailto:linedrop@yandex.ru?subject=AppSeal%20Platform"
-                    className="mt-5 inline-flex w-full items-center justify-center rounded-md border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
-                  >
-                    {p.cta} →
-                  </a>
                 ) : (
                   <Button
                     className="mt-5 w-full bg-sky-400 text-[#090d16] hover:bg-sky-300"
@@ -819,6 +863,26 @@ export function ScannerPage({
               </div>
             ))}
           </div>
+          {/* platform: contact row instead of a third pricing card */}
+          <div className="mt-4 rounded-2xl border border-slate-800 bg-[#111827] p-5 sm:p-6">
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Platform · <span className="font-mono normal-case tracking-normal">{t(lang, "planPlatformPrice")}</span>
+                </p>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">{t(lang, "platformRowText")}</p>
+              </div>
+              <a
+                href="https://t.me/peexthree"
+                target="_blank"
+                rel="noopener"
+                className="inline-flex shrink-0 items-center gap-2 rounded-md bg-sky-400 px-5 py-2.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
+              >
+                <Send className="h-4 w-4" />
+                {t(lang, "telegramCta")}
+              </a>
+            </div>
+          </div>
         </section>
 
         {/* FAQ */}
@@ -827,7 +891,18 @@ export function ScannerPage({
             {t(lang, "faqTitle")}
           </h2>
           <div className="mx-auto mt-8 max-w-3xl space-y-3">
-            {([["faq1Q", "faq1A"], ["faq2Q", "faq2A"], ["faq3Q", "faq3A"], ["faq4Q", "faq4A"]] as const).map(
+            {(
+              [
+                ["faq1Q", "faq1A"],
+                ["faq2Q", "faq2A"],
+                ["faq3Q", "faq3A"],
+                ["faq4Q", "faq4A"],
+                ["faq5Q", "faq5A"],
+                ["faq6Q", "faq6A"],
+                ["faq7Q", "faq7A"],
+                ["faq8Q", "faq8A"],
+              ] as const
+            ).map(
               ([q, a]) => (
                 <details key={q} className="group rounded-xl border border-slate-800 bg-[#111827] p-5">
                   <summary className="cursor-pointer list-none text-sm font-semibold text-slate-100 marker:hidden">
@@ -857,6 +932,10 @@ export function ScannerPage({
               <a href="/bot" className="transition hover:text-slate-400">робот (bot)</a>
               <span>·</span>
               <a href="/legal" className="transition hover:text-slate-400">правила</a>
+              <span>·</span>
+              <a href="https://t.me/peexthree" target="_blank" rel="noopener" className="transition hover:text-slate-400">
+                telegram
+              </a>
               <span>·</span>
               <span className="inline-flex items-center gap-1.5 text-emerald-500/90">
                 <span className="appseal-pulse h-1.5 w-1.5 rounded-full bg-emerald-400" />

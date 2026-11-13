@@ -61,34 +61,34 @@ export async function createPayment(opts: {
   description: string;
   returnUrl: string;
   metadata: Record<string, string>;
-  receiptEmail: string;
+  /** when omitted the payment carries no receipt and YooKassa asks the
+   *  payer for the receipt email on the checkout page itself */
+  receiptEmail?: string;
 }): Promise<YkPayment> {
-  return ykRequest<YkPayment>(
-    "POST",
-    "/payments",
-    {
-      amount: { value: opts.amountRub, currency: "RUB" },
-      capture: true,
-      confirmation: { type: "redirect", return_url: opts.returnUrl },
-      description: opts.description,
-      metadata: opts.metadata,
-      // самозанятый: чек уходит в «Мой налог» автоматически
-      receipt: {
-        customer: { email: opts.receiptEmail },
-        items: [
-          {
-            description: opts.description.slice(0, 128),
-            quantity: "1.00",
-            amount: { value: opts.amountRub, currency: "RUB" },
-            vat_code: 1,
-            payment_mode: "full_prepayment",
-            payment_subject: "service",
-          },
-        ],
-      },
-    },
-    randomUUID(),
-  );
+  const payment: Record<string, unknown> = {
+    amount: { value: opts.amountRub, currency: "RUB" },
+    capture: true,
+    confirmation: { type: "redirect", return_url: opts.returnUrl },
+    description: opts.description,
+    metadata: opts.metadata,
+  };
+  if (opts.receiptEmail) {
+    // самозанятый: чек уходит в «Мой налог» автоматически
+    payment.receipt = {
+      customer: { email: opts.receiptEmail },
+      items: [
+        {
+          description: opts.description.slice(0, 128),
+          quantity: "1.00",
+          amount: { value: opts.amountRub, currency: "RUB" },
+          vat_code: 1,
+          payment_mode: "full_prepayment",
+          payment_subject: "service",
+        },
+      ],
+    };
+  }
+  return ykRequest<YkPayment>("POST", "/payments", payment, randomUUID());
 }
 
 /** Re-fetch a payment by id - the only trusted way to confirm a webhook. */

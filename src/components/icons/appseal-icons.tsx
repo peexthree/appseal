@@ -853,3 +853,13 @@ export function ChevronDown({ size = 24, strokeWidth = 2, className = "", ...pro
 </svg>
   );
 }
+
+/** Telegram-style paper plane (static, matches the stroke icon set) */
+export function Send({ size = 24, strokeWidth = 2, className = "", ...props }: AppSealIconProps) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} overflow="visible" style={{ overflow: "visible" }} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <path d="m22 2-7 20-4-9-9-4Z" />
+      <path d="M22 2 11 13" />
+    </svg>
+  );
+}
