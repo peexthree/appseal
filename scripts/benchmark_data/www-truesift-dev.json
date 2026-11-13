@@ -1,0 +1,26 @@
+{
+  "id": "mwfi44af-a8ce505bd6",
+  "inputUrl": "https://www.truesift.dev/",
+  "targetUrl": "https://www.truesift.dev/",
+  "host": "www.truesift.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:41:02.775Z",
+  "finishedAt": "2026-11-13T21:41:03.415Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.truesift.dev/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.truesift.dev/"
+  },
+  "key": "www-truesift-dev",
+  "label": "www.truesift.dev",
+  "group": "harvest"
+}

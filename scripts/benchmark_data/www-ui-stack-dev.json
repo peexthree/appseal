@@ -1,0 +1,26 @@
+{
+  "id": "mwfi4548-d7b15fb1f9",
+  "inputUrl": "https://www.ui-stack.dev/",
+  "targetUrl": "https://www.ui-stack.dev/",
+  "host": "www.ui-stack.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:41:03.848Z",
+  "finishedAt": "2026-11-13T21:41:04.290Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.ui-stack.dev/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.ui-stack.dev/"
+  },
+  "key": "www-ui-stack-dev",
+  "label": "www.ui-stack.dev",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfi3mk5-be4a0ff348",
+  "inputUrl": "https://www.openlinq.xyz/",
+  "targetUrl": "https://www.openlinq.xyz/",
+  "host": "www.openlinq.xyz",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:39.798Z",
+  "finishedAt": "2026-11-13T21:40:40.574Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.openlinq.xyz/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.openlinq.xyz/"
+  },
+  "key": "www-openlinq-xyz",
+  "label": "www.openlinq.xyz",
+  "group": "harvest"
+}

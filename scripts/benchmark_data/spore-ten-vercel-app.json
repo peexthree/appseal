@@ -1,0 +1,26 @@
+{
+  "id": "mwfhztzd-6d863a83ef",
+  "inputUrl": "https://spore-ten.vercel.app/",
+  "targetUrl": "https://spore-ten.vercel.app/",
+  "host": "spore-ten.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:42.794Z",
+  "finishedAt": "2026-11-13T21:37:43.830Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://spore-ten.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://spore-ten.vercel.app/"
+  },
+  "key": "spore-ten-vercel-app",
+  "label": "spore-ten.vercel.app",
+  "group": "harvest"
+}

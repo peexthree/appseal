@@ -1,0 +1,26 @@
+{
+  "id": "mwfi3o49-d2f8bcf33e",
+  "inputUrl": "https://www.quicklyseo.com/",
+  "targetUrl": "https://www.quicklyseo.com/",
+  "host": "www.quicklyseo.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:41.817Z",
+  "finishedAt": "2026-11-13T21:40:42.580Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 530",
+    "en": "Scan failed: site responded 530"
+  },
+  "key": "www-quicklyseo-com",
+  "label": "www.quicklyseo.com",
+  "group": "harvest"
+}

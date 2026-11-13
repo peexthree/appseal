@@ -1,0 +1,26 @@
+{
+  "id": "mwfi1mql-e4713e066e",
+  "inputUrl": "https://vibe.devpost.com/",
+  "targetUrl": "https://vibe.devpost.com/",
+  "host": "vibe.devpost.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:06.717Z",
+  "finishedAt": "2026-11-13T21:39:07.977Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 410",
+    "en": "Scan failed: site responded 410"
+  },
+  "key": "vibe-devpost-com",
+  "label": "vibe.devpost.com",
+  "group": "harvest"
+}

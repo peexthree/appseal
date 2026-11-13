@@ -1,0 +1,26 @@
+{
+  "id": "mwfi41ka-5bdf19aed1",
+  "inputUrl": "https://www.texocad.ai/",
+  "targetUrl": "https://www.texocad.ai/",
+  "host": "www.texocad.ai",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:59.242Z",
+  "finishedAt": "2026-11-13T21:40:59.711Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.texocad.ai/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.texocad.ai/"
+  },
+  "key": "www-texocad-ai",
+  "label": "www.texocad.ai",
+  "group": "harvest"
+}

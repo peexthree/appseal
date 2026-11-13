@@ -1,0 +1,26 @@
+{
+  "id": "mwfi1kc4-208c12440e",
+  "inputUrl": "https://vibe-delta-orpin.vercel.app",
+  "targetUrl": "https://vibe-delta-orpin.vercel.app/",
+  "host": "vibe-delta-orpin.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:03.605Z",
+  "finishedAt": "2026-11-13T21:39:04.415Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://vibe-delta-orpin.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://vibe-delta-orpin.vercel.app/"
+  },
+  "key": "vibe-delta-orpin-vercel-app",
+  "label": "vibe-delta-orpin.vercel.app",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfi1aln-0ed1f2a1fa",
+  "inputUrl": "https://v0-wireframe-dot-matrix-globe-two-beta.vercel.app",
+  "targetUrl": "https://v0-wireframe-dot-matrix-globe-two-beta.vercel.app/",
+  "host": "v0-wireframe-dot-matrix-globe-two-beta.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:50.988Z",
+  "finishedAt": "2026-11-13T21:38:51.794Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://v0-wireframe-dot-matrix-globe-two-beta.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://v0-wireframe-dot-matrix-globe-two-beta.vercel.app/"
+  },
+  "key": "v0-wireframe-dot-matrix-globe-two-beta-v",
+  "label": "v0-wireframe-dot-matrix-globe-two-beta.vercel.app",
+  "group": "harvest"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "mwfi165f-aa76b94320",
+  "inputUrl": "https://v0-movify-your-life-navy.vercel.app",
+  "targetUrl": "https://v0-movify-your-life-navy.vercel.app/",
+  "host": "v0-movify-your-life-navy.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:45.220Z",
+  "finishedAt": "2026-11-13T21:38:45.983Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://v0-movify-your-life-navy.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://v0-movify-your-life-navy.vercel.app/"
+  },
+  "key": "v0-movify-your-life-navy-vercel-app",
+  "label": "v0-movify-your-life-navy.vercel.app",
+  "group": "harvest"
+}

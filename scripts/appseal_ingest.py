@@ -21,7 +21,19 @@ import pathlib
 
 BENCH_DIR = pathlib.Path(__file__).parent / "benchmark_data"
 ENV_FILE = pathlib.Path("D:/BIR/.env")
+STOP_HOSTS = pathlib.Path(__file__).parent / "stop_hosts.txt"
 PUBLISH_GRADES = ("A+", "A")
+
+
+def load_stop_hosts() -> set[str]:
+    try:
+        return {
+            l.strip().lower()
+            for l in STOP_HOSTS.read_text(encoding="utf-8").splitlines()
+            if l.strip() and not l.startswith("#")
+        }
+    except OSError:
+        return set()
 
 
 def read_key() -> str:
@@ -47,6 +59,7 @@ def iso_to_ms(iso: str) -> int:
 
 
 def collect() -> list[dict]:
+    stop = load_stop_hosts()
     by_host: dict[str, dict] = {}
     for path in sorted(BENCH_DIR.glob("*.json")):
         if path.name in ("summary.json", "harvest_meta.json"):
@@ -64,7 +77,7 @@ def collect() -> list[dict]:
         if d.get("grade") not in PUBLISH_GRADES:
             continue
         host = str(d.get("host", "")).lower().removeprefix("www.")
-        if not host or "." not in host:
+        if not host or "." not in host or host in stop:
             continue
         ts = iso_to_ms(d.get("finishedAt", ""))
         entry = {

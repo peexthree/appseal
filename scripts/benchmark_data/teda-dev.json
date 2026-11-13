@@ -1,0 +1,26 @@
+{
+  "id": "mwfi0ine-2b106a3388",
+  "inputUrl": "https://teda.dev",
+  "targetUrl": "https://teda.dev/",
+  "host": "teda.dev",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:14.762Z",
+  "finishedAt": "2026-11-13T21:38:15.454Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://teda.dev/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://teda.dev/"
+  },
+  "key": "teda-dev",
+  "label": "teda.dev",
+  "group": "harvest"
+}

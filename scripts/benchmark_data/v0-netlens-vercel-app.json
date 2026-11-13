@@ -1,0 +1,26 @@
+{
+  "id": "mwfi183y-6b28e885b7",
+  "inputUrl": "https://v0-netlens.vercel.app",
+  "targetUrl": "https://v0-netlens.vercel.app/",
+  "host": "v0-netlens.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:47.760Z",
+  "finishedAt": "2026-11-13T21:38:48.521Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://v0-netlens.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://v0-netlens.vercel.app/"
+  },
+  "key": "v0-netlens-vercel-app",
+  "label": "v0-netlens.vercel.app",
+  "group": "harvest"
+}

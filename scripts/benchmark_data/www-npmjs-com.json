@@ -1,0 +1,26 @@
+{
+  "id": "mwfi3l6o-86d7750eec",
+  "inputUrl": "https://www.npmjs.com/package/whitehat-squad",
+  "targetUrl": "https://www.npmjs.com/package/whitehat-squad",
+  "host": "www.npmjs.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:38.017Z",
+  "finishedAt": "2026-11-13T21:40:38.685Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.npmjs.com/package/whitehat-squad",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.npmjs.com/package/whitehat-squad"
+  },
+  "key": "www-npmjs-com",
+  "label": "www.npmjs.com",
+  "group": "harvest"
+}

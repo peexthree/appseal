@@ -1,0 +1,26 @@
+{
+  "id": "mwfi39f1-19484b6e5a",
+  "inputUrl": "https://www.kiricast.com",
+  "targetUrl": "https://www.kiricast.com/",
+  "host": "www.kiricast.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:22.765Z",
+  "finishedAt": "2026-11-13T21:40:24.106Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "www-kiricast-com",
+  "label": "www.kiricast.com",
+  "group": "harvest"
+}

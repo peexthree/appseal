@@ -1,0 +1,26 @@
+{
+  "id": "mwfhzxxs-adbe64a156",
+  "inputUrl": "https://stalwart-entremet-08eb9c.netlify.app/",
+  "targetUrl": "https://stalwart-entremet-08eb9c.netlify.app/",
+  "host": "stalwart-entremet-08eb9c.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:47.921Z",
+  "finishedAt": "2026-11-13T21:38:03.126Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "stalwart-entremet-08eb9c-netlify-app",
+  "label": "stalwart-entremet-08eb9c.netlify.app",
+  "group": "harvest"
+}

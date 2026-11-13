@@ -1,0 +1,26 @@
+{
+  "id": "mwfi0jw2-2271a15ee5",
+  "inputUrl": "https://thebdk.com/agent",
+  "targetUrl": "https://thebdk.com/agent",
+  "host": "thebdk.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:16.371Z",
+  "finishedAt": "2026-11-13T21:38:16.889Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://thebdk.com/agent",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://thebdk.com/agent"
+  },
+  "key": "thebdk-com",
+  "label": "thebdk.com",
+  "group": "harvest"
+}

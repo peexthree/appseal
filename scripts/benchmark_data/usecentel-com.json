@@ -1,0 +1,26 @@
+{
+  "id": "mwfi10p0-602011d2e5",
+  "inputUrl": "https://usecentel.com/",
+  "targetUrl": "https://usecentel.com/",
+  "host": "usecentel.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:38.149Z",
+  "finishedAt": "2026-11-13T21:38:38.854Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 525",
+    "en": "Scan failed: site responded 525"
+  },
+  "key": "usecentel-com",
+  "label": "usecentel.com",
+  "group": "harvest"
+}

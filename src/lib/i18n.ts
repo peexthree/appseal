@@ -201,6 +201,7 @@ export const DICT = {
   issue2CtaScan: { ru: "Пришли свой URL - просканировать", en: "Bring your URL - scan it" },
   issue2CtaRegistry: { ru: "Смотреть реестр", en: "Browse the registry" },
   navRegistry: { ru: "Реестр", en: "Registry" },
+  navStats: { ru: "Статистика", en: "Stats" },
   navPricing: { ru: "Тарифы", en: "Pricing" },
   navLegal: { ru: "Правила", en: "Legal" },
   faq1Q: { ru: "Это безопасно? Вы не взламываете сайт?", en: "Is this safe? Are you hacking my site?" },

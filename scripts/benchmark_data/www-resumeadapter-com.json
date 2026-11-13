@@ -1,0 +1,26 @@
+{
+  "id": "mwfi3p9y-aea5318f04",
+  "inputUrl": "https://www.resumeadapter.com/",
+  "targetUrl": "https://www.resumeadapter.com/",
+  "host": "www.resumeadapter.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:43.319Z",
+  "finishedAt": "2026-11-13T21:40:43.825Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.resumeadapter.com/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.resumeadapter.com/"
+  },
+  "key": "www-resumeadapter-com",
+  "label": "www.resumeadapter.com",
+  "group": "harvest"
+}

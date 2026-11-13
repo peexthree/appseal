@@ -135,23 +135,30 @@ export default function StatsPage() {
             </section>
 
             <section className="mt-10">
-              <h2 className="font-display text-xl font-extrabold">Что падает чаще всего</h2>
-              <p className="mt-1 text-sm text-slate-500">Доля приложений, у которых проверка провалена (fail).</p>
+              <h2 className="font-display text-xl font-extrabold">Чего чаще всего не хватает</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Доля приложений, где проверка провалена (красный) или под вопросом (оранжевый).
+              </p>
               <ul className="mt-4 space-y-2.5">
-                {(s.topFails as TopFail[]).map((f) => (
-                  <li key={f.id} className="flex items-center gap-3">
-                    <span className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72" title={f.title}>
-                      {f.title}
-                    </span>
-                    <div className="h-5 flex-1 overflow-hidden rounded-md bg-[#111827]">
-                      <div
-                        className="h-full rounded-md bg-gradient-to-r from-[#F87171] to-[#FB923C]"
-                        style={{ width: `${Math.max(f.failPct, 2)}%` }}
-                      />
-                    </div>
-                    <span className="w-12 text-right font-mono text-xs font-bold text-[#F87171]">{f.failPct}%</span>
-                  </li>
-                ))}
+                {(s.topFails as TopFail[]).map((f) => {
+                  const miss = f.failPct + f.warnPct;
+                  return (
+                    <li key={f.id} className="flex items-center gap-3">
+                      <span className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72" title={f.title}>
+                        {f.title}
+                      </span>
+                      <div className="flex h-5 flex-1 gap-px">
+                        {miss > 0 ? (
+                          <>
+                            <div className="rounded-l-md bg-[#F87171]" style={{ width: `${f.failPct}%` }} />
+                            <div className={`bg-[#FB923C] ${f.failPct ? "" : "rounded-l-md"} ${f.warnPct ? "rounded-r-md" : ""}`} style={{ width: `${f.warnPct}%` }} />
+                          </>
+                        ) : null}
+                      </div>
+                      <span className="w-12 text-right font-mono text-xs font-bold text-[#FB923C]">{miss}%</span>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
 

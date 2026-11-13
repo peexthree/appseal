@@ -15,38 +15,59 @@ Usage:
 import json
 import pathlib
 import statistics
+import time
 
 SCRIPTS_DIR = pathlib.Path(__file__).parent
 BENCH_DIR = SCRIPTS_DIR / "benchmark_data"
 TARGETS_TXT = SCRIPTS_DIR / "targets_harvest.txt"
+STOP_HOSTS = SCRIPTS_DIR / "stop_hosts.txt"
 OUT_FILE = SCRIPTS_DIR.parent / "src" / "data" / "stats-harvest.json"
 
 GRADE_ORDER = ["A+", "A", "B", "C", "D", "E"]
 
 
+def load_stop_hosts() -> set[str]:
+    try:
+        return {
+            l.strip().lower()
+            for l in STOP_HOSTS.read_text(encoding="utf-8").splitlines()
+            if l.strip() and not l.startswith("#")
+        }
+    except OSError:
+        return set()
+
+
 def main() -> None:
-    summary = json.loads((BENCH_DIR / "summary.json").read_text(encoding="utf-8"))
     meta = {}
     meta_path = BENCH_DIR / "harvest_meta.json"
     if meta_path.exists():
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
 
-    # panel status counts from the run summary
-    status_counts: dict[str, int] = {}
-    for r in summary.get("results", []):
-        s = r.get("status", "missing")
-        status_counts[s] = status_counts.get(s, 0) + 1
-
-    total_panel = sum(status_counts.values()) or sum(
+    total_panel = sum(
         1 for l in TARGETS_TXT.read_text(encoding="utf-8").splitlines()
         if l.strip() and not l.startswith("#")
     )
+    # api-error/timeout live only in the run summary (no result file is written)
+    api_errors = 0
+    summary_path = BENCH_DIR / "summary.json"
+    if summary_path.exists():
+        try:
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            api_errors = sum(
+                1 for r in summary.get("results", [])
+                if r.get("status") in ("api-error", "timeout", "missing")
+            )
+        except (json.JSONDecodeError, OSError):
+            pass
 
     grades = {g: 0 for g in GRADE_ORDER}
     scores: list[int] = []
     src_scores: dict[str, list[int]] = {}
     fail_by_check: dict[str, dict] = {}
+    stop = load_stop_hosts()
     scanned = 0
+    dead = 0
+    harvested_files = 0
 
     for path in sorted(BENCH_DIR.glob("*.json")):
         if path.name in ("summary.json", "harvest_meta.json"):
@@ -55,7 +76,14 @@ def main() -> None:
             d = json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             continue
-        if d.get("status") != "done" or d.get("isDemo") or d.get("group") != "harvest":
+        if d.get("group") != "harvest" or d.get("isDemo"):
+            continue
+        harvested_files += 1
+        if d.get("status") != "done":
+            dead += 1  # scanner finished but the target was down/broken
+            continue
+        host0 = str(d.get("host", "")).lower().removeprefix("www.")
+        if host0 in stop:
             continue
         scanned += 1
         g = d.get("grade", "E")
@@ -64,7 +92,7 @@ def main() -> None:
         score = d.get("score", 0)
         scores.append(int(score))
 
-        host = str(d.get("host", "")).lower().removeprefix("www.")
+        host = host0
         source = meta.get(host, {}).get("source", "unknown").split(":")[0]
         src_scores.setdefault(source, []).append(int(score))
 
@@ -94,7 +122,9 @@ def main() -> None:
             for cid, a in fail_by_check.items()
             if a["n"] >= scanned * 0.5  # checks that actually ran on most hosts
         ),
-        key=lambda x: (-x["failPct"], -x["warnPct"]),
+        # a missing header is a warn, a leaked secret is a fail: both belong
+        # in "what's missing", so rank by the combined miss rate
+        key=lambda x: (-(x["failPct"] + x["warnPct"]), -x["failPct"]),
     )[:12]
 
     sources = {s: len(v) for s, v in sorted(src_scores.items(), key=lambda kv: -len(kv[1]))}
@@ -103,8 +133,14 @@ def main() -> None:
     }
 
     out = {
-        "generatedAt": summary.get("generated_at", ""),
-        "panel": {"total": total_panel, "done": scanned, **status_counts},
+        "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        "panel": {
+            "total": total_panel,
+            "done": scanned,
+            "dead": dead,
+            "apiError": api_errors,
+            "missing": max(0, total_panel - harvested_files - api_errors),
+        },
         "grades": grades,
         "avgScore": round(statistics.mean(scores)) if scores else 0,
         "medianScore": round(statistics.median(scores)) if scores else 0,

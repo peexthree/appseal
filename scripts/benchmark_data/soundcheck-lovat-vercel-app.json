@@ -1,0 +1,26 @@
+{
+  "id": "mwfhzp6v-6ae4b1a93e",
+  "inputUrl": "https://soundcheck-lovat.vercel.app",
+  "targetUrl": "https://soundcheck-lovat.vercel.app/",
+  "host": "soundcheck-lovat.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:36.584Z",
+  "finishedAt": "2026-11-13T21:37:37.298Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://soundcheck-lovat.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://soundcheck-lovat.vercel.app/"
+  },
+  "key": "soundcheck-lovat-vercel-app",
+  "label": "soundcheck-lovat.vercel.app",
+  "group": "harvest"
+}

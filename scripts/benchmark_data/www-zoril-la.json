@@ -1,0 +1,26 @@
+{
+  "id": "mwfi4d4i-d5e52dce76",
+  "inputUrl": "https://www.zoril.la/",
+  "targetUrl": "https://www.zoril.la/",
+  "host": "www.zoril.la",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:41:14.227Z",
+  "finishedAt": "2026-11-13T21:41:28.593Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "www-zoril-la",
+  "label": "www.zoril.la",
+  "group": "harvest"
+}

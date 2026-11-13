@@ -1,0 +1,26 @@
+{
+  "id": "mwfi36tp-129f1cbf7f",
+  "inputUrl": "https://www.heyalys.com/",
+  "targetUrl": "https://www.heyalys.com/",
+  "host": "www.heyalys.com",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:19.405Z",
+  "finishedAt": "2026-11-13T21:40:20.395Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 503",
+    "en": "Scan failed: site responded 503"
+  },
+  "key": "www-heyalys-com",
+  "label": "www.heyalys.com",
+  "group": "harvest"
+}

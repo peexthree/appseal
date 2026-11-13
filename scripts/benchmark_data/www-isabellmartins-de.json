@@ -1,0 +1,26 @@
+{
+  "id": "mwfi397p-e0ef60a4d9",
+  "inputUrl": "https://www.isabellmartins.de",
+  "targetUrl": "https://www.isabellmartins.de/",
+  "host": "www.isabellmartins.de",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:22.501Z",
+  "finishedAt": "2026-11-13T21:40:36.663Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "www-isabellmartins-de",
+  "label": "www.isabellmartins.de",
+  "group": "harvest"
+}

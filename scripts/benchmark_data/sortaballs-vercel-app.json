@@ -1,0 +1,26 @@
+{
+  "id": "mwfhzmy8-4527572c7b",
+  "inputUrl": "https://sortaballs.vercel.app",
+  "targetUrl": "https://sortaballs.vercel.app/",
+  "host": "sortaballs.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:33.681Z",
+  "finishedAt": "2026-11-13T21:37:34.734Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://sortaballs.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://sortaballs.vercel.app/"
+  },
+  "key": "sortaballs-vercel-app",
+  "label": "sortaballs.vercel.app",
+  "group": "harvest"
+}

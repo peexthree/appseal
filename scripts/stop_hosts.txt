@@ -1,0 +1,29 @@
+# Hosts that are never AI-built vibe apps: app stores, marketplaces,
+# code platforms, docs. Kept out of the public registry and the stats
+# aggregates even if they scored grade A.
+# one host per line, # starts a comment
+apps.apple.com
+itunes.apple.com
+play.google.com
+apps.shopify.com
+codeberg.org
+sourceforge.net
+bitbucket.org
+npmjs.com
+www.npmjs.com
+pypi.org
+crates.io
+rubygems.org
+hub.docker.com
+huggingface.co
+hf.co
+kaggle.com
+arxiv.org
+doi.org
+wikipedia.org
+gumroad.com
+itch.io
+patreon.com
+buy.stripe.com
+marketplace.visualstudio.com
+rapidapi.com

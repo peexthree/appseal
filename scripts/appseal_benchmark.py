@@ -71,9 +71,19 @@ def scan_target(key: str, group: str, label: str, url: str, timeout_s: int = 150
     except Exception as e:  # API unreachable
         return {"key": key, "label": label, "group": group, "url": url,
                 "status": "api-error", "error": str(e)}
+    poll_errors = 0
     while time.time() - t0 < timeout_s:
         time.sleep(3)
-        d = get_scan(scan_id, rkey)
+        try:
+            d = get_scan(scan_id, rkey)
+            poll_errors = 0
+        except Exception as e:
+            # transient 404/502 from the dev server must not kill the run
+            poll_errors += 1
+            if poll_errors >= 3:
+                return {"key": key, "label": label, "group": group, "url": url,
+                        "id": scan_id, "status": "api-error", "error": str(e)}
+            continue
         if d["status"] in ("done", "error"):
             d["key"], d["label"], d["group"] = key, label, group
             (OUT_DIR / f"{key}.json").write_text(
@@ -84,11 +94,12 @@ def scan_target(key: str, group: str, label: str, url: str, timeout_s: int = 150
             "id": scan_id, "status": "timeout"}
 
 
-def load_targets(path: pathlib.Path, tag: str, limit: int) -> list:
+def load_targets(path: pathlib.Path, tag: str, limit: int, skip_done: bool = False) -> list:
     """Read one URL per line ('#' comments and blanks allowed).
 
     Returns (key, group, label, url) tuples; the key is derived from the
-    hostname so results map cleanly back to their source.
+    hostname so results map cleanly back to their source. With skip_done,
+    targets whose result JSON already exists are skipped (resume support).
     """
     todo = []
     seen = set()
@@ -102,6 +113,8 @@ def load_targets(path: pathlib.Path, tag: str, limit: int) -> list:
         if key in seen:
             key = key + "-" + str(len(seen) + 1)
         seen.add(key)
+        if skip_done and (OUT_DIR / f"{key}.json").exists():
+            continue
         todo.append((key, tag, host, url))
         if limit and len(todo) >= limit:
             break
@@ -116,6 +129,7 @@ def main() -> None:
     ap.add_argument("--tag", default="pilot", help="group label for --file targets")
     ap.add_argument("--limit", type=int, default=0, help="max targets from --file")
     ap.add_argument("--workers", type=int, default=3, help="parallel scans")
+    ap.add_argument("--skip-done", action="store_true", help="resume: skip targets with saved results")
     args = ap.parse_args()
 
     if args.list:
@@ -124,7 +138,7 @@ def main() -> None:
         return
 
     if args.file:
-        todo = load_targets(pathlib.Path(args.file), args.tag, args.limit)
+        todo = load_targets(pathlib.Path(args.file), args.tag, args.limit, args.skip_done)
         if not todo:
             print("no targets found in", args.file)
             return
@@ -133,9 +147,16 @@ def main() -> None:
         todo = [t for t in PANEL if not keys or t[0] in keys]
     print(f"scanning {len(todo)} target(s)…")
 
+    def safe_scan(t: tuple) -> dict:
+        try:
+            return scan_target(*t)
+        except Exception as e:  # never let one thread kill the whole run
+            return {"key": t[0], "label": t[2], "group": t[1], "url": t[3],
+                    "status": "api-error", "error": str(e)}
+
     results = []
     with cf.ThreadPoolExecutor(max_workers=max(1, args.workers)) as ex:
-        futs = [ex.submit(scan_target, *t) for t in todo]
+        futs = [ex.submit(safe_scan, t) for t in todo]
         for f in cf.as_completed(futs):
             d = f.result()
             results.append(d)

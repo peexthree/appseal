@@ -1,0 +1,26 @@
+{
+  "id": "mwfi3ms3-3e03087d52",
+  "inputUrl": "https://www.pasteclean.app",
+  "targetUrl": "https://www.pasteclean.app/",
+  "host": "www.pasteclean.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:40.084Z",
+  "finishedAt": "2026-11-13T21:40:40.584Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.pasteclean.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.pasteclean.app/"
+  },
+  "key": "www-pasteclean-app",
+  "label": "www.pasteclean.app",
+  "group": "harvest"
+}

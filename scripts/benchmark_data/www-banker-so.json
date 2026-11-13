@@ -1,0 +1,26 @@
+{
+  "id": "mwfi2t0t-b0ddbd68dc",
+  "inputUrl": "https://www.banker.so/",
+  "targetUrl": "https://www.banker.so/",
+  "host": "www.banker.so",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:40:01.517Z",
+  "finishedAt": "2026-11-13T21:40:01.991Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://www.banker.so/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://www.banker.so/"
+  },
+  "key": "www-banker-so",
+  "label": "www.banker.so",
+  "group": "harvest"
+}

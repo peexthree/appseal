@@ -1,0 +1,26 @@
+{
+  "id": "mwfi1aoq-0699c6253d",
+  "inputUrl": "https://valid-human.vercel.app/",
+  "targetUrl": "https://valid-human.vercel.app/",
+  "host": "valid-human.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:51.099Z",
+  "finishedAt": "2026-11-13T21:38:51.866Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://valid-human.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://valid-human.vercel.app/"
+  },
+  "key": "valid-human-vercel-app",
+  "label": "valid-human.vercel.app",
+  "group": "harvest"
+}

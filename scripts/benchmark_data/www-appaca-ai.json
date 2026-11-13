@@ -1,0 +1,26 @@
+{
+  "id": "mwfi2ls6-35d197f09a",
+  "inputUrl": "https://www.appaca.ai/",
+  "targetUrl": "https://www.appaca.ai/",
+  "host": "www.appaca.ai",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:39:52.134Z",
+  "finishedAt": "2026-11-13T21:40:01.171Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "www-appaca-ai",
+  "label": "www.appaca.ai",
+  "group": "harvest"
+}

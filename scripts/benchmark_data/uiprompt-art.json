@@ -1,0 +1,26 @@
+{
+  "id": "mwfi0x3j-820861786b",
+  "inputUrl": "https://uiprompt.art/",
+  "targetUrl": "https://uiprompt.art/",
+  "host": "uiprompt.art",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:33.488Z",
+  "finishedAt": "2026-11-13T21:38:34.583Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://uiprompt.art/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://uiprompt.art/"
+  },
+  "key": "uiprompt-art",
+  "label": "uiprompt.art",
+  "group": "harvest"
+}

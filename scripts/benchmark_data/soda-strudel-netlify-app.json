@@ -1,0 +1,26 @@
+{
+  "id": "mwfhzl09-62916ad391",
+  "inputUrl": "https://soda-strudel.netlify.app",
+  "targetUrl": "https://soda-strudel.netlify.app/",
+  "host": "soda-strudel.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:37:31.161Z",
+  "finishedAt": "2026-11-13T21:37:46.239Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "soda-strudel-netlify-app",
+  "label": "soda-strudel.netlify.app",
+  "group": "harvest"
+}

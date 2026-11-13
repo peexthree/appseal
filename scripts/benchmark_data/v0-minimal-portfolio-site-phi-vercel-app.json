@@ -1,0 +1,26 @@
+{
+  "id": "mwfi165u-4e266fa786",
+  "inputUrl": "https://v0-minimal-portfolio-site-phi.vercel.app",
+  "targetUrl": "https://v0-minimal-portfolio-site-phi.vercel.app/",
+  "host": "v0-minimal-portfolio-site-phi.vercel.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:38:45.235Z",
+  "finishedAt": "2026-11-13T21:38:46.005Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site responded 403 (WAF/bot protection) @ https://v0-minimal-portfolio-site-phi.vercel.app/",
+    "en": "Scan failed: site responded 403 (WAF/bot protection) @ https://v0-minimal-portfolio-site-phi.vercel.app/"
+  },
+  "key": "v0-minimal-portfolio-site-phi-vercel-app",
+  "label": "v0-minimal-portfolio-site-phi.vercel.app",
+  "group": "harvest"
+}

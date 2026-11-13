@@ -1,0 +1,26 @@
+{
+  "id": "mwfi4ljs-79131d2699",
+  "inputUrl": "https://zesty-chimera-bb59a4.netlify.app/",
+  "targetUrl": "https://zesty-chimera-bb59a4.netlify.app/",
+  "host": "zesty-chimera-bb59a4.netlify.app",
+  "isDemo": false,
+  "lang": "ru",
+  "startedAt": "2026-11-13T21:41:25.145Z",
+  "finishedAt": "2026-11-13T21:41:39.716Z",
+  "status": "error",
+  "progress": 100,
+  "stage": {
+    "ru": "Ошибка",
+    "en": "Error"
+  },
+  "score": 0,
+  "grade": "E",
+  "results": [],
+  "error": {
+    "ru": "Не удалось просканировать: site unreachable: fetch failed",
+    "en": "Scan failed: site unreachable: fetch failed"
+  },
+  "key": "zesty-chimera-bb59a4-netlify-app",
+  "label": "zesty-chimera-bb59a4.netlify.app",
+  "group": "harvest"
+}
