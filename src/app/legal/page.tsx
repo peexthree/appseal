@@ -17,7 +17,7 @@ export default function LegalPage() {
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5" aria-label="AppSeal home">
             <img
-              src="/ico.svg"
+              src="/ico.png"
               alt="AppSeal"
               width={28}
               height={28}
