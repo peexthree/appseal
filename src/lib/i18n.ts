@@ -137,6 +137,7 @@ export const DICT = {
     en: "API for app builders, white-label badges and bulk catalog scans - by agreement.",
   },
   telegramCta: { ru: "Обсудить в Telegram", en: "Discuss on Telegram" },
+  headerCta: { ru: "Проверить сайт", en: "Scan site" },
   pricingSub: {
     ru: "Начните бесплатно. Платите, когда приложение начнёт зарабатывать.",
     en: "Start free. Pay when your app starts earning.",

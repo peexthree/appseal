@@ -9,7 +9,7 @@ import { t, list } from "@/lib/i18n";
 import { ReportView } from "@/components/report-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check, Copy, Send } from "@/components/icons/appseal-icons";
+import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check, Copy, Send, Menu, X } from "@/components/icons/appseal-icons";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
@@ -106,6 +106,7 @@ export function ScannerPage({
   const [booting, setBooting] = useState(true);
   const [bootPct, setBootPct] = useState(0);
   const [bootStage, setBootStage] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -305,19 +306,20 @@ export function ScannerPage({
       </AnimatePresence>
 
       {/* header */}
-      <header className="sticky top-0 z-40 bg-[#090d16]/75 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
-          <a href="/" className="group flex items-center gap-2.5" aria-label="AppSeal home">
+      <header className="sticky top-0 z-40 border-b border-slate-800/60 bg-[#090d16]/75 backdrop-blur-xl">
+        <div className="mx-auto flex h-20 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+          <a href="/" className="group flex shrink-0 items-center gap-3" aria-label="AppSeal home">
             <img
               src="/ico.svg"
               alt="AppSeal"
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain drop-shadow-[0_0_10px_rgba(56,189,248,0.45)] transition-transform group-hover:scale-110"
+              width={56}
+              height={56}
+              className="h-14 w-14 object-contain drop-shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-transform group-hover:scale-110"
             />
-            <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
+            <span className="font-display text-2xl font-extrabold tracking-tight">AppSeal</span>
           </a>
-          <nav className="hidden items-center gap-1 sm:flex" aria-label="Site">
+
+          <nav className="hidden items-center gap-1 md:flex" aria-label="Site">
             {[
               { href: "/registry", label: t(lang, "navRegistry") },
               { href: "#pricing", label: t(lang, "navPricing") },
@@ -326,24 +328,15 @@ export function ScannerPage({
               <a
                 key={item.href}
                 href={item.href}
-                className="rounded-full px-3 py-1.5 text-xs font-semibold text-slate-400 transition hover:bg-slate-800/70 hover:text-slate-100"
+                className="rounded-full px-3.5 py-1.5 text-[13px] font-medium text-slate-400 transition hover:bg-slate-800/70 hover:text-slate-100"
               >
                 {item.label}
               </a>
             ))}
           </nav>
-          <div className="flex items-center gap-2.5">
-            <a
-              href="/?report=mweys4fr-0d7b05c638"
-              target="_blank"
-              rel="noopener"
-              title="AppSeal Security Verified: Grade A+ (100/100)"
-              className="hidden items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-mono text-[10px] font-bold text-emerald-400 transition hover:border-emerald-400/60 md:inline-flex"
-            >
-              <span className="appseal-pulse h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              A+ · 100
-            </a>
-            <nav className="flex items-center rounded-full border border-slate-800 bg-slate-900/60 p-0.5" aria-label="Language">
+
+          <div className="flex items-center gap-2">
+            <nav className="hidden items-center rounded-full border border-slate-800 bg-slate-900/60 p-0.5 sm:flex" aria-label="Language">
               {(["ru", "en"] as Lang[]).map((l) => (
                 <button
                   key={l}
@@ -357,9 +350,75 @@ export function ScannerPage({
                 </button>
               ))}
             </nav>
+            <Button
+              className="hidden h-9 rounded-full bg-sky-400 px-4 text-[13px] font-bold text-[#090d16] shadow-[0_0_20px_-6px_rgba(56,189,248,0.6)] hover:bg-sky-300 md:inline-flex"
+              onClick={() => {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
+              }}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              {t(lang, "headerCta")}
+            </Button>
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-800 text-slate-300 transition hover:bg-slate-800/70 md:hidden"
+              aria-expanded={menuOpen}
+              aria-label="Menu"
+            >
+              {menuOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
+            </button>
           </div>
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-emerald-400/30 via-sky-500/60 to-purple-500/30" />
+
+        {/* mobile menu */}
+        <div
+          className={`overflow-hidden transition-all duration-300 md:hidden ${
+            menuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
+          }`}
+        >
+          <nav className="space-y-1 border-t border-slate-800/60 px-4 py-3" aria-label="Mobile">
+            {[
+              { href: "/registry", label: t(lang, "navRegistry") },
+              { href: "#pricing", label: t(lang, "navPricing") },
+              { href: "/legal", label: t(lang, "navLegal") },
+            ].map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800/70 hover:text-slate-100"
+              >
+                {item.label}
+              </a>
+            ))}
+            <Button
+              className="mt-2 w-full rounded-full bg-sky-400 text-[#090d16] hover:bg-sky-300"
+              onClick={() => {
+                setMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
+              }}
+            >
+              <Zap className="h-4 w-4" />
+              {t(lang, "headerCta")}
+            </Button>
+            <div className="flex items-center justify-center gap-1 pt-2 pb-1 sm:hidden">
+              {(["ru", "en"] as Lang[]).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => switchLang(l)}
+                  className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase transition ${
+                    lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-500"
+                  }`}
+                  aria-pressed={lang === l}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </nav>
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">
