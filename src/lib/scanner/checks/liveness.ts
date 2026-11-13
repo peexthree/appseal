@@ -124,7 +124,8 @@ export async function checkRenderedErrors(ctx: Ctx): Promise<CheckResult> {
     );
   }
   const evidence: string[] = [];
-  const title = ctx.homeBody.match(/<title>([^<]*)<\/title>/i)?.[1] ?? "";
+  const titleMatch = ctx.homeBody.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  const title = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim() : "";
   if (/^(undefined|null|nan)\b/i.test(title.trim())) {
     evidence.push(`title: "${truncate(title, 60)}"`);
   }
@@ -214,8 +215,12 @@ export async function checkBrokenLinks(ctx: Ctx): Promise<CheckResult> {
 
 export async function checkMetaHealth(ctx: Ctx): Promise<CheckResult> {
   const t0 = Date.now();
-  const title = ctx.homeBody.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim() ?? "";
-  const desc = ctx.homeBody.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i)?.[1]?.trim() ?? "";
+  const titleMatch = ctx.homeBody.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  const title = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim() : "";
+  const descMatch =
+    ctx.homeBody.match(/<meta\b[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) ||
+    ctx.homeBody.match(/<meta\b[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i);
+  const desc = descMatch ? descMatch[1].replace(/\s+/g, " ").trim() : "";
   const missing: string[] = [];
   if (!title || title.length < 3) missing.push("<title>");
   if (!desc || desc.length < 10) missing.push("<meta description>");

@@ -30,7 +30,7 @@ const ADMIN_PATHS = ["/admin", "/admin/", "/wp-admin/", "/administrator/", "/das
 
 const ADMIN_MARKERS = [
   /admin\s*(panel|dashboard|login)/i,
-  /<title>[^<]*(admin|панель|dashboard)/i,
+  /<title\b[^>]*>[^<]*(admin|панель|dashboard)/i,
   /wp-admin/i,
   /sign\s*in\s*to\s*(your|the)\s*dashboard/i,
   /вход\s*(для|в)\s*(админ|панель)/i,
@@ -79,7 +79,8 @@ export async function checkAdminExposure(ctx: Ctx): Promise<CheckResult> {
       const real = looksAdmin && !redirected && (hasPasswordInput || hasLoginForm);
       if (real) {
         open.push(p);
-        const title = r.body.match(/<title>([^<]*)<\/title>/i)?.[1] ?? "";
+        const titleMatch = r.body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+        const title = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim() : "";
         evidence.push(`${p} → 200, title: "${truncate(title, 60)}"`);
       } else if (looksAdmin) {
         soft404.push(p);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CheckResult, ScanResult, CategoryId, Lang, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META, SEVERITY_ORDER } from "@/lib/scanner/types";
 import { getTrophyPath, GRADE_META, SEVERITY_META, STATUS_LABEL } from "@/lib/scanner/grade";
@@ -136,11 +136,28 @@ export function ReportView({
   const [promptCopied, setPromptCopied] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
   const [badgeFormat, setBadgeFormat] = useState<"trophy" | "shield">("trophy");
+  const [syntax, setSyntax] = useState<"html" | "markdown">("html");
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [prevScan, setPrevScan] = useState<{ score: number; grade: Grade; id: string } | null>(null);
 
   const fails = scan.results.filter((r) => r.status === "fail").length;
   const warns = scan.results.filter((r) => r.status === "warn").length;
   const passes = scan.results.filter((r) => r.status === "pass").length;
   const gm = GRADE_META[scan.grade] ?? GRADE_META["E"];
+
+  useEffect(() => {
+    try {
+      const key = `appseal_hist_${scan.host}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.id && parsed.id !== scan.id) {
+          setPrevScan(parsed);
+        }
+      }
+      localStorage.setItem(key, JSON.stringify({ score: scan.score, grade: scan.grade, id: scan.id }));
+    } catch {}
+  }, [scan.host, scan.id, scan.score, scan.grade]);
 
   const byCategory = useMemo(() => {
     const order: CategoryId[] = ["secrets", "headers", "admin", "liveness"];
@@ -170,11 +187,17 @@ export function ReportView({
   }, [scan.host]);
 
   const embedCode = useMemo(() => {
+    if (syntax === "markdown") {
+      if (badgeFormat === "trophy") {
+        return `[![AppSeal Security Verified: Grade ${scan.grade}](${origin}/api/badge?id=${scan.id}&style=trophy)](${origin}/?report=${scan.id})`;
+      }
+      return `[![AppSeal Security Verified: Grade ${scan.grade}](${origin}/api/badge?id=${scan.id})](${origin}/?report=${scan.id})`;
+    }
     if (badgeFormat === "trophy") {
       return `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}&style=trophy" alt="AppSeal Verified: Grade ${scan.grade}" width="80" height="80" style="filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" /></a>`;
     }
     return `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}" alt="AppSeal Verified: Grade ${scan.grade}" width="${badgeW}" height="44"></a>`;
-  }, [badgeFormat, origin, scan.id, scan.grade, scan.score, badgeW]);
+  }, [badgeFormat, syntax, origin, scan.id, scan.grade, scan.score, badgeW]);
 
   const fixPrompt = useMemo(() => buildFixPrompt(scan, lang), [scan, lang]);
 
@@ -186,6 +209,20 @@ export function ReportView({
     } catch {
       /* clipboard unavailable */
     }
+  };
+
+  const shareUrl = `${origin}/?report=${scan.id}`;
+  const shareText =
+    lang === "ru"
+      ? `🛡️ Мой проект ${scan.host} прошёл аудит безопасности на AppSeal: Класс ${scan.grade} (${scan.score}/100 баллов)!`
+      : `🛡️ My project ${scan.host} verified on AppSeal: Grade ${scan.grade} (${scan.score}/100)!`;
+
+  const copyShareLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {}
   };
 
   const copyPrompt = async () => {
@@ -267,15 +304,34 @@ export function ReportView({
         </div>
       </div>
 
+      {/* Before / After Re-scan Diff Banner */}
+      {prevScan && scan.score > prevScan.score && (
+        <div className="mt-6 flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-emerald-300 shadow-lg shadow-emerald-500/5">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="text-sm font-bold text-emerald-200">
+                {lang === "ru" ? "Зафиксирован прогресс безопасности!" : "Security progress confirmed!"}
+              </p>
+              <p className="text-xs text-emerald-300/80 mt-0.5">
+                {lang === "ru"
+                  ? `Оценка выросла: было ${prevScan.score}/100 (${prevScan.grade}) → стало ${scan.score}/100 (${scan.grade}) (+${scan.score - prevScan.score} баллов)`
+                  : `Score improved: ${prevScan.score}/100 (${prevScan.grade}) → ${scan.score}/100 (${scan.grade}) (+${scan.score - prevScan.score} pts)`}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {fails === 0 && warns === 0 && (
         <div className="mt-6 rounded-xl border border-emerald-900/50 bg-emerald-400/5 p-5 text-sm leading-relaxed text-emerald-300">
           {t(lang, "allGood")}
         </div>
       )}
 
-      {/* actions */}
+      {/* actions & 1-click viral sharing */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300">
+        <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
           <a href={`/api/report?id=${scan.id}`} download>
             <Download className="h-4 w-4" />
             {t(lang, "downloadPdf")}
@@ -285,6 +341,50 @@ export function ReportView({
           <RotateCcw className="h-4 w-4" />
           {t(lang, "rescan")}
         </Button>
+
+        {/* Viral Share Buttons */}
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          <span className="text-xs font-semibold text-slate-500 hidden sm:inline mr-1">
+            {lang === "ru" ? "Поделиться:" : "Share:"}
+          </span>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-9 border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 text-xs font-bold"
+          >
+            <a
+              href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`}
+              target="_blank"
+              rel="noopener"
+            >
+              <span className="mr-1.5">✈️</span> Telegram
+            </a>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-9 border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white text-xs font-bold"
+          >
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener"
+            >
+              <span className="mr-1.5">𝕏</span> Twitter
+            </a>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={copyShareLink}
+            className="h-9 border-slate-700 text-xs text-slate-300 hover:bg-slate-800 font-semibold"
+          >
+            {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+            {linkCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Ссылка" : "Copy link")}
+          </Button>
+        </div>
       </div>
 
       {/* AI-fix prompt */}
@@ -380,12 +480,36 @@ export function ReportView({
           </div>
 
           <div className="min-w-0 flex-1 w-full">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-[11px] font-medium text-slate-400">
-                {badgeFormat === "trophy"
-                  ? "HTML-код для вставки 3D-значка (footer/header вашего сайта):"
-                  : "HTML-код для вставки компактного бейджа:"}
-              </span>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-medium text-slate-400">
+                  {syntax === "markdown"
+                    ? "Markdown (GitHub README):"
+                    : badgeFormat === "trophy"
+                    ? "HTML (для сайта):"
+                    : "HTML (для сайта):"}
+                </span>
+                <div className="flex rounded border border-slate-800 bg-[#090d16] p-0.5 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setSyntax("html")}
+                    className={`rounded px-2 py-0.5 font-bold uppercase transition ${
+                      syntax === "html" ? "bg-slate-800 text-sky-400" : "text-slate-500 hover:text-slate-300"
+                    }`}
+                  >
+                    HTML
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSyntax("markdown")}
+                    className={`rounded px-2 py-0.5 font-bold uppercase transition ${
+                      syntax === "markdown" ? "bg-slate-800 text-sky-400" : "text-slate-500 hover:text-slate-300"
+                    }`}
+                  >
+                    Markdown
+                  </button>
+                </div>
+              </div>
               <Button
                 size="sm"
                 variant="outline"
