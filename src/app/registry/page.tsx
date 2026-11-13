@@ -146,13 +146,32 @@ export default async function RegistryPage() {
         <p className="mt-8 text-xs leading-relaxed text-slate-600">
           Реестр строится из публичных сканов и показывает только домен, оценку и дату —
           никаких приватных данных из отчётов. Владелец сайта может запросить исключение
-          домена из реестра. Классы A+ и A присваиваются автоматически по результатам 16 проверок.
+          домена из реестра. Классы A+ и A присваиваются автоматически по результатам 24 проверок.
         </p>
       </main>
 
       <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">
-        <div className="mx-auto px-4 py-6 text-center text-xs text-slate-500 sm:px-6">
-          © {new Date().getFullYear()} AppSeal · независимый слой доверия для приложений, собранных с ИИ
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 py-8 text-center sm:flex-row sm:px-6 sm:text-left">
+          <p className="text-xs text-slate-500">
+            © {new Date().getFullYear()} AppSeal · независимый слой доверия для приложений, собранных с ИИ
+          </p>
+          <div className="shrink-0 transition-transform hover:scale-[1.02]">
+            <a
+              href="/?report=mweys4fr-0d7b05c638"
+              target="_blank"
+              rel="noopener"
+              title="AppSeal Security Verified: Grade A+ (100/100)"
+              className="inline-block"
+            >
+              <img
+                src="/api/badge?id=mweys4fr-0d7b05c638"
+                alt="AppSeal Verified: Grade A+"
+                width={228}
+                height={44}
+                className="h-[44px] w-[228px] drop-shadow-[0_4px_16px_rgba(192,132,252,0.18)]"
+              />
+            </a>
+          </div>
         </div>
       </footer>
     </div>
