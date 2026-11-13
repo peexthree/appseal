@@ -285,7 +285,7 @@ export function ScannerPage({
           >
             <div className="w-64 text-center">
               <motion.img
-                src="/ico.svg"
+                src="/ico.png"
                 alt=""
                 width={56}
                 height={56}
