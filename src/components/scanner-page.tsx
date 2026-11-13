@@ -136,6 +136,7 @@ export function ScannerPage({
   const [passInfo, setPassInfo] = useState<{ host: string; until: string } | null>(null);
   const [paidPending, setPaidPending] = useState(false);
   const [lpHost, setLpHost] = useState("");
+  const [lpEmail, setLpEmail] = useState("");
   const [lpBusy, setLpBusy] = useState(false);
   const [lpErr, setLpErr] = useState("");
   const [booting, setBooting] = useState(true);
@@ -261,8 +262,13 @@ export function ScannerPage({
   const buyPass = async () => {
     setLpErr("");
     const host = lpHost.trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/^www\./i, "");
+    const email = lpEmail.trim();
     if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(host)) {
       setLpErr(t(lang, "lpDomainBad"));
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      setLpErr(t(lang, "lpEmailBad"));
       return;
     }
     setLpBusy(true);
@@ -273,7 +279,8 @@ export function ScannerPage({
       const res = await fetch("/api/purchase", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ host, nonce, lang }),
+        // email goes transit-only: YooKassa uses it for the receipt, we never store it
+        body: JSON.stringify({ host, email, nonce, lang }),
       });
       const d = (await res.json().catch(() => ({}))) as { confirmationUrl?: string; error?: string };
       if (!res.ok || !d.confirmationUrl) {
@@ -1066,6 +1073,14 @@ export function ScannerPage({
                         onChange={(e) => setLpHost(e.target.value)}
                         placeholder={t(lang, "lpDomainPh")}
                         aria-label="Pass domain"
+                        className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
+                      />
+                      <input
+                        value={lpEmail}
+                        onChange={(e) => setLpEmail(e.target.value)}
+                        placeholder={t(lang, "lpEmailPh")}
+                        type="email"
+                        aria-label="Pass email"
                         className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
                       />
                       <Button

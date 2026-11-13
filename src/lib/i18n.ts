@@ -176,6 +176,7 @@ export const DICT = {
   lpErr: { ru: "Не удалось создать платёж: ", en: "Could not create the payment: " },
   lpDomainBad: { ru: "Укажите домен в формате myapp.com", en: "Enter a domain like myapp.com" },
   lpEmailBad: { ru: "Укажите корректный email", en: "Enter a valid email" },
+  lpEmailPh: { ru: "email для чека", en: "email for the receipt" },
   quotaTitle: {
     ru: "Бесплатный скан на сегодня уже использован",
     en: "The free scan for today is already used",
