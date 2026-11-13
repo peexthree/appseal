@@ -28,6 +28,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   // ship the PDF fonts with the api/report serverless bundle
   outputFileTracingIncludes: {
     "/api/report": ["./assets/fonts/**"],

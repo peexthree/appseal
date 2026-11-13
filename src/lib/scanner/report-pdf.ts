@@ -257,16 +257,19 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     },
   );
 
-  // TechPassport meta line if present
+  // TechPassport meta line if present (clean text & bullets, no missing emoji glyphs)
   if (scan.techPassport) {
     const tp = scan.techPassport;
-    const tpStr = `⚡ ${tp.stack}   🛡 ${tp.cdnWaf}   📦 ${tp.pageSizeKb} KB   ⏱ ${tp.ttfbMs} ms TTFB`;
+    const tpStr =
+      lang === "ru"
+        ? `Стек: ${tp.stack}   •   Сеть: ${tp.cdnWaf}   •   Вес: ${tp.pageSizeKb} КБ   •   TTFB: ${tp.ttfbMs} мс`
+        : `Stack: ${tp.stack}   •   Network: ${tp.cdnWaf}   •   Size: ${tp.pageSizeKb} KB   •   TTFB: ${tp.ttfbMs} ms`;
     page.drawText(tpStr, {
       x: textX,
       y: A4[1] - M - 98,
-      size: 7.6,
-      font: mono,
-      color: rgb(0.7, 0.75, 0.82),
+      size: 7.4,
+      font: reg,
+      color: rgb(0.72, 0.78, 0.86),
     });
   }
 
@@ -281,8 +284,9 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   for (let i = 0; i < cats.length; i++) {
     const cat = cats[i];
     const catItems = scan.results.filter((r) => r.category === cat);
-    const passed = catItems.filter((r) => r.status === "pass").length;
+    const passed = catItems.filter((r) => r.status === "pass" || r.status === "info").length;
     const failed = catItems.filter((r) => r.status === "fail").length;
+    const warned = catItems.filter((r) => r.status === "warn").length;
     const total = catItems.length || 6;
     const cx = M + i * (cardW + gap);
     const cy = y - cardH;
@@ -307,7 +311,7 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     });
 
     const statusTxt = `${passed}/${total}`;
-    const scoreColor = failed > 0 ? C.crit : passed === total ? C.ok : C.med;
+    const scoreColor = failed > 0 ? C.crit : warned > 0 ? C.med : C.ok;
     page.drawText(statusTxt, {
       x: cx + cardW - bold.widthOfTextAtSize(statusTxt, 7.5) - 6,
       y: cy + cardH - 12,
@@ -343,13 +347,24 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   const fails = scan.results.filter((r) => r.status === "fail");
   const warns = scan.results.filter((r) => r.status === "warn");
   const passes = scan.results.filter((r) => r.status === "pass").length;
+  const infos = scan.results.filter((r) => r.status === "info").length;
 
-  text(
+  function plural(n: number, one: string, few: string, many: string): string {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 19) return many;
+    if (mod10 === 1) return one;
+    if (mod10 >= 2 && mod10 <= 4) return few;
+    return many;
+  }
+
+  const countWord = plural(scan.results.length, "пункт", "пункта", "пунктов");
+  const summaryMsg =
     lang === "ru"
-      ? `Проверено ${scan.results.length} пунктов: ${fails.length} провалено, ${warns.length} с предупреждениями, ${passes} в порядке.`
-      : `${scan.results.length} checks completed: ${fails.length} failed, ${warns.length} warnings, ${passes} passed.`,
-    { size: 10.5, font: bold, gap: 6 },
-  );
+      ? `Проверено ${scan.results.length} ${countWord}: ${fails.length} провалено, ${warns.length} с предупреждениями, ${passes} в норме${infos > 0 ? `, ${infos} инфо` : ""}.`
+      : `${scan.results.length} checks completed: ${fails.length} failed, ${warns.length} warnings, ${passes} passed${infos > 0 ? `, ${infos} info` : ""}.`;
+
+  text(summaryMsg, { size: 10.5, font: bold, gap: 6 });
 
   if (fails.length || warns.length) {
     text(
@@ -419,8 +434,20 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     );
 
     const fullPrompt = buildFixPrompt(scan, lang);
-    const snippetLines = fullPrompt.split("\n").slice(0, 14);
-    const boxH = Math.min(snippetLines.length * 11 + 14, 160);
+    const rawLines = fullPrompt.split("\n");
+    const displayLines: string[] = [];
+    for (const raw of rawLines) {
+      if (!raw.trim()) {
+        displayLines.push("");
+        continue;
+      }
+      const wrapped = wrap(raw, mono, 6.8, CW - 24);
+      displayLines.push(...wrapped);
+      if (displayLines.length >= 22) break;
+    }
+
+    const linesToDraw = displayLines.slice(0, 20);
+    const boxH = Math.min(linesToDraw.length * 10 + 16, 210);
     ensure(boxH + 10);
 
     page.drawRectangle({
@@ -434,19 +461,18 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
     });
 
     let py = y - 12;
-    for (const pline of snippetLines) {
-      if (py < y - boxH + 8) break;
-      const truncated = mono.widthOfTextAtSize(pline, 6.8) > CW - 20 
-        ? pline.slice(0, 85) + "…" 
-        : pline;
-      page.drawText(truncated, {
-        x: M + 10,
-        y: py,
-        size: 6.8,
-        font: mono,
-        color: C.ink,
-      });
-      py -= 10.5;
+    for (const pline of linesToDraw) {
+      if (py < y - boxH + 6) break;
+      if (pline) {
+        page.drawText(pline, {
+          x: M + 10,
+          y: py,
+          size: 6.8,
+          font: mono,
+          color: C.ink,
+        });
+      }
+      py -= 10;
     }
     y -= boxH + 12;
   }

@@ -161,6 +161,60 @@ function fixFor(r: CheckResult, lang: "ru" | "en"): Fix | null {
         why: ru ? "Пустые title/description - приложение невидимо для поисковиков и мессенджеров." : "Empty title/description - invisible to search engines and messengers.",
         how: ru ? "Добавь осмысленные <title> и <meta name=description> на главную." : "Add a meaningful <title> and <meta name=description> to the homepage.",
       };
+    case "server_fingerprint":
+      return {
+        title: r.title[lang],
+        why: ru ? "Заголовки Server или X-Powered-By раскрывают используемый стек и версию ПО." : "Server or X-Powered-By headers expose the backend stack and software versions.",
+        how: ru ? "Отключи заголовок: в Next.js добавь poweredByHeader: false в next.config.ts; в Express используй app.disable('x-powered-by'); в Nginx добавь server_tokens off;." : "Disable the header: in Next.js set poweredByHeader: false in next.config.ts; in Express call app.disable('x-powered-by'); in Nginx add server_tokens off;.",
+      };
+    case "permissions_policy":
+      return {
+        title: r.title[lang],
+        why: ru ? "Заголовок Permissions-Policy не настроен - сторонние скрипты могут запросить доступ к камере или геолокации." : "Missing Permissions-Policy header - scripts might access camera or geolocation.",
+        how: ru ? "Добавь заголовок Permissions-Policy: camera=(), microphone=(), geolocation=() в конфиг хостинга или middleware." : "Add header Permissions-Policy: camera=(), microphone=(), geolocation=() in hosting config or middleware.",
+      };
+    case "client_env_leak":
+      return {
+        title: r.title[lang],
+        why: ru ? "Секретные ключи или токены скомпилированы в клиентский бандл через префиксы сборщика." : "Private keys or secrets compiled into client bundles via bundler prefixes.",
+        how: ru ? "Никогда не используй NEXT_PUBLIC_, VITE_, REACT_APP_ для приватных секретов. Вызывай внешние API только с бэкенда." : "Never use NEXT_PUBLIC_, VITE_, REACT_APP_ prefixes for secrets. Call external APIs from backend/edge handlers.",
+      };
+    case "docker_k8s_exposure":
+      return {
+        title: r.title[lang],
+        why: ru ? "Файлы конфигурации Docker или Kubernetes доступны в веб-корне." : "Docker or Kubernetes configuration files exposed in web root.",
+        how: ru ? "Удали docker-compose.yml и Dockerfile из публичной директории (public/, static/). Настрой исключения веб-сервера." : "Remove docker-compose.yml and Dockerfile from public directory. Configure web server rewrite rules.",
+      };
+    case "swagger_graphql_open":
+      return {
+        title: r.title[lang],
+        why: ru ? "Спецификация API (Swagger/OpenAPI) или IDE GraphiQL открыты в проде без авторизации." : "Swagger/OpenAPI schema or GraphiQL IDE are publicly accessible in production.",
+        how: ru ? "Отключи интерактивную документацию на проде или закрой её проверкой сессии/Basic-auth." : "Disable interactive docs in production or gate them behind auth/IP allowlist.",
+      };
+    case "cors_preflight_methods":
+      return {
+        title: r.title[lang],
+        why: ru ? "CORS preflight разрешает опасные деструктивные методы (DELETE, PUT, PATCH) для публичных источников." : "CORS preflight allows dangerous methods (DELETE, PUT, PATCH) for external origins.",
+        how: ru ? "Ограничь разрешённые методы Access-Control-Allow-Methods до безопасных GET, POST, HEAD для публичных запросов." : "Restrict Access-Control-Allow-Methods to safe methods for public origins.",
+      };
+    case "auth_rate_limit":
+      return {
+        title: r.title[lang],
+        why: ru ? "Эндпоинты авторизации не защищены от брутфорса (отсутствует rate limiting)." : "Auth endpoints lack rate limiting against brute-force attacks.",
+        how: ru ? "Подключи лимитер запросов (Upstash Ratelimit, Cloudflare rate limiting или express-rate-limit) на пути авторизации." : "Add a rate limiter (Upstash Ratelimit, Cloudflare rate limit, etc.) on auth routes.",
+      };
+    case "mixed_content_dom":
+      return {
+        title: r.title[lang],
+        why: ru ? "В HTML-разметке найдены устаревшие ссылки http:// или забытые адреса localhost:." : "Insecure http:// links or leftover localhost references found in DOM.",
+        how: ru ? "Замени все ссылки на безопасные https:// и удали localhost-URL из шаблонов." : "Replace all insecure URLs with https:// and remove leftover localhost references.",
+      };
+    case "open_graph_health":
+      return {
+        title: r.title[lang],
+        why: ru ? "Отсутствуют базовые Open Graph теги (og:title, og:image) или фавикон." : "Missing Open Graph tags (og:title, og:image) or favicon.",
+        how: ru ? "Добавь теги og:title, og:description, og:image и иконку favicon в <head> страницы." : "Add og:title, og:description, og:image tags and favicon in the page <head>.",
+      };
     default:
       return null;
   }
