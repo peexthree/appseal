@@ -1,4 +1,4 @@
-# AppSeal harvested targets - collected 2026-11-14, 627 hosts
+# AppSeal harvested targets - collected 2026-11-14, 638 hosts
 # Sources: Hacker News (Show HN), Reddit, GitHub search.
 # Aggregate-only policy: public listing requires grade A or owner consent.
 http://garbage.yukai.dev/
@@ -48,6 +48,7 @@ https://appmetahub.com
 https://apps.apple.com/us/app/halo-personal-ai/id6783715054
 https://apps.shopify.com/droppable-ai
 https://ariatype.com/en/
+https://arithmetic-skinnerbox.lovable.app/
 https://artist-portfolio-gamma.vercel.app
 https://artsnappy.com/design-editor/
 https://asaagent.xyz
@@ -62,6 +63,7 @@ https://ayushsingh0456.github.io/case-studies/mneme.html
 https://az-900-exam-prep-too-jn8m.bolt.host
 https://babeleo.vercel.app
 https://backend.im
+https://barelink.lovable.app/
 https://beamish-quokka-458251.netlify.app/
 https://benjaminshoemaker.github.io/ai_coding_project_base/
 https://beolis.com
@@ -170,6 +172,7 @@ https://ember-isle-friendsdk.vercel.app
 https://euro-ship-share.lovable.app/
 https://events.sonarsource.com/kintsugi/
 https://eze.lovable.app/
+https://factful.io/
 https://fantasyfootballneuron.app/
 https://fashion-five-livid.vercel.app
 https://fata.dev
@@ -319,6 +322,7 @@ https://opuslabs.substack.com/p/hardware-needs-its-vibe-coding-moment
 https://oriflow.in/
 https://ourmana.app/
 https://pagesmith.ai/seo-for-ai-generated-sites
+https://patakaro.vercel.app/
 https://patchlabs.dev
 https://patchly.cc/
 https://patens-dev.github.io/pbi-guard/
@@ -353,6 +357,7 @@ https://praxisjs.org/
 https://precision-heavens-earth.lovable.app
 https://premium-dealership.vercel.app
 https://premium-todo-app-wit-gf8k.bolt.host
+https://preview--ai-lever-finance.lovable.app/
 https://preview--chrono-strata.lovable.app/shop
 https://prewallet.lovable.app/fsa-calculator
 https://privai-sandy.vercel.app/
@@ -364,6 +369,7 @@ https://promtcontext.com
 https://proofsource.co/
 https://pulseos.finance
 https://pypi.org/project/search2o/
+https://qckfx.com/demo
 https://qomardeen-designs.vercel.app
 https://quantify-ai.co/
 https://quiblo-iptv.github.io/quiblo-wiki/
@@ -374,6 +380,7 @@ https://rajpoot-mango-market.lovable.app/
 https://rampart.sh/
 https://raq.com/real-world-test
 https://rawdog-one.vercel.app/
+https://readventure-tracker.lovable.app/
 https://realpeace.vip/
 https://reeroll.com
 https://registry.modelcontextprotocol.io/v0.1/servers/io.github.JAIPilot%2Fjaipilot/versions/6.4.2
@@ -479,6 +486,7 @@ https://usecentel.com/
 https://uselink.app:443/
 https://usemerlin.ai
 https://usemeva.com/
+https://usmle-study-partner.lovable.app/
 https://v0-healthcare-website-ten-tau.vercel.app
 https://v0-landing-page-with-scheduling.vercel.app
 https://v0-minimal-portfolio-site-phi.vercel.app
@@ -489,6 +497,7 @@ https://v0-qcp.vercel.app/
 https://v0-screen-capture-audio.vercel.app/
 https://v0-wireframe-dot-matrix-globe-two-beta.vercel.app
 https://valid-human.vercel.app/
+https://vampiro.life
 https://vaynoai.lovable.app/
 https://vcatim.github.io/ca-phe/
 https://vectree.io
@@ -555,6 +564,7 @@ https://www.cc.dev/
 https://www.compyle.ai/
 https://www.dailyquiz.ai
 https://www.datastory.tech
+https://www.devs.dev
 https://www.drmagnuslynch.com/skin
 https://www.dyad.sh/
 https://www.fiverr.com/larissadoura380
@@ -603,6 +613,7 @@ https://www.studybuddy.rest
 https://www.subterranean.io/
 https://www.superprez.io
 https://www.sysdesai.com
+https://www.taisk.app/
 https://www.tastebudsai.com
 https://www.teamshotspro.com
 https://www.ternlux.com/online-demo/

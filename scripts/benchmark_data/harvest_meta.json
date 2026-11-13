@@ -3760,5 +3760,71 @@
     "source": "github",
     "title": "Google AI Capstone: Lunar. A vibe-coded web app for advanced data collection, featuring an online survey builder, conditional logic, and real-time analytics.",
     "ref": "https://github.com/clayy-esc/Lunar-Platform"
+  },
+  "devs.dev": {
+    "url": "https://www.devs.dev",
+    "source": "hn",
+    "title": "Show HN: Free Lovable Clone",
+    "ref": "https://news.ycombinator.com/item?id=44891583"
+  },
+  "preview--ai-lever-finance.lovable.app": {
+    "url": "https://preview--ai-lever-finance.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I created a random vibe coding cost estimation site via lovable",
+    "ref": "https://news.ycombinator.com/item?id=44871099"
+  },
+  "taisk.app": {
+    "url": "https://www.taisk.app/",
+    "source": "hn",
+    "title": "Show HN: TAIsk – AI tool that breaks down yearly goals into daily to-dos",
+    "ref": "https://news.ycombinator.com/item?id=44836031"
+  },
+  "barelink.lovable.app": {
+    "url": "https://barelink.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: I built a privacy-focused Link in Bio tool (no sign-up, no tracking)",
+    "ref": "https://news.ycombinator.com/item?id=43037714"
+  },
+  "patakaro.vercel.app": {
+    "url": "https://patakaro.vercel.app/",
+    "source": "hn",
+    "title": "Show HN: Discover facts about anything, powered by Qwen2-VL",
+    "ref": "https://news.ycombinator.com/item?id=42767075"
+  },
+  "arithmetic-skinnerbox.lovable.app": {
+    "url": "https://arithmetic-skinnerbox.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Math Minigame",
+    "ref": "https://news.ycombinator.com/item?id=42751978"
+  },
+  "usmle-study-partner.lovable.app": {
+    "url": "https://usmle-study-partner.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: LLM reasoning partner for multiple choice questions",
+    "ref": "https://news.ycombinator.com/item?id=42666115"
+  },
+  "qckfx.com": {
+    "url": "https://qckfx.com/demo",
+    "source": "hn",
+    "title": "Show HN: AI Agent that turns Jam bug reports into Playwright Tests",
+    "ref": "https://news.ycombinator.com/item?id=42647248"
+  },
+  "readventure-tracker.lovable.app": {
+    "url": "https://readventure-tracker.lovable.app/",
+    "source": "hn",
+    "title": "Show HN: Goodreads Clone built with Agent (lovable)",
+    "ref": "https://news.ycombinator.com/item?id=42591534"
+  },
+  "vampiro.life": {
+    "url": "https://vampiro.life",
+    "source": "hn",
+    "title": "Show HN: Vampire the Masquerade AI Game Master",
+    "ref": "https://news.ycombinator.com/item?id=42475214"
+  },
+  "factful.io": {
+    "url": "https://factful.io/",
+    "source": "hn",
+    "title": "Show HN: 16 year olds building an AI-powered Integrated Writing Environment",
+    "ref": "https://news.ycombinator.com/item?id=42140102"
   }
 }
