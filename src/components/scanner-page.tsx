@@ -383,15 +383,14 @@ export function ScannerPage({
         )}
       </AnimatePresence>
 
-      {/* header: black glass, shrinks on scroll (logo halves with it) */}
-      <header
-        className={`sticky top-0 z-40 border-b border-white/5 backdrop-blur-2xl transition-all duration-300 ${
-          scrolled ? "bg-black/70" : "bg-black/40"
-        }`}
-      >
+      {/* header: near-transparent black glass bar; on scroll it collapses
+          into a narrow centered pill (~1/5 of the width) with a small logo */}
+      <header className="sticky top-0 z-40 w-full">
         <div
-          className={`mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 transition-all duration-300 sm:px-6 ${
-            scrolled ? "h-14" : "h-20"
+          className={`mx-auto flex items-center justify-between px-4 transition-all duration-500 sm:px-6 ${
+            scrolled && !menuOpen
+              ? "mt-3 h-12 max-w-[210px] rounded-full border border-white/10 bg-black/85 shadow-[0_10px_36px_-8px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
+              : "h-20 max-w-5xl rounded-none border-b border-white/5 bg-black/60 backdrop-blur-2xl"
           }`}
         >
           <a href="/" className="group flex shrink-0 items-center gap-3" aria-label="AppSeal home">
@@ -400,20 +399,25 @@ export function ScannerPage({
               alt="AppSeal"
               width={56}
               height={56}
-              className={`object-contain drop-shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-all duration-300 ${
-                scrolled ? "h-7 w-7" : "h-14 w-14"
+              className={`object-contain drop-shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-all duration-500 ${
+                scrolled && !menuOpen ? "h-7 w-7" : "h-14 w-14"
               }`}
             />
             <span
-              className={`font-display font-extrabold tracking-tight transition-all duration-300 ${
-                scrolled ? "text-lg" : "text-2xl"
+              className={`font-display font-extrabold tracking-tight transition-all duration-500 ${
+                scrolled && !menuOpen ? "text-lg" : "text-2xl"
               }`}
             >
               AppSeal
             </span>
           </a>
 
-          <nav className="hidden items-center gap-1 md:flex" aria-label="Site">
+          <nav
+            className={`hidden items-center gap-1 md:flex transition-all duration-300 ${
+              scrolled && !menuOpen ? "pointer-events-none w-0 overflow-hidden opacity-0" : "opacity-100"
+            }`}
+            aria-label="Site"
+          >
             {[
               { href: "/registry", label: t(lang, "navRegistry") },
               { href: "/stats", label: t(lang, "navStats") },
@@ -431,7 +435,12 @@ export function ScannerPage({
           </nav>
 
           <div className="flex items-center gap-2">
-            <nav className="hidden items-center rounded-full border border-slate-800 bg-slate-900/60 p-0.5 sm:flex" aria-label="Language">
+            <nav
+              className={`hidden items-center rounded-full border border-slate-800 bg-slate-900/60 p-0.5 transition-all duration-300 sm:flex ${
+                scrolled && !menuOpen ? "pointer-events-none w-0 overflow-hidden opacity-0" : "opacity-100"
+              }`}
+              aria-label="Language"
+            >
               {(["ru", "en"] as Lang[]).map((l) => (
                 <button
                   key={l}
@@ -462,7 +471,7 @@ export function ScannerPage({
             menuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
           }`}
         >
-          <nav className="space-y-1 border-t border-slate-800/60 px-4 py-3" aria-label="Mobile">
+          <nav className="space-y-1 border-t border-slate-800/60 bg-black/90 px-4 py-3 backdrop-blur-2xl" aria-label="Mobile">
             {[
               { href: "/registry", label: t(lang, "navRegistry") },
               { href: "/stats", label: t(lang, "navStats") },
