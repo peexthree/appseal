@@ -236,6 +236,25 @@ export function ReportView({
             <span className="text-amber-400">{warns} {t(lang, "summaryWarns")}</span> ·{" "}
             <span className="text-emerald-400">{passes} {t(lang, "summaryPassed")}</span>
           </p>
+          {scan.techPassport && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 pt-2.5 border-t border-slate-800/80">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mr-1">
+                {lang === "ru" ? "Паспорт цели:" : "Target passport:"}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded bg-slate-900/90 px-2 py-0.5 text-[11px] font-mono text-slate-300 border border-slate-800">
+                <span className="text-sky-400">⚡</span> {scan.techPassport.stack}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded bg-slate-900/90 px-2 py-0.5 text-[11px] font-mono text-slate-300 border border-slate-800">
+                <span className="text-emerald-400">🛡️</span> {scan.techPassport.cdnWaf}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded bg-slate-900/90 px-2 py-0.5 text-[11px] font-mono text-slate-300 border border-slate-800">
+                <span className="text-amber-400">📦</span> {scan.techPassport.pageSizeKb} {lang === "ru" ? "КБ" : "KB"}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded bg-slate-900/90 px-2 py-0.5 text-[11px] font-mono text-slate-300 border border-slate-800">
+                <span className="text-violet-400">⏱️</span> {scan.techPassport.ttfbMs} {lang === "ru" ? "мс (TTFB)" : "ms (TTFB)"}
+              </span>
+            </div>
+          )}
           {scan.isDemo && (
             <p className="mt-2 text-xs text-amber-400/80">{t(lang, "demoNote")}</p>
           )}

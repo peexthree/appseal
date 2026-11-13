@@ -1,4 +1,4 @@
-import type { CheckResult, Severity } from "../types";
+import type { CheckResult, Severity, TechPassport } from "../types";
 import { extractLinks, safeFetch, truncate } from "../fetcher";
 
 interface Ctx {
@@ -263,3 +263,154 @@ export function detectPlatform(body: string, host: string): string | undefined {
   }
   return undefined;
 }
+
+/* ------------------------------------------------------------------ */
+/* Mixed Content & local development leaks                            */
+/* ------------------------------------------------------------------ */
+
+export async function checkMixedContentDom(ctx: Ctx): Promise<CheckResult> {
+  const t0 = Date.now();
+  const evidence: string[] = [];
+
+  // Localhost / 127.0.0.1 relics
+  const localhostRe = /https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?(?:\/[^\s"'>]*)?/gi;
+  const localMatches = ctx.homeBody.match(localhostRe) ?? [];
+  for (const m of localMatches.slice(0, 3)) {
+    evidence.push(`Забытая dev-ссылка: ${truncate(m, 60)}`);
+  }
+
+  // Mixed content on HTTPS
+  if (!ctx.isHttp) {
+    const mixedRe = /(?:src|href)=["'](http:\/\/[^"'>]+)["']/gi;
+    let match;
+    while ((match = mixedRe.exec(ctx.homeBody)) !== null) {
+      const url = match[1];
+      if (!url.startsWith("http://www.w3.org") && !url.startsWith("http://schema.org")) {
+        evidence.push(`Небезопасный ресурс (mixed content): ${truncate(url, 60)}`);
+        if (evidence.length >= 4) break;
+      }
+    }
+  }
+
+  if (evidence.length > 0) {
+    return done(
+      "mixed_content_dom",
+      "warn",
+      "low",
+      4,
+      { ru: "Mixed content или ссылки на localhost", en: "Mixed content or localhost links found" },
+      {
+        code: "MIXED_CONTENT_LEAK",
+        detail: {
+          ru: "В коде страницы найдены захардкоженные ссылки на localhost/127.0.0.1 или небезопасные ресурсы по http://. Такие ссылки ломаются у внешних пользователей или блокируются браузером.",
+          en: "HTML contains hardcoded links to localhost/127.0.0.1 or insecure http:// assets. These break for public users or get blocked by the browser.",
+        },
+        evidence,
+      },
+      Date.now() - t0,
+    );
+  }
+
+  return done("mixed_content_dom", "pass", "low", 0, {
+    ru: "Mixed content и localhost-ссылки не найдены",
+    en: "No mixed content or localhost links in markup",
+  }, undefined, Date.now() - t0);
+}
+
+/* ------------------------------------------------------------------ */
+/* Open Graph & social preview health                                 */
+/* ------------------------------------------------------------------ */
+
+export async function checkOpenGraphHealth(ctx: Ctx): Promise<CheckResult> {
+  const t0 = Date.now();
+  const missing: string[] = [];
+
+  const hasOgTitle = /<meta[^>]+property=["']og:title["']/i.test(ctx.homeBody);
+  const hasOgImage = /<meta[^>]+property=["']og:image["']/i.test(ctx.homeBody);
+  const hasOgDesc = /<meta[^>]+property=["']og:description["']/i.test(ctx.homeBody);
+  const hasFavicon = /<link[^>]+rel=["'](?:shortcut )?icon["']/i.test(ctx.homeBody);
+
+  if (!hasOgTitle) missing.push("og:title");
+  if (!hasOgImage) missing.push("og:image (превью в соцсетях)");
+  if (!hasOgDesc) missing.push("og:description");
+  if (!hasFavicon) missing.push("favicon (<link rel=\"icon\">)");
+
+  if (missing.length > 0) {
+    return done(
+      "open_graph_health",
+      "warn",
+      "low",
+      3,
+      { ru: "Не настроены теги Open Graph / превью", en: "Open Graph social preview tags missing" },
+      {
+        code: "OG_INCOMPLETE",
+        detail: {
+          ru: `Отсутствуют важные теги превью: ${missing.join(", ")}. В Telegram, Twitter/X, Discord ссылки на приложение будут отображаться без картинки или описания.`,
+          en: `Missing social preview tags: ${missing.join(", ")}. Links shared in Telegram, Twitter/X, and Discord will appear without card preview or image.`,
+        },
+        evidence: missing.map((m) => `Отсутствует: ${m}`),
+      },
+      Date.now() - t0,
+    );
+  }
+
+  return done("open_graph_health", "pass", "low", 0, {
+    ru: "Open Graph превью и фавикон настроены",
+    en: "Open Graph preview and favicon configured",
+  }, undefined, Date.now() - t0);
+}
+
+/* ------------------------------------------------------------------ */
+/* Tech passport detection (unscored metadata)                        */
+/* ------------------------------------------------------------------ */
+
+export function detectTechPassport(
+  body: string,
+  headers: Record<string, string>,
+  host: string,
+  bodyBytes: number,
+  ttfbMs: number,
+): TechPassport {
+  let stack = "Static HTML / CSR";
+  if (/__next/i.test(body) || /_next\/static/i.test(body)) {
+    stack = "Next.js (App Router / SSR)";
+  } else if (/data-astro|astro-/i.test(body)) {
+    stack = "Astro";
+  } else if (/__nuxt/i.test(body) || /_nuxt\//i.test(body)) {
+    stack = "Nuxt.js";
+  } else if (/@vite|vite\//i.test(body) || /id="root"/i.test(body)) {
+    stack = "React / Vite (CSR)";
+  } else if (/svelte/i.test(body)) {
+    stack = "SvelteKit";
+  } else if (/framer/i.test(body)) {
+    stack = "Framer";
+  }
+
+  let cdnWaf = "Direct Server";
+  const server = (headers["server"] ?? "").toLowerCase();
+  if (headers["cf-ray"] || server.includes("cloudflare")) {
+    cdnWaf = "Cloudflare WAF / CDN";
+  } else if (headers["x-vercel-id"] || headers["x-vercel-cache"]) {
+    cdnWaf = "Vercel Edge Network";
+  } else if (headers["x-amz-cf-id"]) {
+    cdnWaf = "AWS CloudFront";
+  } else if (headers["x-nf-request-id"] || server.includes("netlify")) {
+    cdnWaf = "Netlify Edge";
+  } else if (server.includes("nginx")) {
+    cdnWaf = "Nginx Proxy";
+  } else if (server.includes("caddy")) {
+    cdnWaf = "Caddy Server";
+  } else if (headers["ddos-guard"] || server.includes("ddos-guard")) {
+    cdnWaf = "DDoS-Guard";
+  }
+
+  const pageSizeKb = Math.round(((bodyBytes || body.length) / 1024) * 10) / 10;
+
+  return {
+    stack,
+    cdnWaf,
+    pageSizeKb: Math.max(0.1, pageSizeKb),
+    ttfbMs: Math.max(1, Math.round(ttfbMs)),
+  };
+}
+

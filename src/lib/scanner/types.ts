@@ -34,6 +34,13 @@ export interface CheckResult {
   finding?: CheckFinding;
 }
 
+export interface TechPassport {
+  stack: string;
+  cdnWaf: string;
+  pageSizeKb: number;
+  ttfbMs: number;
+}
+
 export interface ScanResult {
   id: string;
   /** URL as entered by user */
@@ -53,6 +60,7 @@ export interface ScanResult {
   grade: Grade;
   results: CheckResult[];
   platform?: string; // detected builder platform
+  techPassport?: TechPassport;
 }
 
 export const CATEGORY_META: Record<CategoryId, { title: Localized; icon: string }> = {

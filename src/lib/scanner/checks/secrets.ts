@@ -1,5 +1,6 @@
 import type { CheckResult, Severity } from "../types";
 import {
+  bodiesEquivalent,
   extractScripts,
   looksLikeDocExample,
   maskSecret,
@@ -42,7 +43,8 @@ export async function checkEnvExposure(ctx: Ctx): Promise<CheckResult> {
     if (r.ok && r.status === 200 && /^[A-Za-z0-9_]+\s*=/.test(r.body)) {
       found.push(p);
       const firstLine = r.body.split("\n").find((l) => /^[A-Za-z0-9_]+\s*=/.test(l)) ?? "";
-      evidence.push(`${p} → ${truncate(firstLine, 80)}`);
+      const varName = firstLine.split("=")[0].trim() || "SECRET_KEY";
+      evidence.push(`${p} → ${varName}=******** (скрыто политикой безопасности)`);
     }
   }
   if (found.length) {
@@ -427,3 +429,126 @@ export async function checkSourceMaps(ctx: Ctx): Promise<CheckResult> {
     en: "Source maps are not exposed",
   }, undefined, Date.now() - t0);
 }
+
+/* ------------------------------------------------------------------ */
+/* Client env leak (NEXT_PUBLIC_SECRET, VITE_PRIVATE_, etc.)           */
+/* ------------------------------------------------------------------ */
+
+const DANGEROUS_CLIENT_ENV = [
+  /NEXT_PUBLIC_(?:SECRET|PRIVATE|API_SECRET|SERVICE_ROLE|PASSWORD|TOKEN|AUTH_SECRET|DATABASE|DB_URL)\b/i,
+  /VITE_(?:PRIVATE|SECRET|API_SECRET|SERVICE_ROLE|PASSWORD|TOKEN)\b/i,
+  /REACT_APP_(?:SECRET|PRIVATE|API_SECRET|SERVICE_ROLE|PASSWORD|TOKEN)\b/i,
+  /NUXT_PUBLIC_(?:SECRET|PRIVATE|TOKEN|PASSWORD)\b/i,
+];
+
+export async function checkClientEnvLeak(ctx: Ctx): Promise<CheckResult> {
+  const t0 = Date.now();
+  const bundles = extractScripts(ctx.homeBody, ctx.origin, 3);
+  const found: string[] = [];
+
+  const checkText = (text: string, srcLabel: string) => {
+    for (const re of DANGEROUS_CLIENT_ENV) {
+      const match = text.match(re);
+      if (match) {
+        found.push(`${srcLabel} → найдена опасная переменная ${match[0]} (риск утечки приватного ключа в клиент)`);
+      }
+    }
+  };
+
+  // check HTML
+  checkText(ctx.homeBody, "homepage HTML");
+
+  // check client JS bundles
+  await Promise.all(
+    bundles.map(async (u) => {
+      const r = await safeFetch(u, { timeoutMs: 5000, maxBody: 256 * 1024 });
+      if (r.ok && r.status === 200 && r.body) {
+        checkText(r.body, u.replace(ctx.origin, ""));
+      }
+    }),
+  );
+
+  if (found.length) {
+    return done(
+      "client_env_leak",
+      "fail",
+      "high",
+      15,
+      { ru: "Приватные env-переменные в клиентском коде", en: "Private env vars in client bundles" },
+      {
+        code: "CLIENT_ENV_LEAK",
+        detail: {
+          ru: "В клиентских скриптах найдены переменные с префиксами NEXT_PUBLIC_ / VITE_ / REACT_APP_, содержащие маркеры приватных секретов (SECRET, PASSWORD, SERVICE_ROLE, DB). Такие ключи видны всем пользователям в браузере.",
+          en: "Client scripts contain build-time variables with NEXT_PUBLIC_ / VITE_ / REACT_APP_ prefixes referencing sensitive markers (SECRET, PASSWORD, SERVICE_ROLE, DB). These values are visible to anyone in DevTools.",
+        },
+        evidence: found,
+      },
+      Date.now() - t0,
+    );
+  }
+
+  return done("client_env_leak", "pass", "low", 0, {
+    ru: "Приватные env-переменные не найдены в клиенте",
+    en: "No sensitive env vars leaked to client bundles",
+  }, undefined, Date.now() - t0);
+}
+
+/* ------------------------------------------------------------------ */
+/* Docker / Kubernetes files exposure                                 */
+/* ------------------------------------------------------------------ */
+
+const DOCKER_K8S_PATHS = [
+  "/Dockerfile",
+  "/docker-compose.yml",
+  "/docker-compose.yaml",
+  "/compose.yml",
+  "/.dockerenv",
+  "/.kube/config",
+];
+
+export async function checkDockerK8sExposure(ctx: Ctx): Promise<CheckResult> {
+  const t0 = Date.now();
+  const found: string[] = [];
+
+  for (const p of DOCKER_K8S_PATHS) {
+    const r = await safeFetch(ctx.origin + (ctx.basePath ?? "") + p, { timeoutMs: 4000, maxBody: 1024 });
+    if (r.ok && r.status === 200) {
+      const isHtml = /text\/html/i.test(r.contentType) && /<html|<!doctype/i.test(r.body);
+      if (isHtml || bodiesEquivalent(r.body, ctx.homeBody)) continue;
+
+      const isDockerfile = p.includes("Dockerfile") && /FROM\s+[a-z0-9_.-]+|WORKDIR\s+|ENTRYPOINT\s+/i.test(r.body);
+      const isCompose = p.includes("compose") && /services:\s*|version:\s*['"]?[0-9]/i.test(r.body);
+      const isDockerEnv = p === "/.dockerenv";
+      const isKube = p.includes(".kube") && /apiVersion:|clusters:|users:/i.test(r.body);
+
+      if (isDockerfile || isCompose || isDockerEnv || isKube) {
+        found.push(`${p} → файл конфигурации контейнеризации доступен публично`);
+      }
+    }
+  }
+
+  if (found.length) {
+    return done(
+      "docker_k8s_exposure",
+      "fail",
+      "high",
+      20,
+      { ru: "Docker / K8s файлы доступны из интернета", en: "Docker / K8s files publicly accessible" },
+      {
+        code: "INFRA_EXPOSED",
+        detail: {
+          ru: "В веб-корне обнаружены файлы конфигурации контейнеризации (Dockerfile, docker-compose.yml или .dockerenv). Они раскрывают структуру сервисов, порты, секреты сборки и системные пути.",
+          en: "Container configuration files (Dockerfile, docker-compose.yml, or .dockerenv) found in the web root. They expose internal service architecture, ports, secrets, and system paths.",
+        },
+        evidence: found,
+      },
+      Date.now() - t0,
+    );
+  }
+
+  return done("docker_k8s_exposure", "pass", "low", 0, {
+    ru: "Файлы Docker и Kubernetes не найдены",
+    en: "No Docker or Kubernetes configuration exposed",
+  }, undefined, Date.now() - t0);
+}
+

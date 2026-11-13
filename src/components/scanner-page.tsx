@@ -41,8 +41,8 @@ const CHECK_CATEGORIES = [
     icon: <Activity className="h-5 w-5" />,
     key: "liveness" as const,
     items: {
-      ru: "Заглушки и lorem ipsum|Ошибки «undefined» в разметке|Битые внутренние ссылки|Пустые title и description",
-      en: "Placeholders and lorem ipsum|\"undefined\" rendered in markup|Broken internal links|Empty title and description",
+      ru: "Шаблонные фразы и заглушки|Ошибки «undefined» в разметке|Битые внутренние ссылки|Пустые title и description",
+      en: "Template phrases and placeholders|\"undefined\" rendered in markup|Broken internal links|Empty title and description",
     },
   },
 ];
@@ -51,6 +51,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
   const [lang, setLang] = useState<Lang>("ru");
   const [phase, setPhase] = useState<Phase>(initialScan ? "report" : "form");
   const [url, setUrl] = useState("");
+  const [consent, setConsent] = useState(true);
   const [scanId, setScanId] = useState<string | null>(null);
   const [scan, setScan] = useState<ScanResult | null>(initialScan);
   const [error, setError] = useState("");
@@ -194,28 +195,49 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
           </div>
 
           {phase === "form" && (
-            <form
-              className="mx-auto mt-8 flex max-w-2xl flex-col gap-3 sm:flex-row"
-              style={{ filter: "drop-shadow(0 0 24px rgba(56,189,248,0.22))" }}
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (url.trim()) void startScan(url.trim());
-              }}
-            >
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder={t(lang, "inputPlaceholder")}
-                className="h-12 flex-1 border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
-                inputMode="url"
-                aria-label="App URL"
-                required
-              />
-              <Button type="submit" className="h-12 bg-sky-400 px-6 text-base font-bold text-[#090d16] shadow-[0_0_30px_-5px_rgba(56,189,248,0.5)] hover:bg-sky-300">
-                <Zap className="h-4 w-4" />
-                {t(lang, "scanBtn")}
-              </Button>
-            </form>
+            <div className="mx-auto mt-8 max-w-2xl">
+              <form
+                className="flex flex-col gap-3 sm:flex-row"
+                style={{ filter: "drop-shadow(0 0 24px rgba(56,189,248,0.22))" }}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (url.trim() && consent) void startScan(url.trim());
+                }}
+              >
+                <Input
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder={t(lang, "inputPlaceholder")}
+                  className="h-12 flex-1 border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
+                  inputMode="url"
+                  aria-label="App URL"
+                  required
+                />
+                <Button
+                  type="submit"
+                  disabled={!consent}
+                  className="h-12 bg-sky-400 px-6 text-base font-bold text-[#090d16] shadow-[0_0_30px_-5px_rgba(56,189,248,0.5)] hover:bg-sky-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Zap className="h-4 w-4" />
+                  {t(lang, "scanBtn")}
+                </Button>
+              </form>
+
+              {/* Consent & legal checkbox (152-FZ & passive scan notice) */}
+              <label className="mt-3.5 flex items-start gap-2.5 text-left cursor-pointer select-none px-1">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-[#111827] text-sky-400 accent-sky-400 focus:ring-sky-400"
+                />
+                <span className="text-[12px] leading-relaxed text-slate-400">
+                  {lang === "ru"
+                    ? "Запуская проверку, вы подтверждаете, что являетесь владельцем/разработчиком ресурса или действуете с его разрешения. Скан выполняется в пассивном режиме чтения публичных HTTP-ответов."
+                    : "By starting the scan, you confirm that you are the owner/developer of the resource or have authorization. The scan runs in passive mode reading public HTTP responses."}
+                </span>
+              </label>
+            </div>
           )}
 
           {phase === "form" && (
@@ -505,7 +527,7 @@ export function ScannerPage({ initialScan }: { initialScan: ScanResult | null })
             © {new Date().getFullYear()} AppSeal · {t(lang, "footerText")}
           </p>
           <p className="font-mono text-[10px] text-slate-700">
-            MVP v0.2 · <a href="/registry" className="transition hover:text-slate-500">реестр</a> · Next.js · external black-box scanner
+            MVP v0.3 · <a href="/registry" className="transition hover:text-slate-400">реестр</a> · <a href="/bot" className="transition hover:text-slate-400">робот (bot)</a> · Next.js · external black-box scanner
           </p>
         </div>
       </footer>
