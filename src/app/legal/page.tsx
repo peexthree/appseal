@@ -3,7 +3,7 @@ import Link from "next/link";
 import { FileCheck2, Lock, Globe, AlertTriangle } from "@/components/icons/appseal-icons";
 
 export const metadata: Metadata = {
-  title: "AppSeal — Правила использования, данные и отказ от ответственности",
+  title: "AppSeal - Правила использования, данные и отказ от ответственности",
   description:
     "Правила использования сканера AppSeal, принципы обработки данных, порядок удаления записей из публичного реестра и отказ от ответственности.",
 };

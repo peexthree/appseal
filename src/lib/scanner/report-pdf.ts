@@ -136,7 +136,7 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   const bold = await pdf.embedFont(await fs.readFile(/* turbopackIgnore: true */ await resolveFont("bold")), { subset: true });
   const mono = await pdf.embedFont(await fs.readFile(/* turbopackIgnore: true */ await resolveFont("mono")), { subset: true });
   const lang = scan.lang;
-  pdf.setTitle(`AppSeal report — ${scan.host}`);
+  pdf.setTitle(`AppSeal report - ${scan.host}`);
   pdf.setAuthor("AppSeal");
   pdf.setSubject(lang === "ru" ? "Отчёт техосмотра приложения" : "Trust report for application");
 
@@ -212,7 +212,7 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   });
   page.drawText(scan.host, { x: textX, y: hx(48), size: 16, font: bold, color: C.ink });
   page.drawText(
-    (lang === "ru" ? "Класс " : "Grade ") + `${scan.grade} (${scan.score}/100) — ${t(gm.label, lang)}`,
+    (lang === "ru" ? "Класс " : "Grade ") + `${scan.grade} (${scan.score}/100) - ${t(gm.label, lang)}`,
     { x: textX, y: hx(67), size: 10.5, font: bold, color: hex2rgb(accent) },
   );
   page.drawText(

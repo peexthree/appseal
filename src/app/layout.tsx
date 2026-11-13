@@ -18,9 +18,9 @@ const jet = JetBrains_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://appseal.online"),
-  title: "AppSeal — техосмотр для приложений, собранных с ИИ",
+  title: "AppSeal - техосмотр для приложений, собранных с ИИ",
   description:
-    "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+–E и бейдж доверия за минуту.",
+    "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+-E и бейдж доверия за минуту.",
   keywords: ["appseal", "vibe coding", "security scanner", "trust badge", "техосмотр приложений"],
   authors: [{ name: "AppSeal" }],
   icons: {
@@ -36,17 +36,17 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "AppSeal — the trust seal for AI-built apps",
+    title: "AppSeal - the trust seal for AI-built apps",
     description:
-      "Scan your AI-built app for leaked secrets, open databases, exposed admin panels and abandonment. A+–E grade in a minute.",
+      "Scan your AI-built app for leaked secrets, open databases, exposed admin panels and abandonment. A+-E grade in a minute.",
     type: "website",
     images: ["/OG.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AppSeal — the trust seal for AI-built apps",
+    title: "AppSeal - the trust seal for AI-built apps",
     description:
-      "Scan your AI-built app for leaked secrets, open databases, exposed admin panels and abandonment. A+–E grade in a minute.",
+      "Scan your AI-built app for leaked secrets, open databases, exposed admin panels and abandonment. A+-E grade in a minute.",
     images: ["/OG.png"],
   },
 };

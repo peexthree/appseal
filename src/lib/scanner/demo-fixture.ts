@@ -24,7 +24,7 @@ const DB_PASSWORD_FIXTURE = fixtureToken(3, 12);
 export const DEMO_PAGE = `<!doctype html>
 <html lang="en">
 <head>
-  <title>FreshBite — food delivery for night owls</title>
+  <title>FreshBite - food delivery for night owls</title>
   <link rel="stylesheet" href="/api/demo-target/app.css">
   <script src="/api/demo-target/app.js"></script>
 </head>
@@ -54,13 +54,13 @@ export const DEMO_PAGE = `<!doctype html>
 </html>`;
 
 export const DEMO_ABOUT = `<!doctype html>
-<html lang="en"><head><title>About — FreshBite</title></head>
+<html lang="en"><head><title>About - FreshBite</title></head>
 <body><h1>About FreshBite</h1>
 <p>We deliver food at night. This page is intentionally alive so the link checker has something green.</p>
 <p><a href="/api/demo-target">back home</a></p></body></html>`;
 
 export const DEMO_ADMIN = `<!doctype html>
-<html lang="en"><head><title>Admin panel — FreshBite</title></head>
+<html lang="en"><head><title>Admin panel - FreshBite</title></head>
 <body><h1>Admin panel</h1>
 <form><input type="password" placeholder="Password"><button>Sign in</button></form>
 <p>No rate limit, no 2FA, no IP allowlist. Good luck.</p></body></html>`;

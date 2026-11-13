@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "AppSeal - реестр просканированных приложений",
   description:
-    "Публичный каталог vibe-приложений, прошедших техосмотр AppSeal: шестиуровневая шкала A+–E, дата скана. Классы A+ и A получают индексируемую ссылку из реестра.",
+    "Публичный каталог vibe-приложений, прошедших техосмотр AppSeal: шестиуровневая шкала A+-E, дата скана. Классы A+ и A получают индексируемую ссылку из реестра.",
 };
 
 const GRADE_STYLES: Record<string, string> = {
@@ -67,7 +67,7 @@ export default async function RegistryPage() {
         </h1>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-400">
           Публичные приложения, прошедшие техосмотр AppSeal. Классы A+ и A получают
-          индексируемую ссылку из этого каталога — поставьте 3D-трофей или бейдж на сайт и{" "}
+          индексируемую ссылку из этого каталога - поставьте 3D-трофей или бейдж на сайт и{" "}
           <Link href="/" className="text-sky-400 underline decoration-dotted underline-offset-4 hover:text-sky-300">
             просканируйте свой проект
           </Link>{" "}
@@ -76,7 +76,7 @@ export default async function RegistryPage() {
 
         {entries.length === 0 ? (
           <div className="mt-10 rounded-2xl border border-slate-800 bg-[#111827] p-10 text-center">
-            <p className="text-slate-400">Реестр пока пуст. Первый A+ или A — за вами.</p>
+            <p className="text-slate-400">Реестр пока пуст. Первый A+ или A - за вами.</p>
             <Link
               href="/"
               className="mt-4 inline-block rounded-md bg-sky-400 px-5 py-2 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
@@ -144,9 +144,9 @@ export default async function RegistryPage() {
         )}
 
         <p className="mt-8 text-xs leading-relaxed text-slate-600">
-          Реестр строится из публичных сканов и показывает только домен, оценку и дату —
+          Реестр строится из публичных сканов и показывает только домен, оценку и дату -
           никаких приватных данных из отчётов. Владелец сайта может запросить исключение
-          домена из реестра. Классы A+ и A присваиваются автоматически по результатам 24 проверок.
+          домена из реестра. Классы A+ и A присваиваются автоматически по результатам 97 проверок.
         </p>
       </main>
 

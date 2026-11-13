@@ -132,6 +132,11 @@ export const DICT = {
     en: "one-time purchase for 7 days - no auto-renewal",
   },
   planPlatformCta: { ru: "Обсудить интеграцию", en: "Discuss integration" },
+  platformRowText: {
+    ru: "API для платформ-конструкторов, white-label бейджи и массовый скан каталога приложений - по договорённости.",
+    en: "API for app builders, white-label badges and bulk catalog scans - by agreement.",
+  },
+  telegramCta: { ru: "Обсудить в Telegram", en: "Discuss on Telegram" },
   pricingSub: {
     ru: "Начните бесплатно. Платите, когда приложение начнёт зарабатывать.",
     en: "Start free. Pay when your app starts earning.",
@@ -162,11 +167,10 @@ export const DICT = {
   },
   planLPCta: { ru: "Разблокировать домен за 490 ₽", en: "Unlock your domain for $6" },
   lpDomainPh: { ru: "домен пропуска, например myapp.vercel.app", en: "pass domain, e.g. myapp.vercel.app" },
-  lpEmailPh: { ru: "email для чека и доступа", en: "email for the receipt and access" },
   lpPay: { ru: "Оплатить", en: "Pay" },
   lpNote: {
-    ru: "Оплата картой через ЮKassa. Чек придёт на email автоматически (НПД).",
-    en: "Payment charged in RUB (490 ₽) via YooKassa. The receipt arrives by email automatically.",
+    ru: "Оплата картой или СБП через ЮKassa. Email для чека ЮKassa спросит сама на странице оплаты - мы его не собираем.",
+    en: "Card or SBP payment via YooKassa. YooKassa asks for the receipt email on its checkout page - we never collect it.",
   },
   lpErr: { ru: "Не удалось создать платёж: ", en: "Could not create the payment: " },
   lpDomainBad: { ru: "Укажите домен в формате myapp.com", en: "Enter a domain like myapp.com" },
@@ -217,6 +221,29 @@ export const DICT = {
     ru: "Отчёт доступен по ссылке и не содержит самих секретов - только факты находок и маскированные фрагменты. Полные ключи мы никогда не сохраняем и не показываем даже вам.",
     en: "The report is available via a link and contains no raw secrets - only findings and masked fragments. Full key values are never stored or shown, even to you.",
   },
+  faq5Q: { ru: "Сколько длится скан?", en: "How long does a scan take?" },
+  faq5A: {
+    ru: "Обычно 20-40 секунд: около 100 лёгких GET-запросов к публичным страницам. Нагрузка сопоставима с одним активным посетителем - ничего не ломаем и не кладём.",
+    en: "Usually 20-40 seconds: about 100 lightweight GET requests to public pages. The load is comparable to one active visitor - nothing breaks, nothing goes down.",
+  },
+  faq6Q: { ru: "А если приложение - SPA и рендерится в браузере?", en: "What if my app is an SPA rendered in the browser?" },
+  faq6A: {
+    ru: "Работаем и с такими: движок открывает страницу в headless-браузере, дожидается отрисовки и сканирует уже собранную разметку. Если что-то нельзя проверить без исходников, в отчёте будет честная пометка о пропуске.",
+    en: "We handle those too: the engine opens the page in a headless browser, waits for the render and scans the assembled markup. Anything untestable without sources gets an honest skip note in the report.",
+  },
+  faq7Q: { ru: "Как попасть в публичный реестр?", en: "How do I get into the public registry?" },
+  faq7A: {
+    ru: "Автоматически: любой скан с классом A или A+ попадает в открытый реестр с индексируемой (dofollow) ссылкой на ваш домен - бесплатный SEO-сигнал доверия. Результаты ниже A остаются приватными.",
+    en: "Automatically: any scan graded A or A+ lands in the open registry with an indexable (dofollow) link to your domain - a free SEO trust signal. Results below A stay private.",
+  },
+  faq8Q: { ru: "Какие данные вы собираете?", en: "What data do you collect?" },
+  faq8A: {
+    ru: "Минимум. Мы не собираем email и не храним персональные данные: в системе остаются только домен пропуска и соль-хеш IP для лимита. Полный отчёт видит только инициатор скана по секретной ссылке; в реестр попадают лишь домен, класс и дата.",
+    en: "Bare minimum. We collect no email and store no personal data: only the pass domain and a salted IP hash for the quota live in our system. The full report is visible only to the scan initiator via a secret link; the registry shows just the domain, grade and date.",
+  },
+  bootStage1: { ru: "Подмешиваем сигнатуры утечек...", en: "Loading leak signatures..." },
+  bootStage2: { ru: "Проверяем заголовки безопасности...", en: "Checking security headers..." },
+  bootStage3: { ru: "Калибруем шкалу оценок...", en: "Calibrating the grade scale..." },
   footerText: {
     ru: "AppSeal - независимый слой доверия для эпохи, когда софт пишут все.",
     en: "AppSeal - an independent trust layer for the era when everyone writes software.",
