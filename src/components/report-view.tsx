@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CheckResult, ScanResult, CategoryId, Lang } from "@/lib/scanner/types";
+import type { CheckResult, ScanResult, CategoryId, Lang, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META, SEVERITY_ORDER } from "@/lib/scanner/types";
-import { GRADE_META, SEVERITY_META, STATUS_LABEL } from "@/lib/scanner/grade";
+import { getTrophyPath, GRADE_META, SEVERITY_META, STATUS_LABEL } from "@/lib/scanner/grade";
 import { buildFixPrompt } from "@/lib/fix-prompt";
 import { t } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -34,24 +34,35 @@ function StatusIcon({ s }: { s: CheckResult["status"] }) {
   return <MinusCircle className={`${cls} text-slate-600`} />;
 }
 
-function GradeRing({ grade, score }: { grade: string; score: number }) {
-  const color = GRADE_META[grade as "A" | "B" | "C" | "D"]?.color ?? "#6b7280";
-  const R = 52;
-  const CIRC = 2 * Math.PI * R;
-  const filled = (score / 100) * CIRC;
+function TrophyHero({ grade, score }: { grade: Grade; score: number }) {
+  const meta = GRADE_META[grade] ?? GRADE_META["E"];
+  const trophyPath = getTrophyPath(grade);
+
   return (
-    <div className="relative h-32 w-32 shrink-0" aria-label={`grade ${grade} score ${score}`}>
-      <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
-        <circle cx="64" cy="64" r={R} fill="none" stroke="#23262c" strokeWidth="11" />
-        <circle
-          cx="64" cy="64" r={R} fill="none"
-          stroke={color} strokeWidth="11" strokeLinecap="round"
-          strokeDasharray={`${filled} ${CIRC - filled}`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-display text-4xl font-extrabold" style={{ color }}>{grade}</span>
-        <span className="text-xs text-slate-400">{score}/100</span>
+    <div className="relative flex h-32 w-32 shrink-0 items-center justify-center" aria-label={`grade ${grade} score ${score}`}>
+      {/* Ambient glow matching grade */}
+      <div
+        className="absolute inset-1 rounded-full blur-2xl opacity-40 transition-all duration-300"
+        style={{ backgroundColor: meta.color }}
+      />
+      {/* 3D Trophy Image */}
+      <img
+        src={trophyPath}
+        alt={`AppSeal ${grade}`}
+        width={128}
+        height={128}
+        className="relative z-10 h-28 w-28 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.7)] transition-transform duration-300 hover:scale-105"
+      />
+      {/* Floating score badge */}
+      <div
+        className="absolute -bottom-1 -right-1 z-20 flex items-center justify-center rounded-lg border px-2 py-0.5 font-mono text-[11px] font-extrabold shadow-lg backdrop-blur"
+        style={{
+          backgroundColor: "#090d16",
+          borderColor: `${meta.color}66`,
+          color: meta.color,
+        }}
+      >
+        {score}/100
       </div>
     </div>
   );
@@ -124,10 +135,12 @@ export function ReportView({
   const [copied, setCopied] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
+  const [badgeFormat, setBadgeFormat] = useState<"trophy" | "shield">("trophy");
+
   const fails = scan.results.filter((r) => r.status === "fail").length;
   const warns = scan.results.filter((r) => r.status === "warn").length;
   const passes = scan.results.filter((r) => r.status === "pass").length;
-  const gm = GRADE_META[scan.grade];
+  const gm = GRADE_META[scan.grade] ?? GRADE_META["E"];
 
   const byCategory = useMemo(() => {
     const order: CategoryId[] = ["secrets", "headers", "admin", "liveness"];
@@ -149,7 +162,14 @@ export function ReportView({
 
   // absolute URLs: the embed lives on foreign sites, relative paths break there
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const embedCode = `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener"><img src="${origin}/api/badge?id=${scan.id}" alt="AppSeal ${scan.grade}" width="168" height="44"></a>`;
+
+  const embedCode = useMemo(() => {
+    if (badgeFormat === "trophy") {
+      return `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}&style=trophy" alt="AppSeal Verified: Grade ${scan.grade}" width="80" height="80" style="filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" /></a>`;
+    }
+    return `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener"><img src="${origin}/api/badge?id=${scan.id}" alt="AppSeal ${scan.grade}" width="168" height="44"></a>`;
+  }, [badgeFormat, origin, scan.id, scan.grade, scan.score]);
+
   const fixPrompt = useMemo(() => buildFixPrompt(scan, lang), [scan, lang]);
 
   const copy = async () => {
@@ -174,18 +194,26 @@ export function ReportView({
 
   return (
     <div className="w-full">
-      {/* header card */}
+      {/* header card with 3D trophy */}
       <div className="flex flex-col items-start gap-6 rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:flex-row sm:items-center sm:p-8">
-        <GradeRing grade={scan.grade} score={scan.score} />
+        <TrophyHero grade={scan.grade} score={scan.score} />
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-            {t(lang, "gradeTitle")}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+              {t(lang, "gradeTitle")}
+            </p>
+            <span
+              className="inline-flex items-center rounded px-2 py-0.5 font-display text-xs font-extrabold"
+              style={{ color: gm.color, backgroundColor: `${gm.color}1a` }}
+            >
+              Класс {scan.grade}
+            </span>
+          </div>
           <h2 className="font-display mt-1 truncate text-2xl font-bold text-slate-50">
             {scan.host}
           </h2>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold" style={{ color: gm.color }}>
+            <span className="text-sm font-bold" style={{ color: gm.color }}>
               {gm.label[lang]}
             </span>
             {scan.platform && (
@@ -199,6 +227,9 @@ export function ReportView({
               </Badge>
             )}
           </div>
+          <p className="mt-2 text-xs leading-relaxed text-slate-400 max-w-xl">
+            {gm.description[lang]}
+          </p>
           <p className="mt-3 text-[13px] text-slate-400">
             {t(lang, "summaryChecks")} {scan.results.length} ·{" "}
             <span className="text-red-400">{fails} {t(lang, "summaryFailed")}</span> ·{" "}
@@ -261,26 +292,90 @@ export function ReportView({
 
       {/* badge embed */}
       <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
-        <div className="flex items-center gap-3">
-          <img
-            src={`/api/badge?id=${scan.id}`}
-            alt={`AppSeal ${scan.grade}`}
-            width={168}
-            height={44}
-            className="rounded"
-          />
-          <div className="flex-1">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
             <p className="text-sm font-semibold text-slate-200">{t(lang, "badgeTitle")}</p>
             <p className="text-xs text-slate-500">{t(lang, "badgeCopy")}</p>
           </div>
-          <Button size="sm" variant="outline" onClick={copy} className="border-slate-700 text-slate-300 hover:bg-slate-800">
-            {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-            {copied ? t(lang, "copied") : t(lang, "copyBtn")}
-          </Button>
+          {/* Format switcher tabs */}
+          <div className="flex rounded-lg border border-slate-800 bg-[#090d16] p-0.5 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setBadgeFormat("trophy")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                badgeFormat === "trophy"
+                  ? "bg-sky-400 text-[#090d16] shadow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <span>🏆</span>
+              <span>{t(lang, "badgeTrophyTab")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setBadgeFormat("shield")}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                badgeFormat === "shield"
+                  ? "bg-sky-400 text-[#090d16] shadow"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+            >
+              <span>🛡</span>
+              <span>{t(lang, "badgeShieldTab")}</span>
+            </button>
+          </div>
         </div>
-        <pre className="appseal-scroll mt-3 overflow-x-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] text-slate-400">
-          {embedCode}
-        </pre>
+
+        {/* Live Badge Preview and Copy Area */}
+        <div className="mt-4 flex flex-col items-center gap-5 rounded-lg border border-slate-800/80 bg-[#090d16]/70 p-4 sm:flex-row">
+          <div className="flex min-w-[130px] items-center justify-center p-2">
+            {badgeFormat === "trophy" ? (
+              <div className="group relative flex items-center justify-center">
+                <div
+                  className="absolute inset-0 rounded-full blur-xl opacity-30 transition-opacity group-hover:opacity-60"
+                  style={{ backgroundColor: gm.color }}
+                />
+                <img
+                  src={gm.trophy}
+                  alt={`AppSeal ${scan.grade}`}
+                  width={80}
+                  height={80}
+                  className="relative z-10 h-20 w-20 object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
+                />
+              </div>
+            ) : (
+              <img
+                src={`/api/badge?id=${scan.id}`}
+                alt={`AppSeal ${scan.grade}`}
+                width={168}
+                height={44}
+                className="rounded"
+              />
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1 w-full">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[11px] font-medium text-slate-400">
+                {badgeFormat === "trophy"
+                  ? "HTML-код для вставки 3D-значка (footer/header вашего сайта):"
+                  : "HTML-код для вставки компактного бейджа:"}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={copy}
+                className="h-7 border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+              >
+                {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? t(lang, "copied") : t(lang, "copyBtn")}
+              </Button>
+            </div>
+            <pre className="appseal-scroll select-all overflow-x-auto rounded-md border border-slate-800/70 bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-300">
+              {embedCode}
+            </pre>
+          </div>
+        </div>
       </div>
 
       {/* findings by category */}

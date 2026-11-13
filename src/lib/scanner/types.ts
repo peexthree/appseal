@@ -1,5 +1,7 @@
 export type Lang = "ru" | "en";
 
+export type Grade = "A+" | "A" | "B" | "C" | "D" | "E";
+
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
 
 export type CheckStatus = "pass" | "fail" | "warn" | "info" | "skip";
@@ -48,7 +50,7 @@ export interface ScanResult {
   stage: Localized;
   error?: Localized;
   score: number; // 0..100
-  grade: "A" | "B" | "C" | "D";
+  grade: Grade;
   results: CheckResult[];
   platform?: string; // detected builder platform
 }

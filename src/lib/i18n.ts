@@ -15,8 +15,8 @@ export const DICT = {
     en: "Check it in a minute.",
   },
   heroSub: {
-    ru: "ИИ-сборка создала миллионы приложений, которые никто не проверял. AppSeal сканирует ваш живой сайт на утечки секретов, открытые базы, дырявые админки и признаки заброшенности — и выдаёт оценку A–D с бейджем для сайта.",
-    en: "AI builders created millions of apps nobody ever checked. AppSeal scans your live site for leaked secrets, open databases, exposed admin panels and signs of abandonment — and issues an A–D grade with a badge for your site.",
+    ru: "ИИ-сборка создала миллионы приложений, которые никто не проверял. AppSeal сканирует ваш живой сайт на утечки секретов, открытые базы, дырявые админки и признаки заброшенности — и выдаёт оценку A+–E с бейджем для сайта.",
+    en: "AI builders created millions of apps nobody ever checked. AppSeal scans your live site for leaked secrets, open databases, exposed admin panels and signs of abandonment — and issues an A+–E grade with a badge for your site.",
   },
   inputPlaceholder: {
     ru: "ваше-приложение.com",
@@ -34,8 +34,10 @@ export const DICT = {
     en: "A ready prompt with every finding, the evidence and config snippets. Hand it to your AI agent in the same vibe-coding session - then re-scan.",
   },
   fixPromptBtn: { ru: "Промпт для ИИ-агента", en: "Prompt for AI agent" },
-  badgeTitle: { ru: "Бейдж для вашего сайта", en: "Badge for your site" },
-  badgeCopy: { ru: "Вставьте этот код на свой сайт:", en: "Embed this code on your site:" },
+  badgeTitle: { ru: "Бейдж доверия для вашего сайта", en: "Trust badge for your site" },
+  badgeCopy: { ru: "Вставьте этот код на свой сайт, чтобы значок красовался на проверенном проекте:", en: "Embed this code on your site to proudly display your trust badge:" },
+  badgeTrophyTab: { ru: "3D Трофей", en: "3D Trophy" },
+  badgeShieldTab: { ru: "Компактный щит (SVG)", en: "Compact shield (SVG)" },
   copyBtn: { ru: "Копировать", en: "Copy" },
   copied: { ru: "Скопировано!", en: "Copied!" },
   summaryChecks: { ru: "пунктов проверено", en: "checks completed" },
@@ -105,8 +107,8 @@ export const DICT = {
   },
   how3Title: { ru: "Получаете оценку и план", en: "Get a grade and a plan" },
   how3Text: {
-    ru: "Оценка A–D, объяснение каждой проблемы человеческим языком, доказательства и бейдж, который показывает пользователям, что приложению можно доверять.",
-    en: "An A–D grade, every issue explained in plain language, evidence attached, and a badge telling users your app can be trusted.",
+    ru: "Оценка A+–E, объяснение каждой проблемы человеческим языком, доказательства и 3D-бейдж, который показывает пользователям, что приложению можно доверять.",
+    en: "An A+–E grade, every issue explained in plain language, evidence attached, and a 3D badge telling users your app can be trusted.",
   },
   checksTitle: { ru: "Что проверяем", en: "What we check" },
   checksSub: {
@@ -123,8 +125,8 @@ export const DICT = {
   planFree: { ru: "Free", en: "Free" },
   planFreePrice: { ru: "$0", en: "$0" },
   planFreeFeats: {
-    ru: "1 полный скан в день|Оценка A–D и отчёт|Бейдж для сайта|PDF-экспорт",
-    en: "1 full scan per day|A–D grade and report|Site badge|PDF export",
+    ru: "1 полный скан в день|Оценка A+–E и отчёт|3D-бейдж для сайта|PDF-экспорт",
+    en: "1 full scan per day|A+–E grade and report|3D site badge|PDF export",
   },
   planPro: { ru: "Pro", en: "Pro" },
   planProPrice: { ru: "$19/мес", en: "$19/mo" },
@@ -153,10 +155,10 @@ export const DICT = {
   },
   faq2Q: { ru: "Зачем приложению бейдж?", en: "Why does my app need a badge?" },
   faq2A: {
-    ru: "Пользователи не отличают хорошее приложение от дырявого. Оценка A–D — короткий сигнал доверия, как значок SSL-замка: конверсия растёт, а вам не нужно объяснять словами, что вы следите за безопасностью.",
-    en: "Users can't tell a well-built app from a leaky one. An A–D grade is a short trust signal, like the SSL padlock: conversion grows and you don't have to explain in words that you care about security.",
+    ru: "Пользователи не отличают хорошее приложение от дырявого. Оценка A+–E — короткий сигнал доверия, как значок SSL-замка: конверсия растёт, а вам не нужно объяснять словами, что вы следите за безопасностью.",
+    en: "Users can't tell a well-built app from a leaky one. An A+–E grade is a short trust signal, like the SSL padlock: conversion grows and you don't have to explain in words that you care about security.",
   },
-  faq3Q: { ru: "Что делать, если оценка D?", en: "What if my grade is D?" },
+  faq3Q: { ru: "Что делать, если оценка низкая (D или E)?", en: "What if my grade is low (D or E)?" },
   faq3A: {
     ru: "Каждый проваленный пункт содержит объяснение и доказательства — большинство закрывается за вечер: убрать секреты из клиента, закрыть .env, поправить правила Firebase. Отчёт можно отдать ИИ-агенту и починить силами той же вайб-кодинг-сессии.",
     en: "Every failed check explains the issue and shows evidence — most fixes take an evening: remove secrets from the client, lock .env, tighten Firebase rules. Hand the report to an AI agent and fix it in the same vibe-coding session.",

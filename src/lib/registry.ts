@@ -24,7 +24,7 @@ export function dedupeRegistry(entries: RegistryEntry[]): RegistryEntry[] {
   return [...byHost.values()].sort((a, b) => b.ts - a.ts);
 }
 
-/** Grade A earns a dofollow link, everything else stays nofollow. */
+/** Grade A+ and A earn a dofollow link, everything else stays nofollow. */
 export function isDofollow(e: RegistryEntry): boolean {
-  return e.grade === "A";
+  return e.grade === "A+" || e.grade === "A";
 }

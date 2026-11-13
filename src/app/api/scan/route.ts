@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
       progress: 2,
       stage: { ru: "Подключаемся…", en: "Connecting…" },
       score: 0,
-      grade: "D",
+      grade: "E",
       results: [],
     };
 
