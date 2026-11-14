@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "AppSeal Scanner Bot - Политика сканирования и Opt-out",
   description:
     "Информация о краулере AppSeal-Scanner: частота запросов, пассивный режим проверки безопасности и правила исключения через robots.txt.",
+  alternates: { canonical: "/bot" },
 };
 
 export default function BotPage() {
