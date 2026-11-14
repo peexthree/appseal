@@ -10,7 +10,7 @@ import {
   redisConfig,
   redis,
 } from "@/lib/scanner/store";
-import { hasActivePass } from "@/lib/passes";
+import { hasPassAccess } from "@/lib/passes";
 import {
   WATCH_KEY,
   LAST_KEY_PREFIX,
@@ -68,8 +68,9 @@ export async function GET() {
       return NextResponse.json({ skipped: true, reason: "all-fresh", host });
     }
 
-    // a lapsed pass leaves the watchlist (and loses its snapshot)
-    if (!(await hasActivePass(host))) {
+    // a lapsed pass leaves the watchlist (and loses its snapshot);
+    // self-hosts (the showcase) pass unconditionally via hasPassAccess
+    if (!(await hasPassAccess(host))) {
       await redis(cfg, ["ZREM", WATCH_KEY, host]);
       await redis(cfg, ["DEL", LAST_KEY_PREFIX + host]);
       return NextResponse.json({ skipped: true, reason: "pass-expired", host });
