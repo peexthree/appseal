@@ -8,6 +8,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { WATCH_KEY } from "./watch.ts";
 
 const PASS_TTL_SECONDS = 8 * 24 * 3600; // 7-day pass + 1 day of grace
 
@@ -73,6 +74,8 @@ export async function activatePass(paymentId: string, host: string): Promise<Pas
   };
   await redisCommand(["SET", `lpass:pay:${paymentId}`, JSON.stringify(record), "EX", String(PASS_TTL_SECONDS)]);
   await redisCommand(["SET", passHostKey(record.host), JSON.stringify(record), "EX", String(PASS_TTL_SECONDS)]);
+  // paid hosts join the background watchlist; score 0 = rescan ASAP
+  await redisCommand(["ZADD", WATCH_KEY, "0", record.host]);
   return record;
 }
 
