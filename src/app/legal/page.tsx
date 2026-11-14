@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "AppSeal - Правила использования, данные и отказ от ответственности",
   description:
     "Правила использования сканера AppSeal, принципы обработки данных, порядок удаления записей из публичного реестра и отказ от ответственности.",
+  alternates: { canonical: "/legal" },
 };
 
 const CONTACT_EMAIL = "linedrop@yandex.ru";

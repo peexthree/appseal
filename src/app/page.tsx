@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ScannerPage } from "@/components/scanner-page";
+import { JsonLd } from "@/components/json-ld";
 import { getScan, publicView } from "@/lib/scanner/store";
 import type { ScanResult } from "@/lib/scanner/types";
 
@@ -20,6 +21,7 @@ export async function generateMetadata({
       return {
         title,
         description,
+        alternates: { canonical: `/?report=${report}` },
         openGraph: {
           title,
           description,
@@ -47,6 +49,7 @@ export async function generateMetadata({
     title: "AppSeal - техосмотр для приложений, собранных с ИИ",
     description:
       "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+-E и бейдж доверия за минуту.",
+    alternates: { canonical: "/" },
   };
 }
 
@@ -73,5 +76,10 @@ export default async function Home({
       initial = { ...scan, rkey: undefined };
     }
   }
-  return <ScannerPage initialScan={initial} initialReportKey={reportKey} />;
+  return (
+    <>
+      <JsonLd />
+      <ScannerPage initialScan={initial} initialReportKey={reportKey} />
+    </>
+  );
 }

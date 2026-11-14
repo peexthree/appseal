@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "AppSeal - статистика AI-собранных приложений",
   description:
     "Анонимный агрегат массового техосмотра: распределение классов A+-E, самые частые проваленные проверки, средний балл по источникам. Имена публикуются только в реестре - для класса A/A+ или с согласия владельца.",
+  alternates: { canonical: "/stats" },
 };
 
 const GRADE_STYLES: Record<string, string> = {
