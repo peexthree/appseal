@@ -884,3 +884,13 @@ export function Sparkles({ size = 24, strokeWidth = 2, className = "", ...props 
     </svg>
   );
 }
+
+/** Magnifier for the registry catalog search (static, matches the stroke icon set) */
+export function Search({ size = 24, strokeWidth = 2, className = "", ...props }: AppSealIconProps) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={size} height={size} overflow="visible" style={{ overflow: "visible" }} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}

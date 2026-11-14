@@ -1,6 +1,7 @@
 /**
- * Public registry of scanned hosts (issue #2 GTM): grade-A hosts get an
- * indexable (dofollow) link from the catalog, lower grades are nofollow.
+ * Public registry of scanned hosts (issue #2 GTM): every finished scan is
+ * listed, grade-A hosts get an indexable (dofollow) link from the catalog,
+ * lower grades are nofollow and their description is blurred in the UI.
  * Pure logic only - storage lives in scanner/store.ts.
  */
 
@@ -14,7 +15,7 @@ export interface RegistryEntry {
   desc?: string;
 }
 
-export const REGISTRY_MAX = 600;
+export const REGISTRY_MAX = 1000;
 
 /** Keep the newest scan per host, newest first. */
 export function dedupeRegistry(entries: RegistryEntry[]): RegistryEntry[] {
