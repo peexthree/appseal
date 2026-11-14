@@ -44,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const raw = await getRegistryEntries();
     const entries = dedupeRegistry(raw).slice(0, 150);
     const dynamicRoutes: MetadataRoute.Sitemap = entries.map((e) => ({
-      url: `${baseUrl}/?report=${e.id}`,
+      url: `${baseUrl}/report/${e.id}`,
       lastModified: new Date(e.ts),
       changeFrequency: "weekly",
       priority: e.grade === "A+" || e.grade === "A" ? 0.8 : 0.6,

@@ -215,14 +215,14 @@ export function ReportView({
   const embedCode = useMemo(() => {
     if (syntax === "markdown") {
       if (badgeFormat === "trophy") {
-        return `[![AppSeal Security Verified: Grade ${scan.grade}](${origin}/api/badge?id=${scan.id}&style=trophy)](${origin}/?report=${scan.id})`;
+        return `[![AppSeal Security Verified: Grade ${scan.grade}](${origin}/api/badge?id=${scan.id}&style=trophy)](${origin}/report/${scan.id})`;
       }
-      return `[![AppSeal Security Verified: Grade ${scan.grade}](${origin}/api/badge?id=${scan.id})](${origin}/?report=${scan.id})`;
+      return `[![AppSeal Security Verified: Grade ${scan.grade}](${origin}/api/badge?id=${scan.id})](${origin}/report/${scan.id})`;
     }
     if (badgeFormat === "trophy") {
-      return `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}&style=trophy" alt="AppSeal Verified: Grade ${scan.grade}" width="80" height="80" style="filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" /></a>`;
+      return `<a href="${origin}/report/${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}&style=trophy" alt="AppSeal Verified: Grade ${scan.grade}" width="80" height="80" style="filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" /></a>`;
     }
-    return `<a href="${origin}/?report=${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}" alt="AppSeal Verified: Grade ${scan.grade}" width="${badgeW}" height="44"></a>`;
+    return `<a href="${origin}/report/${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}" alt="AppSeal Verified: Grade ${scan.grade}" width="${badgeW}" height="44"></a>`;
   }, [badgeFormat, syntax, origin, scan.id, scan.grade, scan.score, badgeW]);
 
   const fixPrompt = useMemo(() => buildFixPrompt(scan, lang), [scan, lang]);
@@ -237,7 +237,7 @@ export function ReportView({
     }
   };
 
-  const shareUrl = `${origin}/?report=${scan.id}`;
+  const shareUrl = `${origin}/report/${scan.id}`;
   const shareText =
     lang === "ru"
       ? `🛡️ Мой проект ${scan.host} прошёл аудит безопасности на AppSeal: Класс ${scan.grade} (${scan.score}/100 баллов)!`

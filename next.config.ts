@@ -46,6 +46,19 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // legacy shared report links (?report=<id> with optional ?key=) move to the
+  // ISR report route; the edge redirect keeps old links working without
+  // touching the function origin (Fast Origin Transfer quota)
+  async redirects() {
+    return [
+      {
+        source: "/",
+        has: [{ type: "query", key: "report" }],
+        destination: "/report/:report",
+        permanent: false,
+      },
+    ];
+  },
   reactStrictMode: false,
 };
 

@@ -1051,7 +1051,7 @@ export function ScannerPage({
             <p className="mt-6 text-[13px] leading-relaxed text-slate-400">{t(lang, "caseBody")}</p>
                 <p className="font-display mt-4 text-sm font-bold text-sky-300">{t(lang, "caseQuote")}</p>
                 <a
-                  href={`/?report=${CASE_REPORT_ID}`}
+                  href={`/report/${CASE_REPORT_ID}`}
                   target="_blank"
                   rel="noopener"
                   className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-sky-400 underline decoration-dotted underline-offset-4 transition hover:text-sky-300"
@@ -1355,7 +1355,7 @@ export function ScannerPage({
           </div>
           <div className="shrink-0 text-center">
             <a
-              href="/?report=mweys4fr-0d7b05c638"
+              href="/report/mweys4fr-0d7b05c638"
               target="_blank"
               rel="noopener"
               title="AppSeal Security Verified: Grade A+ (100/100)"
