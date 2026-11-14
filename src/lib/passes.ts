@@ -39,7 +39,9 @@ function upstashHostOk(raw: string): boolean {
   return raw.startsWith("https://") && (host === "upstash.io" || host.endsWith(".upstash.io"));
 }
 
-async function redisCommand<T>(command: string[]): Promise<T | null> {
+/** Upstash REST call (pinned to https + *.upstash.io). Also used by the
+ *  Telegram bot webhook for per-chat purchase state. */
+export async function redisCommand<T>(command: string[]): Promise<T | null> {
   const cfg = redisConfig();
   if (!cfg || !upstashHostOk(cfg.url)) return null;
   try {

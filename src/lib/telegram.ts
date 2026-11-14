@@ -16,7 +16,22 @@ export async function sendTelegramAlert(text: string): Promise<boolean> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) return false;
-  const body = JSON.stringify({ chat_id: chatId, text });
+  return sendTelegramMessage(chatId, text);
+}
+
+/** Generic Bot API sendMessage (used by the webhook bot): chat id comes from
+ *  the incoming update, the token from the env. replyMarkup is a Bot API
+ *  reply_markup object (inline_keyboard). */
+export async function sendTelegramMessage(
+  chatId: string,
+  text: string,
+  replyMarkup?: object,
+): Promise<boolean> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return false;
+  const payload: Record<string, unknown> = { chat_id: chatId, text };
+  if (replyMarkup) payload.reply_markup = replyMarkup;
+  const body = JSON.stringify(payload);
   return new Promise((resolve) => {
     const req = request(
       {
