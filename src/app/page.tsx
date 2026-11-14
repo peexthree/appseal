@@ -16,7 +16,7 @@ export async function generateMetadata({
     const scan = await getScan(report);
     if (scan) {
       const title = `AppSeal: ${scan.host} - Класс ${scan.grade} (${scan.score}/100)`;
-      const description = `Результаты техосмотра безопасности сайта ${scan.host}: 97 проверок гигиены, класс ${scan.grade}, ${scan.score} баллов из 100.`;
+      const description = `Результаты техосмотра безопасности сайта ${scan.host}: 121 проверка гигиены, класс ${scan.grade}, ${scan.score} баллов из 100.`;
       const ogUrl = `/api/og?id=${scan.id}`;
       return {
         title,

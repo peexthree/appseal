@@ -1,7 +1,7 @@
 # GTM-копирайт для выпуска №2 (готовые тексты)
 
 Каноникл: https://appseal.online. Продукт: внешний чёрно-ящичный сканер
-AI-собранных приложений, 97 проверок по публичным страницам, шкала A+-E,
+AI-собранных приложений, 121 проверка по публичным страницам, шкала A+-E,
 PDF-отчёт с промптом фикса для ИИ-агента. Launch Pass: 490 ₽ / 7 дней.
 
 Как публиковать: раздел 1 - Reddit (вторник-среда), через день-два раздел 2 -
@@ -71,7 +71,7 @@ HN не любит голые маркетинговые страницы, по�
 
     1/ Я просканировал 409 AI-собранных приложений внешним сканером (панель 627,
     188 URL были мертвы - отдельный вывод о заброшенности vibe-проектов).
-    97 проверок, нулевая нагрузка, только публичные страницы.
+    121 проверка, нулевая нагрузка, только публичные страницы.
 
     2/ Средний балл - 73/100. Медиана - 73. Класс A/A+: 46 приложений (11%).
     Класс D: 12 (3%). E: 0 - полного провала нет, базовый уровень у всех есть.
@@ -91,7 +91,7 @@ HN не любит голые маркетинговые страницы, по�
 Тема: a quick security check for <host> - grade in a minute
 
     Hi! Found <host> in <gallery>. I'm building AppSeal - a MOT test for
-    AI-built apps: 97 black-box checks on public pages (no exploits, no load),
+    AI-built apps: 121 black-box checks on public pages (no exploits, no load),
     A+-E grade and a report. I can run it for free and send you the PDF; a
     grade A also gets you an indexable link from the public registry. Not
     interested - just ignore this, and your domain won't be scanned again.

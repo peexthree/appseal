@@ -1,7 +1,7 @@
 import type { CheckResult, Localized, ScanResult } from "./types";
 import { computeScore } from "./grade";
 import { saveScan, updateScan } from "./store";
-import { isClientRenderShell, safeFetch, truncate } from "./fetcher";
+import { extractSiteDesc, isClientRenderShell, safeFetch, truncate } from "./fetcher";
 import { renderPage, shouldRender } from "./render";
 import {
   checkEnvExposure,
@@ -56,6 +56,12 @@ import {
   detectPlatform,
   detectTechPassport,
 } from "./checks/liveness";
+import {
+  checkTrustProbes,
+  checkTrustSignals,
+  checkTrustA11y,
+  checkTrustPerf,
+} from "./checks/trust";
 
 const DEMO_HOST = "http://127.0.0.1:3210";
 
@@ -80,14 +86,14 @@ export function normalizeInputUrl(input: string): { url: string; isDemo: boolean
 }
 
 /**
- * Runs a full ~100-check scan for the given scan id (already saved as "queued").
+ * Runs a full ~120-check scan for the given scan id (already saved as "queued").
  * Each macro-check returns a group of granular results; never throws: errors
  * are recorded into the scan record.
  * Returns the final outcome on success (for the registry feed) or null.
  */
 export async function runScan(
   scan: ScanResult,
-): Promise<{ host: string; grade: string; score: number; pageTitle?: string } | null> {
+): Promise<{ host: string; grade: string; score: number; pageTitle?: string; pageDesc?: string } | null> {
   try {
     await setProgress(scan.id, {
       stage: { ru: "Загружаем главную страницу…", en: "Loading the homepage…" },
@@ -229,6 +235,12 @@ export async function runScan(
       { fn: () => checkMixedContentDom(ctx), id: "mixed_content_dom" },
       { fn: () => checkScriptHygiene(ctx), id: "script_hygiene" },
       { fn: () => checkImgAlt(ctx), id: "img_alt" },
+
+      // 5. AI trust & hygiene
+      { fn: () => checkTrustSignals(ctx), id: "trust_signals" },
+      { fn: () => checkTrustA11y(ctx), id: "trust_a11y" },
+      { fn: () => checkTrustPerf(ctx), id: "trust_perf" },
+      { fn: () => checkTrustProbes(ctx), id: "trust_probes" },
     ];
 
     const results: CheckResult[] = [];
@@ -248,6 +260,9 @@ export async function runScan(
       "script_hygiene",
       "img_alt",
       "framework_errors",
+      "trust_signals",
+      "trust_a11y",
+      "trust_perf",
     ]);
 
     const runOne = async (fn: () => Promise<CheckResult[]>) => {
@@ -325,15 +340,17 @@ export async function runScan(
       techPassport,
       host: scan.isDemo ? "demo-app" : host,
     });
-    // page title travels with the return value: the registry uses it as the
-    // entry's short description
+    // page title and description travel with the return value: the registry
+    // uses them as the entry's short public description
     const titleMatch = home.body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
     const pageTitle = titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim().slice(0, 120) : "";
+    const pageDesc = extractSiteDesc(home.body);
     return {
       host: scan.isDemo ? "demo-app" : host,
       grade,
       score,
       pageTitle: pageTitle || undefined,
+      pageDesc: pageDesc || undefined,
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

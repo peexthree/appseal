@@ -299,3 +299,60 @@ export function isClientRenderShell(html: string): boolean {
     .trim();
   return hasMount && visible.length < 200;
 }
+
+/* ------------------------------------------------------------------ */
+/* Site description for the public registry                            */
+/* ------------------------------------------------------------------ */
+
+/** multi-part public suffixes where DMARC lives on three labels */
+const MULTIPART_TLDS = new Set([
+  "co.uk", "org.uk", "ac.uk", "gov.uk", "co.jp", "co.in", "co.nz", "co.za",
+  "com.au", "net.au", "org.au", "com.br", "com.mx", "com.ar", "com.tr",
+  "com.cn", "com.tw", "com.hk", "com.sg", "com.my", "co.th", "com.ph",
+  "co.id", "co.kr", "com.pl", "co.il", "com.ua",
+]);
+
+/** Last two (or three for co.uk-style) labels: where DMARC actually lives. */
+export function registrableDomain(host: string): string {
+  const parts = host.toLowerCase().split(".").filter(Boolean);
+  if (parts.length <= 2) return parts.join(".");
+  const last2 = parts.slice(-2).join(".");
+  if (MULTIPART_TLDS.has(last2) && parts.length >= 3) return parts.slice(-3).join(".");
+  return last2;
+}
+
+/** Unescape the handful of entities meta/og attributes actually contain. */
+function unescapeHtmlEntities(s: string): string {
+  return s
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0?39;|&apos;|&#x27;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Best public description of the site, in falling priority: meta description,
+ * og:description, twitter:description, then <title>. Powers the one-line
+ * description shown under a registry entry (plain text, max 160 chars).
+ */
+export function extractSiteDesc(html: string): string {
+  const metaContent = (nameRe: RegExp): string => {
+    const m =
+      html.match(new RegExp(`<meta\\b[^>]+(?:${nameRe.source})[^>]*content=["']([^"']*)["']`, "i")) ??
+      html.match(new RegExp(`<meta\\b[^>]+content=["']([^"']*)["'][^>]*${nameRe.source}`, "i"));
+    return m ? unescapeHtmlEntities(m[1]) : "";
+  };
+  const desc = metaContent(/name=["']description["']/);
+  if (desc) return desc.slice(0, 160);
+  const og = metaContent(/property=["']og:description["']/);
+  if (og) return og.slice(0, 160);
+  const tw = metaContent(/name=["']twitter:description["']/);
+  if (tw) return tw.slice(0, 160);
+  const title = html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);
+  const t = title ? unescapeHtmlEntities(title[1].replace(/<[^>]+>/g, " ")) : "";
+  return t.slice(0, 160);
+}

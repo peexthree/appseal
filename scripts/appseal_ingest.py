@@ -18,6 +18,7 @@ import argparse
 import http.client
 import json
 import pathlib
+import re
 
 BENCH_DIR = pathlib.Path(__file__).parent / "benchmark_data"
 ENV_FILE = pathlib.Path("D:/BIR/.env")
@@ -58,8 +59,27 @@ def iso_to_ms(iso: str) -> int:
     return int(dt.timestamp() * 1000)
 
 
+def load_titles() -> dict[str, str]:
+    """host -> one-line description from the harvest metadata (Show HN title)."""
+    try:
+        meta = json.loads((BENCH_DIR / "harvest_meta.json").read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    out: dict[str, str] = {}
+    for url, m in meta.items():
+        host = str(url).split("//", 1)[-1].split("/", 1)[0].lower().removeprefix("www.")
+        title = str(m.get("title", "") if isinstance(m, dict) else m or "").strip()
+        # forum prefixes and markup leftovers do not describe the site itself
+        title = re.sub(r"^Show HN:\s*", "", title)
+        title = title.replace("\u2013", "-").replace("\u2014", "-").replace("<", "").replace(">", "").replace('"', "")
+        if host and title:
+            out[host] = title[:160]
+    return out
+
+
 def collect() -> list[dict]:
     stop = load_stop_hosts()
+    titles = load_titles()
     by_host: dict[str, dict] = {}
     for path in sorted(BENCH_DIR.glob("*.json")):
         if path.name in ("summary.json", "harvest_meta.json"):
@@ -87,6 +107,8 @@ def collect() -> list[dict]:
             "ts": ts,
             "id": d.get("id", ""),
         }
+        if host in titles:
+            entry["desc"] = titles[host]
         prev = by_host.get(host)
         if not prev or entry["ts"] > prev["ts"]:
             by_host[host] = entry

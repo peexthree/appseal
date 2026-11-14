@@ -73,9 +73,10 @@ const CAT_TITLES: Record<CategoryId, { ru: string; en: string }> = {
   headers: { ru: "Заголовки и TLS", en: "Headers & TLS" },
   admin: { ru: "Админки и доступ", en: "Admin & Auth" },
   liveness: { ru: "Живость и контент", en: "Liveness & Content" },
+  trust: { ru: "ИИ-доверие и гигиена", en: "AI Trust & Hygiene" },
 };
 
-const CAT_ORDER: CategoryId[] = ["secrets", "headers", "admin", "liveness"];
+const CAT_ORDER: CategoryId[] = ["secrets", "headers", "admin", "liveness", "trust"];
 
 function sevColor(s: string) {
   return s === "critical" ? C.crit : s === "high" ? C.high : s === "medium" ? C.med : C.low;
@@ -234,9 +235,9 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
 
   y = heroY - 20;
 
-  /* ---------------- 4 category summary cards ---------------- */
+  /* ---------------- 5 category summary cards ---------------- */
   const gap = 8;
-  const cardW = (CW - gap * 3) / 4;
+  const cardW = (CW - gap * 4) / 5;
   const cardH = 40;
 
   for (let i = 0; i < CAT_ORDER.length; i++) {

@@ -131,7 +131,7 @@ export default function StatsPage() {
                 ))}
               </div>
               <p className="mt-3 text-xs text-slate-600">
-                Шкала A+-E: класс A требуют 90+ баллов из 100 по 97 проверкам.
+                Шкала A+-E: класс A требуют 90+ баллов из 100 по 121 проверке.
               </p>
             </section>
 
@@ -182,7 +182,7 @@ export default function StatsPage() {
 
             <p className="mt-10 text-xs leading-relaxed text-slate-600">
               Прогон от {dateFmt.format(new Date(s.generatedAt))}. Сканер ходит с пометкой
-              AppSeal-Scanner, делает ~100 вежливых GET-запросов на сайт и ничего не эксплуатирует;
+              AppSeal-Scanner, делает ~130 вежливых GET-запросов на сайт и ничего не эксплуатирует;
               правила для ботов - на странице <Link href="/bot" className="underline hover:text-slate-400">/bot</Link>.
               Владелец домена может запросить исключение из любых публикаций: linedrop@yandex.ru (3 рабочих дня).
             </p>

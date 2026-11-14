@@ -233,6 +233,7 @@ export async function GET() {
         score: fin.score,
         ts: Date.now(),
         id,
+        desc: fin.pageDesc ?? fin.pageTitle,
       });
     }
     if (fin) {
