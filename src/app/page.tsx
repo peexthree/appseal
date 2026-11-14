@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { ScannerPage } from "@/components/scanner-page";
 import { JsonLd } from "@/components/json-ld";
 
-// ISR rather than build-time static: Vercel stamps prerendered pages with
-// `access-control-allow-origin: *`, which our own CORS check then flags on
-// the homepage (-8 -> grade A). ISR pages (same serving path as /report and
-// /registry) are served without that header. 1h revalidation keeps the
-// function-origin render cost negligible.
-export const revalidate = 3600;
+// ISR with a short revalidate, not build-time static: Vercel's static layer
+// stamps every prerendered file with `access-control-allow-origin: *`, and
+// the seeded ISR entry inherits that header until the first revalidation
+// replaces it with a function render (fresh renders have no such header).
+// Our own CORS check probes the homepage, so a long-lived seed would keep
+// the site at grade A (-8). 2 min keeps the seeded window negligible.
+export const revalidate = 120;
 
 // report links moved to /report/<id> with ISR - see next.config redirects
 export const metadata: Metadata = {
