@@ -626,10 +626,11 @@ export async function checkTrustPerf(ctx: Ctx): Promise<CheckResult[]> {
     evidence: [`html size: ${Math.round(bytes / 1024)} KB`],
   } : undefined, Date.now() - t0));
 
-  // 2. render-blocking scripts in <head> (type=module is deferred by spec)
+  // 2. render-blocking scripts in <head> (type=module is deferred by spec,
+  //    noModule scripts never run in modern browsers - neither blocks)
   const head = body.match(/<head[\s\S]*?<\/head>/i)?.[0] ?? body;
   const blocking = (head.match(/<script\b[^>]*\bsrc=["'][^"']+["'][^>]*>/gi) ?? [])
-    .filter((tag) => !/\basync\b|\bdefer\b|type=["']module["']/i.test(tag));
+    .filter((tag) => !/\basync\b|\bdefer\b|type=["']module["']|\bnomodule\b/i.test(tag));
   out.push(done("perf_render_blocking", blocking.length ? "warn" : "pass", "low", blocking.length ? 1 : 0, {
     ru: blocking.length ? `Блокирующие скрипты в <head>: ${blocking.length}` : "Блокирующих скриптов в <head> нет",
     en: blocking.length ? `Render-blocking scripts in <head>: ${blocking.length}` : "No render-blocking scripts in <head>",

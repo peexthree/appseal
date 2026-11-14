@@ -643,6 +643,7 @@ export function ScannerPage({
               <label className="mt-3.5 flex items-start gap-2.5 text-left cursor-pointer select-none px-1">
                 <input
                   type="checkbox"
+                  aria-label={lang === "ru" ? "Подтверждение прав на проверку сайта" : "Ownership confirmation"}
                   checked={consent}
                   onChange={(e) => setConsent(e.target.checked)}
                   className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-[#111827] text-sky-400 accent-sky-400 focus:ring-sky-400"
@@ -927,6 +928,11 @@ export function ScannerPage({
                                 : { color: "#64748b", borderColor: "rgba(30,41,59,0.8)" }
                             }
                             aria-pressed={active}
+                            aria-label={
+                              lang === "ru"
+                                ? `Показать описание класса ${g}`
+                                : `Show the description of grade ${g}`
+                            }
                           >
                             {g}
                           </button>
