@@ -182,7 +182,7 @@ export const DICT = {
   lpPay: { ru: "Оплатить", en: "Pay" },
   lpNote: {
     ru: "Оплата картой или СБП через ЮKassa. Email нужен только для чека - он уходит напрямую в ЮKassa и у нас не хранится.",
-    en: "Card or SBP payment via YooKassa. The email is only needed for the receipt - it goes straight to YooKassa and is never stored on our side.",
+    en: "Pay $6 with any Visa/Mastercard via Lava. The email is only needed for the receipt - it goes straight to the payment provider and is never stored on our side.",
   },
   lpErr: { ru: "Не удалось создать платёж: ", en: "Could not create the payment: " },
   lpDomainBad: { ru: "Укажите домен в формате myapp.com", en: "Enter a domain like myapp.com" },

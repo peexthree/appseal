@@ -100,6 +100,20 @@ export async function getPaymentIdByNonce(nonce: string): Promise<string | null>
   return id ?? null;
 }
 
+/** Lava.top invoice -> host binding: the webhook and the return-page poll both
+ *  use it to activate the pass (Lava invoices carry no metadata, so we store
+ *  the host at invoice creation time). */
+export async function setLavaInvoiceHost(invoiceId: string, host: string): Promise<void> {
+  if (!/^[a-zA-Z0-9-]{8,80}$/.test(invoiceId)) return;
+  await redisCommand(["SET", `lpass:lava-inv:${invoiceId}`, host, "EX", String(PASS_TTL_SECONDS)]);
+}
+
+export async function getLavaInvoiceHost(invoiceId: string): Promise<string | null> {
+  if (!/^[a-zA-Z0-9-]{8,80}$/.test(invoiceId)) return null;
+  const host = await redisCommand<string>(["GET", `lpass:lava-inv:${invoiceId}`]);
+  return host ?? null;
+}
+
 /** Is there a live pass covering this host right now? */
 export async function hasActivePass(host: string): Promise<boolean> {
   const raw = await redisCommand<string>(["GET", passHostKey(host)]);
