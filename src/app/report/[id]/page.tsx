@@ -10,6 +10,14 @@ import type { ScanResult } from "@/lib/scanner/types";
 // invisible - a scan is immutable once done.
 export const revalidate = 60;
 
+// Next 16: dynamic segments render on demand with no caching unless opted
+// in; an empty generateStaticParams turns unknown ids into render-once,
+// edge-cached ISR pages (blocking fallback)
+export const dynamicParams = true;
+export async function generateStaticParams() {
+  return [];
+}
+
 export async function generateMetadata({
   params,
 }: {
