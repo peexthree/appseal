@@ -1,32 +1,29 @@
 import { NextResponse } from "next/server";
-import { runScan, normalizeInputUrl } from "@/lib/scanner";
+import { normalizeInputUrl } from "@/lib/scanner/url";
 import { assertPublicTarget } from "@/lib/scanner/guard";
-import {
-  newId,
-  newReportKey,
-  saveScan,
-  serializeScan,
-  pushRegistryEntry,
-  redisConfig,
-  redis,
-} from "@/lib/scanner/store";
-import type { Lang, ScanResult } from "@/lib/scanner/types";
+import { redisConfig, redis } from "@/lib/scanner/store";
 
 export const runtime = "nodejs";
-// one scan takes 15-40s; the tick does a full scan inline
+// the tick itself only submits the target; the scan runs inside the scan
+// route's waitUntil window (maxDuration 60 there)
 export const maxDuration = 60;
 
 /**
- * Living-registry heartbeat: each call scans ONE freshly harvested AI-built
- * app and feeds the result into the public registry (any grade), so the
- * catalog visibly updates around the clock with new hosts - not rescans of
- * the old panel. No user interaction, no local machine involved.
+ * Living-registry heartbeat: each call submits ONE freshly harvested AI-built
+ * app to the scan route and lets it feed the public registry (any grade), so
+ * the catalog visibly updates around the clock with new hosts - not rescans
+ * of the old panel. No user interaction, no local machine involved.
+ *
+ * The tick deliberately does NOT run the scanner inline: the engine (with
+ * its ~80 MB browser bundle) lives only in /api/scan, so every deployment
+ * ships it once instead of three times (Vercel Functions Storage quota).
  *
  * Flow per tick:
  *  1. rate-lock (public endpoint - a stranger calling it just gets a no-op);
  *  2. if the queue is empty, harvest fresh Show HN / GitHub targets (hourly
  *     self-throttled), dedupe hosts against the known set, enqueue newcomers;
- *  3. pop one URL, run the scanner inline, publish the result to the registry;
+ *  3. pop one URL, submit it to /api/scan with the admin key (quota bypass);
+ *     the scan route publishes the finished scan to the registry itself;
  *  4. bump the 24h counter shown on /registry.
  *
  * Driven by a free scheduler hitting this URL every 30 minutes
@@ -167,6 +164,28 @@ async function harvestFresh(cfg: NonNullable<ReturnType<typeof redisConfig>>): P
   return added;
 }
 
+/**
+ * Submit a target to the scan route over HTTP. The scan route owns the
+ * browser engine bundle; machine-triggered scans bypass the free quota via
+ * the admin key. Literal URL keeps the SSRF surface explicit; the vercel.app
+ * origin loops back without the Cloudflare proxy in the path.
+ */
+async function submitScan(url: string): Promise<{ id: string; rkey: string }> {
+  const res = await fetch("https://appseal.vercel.app/api/scan", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "user-agent": "AppSeal-Tick/0.1 (+https://appseal.online/bot)",
+    },
+    body: JSON.stringify({ url, lang: "ru", adminKey: process.env.ADMIN_SCAN_KEY ?? "" }),
+  });
+  const d = (await res.json().catch(() => ({}))) as { id?: string; rkey?: string; error?: string };
+  if (!res.ok || !d.id || !d.rkey) {
+    throw new Error(d.error ?? `scan submit failed: ${res.status}`);
+  }
+  return { id: d.id, rkey: d.rkey };
+}
+
 export async function GET() {
   const cfg = redisConfig();
   if (!cfg) {
@@ -199,53 +218,15 @@ export async function GET() {
 
     const norm = normalizeInputUrl(url);
     await assertPublicTarget(new URL(norm.url).hostname);
-    const host = new URL(norm.url).hostname;
-    const id = newId();
-    const scan: ScanResult = {
-      id,
-      inputUrl: url,
-      targetUrl: norm.url,
-      host,
-      isDemo: false,
-      lang: "ru" as Lang,
-      startedAt: new Date().toISOString(),
-      finishedAt: "",
-      status: "running",
-      progress: 2,
-      stage: { ru: "Автоскан…", en: "Auto scan…" },
-      score: 0,
-      grade: "E",
-      results: [],
-      rkey: newReportKey(),
-    };
-    await saveScan(id, serializeScan(scan));
-    const fin = await runScan(scan);
 
-    // runScan returns the outcome on success or null when the scan failed
-    // (the error is already recorded in the store)
-    const status = fin ? "done" : "error";
-    const grade = fin?.grade ?? "E";
-    const finalScore = fin?.score ?? 0;
-    if (fin) {
-      await pushRegistryEntry({
-        host: fin.host,
-        grade: fin.grade,
-        score: fin.score,
-        ts: Date.now(),
-        id,
-        desc: fin.pageDesc ?? fin.pageTitle,
-      });
-    }
-    if (fin) {
-      await redis(cfg, ["INCR", COUNTER]);
-      await redis(cfg, ["EXPIRE", COUNTER, "86400", "NX"]);
-    }
+    // the scan route publishes the finished scan to the registry itself
+    const started = await submitScan(norm.url);
+    await redis(cfg, ["INCR", COUNTER]);
+    await redis(cfg, ["EXPIRE", COUNTER, "86400", "NX"]);
 
     return NextResponse.json({
-      host: fin?.host ?? host,
-      grade,
-      score: finalScore,
-      status,
+      scanned: new URL(norm.url).hostname,
+      id: started.id,
       harvested: added,
       queue: Number(await redis(cfg, ["ZCARD", QUEUE])),
     });

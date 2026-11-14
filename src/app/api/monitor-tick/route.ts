@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
-import { runScan, normalizeInputUrl } from "@/lib/scanner";
+import { normalizeInputUrl } from "@/lib/scanner/url";
 import { assertPublicTarget } from "@/lib/scanner/guard";
-import {
-  newId,
-  newReportKey,
-  saveScan,
-  serializeScan,
-  getScan,
-  redisConfig,
-  redis,
-} from "@/lib/scanner/store";
+import { redisConfig, redis } from "@/lib/scanner/store";
 import { hasPassAccess } from "@/lib/passes";
 import {
   WATCH_KEY,
@@ -20,29 +12,76 @@ import {
   type WatchSnapshot,
 } from "@/lib/watch";
 import { sendTelegramAlert } from "@/lib/telegram";
-import type { Lang, ScanResult } from "@/lib/scanner/types";
+import type { ScanResult } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
-// one rescan takes 15-40s
+// submit + poll a full rescan (15-40s) within this window
 export const maxDuration = 60;
 
 const LOCK = "lpass:monitor:lock";
 const MIN_INTERVAL_S = 1500; // tick throttle; the scheduler fires every 30 min
 const SNAP_TTL_S = 11 * 24 * 3600; // outlives the 8-day pass TTL
+const POLL_DEADLINE_MS = 48_000; // leave headroom under maxDuration
+const POLL_INTERVAL_MS = 2500;
 
 /**
  * Launch Pass background monitor (driven by GHA cron every 30 min).
  *
  * Each tick takes the watched host scanned longest ago (ZSET score =
- * last-scan timestamp), rescans it with the same engine, compares with the
+ * last-scan timestamp), rescans it through the scan route, compares with the
  * previous snapshot and sends a Telegram alert when the grade drops, the
  * score falls by 10+ points or the fail count spikes by 3+.
+ *
+ * The tick deliberately does NOT run the scanner inline: the engine (with
+ * its ~80 MB browser bundle) lives only in /api/scan, so every deployment
+ * ships it once instead of three times (Vercel Functions Storage quota).
+ * A rescan published through the scan route also lands in the public
+ * registry - watched hosts honestly refresh in the catalog.
  *
  * - A host whose pass has expired leaves the watchlist (honest degradation);
  * - A scan error rotates the host back without alerting (no false positives
  *   on transient timeouts);
  * - No TELEGRAM_* env vars -> scans still run, alerts are skipped.
  */
+
+/**
+ * Submit a target to the scan route over HTTP (admin key bypasses the free
+ * quota for machine-triggered scans) and poll until it finishes. Literal URL
+ * prefix keeps the SSRF surface explicit; the vercel.app origin loops back
+ * without the Cloudflare proxy in the path.
+ */
+async function rescanViaScanRoute(url: string): Promise<ScanResult | null> {
+  const res = await fetch("https://appseal.vercel.app/api/scan", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "user-agent": "AppSeal-Tick/0.1 (+https://appseal.online/bot)",
+    },
+    body: JSON.stringify({ url, lang: "ru", adminKey: process.env.ADMIN_SCAN_KEY ?? "" }),
+  });
+  const d = (await res.json().catch(() => ({}))) as { id?: string; rkey?: string; error?: string };
+  if (!res.ok || !d.id || !d.rkey) {
+    throw new Error(d.error ?? `scan submit failed: ${res.status}`);
+  }
+
+  const deadline = Date.now() + POLL_DEADLINE_MS;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+    try {
+      const pres = await fetch("https://appseal.vercel.app/api/scan/" + d.id + "?key=" + d.rkey, {
+        cache: "no-store",
+        headers: { "user-agent": "AppSeal-Tick/0.1 (+https://appseal.online/bot)" },
+      });
+      if (!pres.ok) continue;
+      const rec = (await pres.json()) as ScanResult;
+      if (rec.status === "done" || rec.status === "error") return rec;
+    } catch {
+      /* transient hiccup - keep polling until the deadline */
+    }
+  }
+  return null; // did not finish in time - caller reports an honest error
+}
+
 export async function GET() {
   const cfg = redisConfig();
   if (!cfg) {
@@ -79,41 +118,21 @@ export async function GET() {
     const prevRaw = (await redis(cfg, ["GET", LAST_KEY_PREFIX + host])) as string | null;
     const prev: WatchSnapshot | null = prevRaw ? (JSON.parse(prevRaw) as WatchSnapshot) : null;
 
-    // rescan inline: same engine as the user-facing scan
+    // rescan through the scan route: same engine as the user-facing scan
     const inputUrl = `https://${host}`;
     const norm = normalizeInputUrl(inputUrl);
     await assertPublicTarget(new URL(norm.url).hostname);
-    const scanId = newId();
-    const scan: ScanResult = {
-      id: scanId,
-      inputUrl,
-      targetUrl: norm.url,
-      host: new URL(norm.url).hostname,
-      isDemo: false,
-      lang: "ru" as Lang,
-      startedAt: new Date().toISOString(),
-      finishedAt: "",
-      status: "running",
-      progress: 2,
-      stage: { ru: "Фоновый перескан…", en: "Background rescan…" },
-      score: 0,
-      grade: "E",
-      results: [],
-      rkey: newReportKey(),
-    };
-    await saveScan(scanId, serializeScan(scan));
-    const fin = await runScan(scan);
+    const rec = await rescanViaScanRoute(norm.url);
 
     // rotate regardless of the outcome so a dead site cannot hog the queue
     await redis(cfg, ["ZADD", WATCH_KEY, String(now), host]);
 
-    if (!fin) {
+    if (!rec || rec.status !== "done") {
       return NextResponse.json({ host, error: true });
     }
 
-    const saved = await getScan(scanId);
-    const fails = (saved?.results ?? []).filter((r) => r.status === "fail").length;
-    const cur: WatchSnapshot = { grade: fin.grade, score: fin.score, fails };
+    const fails = (rec.results ?? []).filter((r) => r.status === "fail").length;
+    const cur: WatchSnapshot = { grade: rec.grade, score: rec.score, fails };
     await redis(cfg, ["SET", LAST_KEY_PREFIX + host, JSON.stringify(cur), "EX", String(SNAP_TTL_S)]);
 
     const drop = detectDegradation(prev, cur);

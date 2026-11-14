@@ -37,10 +37,10 @@ const nextConfig: NextConfig = {
     "/api/report": ["./assets/fonts/**"],
     // @sparticuz/chromium resolves its binary via __dirname and playwright-core
     // loads browsers.json at runtime - output tracing cannot see either, so
-    // include both explicitly for the scanner
+    // include both explicitly for the scanner. Only /api/scan owns the engine:
+    // the ticks submit their targets over HTTP so deployments do not ship
+    // three copies of the ~80 MB bundle (Vercel Functions Storage quota)
     "/api/scan": ["./node_modules/@sparticuz/chromium/**", "./node_modules/playwright-core/**"],
-    // the auto-tick runs the same scanner engine and needs the same packages
-    "/api/pipeline-tick": ["./node_modules/@sparticuz/chromium/**", "./node_modules/playwright-core/**"],
   },
   // practice what we scan: AppMOT itself serves the protective headers
   async headers() {
