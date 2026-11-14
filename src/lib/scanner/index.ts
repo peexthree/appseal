@@ -63,7 +63,7 @@ import {
   checkTrustPerf,
 } from "./checks/trust";
 
-const DEMO_HOST = "http://127.0.0.1:3210";
+export { normalizeInputUrl } from "./url";
 
 interface Progress {
   stage: Localized;
@@ -72,17 +72,6 @@ interface Progress {
 
 async function setProgress(id: string, p: Progress) {
   await updateScan(id, { progress: p.progress, stage: p.stage });
-}
-
-export function normalizeInputUrl(input: string): { url: string; isDemo: boolean } {
-  const t = input.trim();
-  if (/^demo:\/\//i.test(t) || /^@demo$/i.test(t)) {
-    return { url: DEMO_HOST, isDemo: true };
-  }
-  let u = t;
-  if (!/^https?:\/\//i.test(u)) u = "https://" + u;
-  const parsed = new URL(u);
-  return { url: parsed.toString(), isDemo: false };
 }
 
 /**
