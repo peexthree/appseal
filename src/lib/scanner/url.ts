@@ -1,4 +1,4 @@
-const DEMO_HOST = "http://127.0.0.1:3210";
+export const DEMO_HOST = "http://127.0.0.1:3210";
 
 /**
  * Normalize a user-supplied target: default scheme, demo:// pass-through.

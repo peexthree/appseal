@@ -54,7 +54,7 @@ function cidrMatch(ip: number, base: string, bits: number): boolean {
   return (ip & mask) === (baseNum & mask);
 }
 
-function isForbiddenIp(ip: string): boolean {
+export function isForbiddenIp(ip: string): boolean {
   // IPv4-mapped IPv6 (::ffff:a.b.c.d)
   const mapped = ip.toLowerCase().match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
   const v4 = mapped ? mapped[1] : ip;
@@ -105,4 +105,24 @@ export async function assertPublicTarget(hostname: string): Promise<void> {
       throw new Error("target resolves to a non-public address");
     }
   }
+}
+
+/**
+ * Fetch-level guard: validates an absolute http(s) URL immediately before a
+ * request. Literal IPs are checked directly; hostnames are resolved and every
+ * resolved record must be public. safeFetch re-runs this per redirect hop, so
+ * a public site cannot bounce a probe to a private address (DNS rebinding /
+ * redirect-to-localhost attacks).
+ */
+export async function assertPublicFetchTarget(url: string): Promise<void> {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    throw new Error("invalid URL");
+  }
+  if (u.protocol !== "http:" && u.protocol !== "https:") {
+    throw new Error("only http/https targets are allowed");
+  }
+  await assertPublicTarget(u.hostname);
 }
