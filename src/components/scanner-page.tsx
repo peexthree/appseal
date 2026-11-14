@@ -345,8 +345,9 @@ export function ScannerPage({
       const res = await fetch("/api/purchase", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        // email goes transit-only: YooKassa uses it for the receipt, we never store it
-        body: JSON.stringify({ host, email, nonce, lang }),
+        // email goes transit-only: the provider uses it for the receipt, we
+        // never store it; EN buyers pay in USD via Lava, RU in RUB via YooKassa
+        body: JSON.stringify({ host, email, nonce, lang, provider: lang === "en" ? "lava" : "yk" }),
       });
       const d = (await res.json().catch(() => ({}))) as { confirmationUrl?: string; error?: string };
       if (!res.ok || !d.confirmationUrl) {
