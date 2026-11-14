@@ -63,6 +63,11 @@ async function rescanViaScanRoute(url: string): Promise<ScanResult | null> {
   if (!res.ok || !d.id || !d.rkey) {
     throw new Error(d.error ?? `scan submit failed: ${res.status}`);
   }
+  // both values are server-generated (id = uuid-like, rkey = 32 hex); the
+  // format check keeps malformed responses from ever reaching the poll URL
+  if (!/^[a-z0-9-]{6,40}$/i.test(d.id) || !/^[a-f0-9]{32}$/.test(d.rkey)) {
+    throw new Error("scan submit returned malformed id/rkey");
+  }
 
   const deadline = Date.now() + POLL_DEADLINE_MS;
   while (Date.now() < deadline) {
