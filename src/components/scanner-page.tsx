@@ -88,12 +88,10 @@ const CHECK_CATEGORIES = [
   },
 ];
 
-/** one-click demo targets - real past scans, the E one is the deliberately vulnerable fixture.
- *  appseal.online: A·88 after the v0.5 checks (SPF/DMARC records pending - adding
- *  them and re-scanning brings A+ back; update this chip after that rescan). */
+/** one-click demo targets - real past scans, the E one is the deliberately vulnerable fixture */
 const DEMO_CHIPS: { target: string; grade: Grade; score: number }[] = [
   { target: "akulenok-tmz.ru", grade: "A", score: 97 },
-  { target: "appseal.online", grade: "A", score: 88 },
+  { target: "appseal.online", grade: "A+", score: 97 },
   { target: "demo://app", grade: "E", score: 0 },
 ];
 
