@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ShieldCheck } from "@/components/icons/appseal-icons";
-import { getRegistryEntries } from "@/lib/scanner/store";
+import { getRegistryEntries, redisConfig, redis } from "@/lib/scanner/store";
 import { dedupeRegistry, isDofollow, type RegistryEntry } from "@/lib/registry";
 import { getTrophyPath, GRADE_META } from "@/lib/scanner/grade";
 
@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "AppSeal - реестр просканированных приложений",
   description:
     "Публичный каталог vibe-приложений, прошедших техосмотр AppSeal: шестиуровневая шкала A+-E, дата скана. Классы A+ и A получают индексируемую ссылку из реестра.",
+  alternates: { canonical: "/registry" },
 };
 
 const GRADE_STYLES: Record<string, string> = {
@@ -39,6 +40,17 @@ export default async function RegistryPage() {
   const entries = dedupeRegistry(raw)
     .filter((e) => e.grade === "A+" || e.grade === "A")
     .slice(0, 120);
+
+  // living-registry heartbeat: how many auto scans ran in the last 24h
+  let tickCount = 0;
+  const tcfg = redisConfig();
+  if (tcfg) {
+    try {
+      tickCount = Number(await redis(tcfg, ["GET", "appmot:pipeline:scans24h"])) || 0;
+    } catch {
+      /* counter is cosmetic */
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
@@ -90,6 +102,7 @@ export default async function RegistryPage() {
           <>
             <p className="mt-6 text-sm text-slate-500">
               {entries.length} приложени{entries.length === 1 ? "е" : "я"} · только классы A/A+ · сканы хранятся 7 дней
+              {tickCount > 0 && <> · <span className="text-emerald-400">за 24 часа авто-проверок: {tickCount}</span></>}
             </p>
             <ul className="mt-6 divide-y divide-slate-800/70 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
               {entries.map((e: RegistryEntry) => {

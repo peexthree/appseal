@@ -1,0 +1,19 @@
+name: pipeline tick
+
+# Living-registry heartbeat: hit the production tick endpoint every 30 min.
+# The endpoint is public but rate-locked (one auto scan per 20 min), so stray
+# calls are harmless no-ops and no secrets are needed here.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: hit the tick endpoint
+        run: curl -fsS -m 70 https://appseal.online/api/pipeline-tick || true
