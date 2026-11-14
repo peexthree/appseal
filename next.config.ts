@@ -8,16 +8,18 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   // 'unsafe-inline' in script/style: Next.js ships inline bootstrap scripts and
-  // framer-motion/toaster write inline styles; everything else is locked to self
+  // framer-motion/toaster write inline styles; mc.yandex.ru hosts the Metrica
+  // counter (script/pixel/XHR/frames); everything else is locked to self
   {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
+      "script-src 'self' 'unsafe-inline' https://mc.yandex.ru",
+      "style-src 'self' 'unsafe-inline' https://mc.yandex.ru",
+      "img-src 'self' data: blob: https://mc.yandex.ru",
       "font-src 'self' data:",
-      "connect-src 'self'",
+      "connect-src 'self' https://mc.yandex.ru",
+      "frame-src https://mc.yandex.ru",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
