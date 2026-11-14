@@ -76,4 +76,26 @@ describe("telegram bot purchase flow", () => {
     assert.equal(step.state.stage, "idle");
     assert.equal(step.reply, handleBotInput({ stage: "idle" }, "любой текст").reply);
   });
+
+  it("deep link /start ru-<host> pre-fills host and provider, straight to email step", () => {
+    const step = handleBotInput({ stage: "idle" }, "/start ru-myapp_vercel_app");
+    assert.equal(step.state.stage, "await_email");
+    assert.equal(step.state.provider, "yk");
+    assert.equal(step.state.host, "myapp.vercel.app");
+    assert.match(step.reply, /myapp\.vercel\.app/);
+    assert.equal(step.intent.action, "reply");
+  });
+
+  it("deep link /start en-<host> presets the lava provider", () => {
+    const step = handleBotInput({ stage: "idle" }, "/start en-my_site_com");
+    assert.equal(step.state.provider, "lava");
+    assert.equal(step.state.host, "my.site.com");
+    assert.equal(step.state.stage, "await_email");
+  });
+
+  it("bad deep-link param falls back to the greeting", () => {
+    const bad = handleBotInput({ stage: "idle" }, "/start ru-not!a!domain");
+    assert.equal(bad.state.stage, "idle");
+    assert.equal(bad.reply, handleBotInput({ stage: "idle" }, "/start").reply);
+  });
 });
