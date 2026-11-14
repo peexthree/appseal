@@ -3,10 +3,15 @@
  * - hard timeouts per request
  * - body size limit
  * - never throws (returns error object instead)
+ * - SSRF: every hop (entry URL + each redirect target) is resolved and
+ *   range-checked immediately before its own request
  */
+import { assertPublicFetchTarget } from "./guard.ts";
+import { DEMO_HOST } from "./url.ts";
 
 const MAX_BODY = 600 * 1024; // 600 KB per response
 const DEFAULT_TIMEOUT = 7000;
+const MAX_REDIRECTS = 5;
 
 /** Read at most maxBytes from the response, aborting the stream afterwards */
 async function readCapped(
@@ -58,6 +63,54 @@ export interface FetchOutcome {
   durationMs: number;
 }
 
+/** Read the final response of a safeFetch chain into the outcome object */
+async function readResponse(
+  res: Response,
+  finalUrl: string,
+  startedAt: number,
+  skipBody: boolean,
+  maxBody: number,
+): Promise<FetchOutcome> {
+  let body = "";
+  let bodyBytes = 0;
+  if (!skipBody) {
+    const clen = parseInt(res.headers.get("content-length") ?? "0", 10);
+    const isTextual = /^(text\/|application\/(json|javascript|xhtml|xml))/.test(
+      res.headers.get("content-type") ?? "",
+    );
+    // never download more than maxBody bytes
+    const capped = await readCapped(res, maxBody);
+    bodyBytes = capped.total; // actual bytes seen (or content-length if larger known)
+    if (clen > bodyBytes) bodyBytes = clen;
+    if (isTextual) {
+      body = new TextDecoder("utf-8", { fatal: false }).decode(capped.chunks.subarray(0, maxBody));
+    } else if (bodyBytes > 0) {
+      body = "BIN:" + bodyBytes;
+    }
+  }
+  const headers: Record<string, string> = {};
+  res.headers.forEach((v, k) => {
+    const key = k.toLowerCase();
+    // undici yields every Set-Cookie separately; join so none are lost
+    if (key === "set-cookie") {
+      headers[key] = headers[key] ? headers[key] + "\n" + v : v;
+    } else {
+      headers[key] = v;
+    }
+  });
+  return {
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    headers,
+    body,
+    bodyBytes,
+    url: res.url || finalUrl,
+    contentType: res.headers.get("content-type") ?? "",
+    durationMs: Date.now() - startedAt,
+  };
+}
+
 export async function safeFetch(
   url: string,
   opts: {
@@ -72,55 +125,48 @@ export async function safeFetch(
   const maxBody = opts.maxBody ?? MAX_BODY;
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  const baseHeaders = {
+    "user-agent": "Mozilla/5.0 (compatible; AppSeal-Scanner/0.3; +https://appseal.online/bot)",
+    accept: "*/*",
+    ...(opts.headers ?? {}),
+  };
   try {
-    const res = await fetch(url, {
-      method: opts.method ?? "GET",
-      redirect: "follow",
-      signal: ctrl.signal,
-      headers: {
-        "user-agent": "Mozilla/5.0 (compatible; AppSeal-Scanner/0.3; +https://appseal.online/bot)",
-        accept: "*/*",
-        ...(opts.headers ?? {}),
-      },
-    });
-    let body = "";
-    let bodyBytes = 0;
-    if (opts.method !== "HEAD") {
-      const clen = parseInt(res.headers.get("content-length") ?? "0", 10);
-      const isTextual = /^(text\/|application\/(json|javascript|xhtml|xml))/.test(
-        res.headers.get("content-type") ?? "",
-      );
-      // never download more than maxBody bytes
-      const capped = await readCapped(res, maxBody);
-      bodyBytes = capped.total; // actual bytes seen (or content-length if larger known)
-      if (clen > bodyBytes) bodyBytes = clen;
-      if (isTextual) {
-        body = new TextDecoder("utf-8", { fatal: false }).decode(capped.chunks.subarray(0, maxBody));
-      } else if (bodyBytes > 0) {
-        body = "BIN:" + bodyBytes;
+    // redirects are followed manually so every hop passes the fetch-level
+    // guard; a public site must not bounce probes to private addresses
+    let current = url;
+    let method = opts.method ?? "GET";
+    let res: Response;
+    for (let hop = 0; ; hop += 1) {
+      // the demo fixture is first-party and pinned to DEMO_HOST
+      if (!current.startsWith(DEMO_HOST)) {
+        await assertPublicFetchTarget(current);
       }
+      res = await fetch(current, {
+        method,
+        redirect: "manual",
+        signal: ctrl.signal,
+        headers: baseHeaders,
+      });
+      if (res.status < 300 || res.status >= 400) break;
+      const loc = res.headers.get("location");
+      try {
+        await res.body?.cancel();
+      } catch {
+        /* ignore */
+      }
+      if (!loc || hop >= MAX_REDIRECTS) break;
+      let next: URL;
+      try {
+        next = new URL(loc, current);
+      } catch {
+        break;
+      }
+      if (next.protocol !== "http:" && next.protocol !== "https:") break;
+      // 301/302/303 switch the re-request to GET; 307/308 keep the method
+      method = res.status === 307 || res.status === 308 ? method : "GET";
+      current = next.toString();
     }
-    const headers: Record<string, string> = {};
-    res.headers.forEach((v, k) => {
-      const key = k.toLowerCase();
-      // undici yields every Set-Cookie separately; join so none are lost
-      if (key === "set-cookie") {
-        headers[key] = headers[key] ? headers[key] + "\n" + v : v;
-      } else {
-        headers[key] = v;
-      }
-    });
-    return {
-      ok: res.ok,
-      status: res.status,
-      statusText: res.statusText,
-      headers,
-      body,
-      bodyBytes,
-      url: res.url || url,
-      contentType: res.headers.get("content-type") ?? "",
-      durationMs: Date.now() - t0,
-    };
+    return await readResponse(res, current, t0, method === "HEAD", maxBody);
   } catch (e) {
     const msg = e instanceof Error ? (e.name === "AbortError" ? "timeout" : e.message) : String(e);
     return {
