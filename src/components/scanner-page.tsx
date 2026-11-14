@@ -84,6 +84,9 @@ const DEMO_CHIPS: { target: string; grade: Grade; score: number }[] = [
 /** the re-scan of the aqua center case (A/97), public verification view */
 const CASE_REPORT_ID = "mwehe0wu-6f339614bd";
 
+/** grade showcase rotation order: the chips render it, the 5s auto-cycle walks it */
+const GRADE_ORDER: Grade[] = ["A+", "A", "B", "C", "D", "E"];
+
 /** ticker under the hero: real engine check names, language-neutral */
 const CHECK_TICKER = [
   "CSP", "HSTS", ".env", ".git", "CORS", "TLS expiry", "cookie flags", "swagger",
@@ -127,6 +130,12 @@ export function ScannerPage({
   const [lang, setLang] = useState<Lang>("ru");
   const [phase, setPhase] = useState<Phase>(initialScan ? "report" : "form");
   const [showGrade, setShowGrade] = useState<Grade>("A+");
+  // auto-showcase: pointer or keyboard focus inside the card pauses the cycle,
+  // a manual pick bumps the seed so the 5s timer restarts from the clicked grade
+  const [hoverHold, setHoverHold] = useState(false);
+  const [focusHold, setFocusHold] = useState(false);
+  const [cycleSeed, setCycleSeed] = useState(0);
+  const cycleHold = hoverHold || focusHold;
   const [caseCopied, setCaseCopied] = useState(false);
   const [url, setUrl] = useState("");
   const [consent, setConsent] = useState(true);
@@ -166,6 +175,15 @@ export function ScannerPage({
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
+
+  // grade showcase walks the ranks on its own every 5s
+  useEffect(() => {
+    if (cycleHold) return;
+    const id = window.setInterval(() => {
+      setShowGrade((cur) => GRADE_ORDER[(GRADE_ORDER.indexOf(cur) + 1) % GRADE_ORDER.length]);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [cycleHold, cycleSeed]);
 
   const toggleFaq = (i: number) =>
     setFaqOpen((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]));
@@ -809,7 +827,13 @@ export function ScannerPage({
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "showcaseHint")}>
           <SectionHead eyebrow={EYEBROWS.grades[lang]} title={t(lang, "showcaseHint")} />
           <Reveal className="mt-8">
-            <div className="appseal-card mx-auto max-w-2xl overflow-hidden rounded-2xl p-5 sm:p-6">
+            <div
+              className="appseal-card mx-auto max-w-2xl overflow-hidden rounded-2xl p-5 sm:p-6"
+              onMouseEnter={() => setHoverHold(true)}
+              onMouseLeave={() => setHoverHold(false)}
+              onFocus={() => setFocusHold(true)}
+              onBlur={() => setFocusHold(false)}
+            >
               <img
                 src="/img/scan-field.png"
                 alt=""
@@ -843,13 +867,16 @@ export function ScannerPage({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap justify-center gap-1.5 sm:justify-start">
-                      {(["A+", "A", "B", "C", "D", "E"] as Grade[]).map((g) => {
+                      {GRADE_ORDER.map((g) => {
                         const m = GRADE_META[g];
                         const active = g === showGrade;
                         return (
                           <button
                             key={g}
-                            onClick={() => setShowGrade(g)}
+                            onClick={() => {
+                              setShowGrade(g);
+                              setCycleSeed((s) => s + 1);
+                            }}
                             className="rounded-lg border px-2.5 py-1 font-display text-sm font-extrabold transition"
                             style={
                               active
