@@ -292,6 +292,9 @@ export async function GET(req: NextRequest) {
     {
       width: 1200,
       height: 630,
+      // per-scan OG images are immutable; cache them at the edge so social
+      // crawler fetches do not burn the Fast Origin Transfer quota
+      headers: { "cache-control": "public, max-age=86400, s-maxage=86400" },
     },
   );
 }

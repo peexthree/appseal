@@ -4,7 +4,10 @@ import { getRegistryEntries, redisConfig, redis } from "@/lib/scanner/store";
 import { dedupeRegistry } from "@/lib/registry";
 import RegistryList from "./registry-list";
 
-export const dynamic = "force-dynamic";
+// ISR: the catalog is a top bot crawl target and a dynamic render on every
+// request burns the Fast Origin Transfer quota; 60s staleness is fine for a
+// catalog fed by periodic scans
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "AppSeal - реестр просканированных приложений",
@@ -103,7 +106,7 @@ export default async function RegistryPage() {
           </div>
           <div className="shrink-0 transition-transform hover:scale-[1.02]">
             <a
-              href="/?report=mweys4fr-0d7b05c638"
+              href="/report/mweys4fr-0d7b05c638"
               target="_blank"
               rel="noopener"
               title="AppSeal Security Verified: Grade A+ (100/100)"

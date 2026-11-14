@@ -297,7 +297,7 @@ export default function LegalPage() {
           </div>
           <div className="shrink-0 transition-transform hover:scale-[1.02]">
             <a
-              href="/?report=mweys4fr-0d7b05c638"
+              href="/report/mweys4fr-0d7b05c638"
               target="_blank"
               rel="noopener"
               title="AppSeal Security Verified: Grade A+ (100/100)"
