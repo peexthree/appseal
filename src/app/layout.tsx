@@ -3,6 +3,7 @@ import { Inter, Manrope, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { YandexMetrika } from "@/components/yandex-metrika";
 
 const inter = Inter({
   variable: "--font-body",
@@ -65,6 +66,7 @@ export default function RootLayout({
         {children}
         <Toaster />
         <Analytics />
+        <YandexMetrika />
       </body>
     </html>
   );

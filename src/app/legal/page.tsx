@@ -125,8 +125,22 @@ export default function LegalPage() {
               <ul className="mt-3 list-inside list-disc space-y-2 pl-1">
                 <li>
                   Регистрация отсутствует, формы для ввода персональных данных не используются.
-                  Сервис не собирает ФИО, адреса электронной почты, телефоны, не использует
-                  cookie-файлы и системы веб-аналитики.
+                  Сервис не собирает ФИО, адреса электронной почты и телефоны.
+                </li>
+                <li>
+                  Веб-аналитика - счётчик Яндекс.Метрики № 114248324 (ООО «ЯНДЕКС»): в целях
+                  статистики посещаемости и улучшения интерфейса обрабатываются обезличенные
+                  данные посещений - cookie-файлы, IP-адрес, параметры визита. Обработка ведётся
+                  Яндексом по{" "}
+                  <a
+                    href="https://yandex.ru/legal/confidential/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sky-400 hover:text-sky-300"
+                  >
+                    его политике
+                  </a>
+                  ; на стороне Сервиса эти данные не хранятся.
                 </li>
                 <li>
                   Исключение - покупка Launch Pass: адрес электронной почты плательщика
@@ -233,7 +247,18 @@ export default function LegalPage() {
                   strictly passive (public GET/HEAD/OPTIONS responses only).
                 </li>
                 <li>
-                  No accounts, no forms, no cookies, no analytics (exception: the buyer&apos;s email
+                  No accounts, no forms. Web analytics: the Yandex.Metrica counter #114248324
+                  (Yandex) processes anonymized visit data (cookies, IP address, visit
+                  parameters) for traffic statistics under{" "}
+                  <a
+                    href="https://yandex.ru/legal/confidential/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sky-400 hover:text-sky-300"
+                  >
+                    Yandex&apos;s own policy
+                  </a>
+                  ; none of it is stored on our side (exception: the buyer&apos;s email
                   during a Launch Pass purchase is processed in transit and handed to the payment
                   provider YooKassa for the receipt - the operator does not store it; only the
                   payment id, pass domain and expiry stay on our side). Only the chosen UI
