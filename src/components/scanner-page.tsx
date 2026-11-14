@@ -383,14 +383,14 @@ export function ScannerPage({
         )}
       </AnimatePresence>
 
-      {/* header: near-transparent black glass bar; on scroll it collapses
-          into a narrow centered pill (~1/5 of the width) with a small logo */}
+      {/* header: fully transparent at rest; once the page scrolls the bar
+          shrinks and slides to the left edge, morphing into a glass pill */}
       <header className="sticky top-0 z-40 w-full">
         <div
-          className={`mx-auto flex items-center justify-between px-4 transition-all duration-500 sm:px-6 ${
+          className={`flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
             scrolled && !menuOpen
-              ? "mt-3 h-12 max-w-[210px] rounded-full border border-white/10 bg-black/85 shadow-[0_10px_36px_-8px_rgba(0,0,0,0.55)] backdrop-blur-2xl"
-              : "h-20 max-w-5xl rounded-none border-b border-white/5 bg-black/60 backdrop-blur-2xl"
+              ? "ml-4 mt-3 h-12 w-[200px] max-w-[200px] rounded-full border border-white/10 bg-black/85 px-4 shadow-[0_10px_36px_-8px_rgba(0,0,0,0.55)] backdrop-blur-2xl md:ml-6 md:w-[168px] md:max-w-[168px]"
+              : "ml-[calc((100%_-_min(100%,64rem))/2)] h-20 w-full max-w-5xl rounded-none border border-transparent bg-transparent px-4 backdrop-blur-none sm:px-6"
           }`}
         >
           <a href="/" className="group flex shrink-0 items-center gap-3" aria-label="AppSeal home">
