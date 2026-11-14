@@ -63,13 +63,25 @@ function RegistryRow({ entry }: { entry: RegistryEntry }) {
       <GradeChip grade={entry.grade} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <a
-            href={`https://${entry.host}`}
-            rel={dofollow ? "noopener" : "nofollow noopener"}
-            className="truncate text-sm font-semibold text-slate-100 transition hover:text-sky-400"
-          >
-            {entry.host}
-          </a>
+          {dofollow ? (
+            <a
+              href={`https://${entry.host}`}
+              rel="noopener"
+              className="truncate text-sm font-semibold text-slate-100 transition hover:text-sky-400"
+            >
+              {entry.host}
+            </a>
+          ) : (
+            /* below A the host is blurred and not linked: registry traffic is
+               the reward for earning the badge, search still matches the name */
+            <span
+              aria-hidden="true"
+              title="Ссылка и описание открыты для классов A и A+"
+              className="truncate select-none blur-[3px] text-sm font-semibold text-slate-100"
+            >
+              {entry.host}
+            </span>
+          )}
           {statusLabel && (
             <span className="hidden text-xs text-slate-500 md:inline">
               · {statusLabel}
