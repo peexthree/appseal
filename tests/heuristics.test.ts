@@ -6,9 +6,11 @@ import {
   looksLikeDocExample,
   maskSecret,
   truncate,
+  extractSiteDesc,
 } from "../src/lib/scanner/fetcher.ts";
 import { isClientRenderShell } from "../src/lib/scanner/fetcher.ts";
 import { buildFixPrompt } from "../src/lib/fix-prompt.ts";
+import { registrableDomain } from "../src/lib/scanner/fetcher.ts";
 import type { ScanResult } from "../src/lib/scanner/types.ts";
 
 describe("shannonEntropy", () => {
@@ -56,6 +58,40 @@ describe("isClientRenderShell", () => {
   it("SSR content -> not CSR", () => {
     const html = `<html><body><div id="root"><p>${"real content ".repeat(20)}</p></div></body></html>`;
     assert.equal(isClientRenderShell(html), false);
+  });
+});
+
+describe("extractSiteDesc (registry description)", () => {
+  it("prefers meta description over og:description and title", () => {
+    const html = `<head>
+      <title>Page title only</title>
+      <meta property="og:description" content="OG descr">
+      <meta name="description" content="Meta descr &amp; more">
+    </head>`;
+    assert.equal(extractSiteDesc(html), "Meta descr & more");
+  });
+  it("falls back to og:description then title", () => {
+    const og = `<head><title>FreshBite - food</title><meta property="og:description" content="Delivery for night owls"></head>`;
+    assert.equal(extractSiteDesc(og), "Delivery for night owls");
+    const t = `<head><title>  FreshBite -   food  </title></head>`;
+    assert.equal(extractSiteDesc(t), "FreshBite - food");
+  });
+  it("caps at 160 chars and strips tags in title", () => {
+    const t = `<title>${"x".repeat(300)}</title>`;
+    assert.equal(extractSiteDesc(t).length, 160);
+  });
+});
+
+describe("registrableDomain (DMARC lookup base)", () => {
+  it("keeps two labels", () => {
+    assert.equal(registrableDomain("appseal.online"), "appseal.online");
+    assert.equal(registrableDomain("www.example.co"), "example.co");
+  });
+  it("keeps three labels for co.uk-style TLDs", () => {
+    assert.equal(registrableDomain("shop.example.co.uk"), "example.co.uk");
+  });
+  it("subdomain yields the registrable part", () => {
+    assert.equal(registrableDomain("blog.example.com"), "example.com");
   });
 });
 

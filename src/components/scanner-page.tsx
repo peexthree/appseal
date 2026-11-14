@@ -8,17 +8,18 @@ import type { Lang, ScanResult, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META } from "@/lib/scanner/types";
 import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
 import { t, list } from "@/lib/i18n";
+import statsData from "@/data/stats-harvest.json";
 import { ReportView } from "@/components/report-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
 import { Stat } from "@/components/stat";
-import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, ArrowRight, Globe, Check, Copy, Send, Menu, X, ChevronDown } from "@/components/icons/appseal-icons";
+import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, Globe, Check, Copy, Send, Menu, X, ChevronDown } from "@/components/icons/appseal-icons";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
-/** exact check counts per category - from the engine, demo scan = 97 total */
+/** exact check counts per category - from the engine, demo scan = 121 total */
 const CHECK_CATEGORIES = [
   {
     icon: <KeyRound className="h-5 w-5" />,
@@ -72,6 +73,19 @@ const CHECK_CATEGORIES = [
       en: "Template phrases and placeholders|\"undefined\" rendered in markup|Broken internal links|Empty title and description",
     },
   },
+  {
+    icon: <Sparkles className="h-5 w-5" />,
+    key: "trust" as const,
+    count: { ru: "24 проверки", en: "24 checks" },
+    extra: {
+      ru: "+ ещё 20 проверок: llms.txt, политика ИИ-краулеров в robots.txt, SPF/DMARC против подделки писем, версия TLS, sitemap.xml, JSON-LD, инвентарь сторонних скриптов, трекеры без политики приватности",
+      en: "+ 20 more checks: llms.txt, AI-crawler policy in robots.txt, SPF/DMARC anti-spoofing, TLS version, sitemap.xml, JSON-LD, third-party script inventory, undisclosed trackers",
+    },
+    items: {
+      ru: "llms.txt и ИИ-краулеры|SPF/DMARC против подделки писем|Политика приватности против трекеров|Блокирующие скрипты и семантика",
+      en: "llms.txt and AI crawlers|SPF/DMARC anti-spoofing|Privacy policy vs trackers|Render-blocking scripts and semantics",
+    },
+  },
 ];
 
 /** one-click demo targets - real past scans, the E one is the deliberately vulnerable fixture */
@@ -91,7 +105,8 @@ const GRADE_ORDER: Grade[] = ["A+", "A", "B", "C", "D", "E"];
 const CHECK_TICKER = [
   "CSP", "HSTS", ".env", ".git", "CORS", "TLS expiry", "cookie flags", "swagger",
   "actuator", "wp-json", "mixed content", "SRI", "soft-404", "X-Frame-Options",
-  "Referrer-Policy", "COOP", "dir listing", "source maps",
+  "Referrer-Policy", "COOP", "dir listing", "source maps", "DMARC", "llms.txt",
+  "SPF", "AI crawlers",
 ];
 
 /** section eyebrow pills, per language */
@@ -106,10 +121,21 @@ const EYEBROWS = {
 };
 
 /** animated stat cards: value, suffix and decimal precision */
+/** «Проблема уже здесь» - реальные цифры нашего массового прогона; stats-harvest.json
+ * обновляет пайплайн (каждые 2 воскресенья), числа на лендинге подтягиваются при деплое */
+const HARVEST_DONE = statsData.panel.done;
+const HARVEST_BELOW_A =
+  HARVEST_DONE > 0
+    ? Math.round(((HARVEST_DONE - statsData.gradeACount) / HARVEST_DONE) * 100)
+    : 0;
+const HARVEST_CSP_MISS = statsData.topFails.find((f) => f.id === "hdr_csp")?.warnPct ?? 0;
+// generatedAt = "+0500"; фиксируем зону генерации, чтобы дата не «уезжала» на день
+const HARVEST_TS = statsData.generatedAt.replace(/([+-]\d{2})(\d{2})$/, "$1:$2");
+
 const STATS: { value: number; suffix: string; decimals: number; label: "stat1" | "stat2" | "stat3" }[] = [
-  { value: 45, suffix: "%", decimals: 0, label: "stat1" },
-  { value: 40, suffix: "%", decimals: 0, label: "stat2" },
-  { value: 1.3, suffix: "M", decimals: 1, label: "stat3" },
+  { value: HARVEST_DONE, suffix: "", decimals: 0, label: "stat1" },
+  { value: HARVEST_BELOW_A, suffix: "%", decimals: 0, label: "stat2" },
+  { value: HARVEST_CSP_MISS, suffix: "%", decimals: 0, label: "stat3" },
 ];
 
 /** decorative registry rows for the CTA banner (static, no API calls) */
@@ -784,6 +810,23 @@ export function ScannerPage({
               </Reveal>
             ))}
           </div>
+          <p className="mt-5 text-center text-xs leading-relaxed text-slate-500">
+            {t(lang, "statsSource").replace(
+              "{date}",
+              new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "en-US", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                timeZone: "Asia/Yekaterinburg",
+              }).format(new Date(HARVEST_TS)),
+            )}{" "}
+            <a
+              href="/stats"
+              className="text-sky-400 underline decoration-slate-700 underline-offset-2 transition hover:text-sky-300"
+            >
+              {t(lang, "navStats")} →
+            </a>
+          </p>
         </section>
 
         {/* how it works */}
@@ -1064,7 +1107,11 @@ export function ScannerPage({
           <SectionHead eyebrow={EYEBROWS.engine[lang]} title={t(lang, "checksTitle")} sub={t(lang, "checksSub")} />
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {CHECK_CATEGORIES.map((c, i) => (
-              <Reveal key={c.key} delay={(i % 2) * 0.08} className="h-full">
+              <Reveal
+                key={c.key}
+                delay={(i % 2) * 0.08}
+                className={`h-full ${c.key === "trust" ? "sm:col-span-2" : ""}`}
+              >
                 <div className="appseal-card h-full rounded-2xl p-6">
                   <div className="flex items-center gap-3">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-400/10 text-sky-400">

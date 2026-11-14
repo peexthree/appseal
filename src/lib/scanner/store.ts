@@ -155,7 +155,8 @@ export interface RegistryEntry {
   score: number;
   ts: number;
   id: string;
-  /** short public description taken from the site's <title>; optional (old entries) */
+  /** short public description: meta description / og:description / <title>;
+   *  optional (old entries have none) */
   desc?: string;
 }
 

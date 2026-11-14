@@ -60,16 +60,20 @@ export const DICT = {
   },
   statsTitle: { ru: "Проблема уже здесь", en: "The problem is already here" },
   stat1: {
-    ru: "сгенерированного ИИ кода не проходит проверку безопасности (Veracode, 2026)",
-    en: "of AI-generated code fails security testing (Veracode, 2026)",
+    ru: "AI-собранных приложений прошли наш внешний техосмотр",
+    en: "AI-built apps went through our external inspection",
   },
   stat2: {
-    ru: "просканированных вайб-кодед приложений сливают чувствительные данные",
-    en: "of scanned vibe-coded apps expose sensitive data",
+    ru: "из них не получают класс A - и это уже живые продакшены",
+    en: "of them score below grade A - and they are already live in production",
   },
   stat3: {
-    ru: "новых приложений вышло в сторах за первое полугодие 2026",
-    en: "new apps hit the stores in H1 2026 alone",
+    ru: "не настраивают CSP - базовый заголовок-щит от XSS",
+    en: "ship without CSP - the basic XSS-shield header",
+  },
+  statsSource: {
+    ru: "Цифры: наш массовый техосмотр от {date}, приложения из Show HN и GitHub. Полная статистика",
+    en: "Source: our mass inspection of {date}, apps from Show HN and GitHub. Full statistics",
   },
   howTitle: { ru: "Как это работает", en: "How it works" },
   caseTitle: { ru: "Первый кейс: сайт аквацентра", en: "First case: an aqua center website" },
@@ -108,10 +112,10 @@ export const DICT = {
     ru: "Только живой адрес приложения. Ничего не нужно устанавливать, доступ к коду не нужен - скан внешний.",
     en: "Just the live URL. Nothing to install, no code access needed - the scan is external.",
   },
-  how2Title: { ru: "Движок гоняет 97 проверок", en: "The engine runs 97 checks" },
+  how2Title: { ru: "Движок гоняет 121 проверку", en: "The engine runs 121 checks" },
   how2Text: {
-    ru: "Секреты и ключи в клиентском коде, открытые .env/.git, дырявые правила Firebase и Supabase, CORS, админки четырёх CMS, бэкапы и дампы, отладочные эндпоинты, source maps, заголовки, TLS, куки, ошибки СУБД в разметке, битые ссылки и заглушки.",
-    en: "Secrets and keys in client code, open .env/.git, misconfigured Firebase and Supabase rules, CORS, admin panels of four CMSes, backups and dumps, debug endpoints, source maps, headers, TLS, cookies, DB errors in markup, broken links and placeholders.",
+    ru: "Секреты и ключи в клиентском коде, открытые .env/.git, дырявые правила Firebase и Supabase, CORS, админки четырёх CMS, бэкапы и дампы, отладочные эндпоинты, source maps, заголовки, TLS, куки, ошибки СУБД в разметке, битые ссылки, заглушки - плюс ИИ-доверие: llms.txt, SPF/DMARC, трекеры без политики приватности.",
+    en: "Secrets and keys in client code, open .env/.git, misconfigured Firebase and Supabase rules, CORS, admin panels of four CMSes, backups and dumps, debug endpoints, source maps, headers, TLS, cookies, DB errors in markup, broken links, placeholders - plus AI trust: llms.txt, SPF/DMARC, trackers without a privacy policy.",
   },
   how3Title: { ru: "Получаете оценку и план", en: "Get a grade and a plan" },
   how3Text: {
@@ -120,8 +124,8 @@ export const DICT = {
   },
   checksTitle: { ru: "Что проверяем", en: "What we check" },
   checksSub: {
-    ru: "Четыре категории, от которых реально болит голова у вайб-кодеров.",
-    en: "Four categories that actually hurt vibe coders.",
+    ru: "Пять категорий, от которых реально болит голова у вайб-кодеров. Четыре из них есть у всех, пятая - только у нас.",
+    en: "Five categories that actually hurt vibe coders. Four of them everyone has, the fifth is ours alone.",
   },
   pricingTitle: { ru: "Тарифы", en: "Pricing" },
   planFreeCta: { ru: "Проверить сайт бесплатно", en: "Scan your site free" },
@@ -206,8 +210,8 @@ export const DICT = {
   navLegal: { ru: "Правила", en: "Legal" },
   faq1Q: { ru: "Это безопасно? Вы не взламываете сайт?", en: "Is this safe? Are you hacking my site?" },
   faq1A: {
-    ru: "Нет. Скан идёт только по публично доступным страницам - ровно то, что видит любой посетитель: заголовки ответов, HTML, общедоступные файлы. Никаких эксплойтов, никакой нагрузки сверх ~100 лёгких запросов за 20-40 секунд.",
-    en: "No. The scan only touches publicly accessible pages - exactly what any visitor sees: response headers, HTML, public files. No exploits, no load beyond ~100 lightweight requests over 20-40 seconds.",
+    ru: "Нет. Скан идёт только по публично доступным страницам - ровно то, что видит любой посетитель: заголовки ответов, HTML, общедоступные файлы и DNS-записи. Никаких эксплойтов, никакой нагрузки сверх ~130 лёгких запросов за 20-40 секунд.",
+    en: "No. The scan only touches publicly accessible pages - exactly what any visitor sees: response headers, HTML, public files, DNS records. No exploits, no load beyond ~130 lightweight requests over 20-40 seconds.",
   },
   faq2Q: { ru: "Зачем приложению бейдж?", en: "Why does my app need a badge?" },
   faq2A: {

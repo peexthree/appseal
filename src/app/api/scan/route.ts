@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
           score: fin.score,
           ts: Date.now(),
           id: scan.id,
-          desc: fin.pageTitle,
+          desc: fin.pageDesc ?? fin.pageTitle,
         });
       }
     });

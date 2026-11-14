@@ -6,7 +6,7 @@ export type Severity = "critical" | "high" | "medium" | "low" | "info";
 
 export type CheckStatus = "pass" | "fail" | "warn" | "info" | "skip";
 
-export type CategoryId = "secrets" | "headers" | "admin" | "liveness";
+export type CategoryId = "secrets" | "headers" | "admin" | "liveness" | "trust";
 
 export interface Localized {
   ru: string;
@@ -86,6 +86,10 @@ export const CATEGORY_META: Record<CategoryId, { title: Localized; icon: string 
   liveness: {
     title: { ru: "Живость и контент", en: "Liveness & content" },
     icon: "pulse",
+  },
+  trust: {
+    title: { ru: "ИИ-доверие и гигиена", en: "AI trust & hygiene" },
+    icon: "spark",
   },
 };
 

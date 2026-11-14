@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   CheckCircle2, XCircle, AlertTriangle, Info, MinusCircle,
-  Download, RotateCcw, Copy, Check, ChevronDown, KeyRound, ShieldHeaders, Lock, Activity,
+  Download, RotateCcw, Copy, Check, ChevronDown, KeyRound, ShieldHeaders, Lock, Activity, Sparkles,
 } from "@/components/icons/appseal-icons";
 
 const CAT_ICONS: Record<CategoryId, React.ReactNode> = {
@@ -23,6 +23,7 @@ const CAT_ICONS: Record<CategoryId, React.ReactNode> = {
   headers: <ShieldHeaders className="h-4 w-4" />,
   admin: <Lock className="h-4 w-4" />,
   liveness: <Activity className="h-4 w-4" />,
+  trust: <Sparkles className="h-4 w-4" />,
 };
 
 function StatusIcon({ s }: { s: CheckResult["status"] }) {

@@ -25,6 +25,7 @@ interface IngestEntry {
   score?: unknown;
   ts?: unknown;
   id?: unknown;
+  desc?: unknown;
 }
 
 export async function POST(req: NextRequest) {
@@ -60,6 +61,11 @@ export async function POST(req: NextRequest) {
     const score = typeof e.score === "number" ? e.score : NaN;
     const ts = typeof e.ts === "number" ? e.ts : NaN;
     const id = typeof e.id === "string" ? e.id : "";
+    // optional one-line site description: plain text only, whitespace collapsed
+    const desc =
+      typeof e.desc === "string"
+        ? e.desc.replace(/\s+/g, " ").replace(/[<>"]/g, "").trim().slice(0, 160)
+        : "";
 
     // one entry per host per batch; window covers a long run, blocks garbage
     const ok =
@@ -78,7 +84,7 @@ export async function POST(req: NextRequest) {
       continue;
     }
     seenHosts.add(host);
-    await pushRegistryEntry({ host, grade, score, ts, id });
+    await pushRegistryEntry({ host, grade, score, ts, id, desc: desc || undefined });
     accepted += 1;
   }
 
