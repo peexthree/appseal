@@ -82,6 +82,18 @@ export const DICT = {
   },
   passGateCta: { ru: "Смотреть Launch Pass", en: "See Launch Pass" },
   passGatePdf: { ru: "PDF - в Launch Pass", en: "PDF - Launch Pass" },
+  passPreviewLabel: { ru: "Так выглядит бейдж твоего сайта:", en: "Here is how your site badge looks:" },
+  fixToastTitle: {
+    ru: "Исправил ошибки в Cursor/Lovable? Запусти перепроверку - бесплатный скан покажет новый класс, а заодно откроет и бейдж.",
+    en: "Fixed it in Cursor/Lovable? Run a re-scan - the free scan shows the new grade and unlocks the badge too.",
+  },
+  fixToastCta: { ru: "Перепроверить бесплатно", en: "Re-scan for free" },
+  ciTitle: { ru: "CI/CD - гейт грейда в GitHub Actions", en: "CI/CD - grade gate in GitHub Actions" },
+  ciCopy: {
+    ru: "Готовый workflow: скан после каждого пуша, сборка падает, если класс ниже B. Сохрани как .github/workflows/appseal.yml; в Secrets репозитория добавь APPSEAL_TARGET_URL (обязательно) и APPSEAL_ADMIN_KEY (опционально - снимает дневную квоту).",
+    en: "Ready-to-paste workflow: scans on every push and fails the build when the grade drops below B. Save as .github/workflows/appseal.yml; add APPSEAL_TARGET_URL (required) and APPSEAL_ADMIN_KEY (optional - lifts the daily quota) to the repo secrets.",
+  },
+  ciBtn: { ru: "Скопировать workflow", en: "Copy workflow" },
   howTitle: { ru: "Как это работает", en: "How it works" },
   caseTitle: { ru: "Первый кейс: сайт аквацентра", en: "First case: an aqua center website" },
   caseSub: {
