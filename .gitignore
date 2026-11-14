@@ -33,6 +33,13 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# local secrets / keys: never in the index even under a subproject
+*.key
+*.pem
+
+# legacy local artifacts (old spec PDFs, benchmark dumps served elsewhere)
+download/
+
 # vercel
 .vercel
 
