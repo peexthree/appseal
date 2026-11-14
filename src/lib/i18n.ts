@@ -156,8 +156,8 @@ export const DICT = {
   planFree: { ru: "Free", en: "Free" },
   planFreePrice: { ru: "0 ₽", en: "$0" },
   planFreeFeats: {
-    ru: "1 полный скан в день|Оценка A+-E и отчёт|3D-бейдж для сайта|PDF-экспорт",
-    en: "1 full scan per day|A+-E grade and report|3D site badge|PDF export",
+    ru: "1 полный скан в день|Оценка A+-E и полный отчёт|Fix-prompt для ИИ-агента",
+    en: "1 full scan per day|A+-E grade and full report|Fix prompt for your AI agent",
   },
   planPro: { ru: "Pro", en: "Pro" },
   planProPrice: { ru: "$19/мес", en: "$19/mo" },
@@ -174,8 +174,8 @@ export const DICT = {
   planLP: { ru: "Launch Pass", en: "Launch Pass" },
   planLPPrice: { ru: "490 ₽", en: "$6" },
   planLPFeats: {
-    ru: "Неделя безлимитных проверок одного домена|Повторный скан сразу после фикса|Помогает довести домен до класса A|Промпт для ИИ-агента и PDF-отчёт",
-    en: "A week of unlimited checks of one domain|Re-scan right after each fix|Helps bring your domain to grade A|AI-agent prompt and PDF report",
+    ru: "Неделя безлимитных проверок одного домена|Повторный скан сразу после фикса|Фоновый перескан каждые 6 ч и алерт при падении класса|PDF-отчёт и embed-бейдж доверия",
+    en: "A week of unlimited checks of one domain|Re-scan right after each fix|Background rescan every 6h with a grade-drop alert|PDF report and the embeddable trust badge",
   },
   planLPCta: { ru: "Разблокировать домен за 490 ₽", en: "Unlock your domain for $6" },
   lpDomainPh: { ru: "домен пропуска, например myapp.vercel.app", en: "pass domain, e.g. myapp.vercel.app" },
