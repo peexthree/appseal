@@ -22,7 +22,9 @@ export function Stat({
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const reduce = useReducedMotion();
-  const [shown, setShown] = useState(0);
+  // SSR и первый клиентский рендер показывают финальное значение: числа видны
+  // поисковикам и без JS; при попадании в вьюпорт счётчик проигрывается заново
+  const [shown, setShown] = useState(value);
 
   useEffect(() => {
     if (reduce) {
