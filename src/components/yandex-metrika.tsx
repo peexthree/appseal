@@ -13,6 +13,17 @@ type YmFn = (id: number, action: string, ...rest: unknown[]) => void;
 // with an explicit hit() because the App Router never reloads the page.
 // The script loads only after the visitor grants cookie consent (152-ФЗ / РКН):
 // the banner stores the choice in localStorage, so no JS = no consent = no pixel.
+/** Fire a Metrica goal from anywhere; silently no-op before consent (the
+ *  pixel, and therefore window.ym, does not exist yet). */
+export function ymGoal(goal: string, params?: Record<string, unknown>): void {
+  try {
+    const ym = (window as unknown as { ym?: YmFn }).ym;
+    if (typeof ym === "function") ym(METRIKA_ID, "reachGoal", goal, params ?? {});
+  } catch {
+    /* private mode */
+  }
+}
+
 export function YandexMetrika() {
   const pathname = usePathname();
   const firstPath = useRef(true);

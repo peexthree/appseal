@@ -26,6 +26,35 @@ const CAT_ICONS: Record<CategoryId, React.ReactNode> = {
   trust: <Sparkles className="h-4 w-4" />,
 };
 
+/** GitHub Actions grade gate: scan after every push, fail the build below B. */
+const CI_YAML = `name: AppSeal scan
+
+on: [push, workflow_dispatch]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Security scan & grade gate
+        env:
+          APPSEAL_KEY: \${{ secrets.APPSEAL_ADMIN_KEY }} # optional: lifts the daily free quota
+        run: |
+          ID=$(curl -fsS -X POST https://appseal.online/api/scan \\
+            -H 'content-type: application/json' \\
+            -d '{"url":"\${{ secrets.APPSEAL_TARGET_URL }}","adminKey":"$APPSEAL_KEY"}' | jq -r '.id')
+          sleep 45
+          R=$(curl -fsS https://appseal.online/api/scan/$ID)
+          STATUS=$(echo "$R" | jq -r '.status')
+          [ "$STATUS" = "done" ] || { echo "scan did not finish: $STATUS"; exit 1; }
+          GRADE=$(echo "$R" | jq -r '.grade')
+          SCORE=$(echo "$R" | jq -r '.score')
+          echo "AppSeal grade: $GRADE ($SCORE/100)"
+          case "$GRADE" in
+            A*|B) echo "OK" ;;
+            *) echo "grade below B - failing the build"; exit 1 ;;
+          esac
+`;
+
 function StatusIcon({ s }: { s: CheckResult["status"] }) {
   const cls = "h-4 w-4 shrink-0";
   if (s === "pass") return <CheckCircle2 className={`${cls} text-emerald-400`} />;
@@ -142,6 +171,9 @@ export function ReportView({
   const [badgeFormat, setBadgeFormat] = useState<"trophy" | "shield">("trophy");
   const [syntax, setSyntax] = useState<"html" | "markdown">("html");
   const [linkCopied, setLinkCopied] = useState(false);
+  const [ciCopied, setCiCopied] = useState(false);
+  // rescan nudge after copying the fix prompt (C/D/E - the badge is the goal)
+  const [fixToast, setFixToast] = useState(false);
   const [prevScan, setPrevScan] = useState<{ score: number; grade: Grade; id: string } | null>(null);
   // Launch Pass benefits (PDF + badge) for the scanned host; null = unknown
   // (render optimistically, /api/pass-status resolves it in a beat)
@@ -256,6 +288,21 @@ export function ReportView({
       await navigator.clipboard.writeText(fixPrompt);
       setPromptCopied(true);
       setTimeout(() => setPromptCopied(false), 2000);
+      // low grades get the rescan nudge: fixed it in the IDE? prove it
+      if (["C", "D", "E"].includes(scan.grade)) {
+        setFixToast(true);
+        setTimeout(() => setFixToast(false), 15000);
+      }
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
+
+  const copyCi = async () => {
+    try {
+      await navigator.clipboard.writeText(CI_YAML);
+      setCiCopied(true);
+      setTimeout(() => setCiCopied(false), 2000);
     } catch {
       /* clipboard unavailable */
     }
@@ -501,6 +548,39 @@ export function ReportView({
         </Collapsible>
       )}
 
+      {fixToast && (
+        <div className="mt-3 rounded-xl border border-emerald-900/60 bg-emerald-400/[0.06] p-4">
+          <p className="text-sm leading-relaxed text-emerald-200">{t(lang, "fixToastTitle")}</p>
+          <Button asChild size="sm" className="mt-2 bg-emerald-400 font-bold text-[#090d16] hover:bg-emerald-300">
+            <a href="/">{t(lang, "fixToastCta")}</a>
+          </Button>
+        </div>
+      )}
+
+      {/* CI/CD grade gate: turns every report owner into a pipeline user */}
+      {reportKey && (
+        <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-sky-300">{t(lang, "ciTitle")}</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">{t(lang, "ciCopy")}</p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={copyCi}
+              className="shrink-0 border-sky-800 text-sky-300 hover:bg-sky-900/30"
+            >
+              {ciCopied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+              {ciCopied ? t(lang, "copied") : t(lang, "ciBtn")}
+            </Button>
+          </div>
+          <pre className="appseal-scroll mt-3 max-h-96 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-400">
+            {CI_YAML}
+          </pre>
+        </div>
+      )}
+
       {/* badge embed (Launch Pass gated) */}
       {passActive === false ? (
         <div className="mt-6 rounded-xl border border-sky-900/60 bg-[#111827] p-5">
@@ -508,6 +588,26 @@ export function ReportView({
           <p className="mt-1 text-xs leading-relaxed text-slate-500">
             {t(lang, "passGateText").replace("{host}", scan.host)}
           </p>
+          {/* honest preview: the real badge, rendered from THIS scan's data */}
+          <p className="mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            {t(lang, "passPreviewLabel")}
+          </p>
+          <svg width="228" height="44" viewBox="0 0 228 44" role="img" className="mt-1.5">
+            <rect x="0.5" y="0.5" width="227" height="43" rx="9" fill="#0b101c" stroke={gm.color} />
+            <path d="M0.5 9 Q0.5 0.5 9 0.5 H219 Q227.5 0.5 227.5 9 V16 H0.5 Z" fill="#0e1420" />
+            <text x="14" y="12" fontFamily="sans-serif" fontSize="7" fontWeight="700" letterSpacing="0.8" fill="#7C8BA1">
+              APPSEAL VERIFIED
+            </text>
+            <text x="14" y="30" fontFamily="sans-serif" fontSize="12" fontWeight="700" fill="#F8FAFC">
+              {scan.host.replace(/^www\./i, "").slice(0, 24)}
+            </text>
+            <text x="196" y="27" textAnchor="middle" fontFamily="sans-serif" fontSize="15" fontWeight="900" fill={gm.color}>
+              {scan.grade}
+            </text>
+            <text x="196" y="36" textAnchor="middle" fontFamily="monospace" fontSize="8" fontWeight="700" fill="#94A3B8">
+              {scan.score}/100
+            </text>
+          </svg>
           <Button asChild className="mt-3 bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
             <a href="/#pricing">{t(lang, "passGateCta")}</a>
           </Button>

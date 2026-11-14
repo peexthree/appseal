@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { track } from "@vercel/analytics";
+import { ymGoal } from "@/components/yandex-metrika";
 import { AnimatePresence, animate, motion } from "framer-motion";
 import type { Lang, ScanResult, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META } from "@/lib/scanner/types";
@@ -178,6 +179,10 @@ export function ScannerPage({
   const [booting, setBooting] = useState(false);
   const [bootPct, setBootPct] = useState(0);
   const [bootStage, setBootStage] = useState(0);
+  // live terminal: engine stage strings timestamped as the scan advances
+  const [termLines, setTermLines] = useState<string[]>([]);
+  const scanStartedAt = useRef(0);
+  const lastTermStage = useRef("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number[]>([]);
@@ -250,6 +255,15 @@ export function ScannerPage({
     }
   };
 
+  // append a timestamped terminal line whenever the engine reports a new stage
+  useEffect(() => {
+    const stage = scan?.stage?.[lang];
+    if (!stage || lastTermStage.current === stage) return;
+    lastTermStage.current = stage;
+    const secs = scanStartedAt.current ? Math.round((Date.now() - scanStartedAt.current) / 1000) : 0;
+    setTermLines((prev) => [...prev.slice(-14), `[${String(secs).padStart(2, "0")}s] ${stage}`]);
+  }, [scan, lang]);
+
   // playful fake boot: 1.2s splash with a progress bar, shown exactly once
   // per browser (localStorage marker); reloads and revisits skip it entirely,
   // as do reduced-motion users
@@ -274,7 +288,11 @@ export function ScannerPage({
     setScan(null);
     setScanId(null);
     setPhase("scanning");
+    setTermLines([]);
+    scanStartedAt.current = Date.now();
+    lastTermStage.current = "";
     track("scan_submit", { demo: target.startsWith("demo://"), lang });
+    ymGoal("scan_submit", { demo: target.startsWith("demo://") });
     try {
       const res = await fetch("/api/scan", {
         method: "POST",
@@ -336,6 +354,8 @@ export function ScannerPage({
       return;
     }
     const prefix = lang === "en" ? "en" : "ru";
+    track("checkout_bot", { lang });
+    ymGoal("checkout_bot", { lang });
     window.location.href = `https://t.me/AppSeal_Monitor_Bot?start=${prefix}-${host.toLowerCase().replace(/\./g, "_")}`;
   };
 
@@ -662,6 +682,7 @@ export function ScannerPage({
                     key={c.target}
                     onClick={() => {
                       track("chip_scan", { target: c.target });
+                      ymGoal("chip_scan", { target: c.target });
                       void startScan(c.target);
                     }}
                     className="appseal-chip inline-flex items-center gap-2 rounded-full border border-slate-700 bg-[#111827] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
@@ -703,6 +724,18 @@ export function ScannerPage({
                 {scan?.stage?.[lang] ?? "…"}{" "}
                 <span className="font-mono text-slate-500">{url ? url.replace(/^https?:\/\//, "") : "demo-app"}</span>
               </p>
+              {termLines.length > 0 && (
+                <div
+                  className="appseal-scroll mt-3 max-h-28 overflow-auto rounded-md bg-[#090d16]/90 p-2.5 font-mono text-[11px] leading-relaxed text-slate-500"
+                  aria-live="polite"
+                >
+                  {termLines.map((l, i) => (
+                    <p key={i} className={i === termLines.length - 1 ? "text-slate-300" : ""}>
+                      {l}
+                    </p>
+                  ))}
+                </div>
+              )}
               {/* live radar: categories click through as the scan advances */}
               <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[
