@@ -42,6 +42,8 @@ const REFERENCE_HOSTS = new Set([
   "anthropic.com", "telegram.org", "discord.com", "spotify.com", "twitch.tv",
   "ebay.com", "yandex.ru", "vk.com", "ozon.ru", "wildberries.ru", "habr.com",
   "npmjs.com", "wordpress.org",
+  // IANA reserved and engine self-test hosts
+  "example.com", "example.org", "appmot.vercel.app",
 ]);
 
 /** True when the host is a mega reference site, not an AI-built project. */
