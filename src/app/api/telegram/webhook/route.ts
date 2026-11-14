@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
-import { redisCommand } from "@/lib/passes";
+import {
+  consumePackCredit,
+  getChatPack,
+  getPackCredits,
+  hasActivePass,
+  redeemPackPass,
+  redisCommand,
+} from "@/lib/passes";
 import { sendTelegramMessage } from "@/lib/telegram";
 import {
   botPayBtn,
   botPayFail,
   botPayText,
+  botPackPayBtn,
+  botPackPayText,
+  botRedeemNoPack,
+  botRedeemResultText,
   botStatusText,
   BotLang,
   BotState,
@@ -68,6 +79,7 @@ function idleKeyboard(): object {
         { text: "Купить 490 ₽", callback_data: "buy_ru" },
         { text: "Pay $6", callback_data: "buy_en" },
       ],
+      [{ text: "Agency Pack - 5 пропусков за 1 490 ₽", callback_data: "buy5" }],
     ],
   };
 }
@@ -83,11 +95,13 @@ async function createPurchase(
   host: string,
   email: string,
   nonce: string,
+  kind?: "lpack",
+  chatId?: string,
 ): Promise<string> {
   const res = await fetch(`${HOSTED_ORIGIN}/api/purchase`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ host, email, nonce, provider }),
+    body: JSON.stringify({ host, email, nonce, provider, kind, chatId }),
     cache: "no-store",
   });
   const data = (await res.json().catch(() => ({}))) as { confirmationUrl?: string; error?: string };
@@ -159,6 +173,59 @@ export async function POST(req: NextRequest) {
         );
         return NextResponse.json({ ok: true });
       }
+    }
+
+    if (step.intent.action === "create_pack_purchase") {
+      const nonce = `tg-${randomUUID()}`;
+      const provider = step.intent.provider;
+      try {
+        const url = await createPurchase(provider, "", step.intent.email, nonce, "lpack", chatId);
+        const paidState: BotState = { ...step.state, provider, nonce };
+        await saveState(chatId, paidState);
+        await sendTelegramMessage(chatId, botPackPayText(step.lang), {
+          inline_keyboard: [[{ text: botPackPayBtn(step.lang, provider), url }]],
+        });
+        return NextResponse.json({ ok: true });
+      } catch (e) {
+        await saveState(chatId, { stage: "idle" });
+        await sendTelegramMessage(
+          chatId,
+          botPayFail(step.lang, e instanceof Error ? e.message : String(e), "buy5"),
+        );
+        return NextResponse.json({ ok: true });
+      }
+    }
+
+    if (step.intent.action === "redeem") {
+      const host = step.intent.host;
+      const packPaymentId = await getChatPack(chatId);
+      if (!packPaymentId) {
+        await sendTelegramMessage(chatId, botRedeemNoPack(step.lang), scannerKeyboard());
+        return NextResponse.json({ ok: true });
+      }
+      const credits = await getPackCredits(packPaymentId);
+      if (credits <= 0 || !(await consumePackCredit(packPaymentId))) {
+        await sendTelegramMessage(chatId, botRedeemResultText(step.lang, "empty"), scannerKeyboard());
+        return NextResponse.json({ ok: true });
+      }
+      // pass already covering the host? refund the credit and say so
+      if (await hasActivePass(host)) {
+        await sendTelegramMessage(
+          chatId,
+          "ru" === step.lang
+            ? `У домена ${host} уже есть активный пропуск - кредит не списан. Пришли другой домен: /redeem myapp.com`
+            : `${host} already has an active pass - the credit was not spent. Send another domain: /redeem myapp.com`,
+          scannerKeyboard(),
+        );
+        return NextResponse.json({ ok: true });
+      }
+      const record = await redeemPackPass(packPaymentId, host);
+      await sendTelegramMessage(
+        chatId,
+        botRedeemResultText(step.lang, "done", record.host, record.until),
+        scannerKeyboard(),
+      );
+      return NextResponse.json({ ok: true });
     }
 
     if (step.intent.action === "check_status") {

@@ -44,6 +44,9 @@ docs/appmot.git.bundle
 p3url.txt
 pfurl.txt
 
+# local test CA material (server.key already out of the index)
+mini-services/secure-app/certs/
+
 # vercel
 .vercel
 

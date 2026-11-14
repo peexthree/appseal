@@ -115,8 +115,8 @@ export const DICT = {
   caseStep3t: { ru: "Повторный скан", en: "Re-scan" },
   caseStep3n: { ru: "A · 91", en: "A · 91" },
   caseStep3d: {
-    ru: "заголовки на месте, CORS явный · класс подтверждён свежим сканом на 121 проверке",
-    en: "headers in place, CORS explicit · grade re-confirmed by a fresh 121-check scan",
+    ru: "заголовки на месте, CORS явный · класс подтверждён свежим сканом на 125 проверках",
+    en: "headers in place, CORS explicit · grade re-confirmed by a fresh 125-check scan",
   },
   caseBody: {
     ru: "Сайт семейного аквацентра собран с ИИ и живёт на Vercel. Внешний скан без доступа к коду нашёл типовые дыры деплоя. Кнопка «Промпт для ИИ-агента» скопировала отчёт, агент той же сессии внёс правки, повторный скан подтвердил результат.",
@@ -131,7 +131,7 @@ export const DICT = {
     ru: "Только живой адрес приложения. Ничего не нужно устанавливать, доступ к коду не нужен - скан внешний.",
     en: "Just the live URL. Nothing to install, no code access needed - the scan is external.",
   },
-  how2Title: { ru: "Движок гоняет 121 проверку", en: "The engine runs 121 checks" },
+  how2Title: { ru: "Движок гоняет 125 проверок", en: "The engine runs 125 checks" },
   how2Text: {
     ru: "Секреты и ключи в клиентском коде, открытые .env/.git, дырявые правила Firebase и Supabase, CORS, админки четырёх CMS, бэкапы и дампы, отладочные эндпоинты, source maps, заголовки, TLS, куки, ошибки СУБД в разметке, битые ссылки, заглушки - плюс ИИ-доверие: llms.txt, SPF/DMARC, трекеры без политики приватности.",
     en: "Secrets and keys in client code, open .env/.git, misconfigured Firebase and Supabase rules, CORS, admin panels of four CMSes, backups and dumps, debug endpoints, source maps, headers, TLS, cookies, DB errors in markup, broken links, placeholders - plus AI trust: llms.txt, SPF/DMARC, trackers without a privacy policy.",
@@ -185,6 +185,13 @@ export const DICT = {
   },
   planLP: { ru: "Launch Pass", en: "Launch Pass" },
   planLPPrice: { ru: "490 ₽", en: "$6" },
+  planAgencyTitle: { ru: "Agency Pack", en: "Agency Pack" },
+  planAgencyPrice: { ru: "1 490 ₽", en: "$19" },
+  planAgencyText: {
+    ru: "5 пропусков Launch Pass оптом - для студий и серийных запусков: 5 доменов по 7 дней безлимита, PDF и бейджи для клиентов. Активация каждого домена командой /redeem в Telegram-боте, кредиты живут 30 дней. Разовая покупка, без автосписаний.",
+    en: "5 Launch Passes wholesale - for studios and serial launches: 5 domains, 7 days of unlimited scans each, client-ready PDFs and badges. Activate every domain via /redeem in the Telegram bot; credits live 30 days. One-time payment, no auto-renewal.",
+  },
+  planAgencyCta: { ru: "Купить пакет в Telegram", en: "Buy the pack in Telegram" },
   planLPFeats: {
     ru: "Неделя безлимитных проверок одного домена|Повторный скан сразу после фикса|Фоновый перескан каждые 6 ч и алерт при падении класса|PDF-отчёт и embed-бейдж доверия",
     en: "A week of unlimited checks of one domain|Re-scan right after each fix|Background rescan every 6h with a grade-drop alert|PDF report and the embeddable trust badge",
@@ -229,8 +236,8 @@ export const DICT = {
   navLegal: { ru: "Правила", en: "Legal" },
   faq1Q: { ru: "Это безопасно? Вы не взламываете сайт?", en: "Is this safe? Are you hacking my site?" },
   faq1A: {
-    ru: "Нет. Скан идёт только по публично доступным страницам - ровно то, что видит любой посетитель: заголовки ответов, HTML, общедоступные файлы и DNS-записи. Никаких эксплойтов, никакой нагрузки сверх ~130 лёгких запросов за 20-40 секунд.",
-    en: "No. The scan only touches publicly accessible pages - exactly what any visitor sees: response headers, HTML, public files, DNS records. No exploits, no load beyond ~130 lightweight requests over 20-40 seconds.",
+    ru: "Нет. Скан идёт только по публично доступным страницам - ровно то, что видит любой посетитель: заголовки ответов, HTML, общедоступные файлы и DNS-записи. Никаких эксплойтов, никакой нагрузки сверх ~140 лёгких запросов за 20-45 секунд.",
+    en: "No. The scan only touches publicly accessible pages - exactly what any visitor sees: response headers, HTML, public files, DNS records. No exploits, no load beyond ~140 lightweight requests over 20-45 seconds.",
   },
   faq2Q: { ru: "Зачем приложению бейдж?", en: "Why does my app need a badge?" },
   faq2A: {
@@ -249,8 +256,8 @@ export const DICT = {
   },
   faq5Q: { ru: "Сколько длится скан?", en: "How long does a scan take?" },
   faq5A: {
-    ru: "Обычно 20-40 секунд: около 130 лёгких запросов к публичным страницам. Нагрузка сопоставима с одним активным посетителем - ничего не ломаем и не кладём.",
-    en: "Usually 20-40 seconds: about 130 lightweight requests to public pages. The load is comparable to one active visitor - nothing breaks, nothing goes down.",
+    ru: "Обычно 20-45 секунд: около 140 лёгких запросов к публичным страницам. Нагрузка сопоставима с одним активным посетителем - ничего не ломаем и не кладём.",
+    en: "Usually 20-45 seconds: about 140 lightweight requests to public pages. The load is comparable to one active visitor - nothing breaks, nothing goes down.",
   },
   faq6Q: { ru: "А если приложение - SPA и рендерится в браузере?", en: "What if my app is an SPA rendered in the browser?" },
   faq6A: {

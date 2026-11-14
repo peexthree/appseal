@@ -69,3 +69,26 @@ export function dedupeRegistry(entries: RegistryEntry[]): RegistryEntry[] {
 export function isDofollow(e: RegistryEntry): boolean {
   return e.grade === "A+" || e.grade === "A";
 }
+
+/** platform buckets for the quick-filter chips (suffix = hosting subdomain) */
+export type PlatformKey = "custom" | "lovable" | "github" | "vercel" | "other";
+
+export function platformOf(host: string): PlatformKey {
+  const h = host.toLowerCase();
+  if (h.endsWith(".lovable.app")) return "lovable";
+  if (h.endsWith(".vercel.app")) return "vercel";
+  if (h.endsWith(".github.io")) return "github";
+  const otherPlatform = [
+    ".replit.app", ".replit.dev", ".repl.co", ".railway.app", ".pages.dev",
+    ".netlify.app", ".onrender.com", ".bolt.host", ".workers.dev", ".fly.dev",
+  ].some((s) => h.endsWith(s));
+  return otherPlatform ? "other" : "custom";
+}
+
+export const PLATFORM_LABELS: Record<PlatformKey, { ru: string; en: string }> = {
+  custom: { ru: "Свой домен", en: "Custom domain" },
+  lovable: { ru: "Lovable", en: "Lovable" },
+  github: { ru: "GitHub Pages", en: "GitHub Pages" },
+  vercel: { ru: "Vercel", en: "Vercel" },
+  other: { ru: "Другие платформы", en: "Other platforms" },
+};

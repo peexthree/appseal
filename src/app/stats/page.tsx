@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ShieldCheck } from "@/components/icons/appseal-icons";
 import statsData from "@/data/stats-harvest.json";
+import { getRegistryEntries } from "@/lib/scanner/store";
+import { dedupeRegistry, isReferenceSite, platformOf, PLATFORM_LABELS, type PlatformKey } from "@/lib/registry";
+
+// the leaderboard reads the live registry: refresh at most every 5 minutes
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "AppSeal - статистика AI-собранных приложений",
@@ -36,7 +41,7 @@ interface TopFail {
   warnPct: number;
 }
 
-export default function StatsPage() {
+export default async function StatsPage() {
   const s = statsData;
   const hasData = Boolean(s.generatedAt) && s.panel.done > 0;
   const done = s.panel.done;
@@ -51,6 +56,28 @@ export default function StatsPage() {
     count: Number(n),
     avg: (s.avgScoreBySource as Record<string, number>)[k],
   }));
+
+  // platform leaderboard: live registry hosts bucketed by hosting platform.
+  // Reference mega-sites (never rendered anywhere) are excluded here too.
+  const registryHosts = dedupeRegistry(await getRegistryEntries()).filter(
+    (e) => !isReferenceSite(e.host),
+  );
+  const buckets = new Map<PlatformKey, { count: number; total: number }>();
+  for (const e of registryHosts) {
+    const key = platformOf(e.host);
+    const b = buckets.get(key) ?? { count: 0, total: 0 };
+    b.count += 1;
+    b.total += e.score;
+    buckets.set(key, b);
+  }
+  const leaderboard = [...buckets.entries()]
+    .map(([key, b]) => ({
+      key,
+      label: PLATFORM_LABELS[key].ru,
+      count: b.count,
+      avg: Math.round(b.total / b.count),
+    }))
+    .sort((a, b) => b.avg - a.avg);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
@@ -131,7 +158,7 @@ export default function StatsPage() {
                 ))}
               </div>
               <p className="mt-3 text-xs text-slate-600">
-                Шкала A+-E: класс A требуют 90+ баллов из 100 по 121 проверке.
+                Шкала A+-E: класс A требуют 90+ баллов из 100 по 125 проверкам.
               </p>
             </section>
 
@@ -164,6 +191,43 @@ export default function StatsPage() {
             </section>
 
             <section className="mt-10">
+              <h2 className="font-display text-xl font-extrabold">Битва платформ</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Средний балл безопасности сборок по хостинг-платформам из{" "}
+                <Link href="/registry" className="text-sky-400 hover:underline">реестра</Link>.
+                Кто из конструкторов выпускает более защищённые приложения - цифры обновляются с каждым новым сканом.
+              </p>
+              <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+                <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  <span className="flex-1">Платформа</span>
+                  <span className="w-20 text-right">Домены</span>
+                  <span className="w-24 text-right">Средний балл</span>
+                </div>
+                {leaderboard.map((row, i) => (
+                  <div
+                    key={row.key}
+                    className={`flex items-center gap-3 px-5 py-3 ${i < leaderboard.length - 1 ? "border-b border-slate-800/60" : ""}`}
+                  >
+                    <span className="flex flex-1 items-center gap-2.5 text-sm font-semibold text-slate-200">
+                      <span className={`font-mono text-xs ${i === 0 ? "text-amber-400" : "text-slate-600"}`}>
+                        {i + 1}.
+                      </span>
+                      {row.label}
+                    </span>
+                    <span className="w-20 text-right font-mono text-xs text-slate-400">{row.count}</span>
+                    <span
+                      className={`w-24 text-right font-mono text-sm font-bold ${
+                        row.avg >= 90 ? "text-emerald-400" : row.avg >= 70 ? "text-sky-400" : "text-amber-400"
+                      }`}
+                    >
+                      {row.avg}/100
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="mt-10">
               <h2 className="font-display text-xl font-extrabold">Откуда приложения</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {sources.map((src) => (
@@ -182,7 +246,7 @@ export default function StatsPage() {
 
             <p className="mt-10 text-xs leading-relaxed text-slate-600">
               Прогон от {dateFmt.format(new Date(s.generatedAt))}. Сканер ходит с пометкой
-              AppSeal-Scanner, делает ~130 вежливых GET-запросов на сайт и ничего не эксплуатирует;
+              AppSeal-Scanner, делает ~140 вежливых GET-запросов на сайт и ничего не эксплуатирует;
               правила для ботов - на странице <Link href="/bot" className="underline hover:text-slate-400">/bot</Link>.
               Владелец домена может запросить исключение из любых публикаций: linedrop@yandex.ru (3 рабочих дня).
             </p>

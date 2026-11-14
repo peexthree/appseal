@@ -20,7 +20,51 @@ import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Loc
 
 type Phase = "form" | "scanning" | "report" | "error";
 
-/** exact check counts per category - from the engine, demo scan = 121 total */
+/**
+ * Decorative background loop for mid-page sections: ships with no src and
+ * preload="none", attaches the file and starts playing only when scrolled
+ * near the viewport, pauses again when it leaves - zero cost for LCP and
+ * for visitors who never scroll that far.
+ */
+function BackdropVideo({ src, className }: { src: string; className?: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let attached = false;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          if (!attached) {
+            attached = true;
+            el.setAttribute("src", src); // starts the fetch on demand
+          }
+          void el.play().catch(() => {});
+        } else {
+          el.pause();
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [src]);
+  // onCanPlay covers the race where play() fires while the file is still loading
+  return (
+    <video
+      ref={ref}
+      muted
+      loop
+      playsInline
+      preload="none"
+      aria-hidden
+      onCanPlay={() => void ref.current?.play().catch(() => {})}
+      className={className}
+    />
+  );
+}
+
+/** exact check counts per category - from the engine, demo scan = 125 total */
 const CHECK_CATEGORIES = [
   {
     icon: <KeyRound className="h-5 w-5" />,
@@ -77,14 +121,14 @@ const CHECK_CATEGORIES = [
   {
     icon: <Sparkles className="h-5 w-5" />,
     key: "trust" as const,
-    count: { ru: "24 проверки", en: "24 checks" },
+    count: { ru: "28 проверок", en: "28 checks" },
     extra: {
-      ru: "+ ещё 20 проверок: llms.txt, политика ИИ-краулеров в robots.txt, SPF/DMARC против подделки писем, версия TLS, sitemap.xml, JSON-LD, инвентарь сторонних скриптов, трекеры без политики приватности",
-      en: "+ 20 more checks: llms.txt, AI-crawler policy in robots.txt, SPF/DMARC anti-spoofing, TLS version, sitemap.xml, JSON-LD, third-party script inventory, undisclosed trackers",
+      ru: "+ ещё 24 проверки: llms.txt, политика ИИ-краулеров в robots.txt, SPF/DMARC против подделки писем, версия TLS, sitemap.xml, JSON-LD, инвентарь сторонних скриптов, трекеры без политики приватности, открытые ИИ-прокси (/api/chat и др.)",
+      en: "+ 24 more checks: llms.txt, AI-crawler policy in robots.txt, SPF/DMARC anti-spoofing, TLS version, sitemap.xml, JSON-LD, third-party script inventory, undisclosed trackers, exposed AI proxies (/api/chat and more)",
     },
     items: {
-      ru: "llms.txt и ИИ-краулеры|SPF/DMARC против подделки писем|Политика приватности против трекеров|Блокирующие скрипты и семантика",
-      en: "llms.txt and AI crawlers|SPF/DMARC anti-spoofing|Privacy policy vs trackers|Render-blocking scripts and semantics",
+      ru: "llms.txt и ИИ-краулеры|SPF/DMARC против подделки писем|Политика приватности против трекеров|Открытые ИИ-прокси без авторизации",
+      en: "llms.txt and AI crawlers|SPF/DMARC anti-spoofing|Privacy policy vs trackers|Exposed AI proxies without auth",
     },
   },
 ];
@@ -622,16 +666,17 @@ export function ScannerPage({
               "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(56,189,248,0.12), transparent 70%)",
           }}
         >
-          {/* optional hero artwork slot: shows up when public/img/hero-bg.png exists */}
-          <img
-            src="/img/hero-bg.png"
-            alt=""
+          {/* looping hero backdrop: radar sweep behind the headline; the mask
+              fades it into the page background so text stays readable */}
+          <video
+            src="/video/Radar_pulse.mp4"
+            poster="/img/hero-poster.jpg"
+            autoPlay
+            loop
+            muted
+            playsInline
             aria-hidden
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-            className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[420px] w-full object-cover opacity-50 [mask-image:linear-gradient(to_bottom,transparent,black_65%)]"
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] w-full object-cover opacity-40 [mask-image:linear-gradient(to_bottom,black_30%,transparent_96%)]"
           />
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-400">
@@ -1202,12 +1247,22 @@ export function ScannerPage({
         </section>
 
         {/* pricing */}
-        <section id="pricing" className="scroll-mt-16 border-t border-slate-800/70 py-14" aria-label={t(lang, "pricingTitle")}>
+        <section
+          id="pricing"
+          className="scroll-mt-16 relative isolate overflow-hidden border-t border-slate-800/70 py-14"
+          aria-label={t(lang, "pricingTitle")}
+        >
+          {/* light streak behind the plans: premium beat, lazy-loaded and
+              only playing while on screen */}
+          <BackdropVideo
+            src="/video/Light_refracting.mp4"
+            className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-30 [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]"
+          />
           <SectionHead eyebrow={EYEBROWS.pricing[lang]} title={t(lang, "pricingTitle")} sub={t(lang, "pricingSub")} />
           <div className="mt-10 grid gap-4 md:grid-cols-2">
             {/* Free plan */}
             <Reveal className="h-full">
-              <div className="appseal-card flex h-full flex-col rounded-2xl p-6">
+              <div className="appseal-card appseal-glass flex h-full flex-col rounded-2xl p-6">
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t(lang, "planFree")}</p>
                 <p className="font-display mt-2 text-3xl font-extrabold text-slate-100">{t(lang, "planFreePrice")}</p>
                 <ul className="mt-4 flex-1 space-y-2">
@@ -1237,7 +1292,7 @@ export function ScannerPage({
                   {t(lang, "planMostPopular")}
                 </span>
                 <div className="appseal-ring appseal-ring-emerald h-full">
-                  <div className="flex h-full flex-col rounded-[15px] bg-[#0b101c] p-6 shadow-[0_0_44px_-14px_rgba(52,211,153,0.4)]">
+                  <div className="appseal-glass-panel flex h-full flex-col rounded-[15px] p-6 shadow-[0_0_44px_-14px_rgba(52,211,153,0.4)]">
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t(lang, "planLP")}</p>
                     <p className="font-display mt-2 text-3xl font-extrabold text-emerald-400">{t(lang, "planLPPrice")}</p>
                     <p className="mt-1 text-[11px] leading-snug text-slate-500">{t(lang, "planLPSub")}</p>
@@ -1272,9 +1327,32 @@ export function ScannerPage({
               </div>
             </Reveal>
           </div>
+          {/* Agency Pack: wholesale passes for studios, same one-time bot flow */}
+          <Reveal className="mt-4">
+            <div className="appseal-card appseal-glass rounded-2xl p-5 sm:p-6">
+              <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    {t(lang, "planAgencyTitle")} ·{" "}
+                    <span className="font-mono normal-case tracking-normal text-emerald-400">
+                      {t(lang, "planAgencyPrice")}
+                    </span>
+                  </p>
+                  <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">{t(lang, "planAgencyText")}</p>
+                </div>
+                <a
+                  href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-pack5`}
+                  className="inline-flex shrink-0 items-center gap-2 rounded-md bg-emerald-400 px-5 py-2.5 text-sm font-bold text-[#090d16] transition hover:bg-emerald-300"
+                >
+                  <Send className="h-4 w-4" />
+                  {t(lang, "planAgencyCta")}
+                </a>
+              </div>
+            </div>
+          </Reveal>
           {/* platform: contact row instead of a third pricing card */}
           <Reveal className="mt-4">
-            <div className="appseal-card rounded-2xl p-5 sm:p-6">
+            <div className="appseal-card appseal-glass rounded-2xl p-5 sm:p-6">
               <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                 <div className="min-w-0">
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500">

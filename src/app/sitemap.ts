@@ -49,7 +49,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: e.grade === "A+" || e.grade === "A" ? 0.8 : 0.6,
     }));
-    return [...staticRoutes, ...dynamicRoutes];
+    // A/A+ domain profiles: indexable proof pages that rank on brand searches
+    const verifiedRoutes: MetadataRoute.Sitemap = dedupeRegistry(raw)
+      .filter((e) => e.grade === "A+" || e.grade === "A")
+      .slice(0, 60)
+      .map((e) => ({
+        url: `${baseUrl}/verified/${e.host}`,
+        lastModified: new Date(e.ts),
+        changeFrequency: "daily" as const,
+        priority: 0.7,
+      }));
+    return [...staticRoutes, ...dynamicRoutes, ...verifiedRoutes];
   } catch {
     return staticRoutes;
   }

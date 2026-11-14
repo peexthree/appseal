@@ -61,6 +61,7 @@ import {
   checkTrustSignals,
   checkTrustA11y,
   checkTrustPerf,
+  checkAiEndpoints,
 } from "./checks/trust";
 
 export { normalizeInputUrl } from "./url";
@@ -172,7 +173,7 @@ export async function runScan(
       });
     }
 
-    // 43 macro-checks, each returning a group of granular results (~100 total)
+    // 44 macro-checks, each returning a group of granular results (125 total)
     const all: { fn: () => Promise<CheckResult[]>; id: string }[] = [
       // 1. Secrets & leaks
       { fn: () => checkEnvExposure(ctx), id: "env_exposure" },
@@ -230,6 +231,7 @@ export async function runScan(
       { fn: () => checkTrustA11y(ctx), id: "trust_a11y" },
       { fn: () => checkTrustPerf(ctx), id: "trust_perf" },
       { fn: () => checkTrustProbes(ctx), id: "trust_probes" },
+      { fn: () => checkAiEndpoints(ctx), id: "ai_endpoints" },
     ];
 
     const results: CheckResult[] = [];

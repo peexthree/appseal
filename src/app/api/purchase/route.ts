@@ -3,9 +3,12 @@ import { createPayment, getPayment, ykConfig } from "@/lib/yookassa";
 import { createLavaInvoice, getLavaInvoice, lavaConfig } from "@/lib/lava";
 import {
   activatePass,
+  ensurePackGranted,
+  getLavaInvoiceHost,
+  getPackCredits,
   getPassByPayment,
   getPaymentIdByNonce,
-  getLavaInvoiceHost,
+  setChatPack,
   setLavaInvoiceHost,
   setNonceMapping,
 } from "@/lib/passes";
@@ -15,7 +18,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PASS_PRICE_RUB = "490.00";
+const PACK_PRICE_RUB = "1490.00";
+// the USD pack goes through a separate Lava offer (LAVA_PACK_OFFER_ID);
+// until it is configured the card path sells single passes only
+const PACK_PRICE_USD_OFFER = process.env.LAVA_PACK_OFFER_ID ?? "";
 const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
+const CHAT_RE = /^[A-Za-z0-9_-]{3,64}$/;
 // return URL is pinned to our own origin - YooKassa sends the payer back here
 const SITE_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || "https://appseal.online";
 
@@ -27,15 +35,26 @@ export async function POST(req: NextRequest) {
       nonce?: string;
       lang?: Lang;
       provider?: string;
+      kind?: string;
+      chatId?: string;
     };
-    const host = (body.host ?? "").trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/^www\./i, "");
     const email = (body.email ?? "").trim();
     const nonce = (body.nonce ?? "").trim();
+    const kind = body.kind === "lpack" ? "lpack" : "lpass";
+    const chatId = (body.chatId ?? "").trim();
     // ru buyers pay in RUB via YooKassa; the EN storefront pays $6 in USD via
     // Lava.top (foreign Visa/MC) - provider is chosen by the client locale
     const provider = body.provider === "lava" ? "lava" : "yk";
-    if (!HOST_RE.test(host)) {
+
+    // Agency Pack: no target domain yet - the 5 credits are redeemed later
+    const host = kind === "lpack"
+      ? ""
+      : (body.host ?? "").trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/^www\./i, "");
+    if (kind === "lpass" && !HOST_RE.test(host)) {
       return NextResponse.json({ error: "invalid host" }, { status: 400 });
+    }
+    if (kind === "lpack" && chatId && !CHAT_RE.test(chatId)) {
+      return NextResponse.json({ error: "invalid chat" }, { status: 400 });
     }
     // 422-FZ art.14: the self-employed receipt must reach the buyer - the email
     // transits to the payment provider and is never stored by us (152-FZ)
@@ -51,6 +70,17 @@ export async function POST(req: NextRequest) {
       if (!lava) {
         return NextResponse.json({ error: "global payments unavailable" }, { status: 503 });
       }
+      if (kind === "lpack") {
+        if (!PACK_PRICE_USD_OFFER) {
+          return NextResponse.json({ error: "pack unavailable via card" }, { status: 503 });
+        }
+        const invoice = await createLavaInvoice(lava, { email, nonce, offerId: PACK_PRICE_USD_OFFER });
+        await setNonceMapping(nonce, `lava:${invoice.invoiceId}`);
+        // the pack marker rides in the invoice->host map: the webhook and the
+        // return page branch on it exactly like on the YooKassa metadata kind
+        await setLavaInvoiceHost(invoice.invoiceId, chatId ? `pack:${chatId}` : "pack");
+        return NextResponse.json({ confirmationUrl: invoice.url });
+      }
       const invoice = await createLavaInvoice(lava, { email, nonce });
       // the nonce is the only browser-held reference; the invoice->host map
       // feeds both the webhook and the return-page activation
@@ -64,10 +94,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "payments unavailable" }, { status: 503 });
     }
     const payment = await createPayment({
-      amountRub: PASS_PRICE_RUB,
-      description: `AppSeal Launch Pass - неделя безлимитных проверок ${host}`,
+      amountRub: kind === "lpack" ? PACK_PRICE_RUB : PASS_PRICE_RUB,
+      description:
+        kind === "lpack"
+          ? "AppSeal Agency Pack - 5 пропусков по 7 дней"
+          : `AppSeal Launch Pass - неделя безлимитных проверок ${host}`,
       returnUrl: `${SITE_ORIGIN}/?paid=${encodeURIComponent(nonce)}`,
-      metadata: { kind: "lpass", host, nonce },
+      metadata: kind === "lpack" ? { kind: "lpack", nonce, chatId } : { kind: "lpass", host, nonce },
       receiptEmail: email,
     });
     const url = payment.confirmation?.confirmation_url;
@@ -112,6 +145,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ status: invoice.status });
     }
     const host = (await getLavaInvoiceHost(invoiceId)) ?? "";
+    // Agency Pack invoice: the marker rides in the host field ("pack:<chatId>")
+    if (host.startsWith("pack")) {
+      const granted = await ensurePackGranted(invoiceId);
+      if (granted) {
+        const chatId = host.slice(5);
+        if (chatId) await setChatPack(chatId, invoiceId);
+      }
+      return NextResponse.json({ status: "succeeded", pack: true, credits: await getPackCredits(invoiceId) });
+    }
     const existing = await getPassByPayment(invoiceId);
     const pass = existing ?? (await activatePass(invoiceId, host));
     if (!pass.host) {
@@ -129,6 +171,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ status: payment.status });
   }
   const meta = payment.metadata ?? {};
+  // Agency Pack: grant the credits instead of activating a host pass
+  if (meta.kind === "lpack") {
+    const granted = await ensurePackGranted(payment.id);
+    if (granted && meta.chatId) {
+      await setChatPack(meta.chatId, payment.id);
+    }
+    return NextResponse.json({ status: "succeeded", pack: true, credits: await getPackCredits(payment.id) });
+  }
   // idempotent: reuse the stored pass if the webhook already activated it.
   // The payer email stays with YooKassa (receipt); we store no personal data.
   const existing = await getPassByPayment(payment.id);

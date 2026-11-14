@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { isDofollow, type RegistryEntry } from "@/lib/registry";
+import { isDofollow, platformOf, PLATFORM_LABELS, type PlatformKey, type RegistryEntry } from "@/lib/registry";
 import { getTrophyPath, GRADE_META } from "@/lib/scanner/grade";
 import { Search, X, ArrowRight } from "@/components/icons/appseal-icons";
 
@@ -33,29 +33,7 @@ function pluralApps(n: number): string {
   return "приложений";
 }
 
-/** platform buckets for the quick-filter chips (suffix = hosting subdomain) */
-type PlatformKey = "custom" | "lovable" | "github" | "vercel" | "other";
-
-function platformOf(host: string): PlatformKey {
-  const h = host.toLowerCase();
-  if (h.endsWith(".lovable.app")) return "lovable";
-  if (h.endsWith(".vercel.app")) return "vercel";
-  if (h.endsWith(".github.io")) return "github";
-  const otherPlatform = [
-    ".replit.app", ".replit.dev", ".repl.co", ".railway.app", ".pages.dev",
-    ".netlify.app", ".onrender.com", ".bolt.host", ".workers.dev", ".fly.dev",
-  ].some((s) => h.endsWith(s));
-  return otherPlatform ? "other" : "custom";
-}
-
-const PLATFORM_LABELS: Record<PlatformKey, string> = {
-  custom: "Свой домен",
-  lovable: "Lovable",
-  github: "GitHub Pages",
-  vercel: "Vercel",
-  other: "Другие платформы",
-};
-
+/** platform buckets live in lib/registry (shared with the /stats leaderboard) */
 type ChipKey = PlatformKey | "all" | "top";
 
 function GradeChip({ grade }: { grade: string }) {
@@ -126,13 +104,22 @@ function RegistryRow({ entry }: { entry: RegistryEntry }) {
         )}
       </div>
       {dofollow ? (
-        <span className={`hidden rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider sm:inline ${
-          entry.grade === "A+"
-            ? "border-[#C084FC]/40 text-[#C084FC] bg-[#C084FC]/10"
-            : "border-[#34D399]/30 text-[#34D399] bg-[#34D399]/10"
-        }`}>
-          dofollow
-        </span>
+        <>
+          <span className={`hidden rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider sm:inline ${
+            entry.grade === "A+"
+              ? "border-[#C084FC]/40 text-[#C084FC] bg-[#C084FC]/10"
+              : "border-[#34D399]/30 text-[#34D399] bg-[#34D399]/10"
+          }`}>
+            dofollow
+          </span>
+          <a
+            href={`/verified/${entry.host}`}
+            title="Публичный профиль домена с историей проверок"
+            className="hidden text-[11px] font-semibold text-slate-500 transition hover:text-sky-400 md:inline"
+          >
+            профиль
+          </a>
+        </>
       ) : (
         /* action CTA: the owner who found their site one click away from the
            fix flow - the scanner opens with the domain already prefilled */
@@ -227,7 +214,7 @@ export default function RegistryList({
                 : "border-slate-800 bg-white/[0.03] text-slate-400 hover:border-slate-600 hover:text-slate-200"
             }`}
           >
-            {k === "all" ? "Все" : k === "top" ? "Только A/A+" : PLATFORM_LABELS[k]}
+            {k === "all" ? "Все" : k === "top" ? "Только A/A+" : PLATFORM_LABELS[k].ru}
             <span className="ml-1.5 font-mono text-[10px] opacity-70">{chipCounts[k]}</span>
           </button>
         ))}
@@ -303,7 +290,7 @@ export default function RegistryList({
       {items.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-slate-800 bg-[#111827] p-10 text-center">
           <p className="text-slate-400">
-            Ничего не найдено по «{query.trim() || PLATFORM_LABELS[chip as PlatformKey] || ""}». Введите домен без https:// и www.
+            Ничего не найдено по «{query.trim() || PLATFORM_LABELS[chip as PlatformKey]?.ru || ""}». Введите домен без https:// и www.
           </p>
         </div>
       ) : (

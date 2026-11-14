@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPayment } from "@/lib/yookassa";
-import { activatePass } from "@/lib/passes";
+import { activatePass, ensurePackGranted, setChatPack } from "@/lib/passes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +23,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
     const meta = payment.metadata ?? {};
+    if (meta.kind === "lpack") {
+      // Agency Pack: grant 5 redeemable credits, bind the chat for /redeem
+      if (await ensurePackGranted(payment.id)) {
+        if (meta.chatId) await setChatPack(meta.chatId, payment.id);
+      }
+      return NextResponse.json({ ok: true });
+    }
     if (meta.kind !== "lpass") {
       return NextResponse.json({ ok: true });
     }

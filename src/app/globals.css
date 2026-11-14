@@ -255,6 +255,19 @@
   opacity: 1;
 }
 
+/* glass variants: pricing section only, so the light-streak video bleeds
+   through the cards - other appseal-card usages stay opaque */
+.appseal-card.appseal-glass {
+  background-image: linear-gradient(180deg, rgba(17, 24, 39, 0.55), rgba(13, 19, 32, 0.55));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.appseal-glass-panel {
+  background-color: rgba(11, 16, 28, 0.55);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
 /* gradient text with a slow sheen (hero accent, stat numbers) */
 .appseal-gradient-text {
   background-image: linear-gradient(90deg, #38bdf8, #818cf8, #38bdf8);

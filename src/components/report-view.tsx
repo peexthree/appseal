@@ -5,6 +5,9 @@ import type { CheckResult, ScanResult, CategoryId, Lang, Grade } from "@/lib/sca
 import { CATEGORY_META, SEVERITY_ORDER } from "@/lib/scanner/types";
 import { getTrophyPath, GRADE_META, SEVERITY_META, STATUS_LABEL } from "@/lib/scanner/grade";
 import { buildFixPrompt } from "@/lib/fix-prompt";
+import { buildLlmsTxt, buildSecurityTxt } from "@/lib/generators";
+import { buildHostingPatch } from "@/lib/config-patch";
+import { simulateFix } from "@/lib/score-sim";
 import { t } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -114,13 +117,23 @@ function CheckRow({ r, lang }: { r: CheckResult; lang: Lang }) {
             {r.title[lang]}
           </span>
           {(r.status === "fail" || r.status === "warn") && (
-            <Badge
-              variant="outline"
-              className="border-none text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: sev.color, backgroundColor: `${sev.color}1a` }}
-            >
-              {sev.label[lang]}
-            </Badge>
+            <>
+              {r.penalty > 0 && (
+                <span
+                  className="hidden rounded border border-sky-800/60 bg-sky-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-sky-300 sm:inline"
+                  title={lang === "ru" ? "Сколько баллов вернёт исправление" : "Points this fix returns"}
+                >
+                  +{r.penalty} {lang === "ru" ? "б." : "pts"}
+                </span>
+              )}
+              <Badge
+                variant="outline"
+                className="border-none text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: sev.color, backgroundColor: `${sev.color}1a` }}
+              >
+                {sev.label[lang]}
+              </Badge>
+            </>
           )}
           {r.status !== "fail" && r.status !== "warn" && (
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
@@ -172,6 +185,11 @@ export function ReportView({
   const [syntax, setSyntax] = useState<"html" | "markdown">("html");
   const [linkCopied, setLinkCopied] = useState(false);
   const [ciCopied, setCiCopied] = useState(false);
+  // trust-file generators (llms.txt / security.txt) and the hosting config patch
+  const [genTab, setGenTab] = useState<"llms" | "sec" | null>(null);
+  const [genCopied, setGenCopied] = useState(false);
+  const [patchOpen, setPatchOpen] = useState(false);
+  const [patchCopied, setPatchCopied] = useState(false);
   // rescan nudge after copying the fix prompt (C/D/E - the badge is the goal)
   const [fixToast, setFixToast] = useState(false);
   const [prevScan, setPrevScan] = useState<{ score: number; grade: Grade; id: string } | null>(null);
@@ -218,7 +236,7 @@ export function ReportView({
   }, [scan.host, scan.id, scan.score, scan.grade]);
 
   const byCategory = useMemo(() => {
-    const order: CategoryId[] = ["secrets", "headers", "admin", "liveness"];
+    const order: CategoryId[] = ["secrets", "headers", "admin", "liveness", "trust"];
     return order.map((cat) => ({
       cat,
       items: scan.results
@@ -258,6 +276,10 @@ export function ReportView({
   }, [badgeFormat, syntax, origin, scan.id, scan.grade, scan.score, badgeW]);
 
   const fixPrompt = useMemo(() => buildFixPrompt(scan, lang), [scan, lang]);
+
+  // score simulator: what the real grader would give after the fixes
+  const sim = useMemo(() => simulateFix(scan.results), [scan.results]);
+  const hostingPatch = useMemo(() => buildHostingPatch(scan), [scan]);
 
   const copy = async () => {
     try {
@@ -453,6 +475,46 @@ export function ReportView({
         </div>
       )}
 
+      {/* score simulator: the honest "fix N items -> grade Y" nudge */}
+      {sim.items.length > 0 && (
+        <div className="mt-6 rounded-xl border border-sky-900/60 bg-sky-500/[0.06] p-5">
+          <p className="text-sm font-bold text-sky-300">
+            {lang === "ru" ? "Симулятор исправлений" : "Fix simulator"}
+          </p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">
+            {lang === "ru" ? (
+              <>
+                Исправьте всего{" "}
+                <strong className="text-sky-300">{sim.stepCount} пункт(ов)</strong> - и тот же
+                движок даст <strong className="text-sky-300">{sim.stepScore}/100 ({sim.stepGrade})</strong>.
+                Все {sim.items.length} пунктов закрыть:{" "}
+                <strong className="text-sky-300">{sim.potentialScore}/100 ({sim.potentialGrade})</strong>
+                {sim.potentialGrade === "A+" || sim.potentialGrade === "A" ? (
+                  <> - плюс бесплатная dofollow-ссылка в реестре!</>
+                ) : null}
+              </>
+            ) : (
+              <>
+                Fix just <strong className="text-sky-300">{sim.stepCount} item(s)</strong> - the same
+                engine would give <strong className="text-sky-300">{sim.stepScore}/100 ({sim.stepGrade})</strong>.
+                Fix all {sim.items.length}:{" "}
+                <strong className="text-sky-300">{sim.potentialScore}/100 ({sim.potentialGrade})</strong>
+                {sim.potentialGrade === "A+" || sim.potentialGrade === "A" ? (
+                  <> - plus a free dofollow link in the registry!</>
+                ) : null}
+              </>
+            )}
+          </p>
+          {sim.items.length > 0 && sim.items[0].penalty >= 8 && (
+            <p className="mt-2 text-xs text-slate-500">
+              {lang === "ru"
+                ? `Самый крупный приз: ${sim.items[0].penalty} баллов за первый пункт в списке ниже.`
+                : `The biggest single win: ${sim.items[0].penalty} pts for the first item below.`}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* actions & 1-click viral sharing */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         {passActive === false ? (
@@ -506,6 +568,20 @@ export function ReportView({
               rel="noopener"
             >
               <span className="mr-1.5">𝕏</span> Twitter
+            </a>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-9 border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white text-xs font-bold"
+          >
+            <a
+              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+              target="_blank"
+              rel="noopener"
+            >
+              <span className="mr-1.5">in</span> LinkedIn
             </a>
           </Button>
           <Button
@@ -580,6 +656,145 @@ export function ReportView({
           </pre>
         </div>
       )}
+
+      {/* trust-file generators: llms.txt / security.txt from parsed site data */}
+      <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-sky-300">
+              {lang === "ru" ? "Генератор файлов доверия" : "Trust-file generator"}
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              {lang === "ru"
+                ? "Движок уже прочитал сайт - готовые llms.txt и security.txt за один клик. Замените строки [TODO] своими данными и положите файлы в корень сайта."
+                : "The engine already parsed the site - ready llms.txt and security.txt in one click. Replace the [TODO] lines and drop the files into the site root."}
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(
+            [
+              { key: "llms" as const, label: "llms.txt" },
+              { key: "sec" as const, label: "security.txt" },
+            ]
+          ).map((tab) => {
+            const active = genTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => {
+                  setGenTab(tab.key);
+                  setGenCopied(false);
+                }}
+                aria-pressed={active}
+                className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
+                  active
+                    ? "border-sky-400/60 bg-sky-400/15 text-sky-300"
+                    : "border-slate-700 bg-[#090d16] text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        {genTab && (
+          <div className="mt-3">
+            {(() => {
+              const file = genTab === "llms" ? buildLlmsTxt(scan) : buildSecurityTxt(scan);
+              return (
+                <>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-mono text-[11px] text-slate-400">{file.path}</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(file.content);
+                          setGenCopied(true);
+                          setTimeout(() => setGenCopied(false), 2000);
+                        } catch {}
+                      }}
+                      className="h-7 border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+                    >
+                      {genCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      {genCopied ? t(lang, "copied") : t(lang, "copyBtn")}
+                    </Button>
+                  </div>
+                  <pre className="appseal-scroll mt-2 max-h-80 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-300">
+                    {file.content}
+                  </pre>
+                  {file.todo.length > 0 && (
+                    <p className="mt-2 text-[11px] leading-relaxed text-amber-400/80">
+                      {lang === "ru" ? "Заполнить руками: " : "Fill in by hand: "}
+                      {file.todo.join(" · ")}
+                    </p>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        )}
+      </div>
+
+      {/* hosting-specific header config: copy-paste fix for the detected platform */}
+      <Collapsible open={patchOpen} onOpenChange={setPatchOpen}>
+        <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
+          <div className="flex items-start gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-sky-300">
+                {lang === "ru"
+                  ? `Готовый конфиг заголовков (${hostingPatch.label})`
+                  : `Ready-made headers config (${hostingPatch.label})`}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                {lang === "ru"
+                  ? `Платформа опознана по ответу сервера. Скопируйте блок в ${hostingPatch.file} - значения те же, на которых AppSeal сам держит класс A+.`
+                  : `Platform detected from the server response. Copy the block into ${hostingPatch.file} - the same values AppSeal runs on its own A+ site.`}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col gap-2">
+              <CollapsibleTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-sky-800 text-sky-300 hover:bg-sky-900/30"
+                >
+                  <ChevronDown className={`h-4 w-4 transition-transform ${patchOpen ? "rotate-180" : ""}`} />
+                  {patchOpen
+                    ? lang === "ru" ? "Свернуть" : "Collapse"
+                    : lang === "ru" ? "Показать конфиг" : "Show config"}
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+          </div>
+          <CollapsibleContent>
+            <div className="mt-3 flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(hostingPatch.code);
+                    setPatchCopied(true);
+                    setTimeout(() => setPatchCopied(false), 2000);
+                  } catch {}
+                }}
+                className="h-7 border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+              >
+                {patchCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                {patchCopied ? t(lang, "copied") : t(lang, "copyBtn")}
+              </Button>
+            </div>
+            <pre className="appseal-scroll mt-2 max-h-96 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-400">
+              {hostingPatch.code}
+            </pre>
+            <p className="mt-2 text-[11px] leading-relaxed text-amber-400/80">{hostingPatch.note[lang]}</p>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
 
       {/* badge embed (Launch Pass gated) */}
       {passActive === false ? (

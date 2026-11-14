@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { activatePass, getLavaInvoiceHost } from "@/lib/passes";
+import { activatePass, ensurePackGranted, getLavaInvoiceHost, setChatPack } from "@/lib/passes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,6 +38,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
   const host = (await getLavaInvoiceHost(invoiceId)) ?? "";
+  // Agency Pack invoices carry the "pack:<chatId>" marker in the host field
+  if (host.startsWith("pack")) {
+    if (await ensurePackGranted(invoiceId)) {
+      const chatId = host.slice(5);
+      if (chatId) await setChatPack(chatId, invoiceId);
+    }
+    return NextResponse.json({ ok: true });
+  }
   // idempotent by design: activatePass overwrites the pass record
   if (host) {
     await activatePass(invoiceId, host);

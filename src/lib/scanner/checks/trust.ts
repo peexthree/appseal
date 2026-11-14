@@ -667,3 +667,144 @@ export async function checkTrustPerf(ctx: Ctx): Promise<CheckResult[]> {
 
   return out;
 }
+
+/* ------------------------------------------------------------------ */
+/* AI endpoint leak check: unauthenticated LLM proxies (vibe-coder pits) */
+/* ------------------------------------------------------------------ */
+
+/** Typical AI-proxy routes in AI-assembled apps: an exposed one lets anyone
+ *  burn the owner's OpenAI/Anthropic balance. Groups keep the result count
+ *  stable (4 checks) regardless of how many concrete paths each covers. */
+const AI_ENDPOINT_GROUPS: { id: string; paths: string[] }[] = [
+  {
+    id: "ai_chat_route",
+    paths: ["/api/chat", "/api/ai/chat", "/api/v1/chat/completions", "/api/assistant"],
+  },
+  {
+    id: "ai_openai_route",
+    paths: ["/api/openai", "/api/openai/chat", "/api/openai/completion"],
+  },
+  {
+    id: "ai_generate_route",
+    paths: ["/api/generate", "/api/ai/generate"],
+  },
+  {
+    id: "ai_completion_route",
+    paths: ["/api/completion", "/api/completions"],
+  },
+];
+
+const AUTH_ERROR_RE =
+  /unauthorized|forbidden|api[ _-]?key|authentication|not[ _-]?(?:logged|authorized)|missing authorization|invalid[ _-]?token|auth required|access denied/i;
+
+function aiEndpointResult(
+  groupId: string,
+  status: CheckResult["status"],
+  title: CheckResult["title"],
+  finding?: CheckResult["finding"],
+  durationMs = 0,
+): CheckResult {
+  return done(
+    groupId,
+    status,
+    status === "fail" ? "high" : "low",
+    status === "fail" ? 8 : 0,
+    title,
+    finding,
+    durationMs,
+  );
+}
+
+interface ProbeOutcome {
+  path: string;
+  state: "open" | "protected" | "absent" | "html" | "unreachable";
+  evidence: string[];
+}
+
+async function probeAiRoute(origin: string, basePath: string, path: string): Promise<ProbeOutcome> {
+  const url = origin + basePath + path;
+  const r = await safeFetch(url, { timeoutMs: 4000, maxBody: 8 * 1024 });
+  if (r.status === 0) {
+    return { path, state: "unreachable", evidence: [] };
+  }
+  const ct = (r.headers["content-type"] ?? "").toLowerCase();
+  const acao = r.headers["access-control-allow-origin"] ?? "";
+  const body = (r.body ?? "").slice(0, 400);
+  const ev = [`GET ${path} -> ${r.status}`, ct ? `content-type: ${ct.split(";")[0]}` : ""];
+  if (acao) ev.push(`access-control-allow-origin: ${acao}`);
+  if (body) ev.push(truncate(body.replace(/\s+/g, " "), 120));
+
+  // protected or absent: any explicit auth wall, method rejection, rate limit
+  if ([401, 402, 403, 405, 429].includes(r.status)) return { path, state: "protected", evidence: ev };
+  if ([404, 410].includes(r.status)) return { path, state: "absent", evidence: ev };
+  if (r.status >= 400) return { path, state: "protected", evidence: ev };
+
+  if (ct.includes("text/html")) {
+    // SPA catch-all serves the app shell - can't tell an API from a page
+    return { path, state: "html", evidence: ev };
+  }
+  // 2xx/3xx with a non-HTML body: the endpoint actually answers the public.
+  // Auth-error JSON bodies (e.g. {"error":"Missing API key"}) still count as
+  // protected - the route responds but refuses to work without a key.
+  if (AUTH_ERROR_RE.test(body)) return { path, state: "protected", evidence: ev };
+  return { path, state: "open", evidence: ev };
+}
+
+export async function checkAiEndpoints(ctx: Ctx): Promise<CheckResult[]> {
+  const t0 = Date.now();
+  const base = ctx.basePath ?? "";
+  const out: CheckResult[] = [];
+
+  for (const group of AI_ENDPOINT_GROUPS) {
+    // all concrete paths of the group fire in parallel; the worst verdict wins
+    const outcomes = await Promise.all(group.paths.map((p) => probeAiRoute(ctx.origin, base, p)));
+    const dur = Date.now() - t0;
+    const open = outcomes.find((o) => o.state === "open");
+    const html = outcomes.find((o) => o.state === "html");
+    const probed = outcomes.find((o) => o.state === "protected" || o.state === "absent");
+    const unreachable = outcomes.every((o) => o.state === "unreachable");
+
+    if (open) {
+      out.push(
+        aiEndpointResult(group.id, "fail", {
+          ru: `ИИ-прокси ${open.path} отвечает публично без авторизации`,
+          en: `AI proxy ${open.path} responds publicly without authentication`,
+        }, {
+          code: "AI_PROXY_OPEN",
+          detail: {
+            ru: "Публичный эндпоинт без проверки ключа: любой посетитель может гонять ваши запросы к LLM, сжигая баланс OpenAI/Anthropic (типовой убыток вайб-кодера - тысячи долларов за ночь). Добавьте проверку API-ключа/сессии на сервере или ограничьте маршрут по origin.",
+            en: "A public endpoint with no key check: any visitor can run LLM calls on your tab, burning the OpenAI/Anthropic balance (a classic vibe-coder loss - thousands of dollars overnight). Add a server-side API-key/session check or restrict the route by origin.",
+          },
+          evidence: open.evidence.filter(Boolean),
+        }, dur),
+      );
+      continue;
+    }
+    if (html) {
+      out.push(
+        aiEndpointResult(group.id, "pass", {
+          ru: `ИИ-эндпоинты (${group.paths[0]}*) не выявлены (SPA-маршрутизация)`,
+          en: `No AI endpoints detected (${group.paths[0]}*, SPA routing)`,
+        }, undefined, dur),
+      );
+      continue;
+    }
+    if (probed) {
+      out.push(
+        aiEndpointResult(group.id, "pass", {
+          ru: "ИИ-эндпоинты закрыты или отсутствуют",
+          en: "AI endpoints are protected or absent",
+        }, undefined, dur),
+      );
+      continue;
+    }
+    out.push(
+      aiEndpointResult(group.id, "skip", {
+        ru: unreachable ? "ИИ-эндпоинты не проверялись (нет ответа)" : "ИИ-эндпоинты не проверялись",
+        en: unreachable ? "AI endpoints not checked (no response)" : "AI endpoints not checked",
+      }, undefined, dur),
+    );
+  }
+
+  return out;
+}

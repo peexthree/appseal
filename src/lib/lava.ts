@@ -59,7 +59,7 @@ function isPaidStatus(status: string): boolean {
 
 export async function createLavaInvoice(
   cfg: LavaCfg,
-  opts: { email: string; nonce: string },
+  opts: { email: string; nonce: string; offerId?: string },
 ): Promise<LavaInvoice> {
   const res = await fetch(`${API_ORIGIN}/api/v3/invoice`, {
     method: "POST",
@@ -70,7 +70,8 @@ export async function createLavaInvoice(
     },
     body: JSON.stringify({
       email: opts.email,
-      offerId: cfg.offerId,
+      // a second offer id (Agency Pack) can override the default one
+      offerId: opts.offerId ?? cfg.offerId,
       currency: "USD",
       // Lava appends invoiceId + status to this URL; our own ?paid= stays intact
       successful_return_url: `${SITE_ORIGIN}/?paid=${encodeURIComponent(opts.nonce)}`,

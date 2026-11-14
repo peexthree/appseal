@@ -128,6 +128,71 @@ export async function hasActivePass(host: string): Promise<boolean> {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Agency Pack: 5 pass-credits bought at once, redeemed per domain     */
+/* ------------------------------------------------------------------ */
+
+export const PACK_CREDITS = 5;
+/** 30 days to redeem all credits after the pack purchase */
+const PACK_TTL_SECONDS = 30 * 24 * 3600;
+
+export async function grantPackCredits(paymentId: string, credits = PACK_CREDITS): Promise<void> {
+  await redisCommand(["SET", `lpack:credits:${paymentId}`, String(credits), "EX", String(PACK_TTL_SECONDS)]);
+}
+
+/** Idempotent grant: SET NX marker first, credits only when it won the race.
+ *  Both the webhook and the ?paid= return path call this - without the marker
+ *  a return-visit GET would refill an already redeemed pack. */
+export async function ensurePackGranted(paymentId: string): Promise<boolean> {
+  const won = await redisCommand<string>([
+    "SET",
+    `lpack:granted:${paymentId}`,
+    "1",
+    "EX",
+    String(PACK_TTL_SECONDS),
+    "NX",
+  ]);
+  if (!won) return false;
+  await grantPackCredits(paymentId);
+  return true;
+}
+
+export async function getPackCredits(paymentId: string): Promise<number> {
+  const raw = await redisCommand<string>(["GET", `lpack:credits:${paymentId}`]);
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Atomically consume one credit; DECR keeps concurrent redeems honest -
+ *  a losing racer is refunded the count it drove below zero. */
+export async function consumePackCredit(paymentId: string): Promise<boolean> {
+  const left = await redisCommand<number>(["DECR", `lpack:credits:${paymentId}`]);
+  if (left === null) return false;
+  if (left < 0) {
+    await redisCommand(["INCR", `lpack:credits:${paymentId}`]);
+    return false;
+  }
+  return true;
+}
+
+/** chat -> pack payment reference so /redeem works days after the payment */
+export async function setChatPack(chatId: string, paymentId: string): Promise<void> {
+  if (!/^[A-Za-z0-9_-]{3,64}$/.test(chatId) || !/^[A-Za-z0-9:_-]{8,120}$/.test(paymentId)) return;
+  await redisCommand(["SET", `tg:pack:${chatId}`, paymentId, "EX", String(PACK_TTL_SECONDS)]);
+}
+
+export async function getChatPack(chatId: string): Promise<string | null> {
+  if (!/^[A-Za-z0-9_-]{3,64}$/.test(chatId)) return null;
+  const raw = await redisCommand<string>(["GET", `tg:pack:${chatId}`]);
+  return raw ?? null;
+}
+
+/** Redeem one pack credit onto a host: unique pass record per redemption. */
+export async function redeemPackPass(paymentId: string, host: string): Promise<PassRecord> {
+  const clean = host.replace(/^www\./i, "").toLowerCase();
+  return activatePass(`${paymentId}:${clean.slice(0, 24)}`, clean);
+}
+
 /** Our own deployments (and the showcase case study) keep badge/PDF access
  *  without a paid pass: their badges stay lit and demo the trust seal. */
 const SELF_HOSTS = new Set([
