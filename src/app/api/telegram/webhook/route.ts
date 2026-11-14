@@ -2,7 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { redisCommand } from "@/lib/passes";
 import { sendTelegramMessage } from "@/lib/telegram";
-import { BotState, handleBotInput } from "@/lib/telegram-bot";
+import {
+  botPayBtn,
+  botPayFail,
+  botPayText,
+  botStatusText,
+  BotLang,
+  BotState,
+  handleBotInput,
+} from "@/lib/telegram-bot";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +20,8 @@ export const dynamic = "force-dynamic";
  * Telegram authenticates the call with the secret token configured in
  * setWebhook (X-Telegram-Bot-Api-Secret-Token header). Per-chat state lives
  * in Redis for 1 hour and never holds the buyer email.
+ * Language comes from the sender's language_code (ru* -> RU, else EN); a
+ * landing deep link carries an explicit prefix that overrides it.
  * The purchase itself is submitted over HTTPS to our own /api/purchase
  * (literal URL - the route exists only on appseal.online), reusing the same
  * provider branches and activation chain as the landing.
@@ -20,13 +30,16 @@ export const dynamic = "force-dynamic";
 const STATE_TTL_SECONDS = 3600;
 const HOSTED_ORIGIN = "https://appseal.online";
 
+interface TgUser {
+  language_code?: string;
+}
 interface TgChat {
   id?: number | string;
 }
 interface TgMessage {
-  message?: { chat?: TgChat; text?: string };
-  edited_message?: { chat?: TgChat; text?: string };
-  callback_query?: { data?: string; message?: { chat?: TgChat } };
+  message?: { chat?: TgChat; from?: TgUser; text?: string };
+  edited_message?: { chat?: TgChat; from?: TgUser; text?: string };
+  callback_query?: { data?: string; from?: TgUser; message?: { chat?: TgChat } };
 }
 
 function stateKey(chatId: string): string {
@@ -59,6 +72,12 @@ function idleKeyboard(): object {
   };
 }
 
+function scannerKeyboard(): object {
+  return {
+    inline_keyboard: [[{ text: "Открыть сканер AppSeal", url: "https://appseal.online" }]],
+  };
+}
+
 async function createPurchase(
   provider: string,
   host: string,
@@ -78,23 +97,16 @@ async function createPurchase(
   return data.confirmationUrl;
 }
 
-async function checkStatus(nonce: string): Promise<string> {
+async function checkStatus(nonce: string): Promise<{ status?: string; host?: string; until?: string }> {
   const res = await fetch(`${HOSTED_ORIGIN}/api/purchase?nonce=${encodeURIComponent(nonce)}`, {
     cache: "no-store",
   });
-  const data = (await res.json().catch(() => ({}))) as {
+  return (await res.json().catch(() => ({}))) as {
     status?: string;
     host?: string;
     until?: string;
     error?: string;
   };
-  if (data.status === "succeeded") {
-    return `Пропуск активен для ${data.host || "?"} до ${data.until ? data.until.slice(0, 10) : "?"}. Сканы без лимита: https://appseal.online`;
-  }
-  if (data.status) {
-    return `Оплата ещё не прошла (статус: ${data.status}). После оплаты нажми /status ещё раз.`;
-  }
-  return "Не удалось проверить статус - попробуй позже.";
 }
 
 export async function POST(req: NextRequest) {
@@ -111,17 +123,20 @@ export async function POST(req: NextRequest) {
   }
 
   const chat = update.message?.chat ?? update.edited_message?.chat ?? update.callback_query?.message?.chat;
+  const from = update.message?.from ?? update.edited_message?.from ?? update.callback_query?.from;
   const chatId = chat?.id !== undefined ? String(chat.id) : "";
   if (!chatId) {
     return NextResponse.json({ ok: true });
   }
+  // buyer language: Telegram language_code (ru* -> RU, everything else EN)
+  const lang: BotLang = (from?.language_code ?? "").toLowerCase().startsWith("ru") ? "ru" : "en";
   // callback_query data is re-interpreted as a command (/buy_ru, /buy_en)
   const raw = update.callback_query?.data
     ? `/${update.callback_query.data.replace(/^\//, "")}`
     : (update.message?.text ?? "");
 
   const state = await loadState(chatId);
-  const step = handleBotInput(state, raw);
+  const step = handleBotInput(state, raw, lang);
 
   try {
     if (step.intent.action === "create_purchase") {
@@ -131,28 +146,30 @@ export async function POST(req: NextRequest) {
         const url = await createPurchase(provider, step.intent.host, step.intent.email, nonce);
         const paidState: BotState = { ...step.state, provider, host: step.intent.host, nonce };
         await saveState(chatId, paidState);
-        const btn = provider === "lava" ? "Pay $6 with card" : "Оплатить 490 ₽ (ЮKassa)";
-        const payText =
-          `Пропуск для домена: ${step.intent.host}. После оплаты активируется автоматически (до пары минут) - проверяй /status.`;
-        await sendTelegramMessage(chatId, payText, {
-          inline_keyboard: [[{ text: btn, url }]],
+        await sendTelegramMessage(chatId, botPayText(step.lang, step.intent.host), {
+          inline_keyboard: [[{ text: botPayBtn(step.lang, provider), url }]],
         });
         return NextResponse.json({ ok: true });
       } catch (e) {
         await saveState(chatId, { stage: "idle" });
+        const retryCmd = provider === "lava" ? "buy_en" : "buy_ru";
         await sendTelegramMessage(
           chatId,
-          `Не удалось создать платёж: ${e instanceof Error ? e.message : String(e)}. Попробуй /${provider === "lava" ? "buy_en" : "buy_ru"} ещё раз.`,
+          botPayFail(step.lang, e instanceof Error ? e.message : String(e), retryCmd),
         );
         return NextResponse.json({ ok: true });
       }
     }
 
     if (step.intent.action === "check_status") {
-      const statusText = await checkStatus(state.nonce ?? "");
-      await sendTelegramMessage(chatId, statusText, {
-        inline_keyboard: [[{ text: "Открыть сканер AppSeal", url: "https://appseal.online" }]],
-      });
+      const d = await checkStatus(state.nonce ?? "");
+      const text =
+        d.status === "succeeded"
+          ? botStatusText(step.lang, "done", d.host, d.until)
+          : d.status
+            ? botStatusText(step.lang, "pending", undefined, undefined, d.status)
+            : botStatusText(step.lang, "fail");
+      await sendTelegramMessage(chatId, text, scannerKeyboard());
       return NextResponse.json({ ok: true });
     }
 
