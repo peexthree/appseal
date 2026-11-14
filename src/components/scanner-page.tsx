@@ -216,6 +216,25 @@ export function ScannerPage({
   const toggleFaq = (i: number) =>
     setFaqOpen((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]));
 
+  // admin quota bypass: opening the site once with /?admin=<key> stores the
+  // key in this browser, after which every scan skips the daily free quota.
+  // The key is wiped from the address bar immediately so it cannot leak
+  // through copied links; without a stored key the request field stays empty
+  const [adminKey] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("admin");
+      if (fromUrl) {
+        localStorage.setItem("appseal-admin-key", fromUrl);
+        window.history.replaceState(null, "", window.location.pathname);
+        return fromUrl;
+      }
+      return localStorage.getItem("appseal-admin-key") ?? "";
+    } catch {
+      return "";
+    }
+  });
+
   useEffect(() => {
     const saved = typeof window !== "undefined" ? localStorage.getItem("appseal-lang") : null;
     if (saved === "ru" || saved === "en") {
@@ -262,7 +281,7 @@ export function ScannerPage({
       const res = await fetch("/api/scan", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: target, lang }),
+        body: JSON.stringify({ url: target, lang, adminKey }),
       });
       if (res.status === 429) {
         setQuotaHit(true);
@@ -280,7 +299,7 @@ export function ScannerPage({
       setError(e instanceof Error ? e.message : String(e));
       setPhase("error");
     }
-  }, [lang]);
+  }, [lang, adminKey]);
 
   // returning from YooKassa: /?paid=<nonce> -> resolve the payment, show the pass
   useEffect(() => {

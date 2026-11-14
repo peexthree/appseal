@@ -17,7 +17,7 @@ const FREE_DAILY_LIMIT = 1;
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as { url?: string; lang?: Lang };
+    const body = (await req.json()) as { url?: string; lang?: Lang; adminKey?: string };
     const raw = (body.url ?? "").trim();
     if (!raw) {
       return NextResponse.json({ error: "url required" }, { status: 400 });
@@ -39,8 +39,11 @@ export async function POST(req: NextRequest) {
     }
 
     // free quota (demo target excluded - it is the marketing funnel);
-    // a live Launch Pass on the target host removes the limit
-    if (!norm.isDemo) {
+    // a live Launch Pass on the target host removes the limit;
+    // the owner's admin key removes it too (set ADMIN_SCAN_KEY in env)
+    const adminBypass =
+      Boolean(process.env.ADMIN_SCAN_KEY) && body.adminKey === process.env.ADMIN_SCAN_KEY;
+    if (!norm.isDemo && !adminBypass) {
       const ip =
         req.headers.get("cf-connecting-ip") ??
         req.headers.get("x-forwarded-for")?.split(",")[0] ??
