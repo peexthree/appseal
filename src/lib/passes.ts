@@ -109,6 +109,27 @@ export async function hasActivePass(host: string): Promise<boolean> {
   }
 }
 
+/** Our own deployments (and the showcase case study) keep badge/PDF access
+ *  without a paid pass: their badges stay lit and demo the trust seal. */
+const SELF_HOSTS = new Set([
+  "appseal.online",
+  "appseal.vercel.app",
+  "appseal.ru",
+  "akulenok-tmz.ru",
+]);
+
+export function isSelfHost(host: string): boolean {
+  const clean = host.replace(/^www\./i, "").toLowerCase();
+  return SELF_HOSTS.has(clean);
+}
+
+/** PDF reports and the embeddable trust badge are Launch Pass benefits:
+ *  unlocked by a live pass on the scanned host (or our own deployments). */
+export async function hasPassAccess(host: string): Promise<boolean> {
+  if (isSelfHost(host)) return true;
+  return hasActivePass(host);
+}
+
 /** Daily free quota for the scan API (per IP hash, UTC-day bucket). */
 export async function bumpDailyQuota(
   ipHash: string,
