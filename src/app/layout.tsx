@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { YandexMetrika } from "@/components/yandex-metrika";
+import { CookieConsent } from "@/components/cookie-consent";
 
 const inter = Inter({
   variable: "--font-body",
@@ -67,6 +68,7 @@ export default function RootLayout({
         <Toaster />
         <Analytics />
         <YandexMetrika />
+        <CookieConsent />
       </body>
     </html>
   );

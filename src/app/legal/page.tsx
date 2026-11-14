@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FileCheck2, Lock, Globe, AlertTriangle } from "@/components/icons/appseal-icons";
+import { CookiePrefs } from "@/components/cookie-consent";
 
 export const metadata: Metadata = {
   title: "AppSeal - Правила использования, данные и отказ от ответственности",
@@ -140,8 +141,13 @@ export default function LegalPage() {
                   >
                     его политике
                   </a>
-                  ; на стороне Сервиса эти данные не хранятся.
+                  ; на стороне Сервиса эти данные не хранятся. Счётчик загружается только после
+                  того, как вы согласитесь на аналитику в баннере cookie: без согласия скрипт
+                  Метрики не запускается вовсе, а сам выбор хранится в localStorage вашего
+                  браузера (никакие прочие cookie на Сервисе не ставятся). Согласие можно отозвать
+                  в любой момент - блок ниже сбрасывает выбор и баннер появится снова.
                 </li>
+                <CookiePrefs />
                 <li>
                   Исключение - покупка Launch Pass: адрес электронной почты плательщика
                   обрабатывается только транзитом и передаётся платёжному провайдеру ЮKassa для
@@ -261,8 +267,10 @@ export default function LegalPage() {
                   ; none of it is stored on our side (exception: the buyer&apos;s email
                   during a Launch Pass purchase is processed in transit and handed to the payment
                   provider YooKassa for the receipt - the operator does not store it; only the
-                  payment id, pass domain and expiry stay on our side). Only the chosen UI
-                  language is kept in your browser. Scan results (domain, date, grade) may be
+                  payment id, pass domain and expiry stay on our side). The counter loads only
+                  after you opt in via the cookie banner; your choice lives in your browser&apos;s
+                  localStorage and can be reset in the cookie preferences block above. Only the
+                  chosen UI language is kept in your browser. Scan results (domain, date, grade) may be
                   published in the public registry; domain owners may request removal by email
                   (processed within 3 business days). Request logs are handled by infrastructure
                   providers Vercel and Cloudflare under their own policies.
