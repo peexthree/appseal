@@ -143,6 +143,28 @@ export function ReportView({
   const [syntax, setSyntax] = useState<"html" | "markdown">("html");
   const [linkCopied, setLinkCopied] = useState(false);
   const [prevScan, setPrevScan] = useState<{ score: number; grade: Grade; id: string } | null>(null);
+  // Launch Pass benefits (PDF + badge) for the scanned host; null = unknown
+  // (render optimistically, /api/pass-status resolves it in a beat)
+  const [passActive, setPassActive] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!reportKey) {
+      setPassActive(null);
+      return;
+    }
+    let alive = true;
+    fetch(`/api/pass-status?id=${encodeURIComponent(scan.id)}&key=${encodeURIComponent(reportKey)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((data: { active?: boolean }) => {
+        if (alive) setPassActive(Boolean(data.active));
+      })
+      .catch(() => {
+        if (alive) setPassActive(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [scan.id, scan.host, reportKey]);
 
   const fails = scan.results.filter((r) => r.status === "fail").length;
   const warns = scan.results.filter((r) => r.status === "warn").length;
@@ -386,12 +408,21 @@ export function ReportView({
 
       {/* actions & 1-click viral sharing */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
-          <a href={`/api/report?id=${scan.id}${reportKey ? `&key=${reportKey}` : ""}`} download>
-            <Download className="h-4 w-4" />
-            {t(lang, "downloadPdf")}
-          </a>
-        </Button>
+        {passActive === false ? (
+          <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
+            <a href="/#pricing">
+              <Download className="h-4 w-4" />
+              {t(lang, "passGatePdf")}
+            </a>
+          </Button>
+        ) : (
+          <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
+            <a href={`/api/report?id=${scan.id}${reportKey ? `&key=${reportKey}` : ""}`} download>
+              <Download className="h-4 w-4" />
+              {t(lang, "downloadPdf")}
+            </a>
+          </Button>
+        )}
         <Button variant="outline" onClick={onReset} className="border-slate-700 text-slate-300 hover:bg-slate-800">
           <RotateCcw className="h-4 w-4" />
           {t(lang, "rescan")}
@@ -470,7 +501,18 @@ export function ReportView({
         </Collapsible>
       )}
 
-      {/* badge embed */}
+      {/* badge embed (Launch Pass gated) */}
+      {passActive === false ? (
+        <div className="mt-6 rounded-xl border border-sky-900/60 bg-[#111827] p-5">
+          <p className="text-sm font-semibold text-slate-200">{t(lang, "passGateTitle")}</p>
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            {t(lang, "passGateText").replace("{host}", scan.host)}
+          </p>
+          <Button asChild className="mt-3 bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
+            <a href="/#pricing">{t(lang, "passGateCta")}</a>
+          </Button>
+        </div>
+      ) : (
       <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -581,6 +623,7 @@ export function ReportView({
           </div>
         </div>
       </div>
+      )}
 
       {/* findings by category */}
       <h3 className="font-display mt-8 text-lg font-bold text-slate-100">

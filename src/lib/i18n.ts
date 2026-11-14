@@ -75,6 +75,13 @@ export const DICT = {
     ru: "Цифры: наш массовый техосмотр от {date}, приложения из Show HN и GitHub. Полная статистика",
     en: "Source: our mass inspection of {date}, apps from Show HN and GitHub. Full statistics",
   },
+  passGateTitle: { ru: "Бейдж и PDF - часть Launch Pass", en: "Badge and PDF are part of Launch Pass" },
+  passGateText: {
+    ru: "Пропуск на домен {host} открывает: скачиваемый PDF-отчёт, embed-бейдж доверия для вашего сайта и безлимит сканов на 7 дней. Fix-prompt остаётся бесплатным.",
+    en: "A pass for {host} unlocks the downloadable PDF report, the embeddable trust badge for your site, and unlimited scans for 7 days. The fix prompt stays free.",
+  },
+  passGateCta: { ru: "Смотреть Launch Pass", en: "See Launch Pass" },
+  passGatePdf: { ru: "PDF - в Launch Pass", en: "PDF - Launch Pass" },
   howTitle: { ru: "Как это работает", en: "How it works" },
   caseTitle: { ru: "Первый кейс: сайт аквацентра", en: "First case: an aqua center website" },
   caseSub: {

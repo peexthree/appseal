@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getScan } from "@/lib/scanner/store";
 import { GRADE_META } from "@/lib/scanner/grade";
+import { hasPassAccess } from "@/lib/passes";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -18,6 +19,10 @@ const TROPHY_FILE = {
   E: "E.png",
 } as const;
 
+/** Honest placeholder shown when the scanned host has no live Launch Pass:
+ *  the trust seal is a paid benefit, a lapsed pass must not keep displaying it. */
+const GATE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="228" height="44" viewBox="0 0 228 44" role="img" aria-label="AppSeal badge: Launch Pass required"><rect width="228" height="44" rx="8" fill="#080B11"/><rect x="0.5" y="0.5" width="227" height="43" rx="7.5" fill="none" stroke="#1E293B"/><text x="14" y="19" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#38BDF8">AppSeal</text><text x="14" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#7C8BA1">badge - Launch Pass required</text></svg>`;
+
 /** Badge endpoint:
  *  - style=trophy | format=png -> 512x512 3D trophy PNG
  *  - default -> vector shield SVG with cyber-security theme
@@ -28,6 +33,17 @@ export async function GET(req: NextRequest) {
   const theme = req.nextUrl.searchParams.get("theme") === "light" ? "light" : "dark";
   const langParam = req.nextUrl.searchParams.get("lang");
   const scan = await getScan(id);
+
+  // Launch Pass gate: without a live pass on the scanned host the badge
+  // renders as the placeholder (no-store - a purchase changes the answer)
+  if (scan && !(await hasPassAccess(scan.host))) {
+    return new Response(GATE_SVG, {
+      headers: {
+        "content-type": "image/svg+xml; charset=utf-8",
+        "cache-control": "no-store",
+      },
+    });
+  }
 
   const grade = scan?.grade ?? "E";
   const meta = GRADE_META[grade as keyof typeof GRADE_META] ?? GRADE_META["E"];

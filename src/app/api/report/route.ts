@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getScan } from "@/lib/scanner/store";
 import { buildReportPdf } from "@/lib/scanner/report-pdf";
+import { hasPassAccess } from "@/lib/passes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,6 +17,14 @@ export async function GET(req: NextRequest) {
   // holding the report key (bare ids must stay on the public view)
   if (!scan.rkey || scan.rkey !== key) {
     return new Response("forbidden", { status: 403 });
+  }
+  // PDF is a Launch Pass benefit: the scanned host needs a live pass
+  // (the UI mirrors this via /api/pass-status and shows the upsell)
+  if (!(await hasPassAccess(scan.host))) {
+    return Response.json(
+      { error: "launch_pass_required", upsell: "launch-pass" },
+      { status: 402 },
+    );
   }
   const bytes = await buildReportPdf(scan);
   const safeHost = scan.host.replace(/[^a-z0-9.-]/gi, "");
