@@ -113,10 +113,10 @@ export const DICT = {
     en: "the agent fixed two findings with one config commit",
   },
   caseStep3t: { ru: "Повторный скан", en: "Re-scan" },
-  caseStep3n: { ru: "A · 97", en: "A · 97" },
+  caseStep3n: { ru: "A · 91", en: "A · 91" },
   caseStep3d: {
-    ru: "заголовки на месте, CORS явный",
-    en: "headers in place, CORS explicit",
+    ru: "заголовки на месте, CORS явный · класс подтверждён свежим сканом на 121 проверке",
+    en: "headers in place, CORS explicit · grade re-confirmed by a fresh 121-check scan",
   },
   caseBody: {
     ru: "Сайт семейного аквацентра собран с ИИ и живёт на Vercel. Внешний скан без доступа к коду нашёл типовые дыры деплоя. Кнопка «Промпт для ИИ-агента» скопировала отчёт, агент той же сессии внёс правки, повторный скан подтвердил результат.",
@@ -249,8 +249,8 @@ export const DICT = {
   },
   faq5Q: { ru: "Сколько длится скан?", en: "How long does a scan take?" },
   faq5A: {
-    ru: "Обычно 20-40 секунд: около 100 лёгких GET-запросов к публичным страницам. Нагрузка сопоставима с одним активным посетителем - ничего не ломаем и не кладём.",
-    en: "Usually 20-40 seconds: about 100 lightweight GET requests to public pages. The load is comparable to one active visitor - nothing breaks, nothing goes down.",
+    ru: "Обычно 20-40 секунд: около 130 лёгких запросов к публичным страницам. Нагрузка сопоставима с одним активным посетителем - ничего не ломаем и не кладём.",
+    en: "Usually 20-40 seconds: about 130 lightweight requests to public pages. The load is comparable to one active visitor - nothing breaks, nothing goes down.",
   },
   faq6Q: { ru: "А если приложение - SPA и рендерится в браузере?", en: "What if my app is an SPA rendered in the browser?" },
   faq6A: {

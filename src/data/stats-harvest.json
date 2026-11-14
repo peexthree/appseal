@@ -54,37 +54,37 @@
     },
     {
       "id": "hdr_referrer",
-      "title": "Referrer-Policy установлен",
+      "title": "Заголовок Referrer-Policy не установлен",
       "failPct": 0,
       "warnPct": 54
     },
     {
       "id": "hdr_xcto",
-      "title": "X-Content-Type-Options установлен",
+      "title": "Заголовок X-Content-Type-Options не установлен",
       "failPct": 0,
       "warnPct": 50
     },
     {
       "id": "hdr_hsts",
-      "title": "HSTS установлен",
+      "title": "Заголовок HSTS не установлен",
       "failPct": 0,
       "warnPct": 36
     },
     {
       "id": "og_image",
-      "title": "og:image настроен",
+      "title": "og:image не настроен",
       "failPct": 0,
       "warnPct": 33
     },
     {
       "id": "og_title",
-      "title": "og:title настроен",
+      "title": "og:title не настроен",
       "failPct": 0,
       "warnPct": 30
     },
     {
       "id": "og_description",
-      "title": "og:description настроен",
+      "title": "og:description не настроен",
       "failPct": 0,
       "warnPct": 30
     },
@@ -96,7 +96,7 @@
     },
     {
       "id": "cors_wildcard",
-      "title": "CORS не открыт для всех",
+      "title": "CORS открыт для всех (*)",
       "failPct": 0,
       "warnPct": 24
     }

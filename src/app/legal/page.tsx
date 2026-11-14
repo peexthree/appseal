@@ -102,12 +102,14 @@ export default function LegalPage() {
                   чекбоксом при запуске скана.
                 </li>
                 <li>
-                  Скан выполняется в исключительно пассивном режиме: стандартные HTTP-запросы
+                  Скан выполняется в пассивном режиме: стандартные HTTP-запросы
                   <code className="mx-1 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">GET</code>/
                   <code className="mx-1 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">HEAD</code>/
                   <code className="mx-1 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">OPTIONS</code>
-                  к публично доступным страницам. Попытки входа, взлома, инъекций и нагрузочного
-                  воздействия не производятся.
+                  к публично доступным страницам. Для страниц, отрисовываемых только в браузере
+                  (SPA), движок дополнительно открывает страницу в headless-браузере и читает уже
+                  собранную разметку - без ввода данных, авторизации и отправки форм. Попытки
+                  входа, взлома, инъекций и нагрузочного воздействия не производятся.
                 </li>
                 <li>
                   Запрещены автоматизированное использование Сервиса в обход интерфейса, попытки
@@ -226,8 +228,48 @@ export default function LegalPage() {
                   или косвенный ущерб, связанный с использованием Сервиса.
                 </li>
                 <li>
-                  Материалы Сервиса не являются публичной офертой. К отношениям по использованию
-                  Сервиса применяется законодательство Российской Федерации.
+                  Условия использования бесплатных функций Сервиса не являются публичной офертой;
+                  условия приобретения платного Launch Pass закреплены в разделе 5 ниже (публичная
+                  оферта). К отношениям по использованию Сервиса применяется законодательство
+                  Российской Федерации.
+                </li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <FileCheck2 className="h-4 w-4 text-emerald-400" />
+                5. Условия приобретения Launch Pass (публичная оферта)
+              </h2>
+              <ul className="mt-3 list-inside list-disc space-y-2 pl-1">
+                <li>
+                  Акцепт настоящего раздела - оплата, оформленная в Telegram-боте Сервиса
+                  (@AppSeal_Monitor_Bot) по ссылке с сайта. Оплата означает полное и безоговорочное
+                  принятие условий этого раздела.
+                </li>
+                <li>
+                  Предмет: разовый цифровой пропуск (Launch Pass) на один указанный покупателем
+                  домен. Цена - <strong className="text-slate-100">490 ₽</strong>, разовый платёж,
+                  автоматических списаний и автопродления нет.
+                </li>
+                <li>
+                  Пропуск действует <strong className="text-slate-100">7 суток</strong> с момента
+                  оплаты и открывает на этот домен: неограниченное число повторных сканов,
+                  скачиваемый PDF-отчёт и встраиваемый бейдж доверия для сайта. Fix-prompt
+                  остаётся бесплатным.
+                </li>
+                <li>
+                  Оплата проходит через платёжных провайдеров, подключённых в Telegram-боте
+                  (эквайринг ЮKassa; для иностранных карт - Lava.top). Чек самозанятого (НПД)
+                  направляется плательщику в Telegram. Оператор - самозанятый гражданин РФ; контакт
+                  для всех вопросов: {CONTACT_EMAIL}.
+                </li>
+                <li>
+                  Доступ к функциям пропуска активируется автоматически сразу после подтверждения
+                  платежа. Если пропуск не активировался или не работает в течение срока действия,
+                  покупатель направляет письмо на {CONTACT_EMAIL} с указанием домена и даты оплаты -
+                  платёж возвращается полностью в течение 3 рабочих дней. По остальным основаниям
+                  возвраты не предусмотрены (цифровой товар, оказан и использован мгновенно).
                 </li>
               </ul>
             </section>
@@ -250,7 +292,14 @@ export default function LegalPage() {
                 </li>
                 <li>
                   Scan only resources you own, develop, or are authorized to test. Checks are
-                  strictly passive (public GET/HEAD/OPTIONS responses only).
+                  passive: public GET/HEAD/OPTIONS responses, plus a headless-browser render of
+                  client-side (SPA) pages - no login attempts, form submissions or load testing.
+                </li>
+                <li>
+                  Launch Pass: 490 ₽ one-time purchase in the Service&apos;s Telegram bot, valid 7
+                  days per domain, unlocks unlimited rescans, the PDF report and the embeddable
+                  badge - no auto-renewal. If the pass fails to activate, a full refund is issued
+                  within 3 business days (email the contact above).
                 </li>
                 <li>
                   No accounts, no forms. Web analytics: the Yandex.Metrica counter #114248324

@@ -1,5 +1,5 @@
 import type { ScanResult } from "./types";
-import { REGISTRY_MAX } from "../registry";
+import { REGISTRY_MAX, canonicalHost } from "../registry";
 import { promises as fs } from "node:fs";
 import { createHash, randomBytes } from "node:crypto";
 import path from "node:path";
@@ -167,6 +167,10 @@ export interface RegistryEntry {
  * must never break the scan flow.
  */
 export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
+  // canonical form at the single write point: www.example.com scans never
+  // fork into a second catalog entry (legacy rows merge on read)
+  const host = canonicalHost(entry.host);
+  entry = host === entry.host ? entry : { ...entry, host };
   try {
     const cfg = redisConfig();
     if (cfg) {

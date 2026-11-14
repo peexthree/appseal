@@ -91,13 +91,13 @@ const CHECK_CATEGORIES = [
 
 /** one-click demo targets - real past scans, the E one is the deliberately vulnerable fixture */
 const DEMO_CHIPS: { target: string; grade: Grade; score: number }[] = [
-  { target: "akulenok-tmz.ru", grade: "A", score: 97 },
+  { target: "akulenok-tmz.ru", grade: "A", score: 91 },
   { target: "appseal.online", grade: "A+", score: 97 },
   { target: "demo://app", grade: "E", score: 0 },
 ];
 
-/** the re-scan of the aqua center case (A/97), public verification view */
-const CASE_REPORT_ID = "mwehe0wu-6f339614bd";
+/** the re-scan of the aqua center case (A/91, current engine), public verification view */
+const CASE_REPORT_ID = "mwgtru41-31b2e3c030";
 
 /** grade showcase rotation order: the chips render it, the 5s auto-cycle walks it */
 const GRADE_ORDER: Grade[] = ["A+", "A", "B", "C", "D", "E"];
@@ -149,12 +149,16 @@ const REGISTRY_DECOR: { host: string; color: string }[] = [
 export function ScannerPage({
   initialScan,
   initialReportKey,
+  initialLang,
 }: {
   initialScan: ScanResult | null;
   /** report key from ?key= - present only for the scan initiator */
   initialReportKey?: string;
+  /** server-resolved seed (headers): ru for RU audience, en for everyone
+   *  else; a saved localStorage choice still wins over it */
+  initialLang?: Lang;
 }) {
-  const [lang, setLang] = useState<Lang>("ru");
+  const [lang, setLang] = useState<Lang>(initialLang ?? "ru");
   const [phase, setPhase] = useState<Phase>(initialScan ? "report" : "form");
   const [showGrade, setShowGrade] = useState<Grade>("A+");
   // auto-showcase: pointer or keyboard focus inside the card pauses the cycle,
@@ -241,8 +245,26 @@ export function ScannerPage({
     const saved = typeof window !== "undefined" ? localStorage.getItem("appseal-lang") : null;
     if (saved === "ru" || saved === "en") {
       setLang(saved);
+    } else if (initialLang) {
+      // SSR already picked the language from headers; navigator check would
+      // only duplicate it and risk a flash of the other language
+      return;
     } else if (typeof navigator !== "undefined" && !navigator.language.toLowerCase().startsWith("ru")) {
       setLang("en");
+    }
+  }, [initialLang]);
+
+  // keep <html lang> in sync with the active UI language (layout is static)
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
+  // deep link from the registry Fix CTA: /?domain=example.com prefills the
+  // scanner input so the owner is one click from the re-scan
+  useEffect(() => {
+    const d = new URLSearchParams(window.location.search).get("domain");
+    if (d && /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d.trim())) {
+      setUrl(d.trim());
     }
   }, []);
 
@@ -991,7 +1013,7 @@ export function ScannerPage({
           <Reveal className="mt-8">
             <div className="appseal-ring mx-auto max-w-3xl">
               <div className="rounded-[15px] bg-[#0b101c] p-6 sm:p-8">
-                {/* timeline: lime 86 -> emerald 97, revealed step by step */}
+                {/* timeline: lime 86 -> emerald 91, revealed step by step */}
                 <div className="grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
                   {[
                     {
@@ -1362,7 +1384,7 @@ export function ScannerPage({
               href="/report/mweys4fr-0d7b05c638"
               target="_blank"
               rel="noopener"
-              title="AppSeal Security Verified: Grade A+ (100/100)"
+              title="AppSeal Security Verified: Grade A+ (97/100)"
               className="inline-block transition-transform hover:scale-[1.02]"
             >
               <img

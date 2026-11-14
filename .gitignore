@@ -39,6 +39,10 @@ yarn-error.log*
 
 # legacy local artifacts (old spec PDFs, benchmark dumps served elsewhere)
 download/
+docs/AppMOT_*
+docs/appmot.git.bundle
+p3url.txt
+pfurl.txt
 
 # vercel
 .vercel

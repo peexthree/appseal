@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getRegistryEntries, redisConfig, redis } from "@/lib/scanner/store";
-import { dedupeRegistry } from "@/lib/registry";
+import { dedupeRegistry, isDofollow, isReferenceSite } from "@/lib/registry";
 import RegistryList from "./registry-list";
 
 // ISR: the catalog is a top bot crawl target and a dynamic render on every
@@ -18,9 +18,14 @@ export const metadata: Metadata = {
 
 export default async function RegistryPage() {
   const raw = await getRegistryEntries();
-  // the full catalog: every finished scan is listed, the client component
-  // blurs descriptions of hosts below A (showcase of top grades stays intact)
-  const entries = dedupeRegistry(raw);
+  // the catalog shows only AI-built projects: reference mega-sites (scanned
+  // by demos) stay in storage but never render next to indie apps, legacy
+  // www.-duplicates fold into the bare domain, and descriptions of hosts
+  // below A are stripped from the payload entirely - the blur alone left the
+  // text parseable in the source HTML, the privacy reward must not leak
+  const entries = dedupeRegistry(raw)
+    .filter((e) => !isReferenceSite(e.host))
+    .map((e) => (isDofollow(e) ? e : { ...e, desc: undefined }));
 
   // living-registry heartbeat: how many auto scans ran in the last 24h
   let tickCount = 0;
@@ -109,7 +114,7 @@ export default async function RegistryPage() {
               href="/report/mweys4fr-0d7b05c638"
               target="_blank"
               rel="noopener"
-              title="AppSeal Security Verified: Grade A+ (100/100)"
+              title="AppSeal Security Verified: Grade A+ (97/100)"
               className="inline-block"
             >
               <img

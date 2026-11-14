@@ -18,12 +18,49 @@ export interface RegistryEntry {
 
 export const REGISTRY_MAX = 1000;
 
-/** Keep the newest scan per host, newest first. */
+/**
+ * Hosts stored and displayed in canonical (www-less, lowercase) form: a scan
+ * of www.example.com and example.com is one catalog entry, not two.
+ */
+export function canonicalHost(host: string): string {
+  return host.toLowerCase().replace(/^www\./, "");
+}
+
+/**
+ * Mega-sites that land in the catalog through demo scans of well-known
+ * domains. They are not AI-built apps, so "YouTube - Vulnerable" next to
+ * indie projects undermines the grading algorithm's credibility: reference
+ * hosts are kept in storage (the stats stay untouched) but never rendered.
+ */
+const REFERENCE_HOSTS = new Set([
+  "google.com", "youtube.com", "facebook.com", "instagram.com", "x.com",
+  "twitter.com", "github.com", "gitlab.com", "wikipedia.org", "reddit.com",
+  "medium.com", "stackoverflow.com", "amazon.com", "netflix.com",
+  "linkedin.com", "tiktok.com", "apple.com", "microsoft.com", "mozilla.org",
+  "cloudflare.com", "vercel.com", "netlify.com", "upstash.com", "supabase.com",
+  "notion.so", "figma.com", "openai.com", "chatgpt.com", "claude.ai",
+  "anthropic.com", "telegram.org", "discord.com", "spotify.com", "twitch.tv",
+  "ebay.com", "yandex.ru", "vk.com", "ozon.ru", "wildberries.ru", "habr.com",
+  "npmjs.com", "wordpress.org",
+]);
+
+/** True when the host is a mega reference site, not an AI-built project. */
+export function isReferenceSite(host: string): boolean {
+  return REFERENCE_HOSTS.has(canonicalHost(host));
+}
+
+/**
+ * Keep the newest scan per canonical host, newest first. The www. prefix is
+ * folded here, so legacy rows stored as www.example.com merge into the
+ * example.com entry on read - no data migration needed.
+ */
 export function dedupeRegistry(entries: RegistryEntry[]): RegistryEntry[] {
   const byHost = new Map<string, RegistryEntry>();
   for (const e of entries) {
-    const prev = byHost.get(e.host);
-    if (!prev || e.ts > prev.ts) byHost.set(e.host, e);
+    const host = canonicalHost(e.host);
+    const normalized = host === e.host ? e : { ...e, host };
+    const prev = byHost.get(host);
+    if (!prev || e.ts > prev.ts) byHost.set(host, normalized);
   }
   return [...byHost.values()].sort((a, b) => b.ts - a.ts);
 }
