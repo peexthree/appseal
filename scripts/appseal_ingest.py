@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Push grade-A/A+ hosts from a finished benchmark run to the public registry.
+"""Push every finished benchmark scan to the public registry (any grade).
 
 Reads scripts/benchmark_data/*.json (written by appseal_benchmark.py), keeps
-status=done non-demo scans with grade A+ or A, dedupes by host (newest scan
-wins) and POSTs batches to the production ingest endpoint. Hosts below grade
-A are intentionally NOT listed: the public registry policy is grade A / A+
-plus owners who scanned the site themselves; the rest stays aggregate-only.
+status=done non-demo scans that produced real results (dead URLs and
+api-error targets have empty results and are skipped), dedupes by host
+(newest scan wins) and POSTs batches to the production ingest endpoint.
+The registry UI blurs descriptions of hosts below grade A, so listing all
+grades is safe; the runner never sends scans without results.
 
 The ingest key lives in the local env file (never in the repo):
   REGISTRY_INGEST_KEY=...
@@ -23,7 +24,6 @@ import re
 BENCH_DIR = pathlib.Path(__file__).parent / "benchmark_data"
 ENV_FILE = pathlib.Path("D:/BIR/.env")
 STOP_HOSTS = pathlib.Path(__file__).parent / "stop_hosts.txt"
-PUBLISH_GRADES = ("A+", "A")
 
 
 def load_stop_hosts() -> set[str]:
@@ -94,7 +94,9 @@ def collect() -> list[dict]:
         # (platforms, our own apps) never belong in the public registry
         if d.get("group") != "harvest":
             continue
-        if d.get("grade") not in PUBLISH_GRADES:
+        # dead URLs and errored scans have no results: a badge on a site that
+        # does not exist is noise, never publish those
+        if not d.get("results"):
             continue
         host = str(d.get("host", "")).lower().removeprefix("www.")
         if not host or "." not in host or host in stop:
@@ -142,7 +144,7 @@ def main() -> None:
     args = ap.parse_args()
 
     entries = collect()
-    print(f"grade A/A+ hosts ready for the registry: {len(entries)}")
+    print(f"hosts ready for the registry (all grades): {len(entries)}")
     for e in entries:
         print(f"  {e['grade']:2} {e['score']:3}  {e['host']}")
     if args.push and entries:

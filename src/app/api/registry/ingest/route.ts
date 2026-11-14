@@ -6,14 +6,13 @@ export const dynamic = "force-dynamic";
 
 /**
  * Registry ingest for benchmark runs (issue #3 GTM): the local benchmark
- * runner scans hundreds of publicly posted AI-built apps and pushes only the
- * ones that earned grade A/A+. Everything below A stays anonymous in the
- * aggregate stats - a host is listed publicly either because the scan was
- * initiated by its owner (regular /api/scan flow) or because it passed the
- * top bar. Lowering the bar here would turn the catalog into a wall of shame.
+ * runner scans hundreds of publicly posted AI-built apps and pushes every
+ * finished scan with real results, any grade (the runner never sends dead
+ * URLs or errored scans). The registry UI blurs descriptions of hosts below
+ * A; the aggregate stats stay anonymous.
  */
 
-const PUBLISH_GRADES = new Set(["A+", "A"]);
+const GRADE_RE = /^[A-E]\+?$/;
 const HOST_RE = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 const ID_RE = /^[a-z0-9-]{6,40}$/;
 const MAX_BATCH = 100;
@@ -70,7 +69,7 @@ export async function POST(req: NextRequest) {
     // one entry per host per batch; window covers a long run, blocks garbage
     const ok =
       HOST_RE.test(host) &&
-      PUBLISH_GRADES.has(grade) &&
+      GRADE_RE.test(grade) &&
       Number.isInteger(score) &&
       score >= 0 &&
       score <= 100 &&

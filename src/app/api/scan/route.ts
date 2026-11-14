@@ -92,10 +92,11 @@ export async function POST(req: NextRequest) {
     // function alive (waitUntil) within maxDuration, locally it just works
     after(async () => {
       // runScan never throws: the final record lands in the store; its return
-      // value feeds the public registry. Demo scans excluded; the registry is
-      // a curated showcase - only A/A+ hosts make it in.
+      // value feeds the public registry. Demo scans excluded. Every finished
+      // scan is listed - the catalog shows all grades; descriptions of hosts
+      // below A are blurred in the registry UI, findings stay rkey-private.
       const fin = await runScan(scan);
-      if (fin && !scan.isDemo && (fin.grade === "A+" || fin.grade === "A")) {
+      if (fin && !scan.isDemo) {
         await pushRegistryEntry({
           host: fin.host,
           grade: fin.grade,

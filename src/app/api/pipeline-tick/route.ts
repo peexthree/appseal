@@ -18,15 +18,15 @@ export const maxDuration = 60;
 
 /**
  * Living-registry heartbeat: each call scans ONE freshly harvested AI-built
- * app and feeds grade A/A+ results into the public registry, so the catalog
- * visibly updates around the clock with new hosts - not rescans of the old
- * panel. No user interaction, no local machine involved.
+ * app and feeds the result into the public registry (any grade), so the
+ * catalog visibly updates around the clock with new hosts - not rescans of
+ * the old panel. No user interaction, no local machine involved.
  *
  * Flow per tick:
  *  1. rate-lock (public endpoint - a stranger calling it just gets a no-op);
  *  2. if the queue is empty, harvest fresh Show HN / GitHub targets (hourly
  *     self-throttled), dedupe hosts against the known set, enqueue newcomers;
- *  3. pop one URL, run the scanner inline, publish A/A+ to the registry;
+ *  3. pop one URL, run the scanner inline, publish the result to the registry;
  *  4. bump the 24h counter shown on /registry.
  *
  * Driven by a free scheduler hitting this URL every 30 minutes
@@ -226,7 +226,7 @@ export async function GET() {
     const status = fin ? "done" : "error";
     const grade = fin?.grade ?? "E";
     const finalScore = fin?.score ?? 0;
-    if (fin && (fin.grade === "A+" || fin.grade === "A")) {
+    if (fin) {
       await pushRegistryEntry({
         host: fin.host,
         grade: fin.grade,
