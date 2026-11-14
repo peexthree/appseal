@@ -292,35 +292,46 @@ export async function checkTrustSignals(ctx: Ctx): Promise<CheckResult[]> {
   const out: CheckResult[] = [];
   const body = ctx.homeBody;
 
-  // 1. privacy policy link
+  // privacy-policy link: reused by the trackers-disclosure check below
   const privacyHit = ctx.csr
     ? null
     : findAnchor(body, /(?:href=["'][^"']*(?:privacy|конфиденциаль|персональн[^"']*данн|\/legal|\/policy)|>\s*(?:privacy|политик|конфиденциаль))/i);
-  out.push(privacyHit || ctx.csr ? done("trust_privacy_link", privacyHit ? "pass" : "warn", "low", privacyHit ? 0 : 2, {
-    ru: privacyHit ? "Ссылка на политику приватности найдена" : "Ссылка на политику приватности не найдена",
-    en: privacyHit ? "Privacy policy link found" : "Privacy policy link missing",
-  }, privacyHit || ctx.csr ? undefined : {
-    code: "NO_PRIVACY_LINK",
-    detail: {
-      ru: "На главной нет ссылки на политику приватности: посетитель не видит, что происходит с его данными, а рекламные площадки и маркетплейсы при проверке просят её в первую очередь. Даже одностраничная /privacy снимает вопрос.",
-      en: "The homepage has no privacy policy link: visitors cannot see what happens to their data, and ad networks or marketplaces ask for it first. Even a one-page /privacy settles it.",
-    },
-    evidence: [],
-  }, Date.now() - t0) : csrSkip("trust_privacy_link", "ссылка на приватность не оценивалась", "privacy link not evaluated", t0));
+
+  // 1. privacy policy link
+  if (ctx.csr) {
+    out.push(csrSkip("trust_privacy_link", "ссылка на приватность не оценивалась", "privacy link not evaluated", t0));
+  } else {
+    const hit = privacyHit;
+    out.push(done("trust_privacy_link", hit ? "pass" : "warn", "low", hit ? 0 : 2, {
+      ru: privacyHit ? "Ссылка на политику приватности найдена" : "Ссылка на политику приватности не найдена",
+      en: privacyHit ? "Privacy policy link found" : "Privacy policy link missing",
+    }, privacyHit ? undefined : {
+      code: "NO_PRIVACY_LINK",
+      detail: {
+        ru: "На главной нет ссылки на политику приватности: посетитель не видит, что происходит с его данными, а рекламные площадки и маркетплейсы при проверке просят её в первую очередь. Даже одностраничная /privacy снимает вопрос.",
+        en: "The homepage has no privacy policy link: visitors cannot see what happens to their data, and ad networks or marketplaces ask for it first. Even a one-page /privacy settles it.",
+      },
+      evidence: [],
+    }, Date.now() - t0));
+  }
 
   // 2. terms link
-  const termsHit = ctx.csr ? null : findAnchor(body, /(?:href=["'][^"']*(?:terms|tos|условия|соглашен|agreement|\/legal)|>\s*(?:terms|условия|правила))/i);
-  out.push(termsHit || ctx.csr ? done("trust_terms_link", termsHit ? "pass" : "warn", "low", termsHit ? 0 : 1, {
-    ru: termsHit ? "Ссылка на условия использования найдена" : "Ссылка на условия использования не найдена",
-    en: termsHit ? "Terms link found" : "Terms link missing",
-  }, termsHit || ctx.csr ? undefined : {
-    code: "NO_TERMS_LINK",
-    detail: {
-      ru: "Нет ссылки на условия использования: правила сервиса нигде не объявлены, при споре не на что ссылаться. Достаточно страницы /terms с базовыми пунктами.",
-      en: "No terms-of-service link: the service rules are declared nowhere and there is nothing to reference in a dispute. A basic /terms page is enough.",
-    },
-    evidence: [],
-  }, Date.now() - t0) : csrSkip("trust_terms_link", "условия не оценивались", "terms not evaluated", t0));
+  if (ctx.csr) {
+    out.push(csrSkip("trust_terms_link", "условия не оценивались", "terms not evaluated", t0));
+  } else {
+    const termsHit = findAnchor(body, /(?:href=["'][^"']*(?:terms|tos|условия|соглашен|agreement|\/legal)|>\s*(?:terms|условия|правила))/i);
+    out.push(done("trust_terms_link", termsHit ? "pass" : "warn", "low", termsHit ? 0 : 1, {
+      ru: termsHit ? "Ссылка на условия использования найдена" : "Ссылка на условия использования не найдена",
+      en: termsHit ? "Terms link found" : "Terms link missing",
+    }, termsHit ? undefined : {
+      code: "NO_TERMS_LINK",
+      detail: {
+        ru: "Нет ссылки на условия использования: правила сервиса нигде не объявлены, при споре не на что ссылаться. Достаточно страницы /terms с базовыми пунктами.",
+        en: "No terms-of-service link: the service rules are declared nowhere and there is nothing to reference in a dispute. A basic /terms page is enough.",
+      },
+      evidence: [],
+    }, Date.now() - t0));
+  }
 
   // 3. contact channel
   const contactHit = ctx.csr ? null : findAnchor(body, /(?:href=["'][^"']*(?:mailto:|t\.me\/|telegram|whatsapp|\/contact|\/support|контак)|>\s*(?:contact|контакт|support|поддержка))/i);
