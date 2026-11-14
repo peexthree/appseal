@@ -173,10 +173,9 @@ export function ScannerPage({
   const [passInfo, setPassInfo] = useState<{ host: string; until: string } | null>(null);
   const [paidPending, setPaidPending] = useState(false);
   const [lpHost, setLpHost] = useState("");
-  const [lpEmail, setLpEmail] = useState("");
-  const [lpBusy, setLpBusy] = useState(false);
   const [lpErr, setLpErr] = useState("");
-  const [booting, setBooting] = useState(true);
+  // boot splash shows once per browser (localStorage gate), never on reloads
+  const [booting, setBooting] = useState(false);
   const [bootPct, setBootPct] = useState(0);
   const [bootStage, setBootStage] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -251,13 +250,14 @@ export function ScannerPage({
     }
   };
 
-  // playful fake boot: 1.2s splash with a progress bar, once per page load.
-  // skipped entirely for reduced-motion users
+  // playful fake boot: 1.2s splash with a progress bar, shown exactly once
+  // per browser (localStorage marker); reloads and revisits skip it entirely,
+  // as do reduced-motion users
   useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      setBooting(false);
-      return;
-    }
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.localStorage.getItem("appseal-boot-seen") === "1") return;
+    window.localStorage.setItem("appseal-boot-seen", "1");
+    setBooting(true);
     const ctrl = animate(0, 100, { duration: 1.1, ease: "easeInOut", onUpdate: (v) => setBootPct(Math.round(v)) });
     const stages = setInterval(() => setBootStage((s) => (s + 1) % 3), 360);
     const done = setTimeout(() => setBooting(false), 1350);
@@ -325,39 +325,18 @@ export function ScannerPage({
     void check();
   }, []);
 
-  const buyPass = async () => {
+  // the site collects only the domain; the receipt email is the bot's job
+  // (it asks in the chat and passes it transit-only to the payment provider).
+  // start_param allows A-Z a-z 0-9 _ and - only, so dots map to underscores.
+  const buyPass = () => {
     setLpErr("");
     const host = lpHost.trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/^www\./i, "");
-    const email = lpEmail.trim();
     if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(host)) {
       setLpErr(t(lang, "lpDomainBad"));
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-      setLpErr(t(lang, "lpEmailBad"));
-      return;
-    }
-    setLpBusy(true);
-    try {
-      const nonce = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-      const res = await fetch("/api/purchase", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        // email goes transit-only: the provider uses it for the receipt, we
-        // never store it; EN buyers pay in USD via Lava, RU in RUB via YooKassa
-        body: JSON.stringify({ host, email, nonce, lang, provider: lang === "en" ? "lava" : "yk" }),
-      });
-      const d = (await res.json().catch(() => ({}))) as { confirmationUrl?: string; error?: string };
-      if (!res.ok || !d.confirmationUrl) {
-        throw new Error(d.error ?? `HTTP ${res.status}`);
-      }
-      window.location.href = d.confirmationUrl;
-    } catch (e) {
-      setLpErr(`${t(lang, "lpErr")}${e instanceof Error ? e.message : String(e)}`);
-      setLpBusy(false);
-    }
+    const prefix = lang === "en" ? "en" : "ru";
+    window.location.href = `https://t.me/AppSeal_Monitor_Bot?start=${prefix}-${host.toLowerCase().replace(/\./g, "_")}`;
   };
 
   useEffect(() => {
@@ -1223,21 +1202,12 @@ export function ScannerPage({
                         aria-label="Pass domain"
                         className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
                       />
-                      <input
-                        value={lpEmail}
-                        onChange={(e) => setLpEmail(e.target.value)}
-                        placeholder={t(lang, "lpEmailPh")}
-                        type="email"
-                        aria-label="Pass email"
-                        className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
-                      />
                       <Button
                         className="w-full bg-emerald-400 text-[#090d16] hover:bg-emerald-300"
                         onClick={buyPass}
-                        disabled={lpBusy}
                       >
                         <Zap className="h-4 w-4" />
-                        {lpBusy ? "…" : t(lang, "planLPCta")}
+                        {t(lang, "planLPCta")}
                       </Button>
                       <p className="text-[10px] leading-relaxed text-slate-500">{t(lang, "lpNote")}</p>
                       {lpErr && <p className="text-[11px] leading-snug text-red-400">{lpErr}</p>}

@@ -57,8 +57,26 @@ export function handleBotInput(state: BotState, raw: string): BotStep {
   if (text.startsWith("/")) {
     const cmd = text.split(/[\s@]+/)[0].toLowerCase();
     switch (cmd) {
-      case "/start":
+      case "/start": {
+        // deep link from the landing: /start ru-myapp_vercel_app - dots arrive
+        // as underscores (start_param allows only latin/digits/_/-), provider
+        // is preset by the prefix and the bot goes straight to the email step
+        const param = text.split(/\s+/)[1] ?? "";
+        const m = param.match(/^(ru|en)-([a-z0-9_-]{3,60})$/i);
+        if (m) {
+          const provider = m[1].toLowerCase() === "en" ? "lava" : "yk";
+          const host = m[2].replace(/_/g, ".").toLowerCase();
+          if (HOST_RE.test(host)) {
+            const step2 = provider === "lava" ? EN_STEP2 : RU_STEP2;
+            return {
+              state: { stage: "await_email", provider, host },
+              intent: { action: "reply" },
+              reply: `Домен пропуска: ${host}\n\n${step2}`,
+            };
+          }
+        }
         return { state: { stage: "idle" }, intent: { action: "reply" }, reply: BOT_GREETING };
+      }
       case "/buy_ru":
         return { state: { stage: "await_host", provider: "yk" }, intent: { action: "reply" }, reply: RU_STEP1 };
       case "/buy_en":
