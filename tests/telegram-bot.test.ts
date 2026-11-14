@@ -98,4 +98,32 @@ describe("telegram bot purchase flow", () => {
     assert.equal(bad.state.stage, "idle");
     assert.equal(bad.reply, handleBotInput({ stage: "idle" }, "/start").reply);
   });
+
+  it("language_code en produces EN greeting and prompts", () => {
+    const step = handleBotInput({ stage: "idle" }, "/start", "en");
+    assert.match(step.reply, /trust seal for AI-built apps/);
+    assert.equal(step.lang, "en");
+    const host = handleBotInput({ stage: "await_host", provider: "yk" }, "myapp.com", "en");
+    assert.match(host.reply, /Send your email for the receipt/);
+  });
+
+  it("language_code ru produces RU prompts", () => {
+    const step = handleBotInput({ stage: "idle" }, "/start", "ru");
+    assert.match(step.reply, /печать доверия/);
+  });
+
+  it("explicit /buy_ru keeps RU texts even for an EN-speaker", () => {
+    const step = handleBotInput({ stage: "idle" }, "/buy_ru", "en");
+    assert.equal(step.state.provider, "yk");
+    assert.match(step.reply, /Шаг 1\/2/);
+    assert.equal(step.lang, "ru");
+  });
+
+  it("deep link en-<host> replies in EN regardless of detected language", () => {
+    const step = handleBotInput({ stage: "idle" }, "/start en-my_site_com", "ru");
+    assert.equal(step.state.provider, "lava");
+    assert.match(step.reply, /my\.site\.com/);
+    assert.match(step.reply, /Send your email for the receipt/);
+    assert.equal(step.lang, "en");
+  });
 });
