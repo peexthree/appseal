@@ -37,6 +37,8 @@ const nextConfig: NextConfig = {
     // loads browsers.json at runtime - output tracing cannot see either, so
     // include both explicitly for the scanner
     "/api/scan": ["./node_modules/@sparticuz/chromium/**", "./node_modules/playwright-core/**"],
+    // the auto-tick runs the same scanner engine and needs the same packages
+    "/api/pipeline-tick": ["./node_modules/@sparticuz/chromium/**", "./node_modules/playwright-core/**"],
   },
   // practice what we scan: AppMOT itself serves the protective headers
   async headers() {

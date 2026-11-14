@@ -29,13 +29,13 @@ interface RedisCfg {
   token: string;
 }
 
-function redisConfig(): RedisCfg | null {
+export function redisConfig(): RedisCfg | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   return url && token ? { url, token } : null;
 }
 
-async function redis(cfg: RedisCfg, command: unknown[]): Promise<unknown> {
+export async function redis(cfg: RedisCfg, command: unknown[]): Promise<unknown> {
   const res = await fetch(cfg.url, {
     method: "POST",
     headers: {
