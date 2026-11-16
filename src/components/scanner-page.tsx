@@ -17,7 +17,7 @@ import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
 import { ScoreSimulator } from "@/components/score-simulator";
 import { Stat } from "@/components/stat";
-import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, Globe, Check, Copy, Send, Menu, X, ChevronDown } from "@/components/icons/appseal-icons";
+import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, ArrowUp, Globe, Check, CheckCircle2, Copy, Send, Menu, X, ChevronDown } from "@/components/icons/appseal-icons";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
@@ -1265,104 +1265,116 @@ export function ScannerPage({
             className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-40 [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]"
           />
           <SectionHead eyebrow={EYEBROWS.pricing[lang]} title={t(lang, "pricingTitle")} sub={t(lang, "pricingSub")} />
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
             {/* Free plan */}
-            <Reveal className="h-full">
+            <Reveal className="h-full md:my-4">
               <div className="appseal-card appseal-glass flex h-full flex-col rounded-2xl p-6">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t(lang, "planFree")}</p>
-                <p className="font-display mt-2 text-3xl font-extrabold text-slate-100">{t(lang, "planFreePrice")}</p>
-                <ul className="mt-4 flex-1 space-y-2">
+                <span className="mx-auto rounded-full bg-gradient-to-b from-slate-200 to-slate-400 px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-slate-900">
+                  {t(lang, "planFree")}
+                </span>
+                <p className="font-display mt-4 text-center text-5xl font-extrabold text-slate-100">{t(lang, "planFreePrice")}</p>
+                <ul className="mt-6 flex-1 space-y-3">
                   {list(lang, "planFreeFeats").map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-[13px] text-slate-300">
-                      <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400" />
+                    <li key={f} className="flex items-start gap-2.5 text-[13px] text-slate-300">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
                       {f}
                     </li>
                   ))}
                 </ul>
                 <Button
-                  className="mt-5 w-full bg-sky-400 text-[#090d16] hover:bg-sky-300"
+                  className="mt-6 h-11 w-full rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(56,189,248,0.7)] hover:from-sky-300 hover:to-blue-400"
                   onClick={() => {
                     window.scrollTo({ top: 0, behavior: "smooth" });
                     document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
                   }}
                 >
-                  <Zap className="h-4 w-4" />
-                  {t(lang, "planFreeCta")} ↑
+                  <ArrowUp className="h-4 w-4" />
+                  {t(lang, "planFreeCta")}
                 </Button>
               </div>
             </Reveal>
-            {/* Launch Pass: animated emerald ring frame, featured */}
+            {/* Launch Pass: static neon emerald frame, featured center card */}
             <Reveal delay={0.08} className="h-full">
               <div className="relative h-full">
-                <span className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#090d16] shadow-[0_0_20px_-4px_rgba(52,211,153,0.6)]">
+                <span className="absolute -top-3.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-emerald-200/40 bg-emerald-400 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#090d16] shadow-[0_0_26px_-2px_rgba(52,211,153,0.8)]">
                   {t(lang, "planMostPopular")}
                 </span>
-                <div className="appseal-ring appseal-ring-emerald h-full">
-                  <div className="appseal-glass-panel flex h-full flex-col rounded-[15px] p-6 shadow-[0_0_44px_-14px_rgba(52,211,153,0.4)]">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t(lang, "planLP")}</p>
-                    <p className="font-display mt-2 text-3xl font-extrabold text-emerald-400">{t(lang, "planLPPrice")}</p>
-                    <p className="mt-1 text-[11px] leading-snug text-slate-500">{t(lang, "planLPSub")}</p>
-                    <ul className="mt-4 flex-1 space-y-2">
-                      {list(lang, "planLPFeats").map((f) => (
-                        <li key={f} className="flex items-start gap-2 text-[13px] text-slate-300">
-                          <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="mt-5 space-y-2">
-                      <input
-                        value={lpHost}
-                        onChange={(e) => setLpHost(e.target.value)}
-                        placeholder={t(lang, "lpDomainPh")}
-                        aria-label="Pass domain"
-                        className="w-full rounded-md border border-slate-700 bg-[#090d16] px-3 py-2 text-xs text-slate-200 placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none"
-                      />
-                      <Button
-                        className="w-full bg-emerald-400 text-[#090d16] hover:bg-emerald-300"
-                        onClick={buyPass}
-                      >
-                        <Zap className="h-4 w-4" />
-                        {t(lang, "planLPCta")}
-                      </Button>
-                      <p className="text-[10px] leading-relaxed text-slate-500">{t(lang, "lpNote")}</p>
-                      {lpErr && <p className="text-[11px] leading-snug text-red-400">{lpErr}</p>}
-                    </div>
+                <div className="appseal-glass-panel flex h-full flex-col rounded-2xl border border-emerald-400/60 p-6 shadow-[0_0_32px_-8px_rgba(52,211,153,0.55),0_0_90px_-28px_rgba(52,211,153,0.4)]">
+                  <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-2xl bg-emerald-400/[0.05]" />
+                  <p className="text-center text-sm font-bold uppercase tracking-[0.18em] text-slate-100">{t(lang, "planLP")}</p>
+                  <div className="mt-3 flex items-center justify-center gap-1.5">
+                    <span aria-hidden="true" className="appseal-wave font-display text-2xl font-bold text-emerald-400/30">(</span>
+                    <span aria-hidden="true" className="appseal-wave appseal-wave-2 font-display text-2xl font-bold text-emerald-400/60">(</span>
+                    <span className="font-display text-5xl font-extrabold text-emerald-400 drop-shadow-[0_0_16px_rgba(52,211,153,0.35)]">{t(lang, "planLPPrice")}</span>
+                    <span aria-hidden="true" className="appseal-wave appseal-wave-2 font-display text-2xl font-bold text-emerald-400/60">)</span>
+                    <span aria-hidden="true" className="appseal-wave font-display text-2xl font-bold text-emerald-400/30">)</span>
+                  </div>
+                  <p className="mt-2 text-center text-[11px] leading-snug text-slate-400">{t(lang, "planLPSub")}</p>
+                  <ul className="mt-5 flex-1 space-y-3">
+                    {list(lang, "planLPFeats").map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-[13px] text-slate-300">
+                        <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-emerald-400">
+                          <Check className="h-2.5 w-2.5 text-[#090d16]" strokeWidth={3.5} />
+                        </span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-6 space-y-2.5">
+                    <input
+                      value={lpHost}
+                      onChange={(e) => setLpHost(e.target.value)}
+                      placeholder={t(lang, "lpDomainPh")}
+                      aria-label="Pass domain"
+                      className="w-full rounded-xl border border-emerald-500/30 bg-black/30 px-3.5 py-2.5 text-xs text-slate-200 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
+                    />
+                    <Button
+                      className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(52,211,153,0.7)] hover:from-emerald-300 hover:to-teal-300"
+                      onClick={buyPass}
+                    >
+                      <Zap className="h-4 w-4" />
+                      {t(lang, "planLPCta")}
+                    </Button>
+                    <p className="text-center text-[10px] leading-relaxed text-slate-500">{t(lang, "lpNote")}</p>
+                    {lpErr && <p className="text-[11px] leading-snug text-red-400">{lpErr}</p>}
                   </div>
                 </div>
               </div>
             </Reveal>
-          </div>
-          {/* Agency Pack: wholesale passes for studios, same one-time bot flow */}
-          <Reveal className="mt-4">
-            <div className="appseal-card appseal-glass rounded-2xl p-5 sm:p-6">
-              <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-                <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    {t(lang, "planAgencyTitle")} ·{" "}
-                    <span className="font-mono normal-case tracking-normal text-emerald-400">
-                      {t(lang, "planAgencyPrice")}
-                    </span>
-                  </p>
-                  <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">{t(lang, "planAgencyText")}</p>
+
+            {/* Agency Pack: wholesale passes for studios, same one-time bot flow */}
+            <Reveal delay={0.16} className="h-full md:my-4">
+              <div className="appseal-card appseal-glass flex h-full flex-col rounded-2xl p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="rounded-full border border-slate-400/25 bg-slate-500/15 px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest text-slate-200">
+                    {t(lang, "planAgencyTitle")}
+                  </span>
+                  <span className="font-display text-lg font-extrabold text-slate-100">{t(lang, "planAgencyPrice")}</span>
                 </div>
+                <ul className="mt-5 flex-1 space-y-2.5">
+                  {list(lang, "planAgencyFeats").map((f) => (
+                    <li key={f} className="text-[13px] leading-snug text-slate-300">
+                      {f}
+                    </li>
+                  ))}
+                </ul>
                 <a
                   href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-pack5`}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-md bg-emerald-400 px-5 py-2.5 text-sm font-bold text-[#090d16] transition hover:bg-emerald-300"
+                  className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(52,211,153,0.7)] transition hover:from-emerald-300 hover:to-teal-300"
                 >
                   <Send className="h-4 w-4" />
                   {t(lang, "planAgencyCta")}
                 </a>
               </div>
-            </div>
-          </Reveal>
-          {/* platform: contact row instead of a third pricing card */}
-          <Reveal className="mt-4">
+            </Reveal>
+          </div>
+          {/* platform: wide contact bar under the plans */}
+          <Reveal className="mt-5">
             <div className="appseal-card appseal-glass rounded-2xl p-5 sm:p-6">
               <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                 <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Platform · <span className="font-mono normal-case tracking-normal">{t(lang, "planPlatformPrice")}</span>
+                  <p className="text-sm font-bold text-slate-100">
+                    Platform · <span className="font-normal text-slate-400">{t(lang, "planPlatformPrice")}</span>
                   </p>
                   <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">{t(lang, "platformRowText")}</p>
                 </div>
@@ -1370,7 +1382,7 @@ export function ScannerPage({
                   href="https://t.me/peexthree"
                   target="_blank"
                   rel="noopener"
-                  className="inline-flex shrink-0 items-center gap-2 rounded-md bg-sky-400 px-5 py-2.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
+                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 px-6 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(56,189,248,0.7)] transition hover:from-sky-300 hover:to-blue-400"
                 >
                   <Send className="h-4 w-4" />
                   {t(lang, "telegramCta")}

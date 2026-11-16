@@ -192,6 +192,10 @@ export const DICT = {
     en: "5 Launch Passes wholesale - for studios and serial launches: 5 domains, 7 days of unlimited scans each, client-ready PDFs and badges. Activate every domain via /redeem in the Telegram bot; credits live 30 days. One-time payment, no auto-renewal.",
   },
   planAgencyCta: { ru: "Купить пакет в Telegram", en: "Buy the pack in Telegram" },
+  planAgencyFeats: {
+    ru: "5 пропусков Launch Pass оптом - для студий и серийных запусков|5 доменов по 7 дней безлимита|PDF и бейджи для клиентов|Активация каждого домена через /redeem в Telegram-боте|Кредиты живут 30 дней|Разовая покупка, без автосписаний",
+    en: "5 Launch Passes wholesale - for studios and serial launches|5 domains with 7 days of unlimited scans each|Client-ready PDFs and trust badges|Activate each domain via /redeem in the Telegram bot|Credits live 30 days|One-time payment, no auto-renewal",
+  },
   planLPFeats: {
     ru: "Неделя безлимитных проверок одного домена|Повторный скан сразу после фикса|Фоновый перескан каждые 6 ч и алерт при падении класса|PDF-отчёт и embed-бейдж доверия",
     en: "A week of unlimited checks of one domain|Re-scan right after each fix|Background rescan every 6h with a grade-drop alert|PDF report and the embeddable trust badge",

@@ -377,13 +377,27 @@
   to { opacity: 1; }
 }
 
+/* launch pass price wave-marks: echo parens pulsing outward like a signal */
+.appseal-wave {
+  display: inline-block;
+  animation: appseal-wave 2.2s ease-in-out infinite;
+}
+.appseal-wave-2 {
+  animation-delay: 0.25s;
+}
+@keyframes appseal-wave {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
 /* reduced motion: all decorative animations off, content static */
 @media (prefers-reduced-motion: reduce) {
   .appseal-aurora span,
   .appseal-marquee,
   .appseal-gradient-text,
   .appseal-ring::before,
-  .appseal-glow-once {
+  .appseal-glow-once,
+  .appseal-wave {
     animation: none;
   }
 }
