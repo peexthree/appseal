@@ -8,6 +8,8 @@ import {
   redeemPackPass,
   redisCommand,
 } from "@/lib/passes";
+import { getLatestHostEntry } from "@/lib/scanner/store";
+import { FREE_WATCH_KEY_PREFIX, FREE_WATCH_MAX, FREE_WATCH_ZSET } from "@/lib/watch";
 import { sendTelegramMessage } from "@/lib/telegram";
 import {
   botPayBtn,
@@ -18,6 +20,10 @@ import {
   botRedeemNoPack,
   botRedeemResultText,
   botStatusText,
+  botWatchDone,
+  botWatchLimit,
+  botWatchNone,
+  botWatchRemoved,
   BotLang,
   BotState,
   handleBotInput,
@@ -223,6 +229,42 @@ export async function POST(req: NextRequest) {
       await sendTelegramMessage(
         chatId,
         botRedeemResultText(step.lang, "done", record.host, record.until),
+        scannerKeyboard(),
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    if (step.intent.action === "watch") {
+      const host = step.intent.host;
+      // free watch capacity guard: one domain per chat, bounded total slots
+      const existing = await redisCommand<string>(["GET", FREE_WATCH_KEY_PREFIX + chatId]);
+      const count = await redisCommand<number>(["ZCARD", FREE_WATCH_ZSET]);
+      if (!existing && (count ?? 0) >= FREE_WATCH_MAX) {
+        await sendTelegramMessage(chatId, botWatchLimit(step.lang, FREE_WATCH_MAX), scannerKeyboard());
+        return NextResponse.json({ ok: true });
+      }
+      await redisCommand([
+        "SET",
+        FREE_WATCH_KEY_PREFIX + chatId,
+        host,
+      ]);
+      // re-watch or fresh watch both set the rescan clock to "as soon as possible"
+      await redisCommand(["ZADD", FREE_WATCH_ZSET, "0", chatId]);
+      const entry = await getLatestHostEntry(host);
+      await sendTelegramMessage(
+        chatId,
+        botWatchDone(step.lang, host, entry?.grade),
+        scannerKeyboard(),
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    if (step.intent.action === "unwatch") {
+      const removed = await redisCommand<number>(["DEL", FREE_WATCH_KEY_PREFIX + chatId]);
+      await redisCommand(["ZREM", FREE_WATCH_ZSET, chatId]);
+      await sendTelegramMessage(
+        chatId,
+        removed ? botWatchRemoved(step.lang) : botWatchNone(step.lang),
         scannerKeyboard(),
       );
       return NextResponse.json({ ok: true });

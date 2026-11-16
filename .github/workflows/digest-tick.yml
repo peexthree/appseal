@@ -1,0 +1,14 @@
+name: digest-tick
+
+on:
+  schedule:
+    # Mondays 09:00 UTC (14:00 in Tuiymazy) - weekly digest post to Telegram
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger digest tick
+        run: curl -fsS -m 60 https://appseal.online/api/digest-tick || true

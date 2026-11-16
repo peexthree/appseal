@@ -7,6 +7,7 @@ import { getTrophyPath, GRADE_META, SEVERITY_META, STATUS_LABEL } from "@/lib/sc
 import { buildFixPrompt } from "@/lib/fix-prompt";
 import { buildLlmsTxt, buildSecurityTxt } from "@/lib/generators";
 import { buildHostingPatch } from "@/lib/config-patch";
+import { CI_YAML as CI_YAML_TEMPLATE } from "@/lib/ci-yaml";
 import { simulateFix } from "@/lib/score-sim";
 import { t } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -30,33 +31,7 @@ const CAT_ICONS: Record<CategoryId, React.ReactNode> = {
 };
 
 /** GitHub Actions grade gate: scan after every push, fail the build below B. */
-const CI_YAML = `name: AppSeal scan
-
-on: [push, workflow_dispatch]
-
-jobs:
-  scan:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Security scan & grade gate
-        env:
-          APPSEAL_KEY: \${{ secrets.APPSEAL_ADMIN_KEY }} # optional: lifts the daily free quota
-        run: |
-          ID=$(curl -fsS -X POST https://appseal.online/api/scan \\
-            -H 'content-type: application/json' \\
-            -d '{"url":"\${{ secrets.APPSEAL_TARGET_URL }}","adminKey":"$APPSEAL_KEY"}' | jq -r '.id')
-          sleep 45
-          R=$(curl -fsS https://appseal.online/api/scan/$ID)
-          STATUS=$(echo "$R" | jq -r '.status')
-          [ "$STATUS" = "done" ] || { echo "scan did not finish: $STATUS"; exit 1; }
-          GRADE=$(echo "$R" | jq -r '.grade')
-          SCORE=$(echo "$R" | jq -r '.score')
-          echo "AppSeal grade: $GRADE ($SCORE/100)"
-          case "$GRADE" in
-            A*|B) echo "OK" ;;
-            *) echo "grade below B - failing the build"; exit 1 ;;
-          esac
-`;
+const CI_YAML = CI_YAML_TEMPLATE;
 
 function StatusIcon({ s }: { s: CheckResult["status"] }) {
   const cls = "h-4 w-4 shrink-0";

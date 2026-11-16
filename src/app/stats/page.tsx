@@ -614,8 +614,12 @@ export default async function StatsPage() {
       <footer className="border-t border-slate-800/70 bg-[#070B13]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-xs text-slate-500 sm:px-6">
           <span>AppSeal Engine v1.0 · External Black-Box Security Scanner</span>
-          <span className="inline-flex items-center gap-1.5">
-            <ShieldCheck className="h-4 w-4 text-emerald-400" /> Aggregate-only статистика
+          <span className="inline-flex items-center gap-3">
+            <Link href="/digest" className="transition hover:text-slate-400">дайджест недели</Link>
+            <Link href="/fixes" className="transition hover:text-slate-400">гайды по исправлению</Link>
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-emerald-400" /> Aggregate-only статистика
+            </span>
           </span>
         </div>
       </footer>

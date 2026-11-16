@@ -7,11 +7,16 @@ import {
   WATCH_KEY,
   LAST_KEY_PREFIX,
   RESCAN_AFTER_S,
+  FREE_WATCH_ZSET,
+  FREE_WATCH_KEY_PREFIX,
+  FREE_RESCAN_AFTER_S,
   detectDegradation,
   formatAlert,
+  formatImprovement,
+  gradeIndex,
   type WatchSnapshot,
 } from "@/lib/watch";
-import { sendTelegramAlert } from "@/lib/telegram";
+import { sendTelegramAlert, sendTelegramMessage } from "@/lib/telegram";
 import type { ScanResult } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
@@ -87,6 +92,58 @@ async function rescanViaScanRoute(url: string): Promise<ScanResult | null> {
   return null; // did not finish in time - caller reports an honest error
 }
 
+/**
+ * Free bot watches: one domain per chat (tg:watch:{chatId}), daily cadence.
+ * At most one free host per tick - 48 ticks a day keep a 100-slot watchlist
+ * fresh. Alerts go straight to the follower's chat, drops and improvements
+ * alike. Failures never break the Launch Pass path below.
+ */
+async function processFreeWatch(
+  cfg: NonNullable<ReturnType<typeof redisConfig>>,
+): Promise<Record<string, unknown>> {
+  try {
+    const top = (await redis(cfg, ["ZRANGE", FREE_WATCH_ZSET, "0", "0", "WITHSCORES"])) as string[] | null;
+    const chatId = top?.[0] ?? "";
+    const lastTs = Number(top?.[1] ?? 0);
+    if (!chatId) return { free: "none" };
+    const now = Date.now();
+    if (now - lastTs < FREE_RESCAN_AFTER_S * 1000) return { free: "fresh" };
+    const host = (await redis(cfg, ["GET", FREE_WATCH_KEY_PREFIX + chatId])) as string | null;
+    if (!host) {
+      await redis(cfg, ["ZREM", FREE_WATCH_ZSET, chatId]);
+      return { free: "stale-chat" };
+    }
+
+    const prevRaw = (await redis(cfg, ["GET", LAST_KEY_PREFIX + host])) as string | null;
+    const prev: WatchSnapshot | null = prevRaw ? (JSON.parse(prevRaw) as WatchSnapshot) : null;
+
+    const norm = normalizeInputUrl(`https://${host}`);
+    await assertPublicTarget(new URL(norm.url).hostname);
+    const rec = await rescanViaScanRoute(norm.url);
+
+    // rotate even on failure so a dead host cannot starve the queue
+    await redis(cfg, ["ZADD", FREE_WATCH_ZSET, String(now), chatId]);
+    if (!rec || rec.status !== "done") return { free: host, error: true };
+
+    const fails = (rec.results ?? []).filter((r) => r.status === "fail").length;
+    const cur: WatchSnapshot = { grade: rec.grade, score: rec.score, fails };
+    await redis(cfg, ["SET", LAST_KEY_PREFIX + host, JSON.stringify(cur), "EX", String(SNAP_TTL_S)]);
+
+    const drop = detectDegradation(prev, cur);
+    const improved = Boolean(prev && gradeIndex(cur.grade) < gradeIndex(prev.grade));
+    let notified = false;
+    if (drop && prev) {
+      notified = await sendTelegramMessage(chatId, formatAlert(host, prev, cur));
+    } else if (improved && prev) {
+      notified = await sendTelegramMessage(chatId, formatImprovement(host, prev, cur));
+    }
+    return { free: host, grade: cur.grade, score: cur.score, alert: drop ?? (improved ? "improved" : null), notified };
+  } catch (e) {
+    // free-watch problems must never take the paid monitor down
+    return { free: "error", detail: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export async function GET() {
   const cfg = redisConfig();
   if (!cfg) {
@@ -100,16 +157,18 @@ export async function GET() {
   }
 
   try {
+    const free = await processFreeWatch(cfg);
+
     const top = (await redis(cfg, ["ZRANGE", WATCH_KEY, "0", "0", "WITHSCORES"])) as string[] | null;
     const host = top?.[0] ?? "";
     const lastScanTs = Number(top?.[1] ?? 0);
     if (!host) {
-      return NextResponse.json({ skipped: true, reason: "watchlist-empty" });
+      return NextResponse.json({ skipped: true, reason: "watchlist-empty", ...free });
     }
 
     const now = Date.now();
     if (now - lastScanTs < RESCAN_AFTER_S * 1000) {
-      return NextResponse.json({ skipped: true, reason: "all-fresh", host });
+      return NextResponse.json({ skipped: true, reason: "all-fresh", host, ...free });
     }
 
     // a lapsed pass leaves the watchlist (and loses its snapshot);
@@ -117,7 +176,7 @@ export async function GET() {
     if (!(await hasPassAccess(host))) {
       await redis(cfg, ["ZREM", WATCH_KEY, host]);
       await redis(cfg, ["DEL", LAST_KEY_PREFIX + host]);
-      return NextResponse.json({ skipped: true, reason: "pass-expired", host });
+      return NextResponse.json({ skipped: true, reason: "pass-expired", host, ...free });
     }
 
     const prevRaw = (await redis(cfg, ["GET", LAST_KEY_PREFIX + host])) as string | null;
@@ -133,7 +192,7 @@ export async function GET() {
     await redis(cfg, ["ZADD", WATCH_KEY, String(now), host]);
 
     if (!rec || rec.status !== "done") {
-      return NextResponse.json({ host, error: true });
+      return NextResponse.json({ host, error: true, ...free });
     }
 
     const fails = (rec.results ?? []).filter((r) => r.status === "fail").length;
@@ -146,7 +205,7 @@ export async function GET() {
       notified = await sendTelegramAlert(formatAlert(host, prev, cur));
     }
 
-    return NextResponse.json({ host, grade: cur.grade, score: cur.score, fails, alert: drop, notified });
+    return NextResponse.json({ host, grade: cur.grade, score: cur.score, fails, alert: drop, notified, ...free });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }

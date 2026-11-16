@@ -27,7 +27,7 @@ export type BotProvider = "yk" | "lava";
 export type BotLang = "ru" | "en";
 
 export interface BotState {
-  stage: "idle" | "await_host" | "await_email" | "paid_pending" | "await_redeem_host";
+  stage: "idle" | "await_host" | "await_email" | "paid_pending" | "await_redeem_host" | "await_watch_host";
   provider?: BotProvider;
   host?: string;
   nonce?: string;
@@ -40,6 +40,8 @@ export type BotIntent =
   | { action: "create_purchase"; provider: BotProvider; host: string; email: string }
   | { action: "create_pack_purchase"; provider: BotProvider; email: string }
   | { action: "redeem"; host: string }
+  | { action: "watch"; host: string }
+  | { action: "unwatch" }
   | { action: "check_status" };
 
 export interface BotStep {
@@ -64,6 +66,9 @@ interface LangPack {
   emailBad: string;
   statusNone: string;
   cancelled: string;
+  watchPrompt: string;
+  watchRemoved: string;
+  watchNone: string;
   payText: (host: string) => string;
   payFail: (msg: string, retryCmd: string) => string;
   btnPay: string;
@@ -77,6 +82,8 @@ const RU: LangPack = {
     "/buy_en - Launch Pass за $6 (любая зарубежная карта)\n" +
     "/buy5 - Agency Pack: 5 пропусков за 1 490 ₽ (выгоднее на 39%)\n" +
     "/redeem - активировать пропуск из купленного пакета\n" +
+    "/watch - следить за одним доменом бесплатно (алерт при изменении)\n" +
+    "/unwatch - перестать следить\n" +
     "/status - статус последней покупки\n" +
     "/cancel - сброс диалога",
   unknown: "Не понял сообщение. Команды: /start - меню, /buy_ru, /buy_en или /buy5 - купить.",
@@ -94,6 +101,9 @@ const RU: LangPack = {
   emailBad: "Не похоже на email. Пришли ещё раз, например you@example.com.",
   statusNone: "Активной покупки нет. /buy_ru, /buy_en или /buy5 - начать.",
   cancelled: "Диалог сброшен. /start - меню.",
+  watchPrompt: "Пришли домен для бесплатного наблюдения (например myapp.vercel.app). Один домен на чат: напишу, когда класс изменится после проверки. Перепроверка - раз в сутки.",
+  watchRemoved: "Наблюдение снято. Вернуть: /watch myapp.com",
+  watchNone: "Я и так ничего не наблюдаю в этом чате. Добавить: /watch myapp.com",
   payText: (host) =>
     `Пропуск для домена: ${host}. После оплаты активируется автоматически (до пары минут) - проверяй /status.`,
   payFail: (msg, retryCmd) => `Не удалось создать платёж: ${msg}. Попробуй /${retryCmd} ещё раз.`,
@@ -108,6 +118,8 @@ const EN: LangPack = {
     "/buy_en - Launch Pass for $6 (any international card)\n" +
     "/buy5 - Agency Pack: 5 passes for $19 (39% cheaper)\n" +
     "/redeem - activate a pass from a purchased pack\n" +
+    "/watch - follow one domain for free (alert on any change)\n" +
+    "/unwatch - stop following\n" +
     "/status - status of your last purchase\n" +
     "/cancel - reset the dialog",
   unknown: "Not sure what you mean. Commands: /start - menu, /buy_ru, /buy_en or /buy5 - buy a pass.",
@@ -125,6 +137,9 @@ const EN: LangPack = {
   emailBad: "That does not look like an email. Try again, e.g. you@example.com.",
   statusNone: "No active purchase. /buy_ru, /buy_en or /buy5 to start one.",
   cancelled: "Dialog reset. /start for the menu.",
+  watchPrompt: "Send the domain to follow for free (e.g. myapp.vercel.app). One domain per chat: I will message you whenever its grade changes after a check. Free re-scan cadence - once a day.",
+  watchRemoved: "Unfollowed. Follow again with /watch myapp.com",
+  watchNone: "Nothing is followed in this chat yet. Add one: /watch myapp.com",
   payText: (host) =>
     `Pass for ${host}. It activates automatically right after payment (up to a couple of minutes) - check /status.`,
   payFail: (msg, retryCmd) => `Could not create the payment: ${msg}. Try /${retryCmd} again.`,
@@ -217,6 +232,27 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
           lang,
         };
       }
+      case "/watch": {
+        if (arg) {
+          const host = arg
+            .replace(/^https?:\/\//i, "")
+            .replace(/\/.*$/, "")
+            .replace(/^www\./i, "")
+            .toLowerCase();
+          if (!HOST_RE.test(host)) {
+            return { state, intent: { action: "reply" }, reply: pack.hostBad, lang };
+          }
+          return { state: { stage: "idle" }, intent: { action: "watch", host }, reply: "", lang };
+        }
+        return {
+          state: { ...state, stage: "await_watch_host" },
+          intent: { action: "reply" },
+          reply: pack.watchPrompt,
+          lang,
+        };
+      }
+      case "/unwatch":
+        return { state: { stage: "idle" }, intent: { action: "unwatch" }, reply: "", lang };
       case "/status":
         if (state.nonce) {
           return { state, intent: { action: "check_status" }, reply: "", lang };
@@ -255,6 +291,18 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
       return { state, intent: { action: "reply" }, reply: pack.redeemBad, lang };
     }
     return { state, intent: { action: "redeem", host }, reply: "", lang };
+  }
+
+  if (state.stage === "await_watch_host") {
+    const host = text
+      .replace(/^https?:\/\//i, "")
+      .replace(/\/.*$/, "")
+      .replace(/^www\./i, "")
+      .toLowerCase();
+    if (!HOST_RE.test(host)) {
+      return { state, intent: { action: "reply" }, reply: pack.hostBad, lang };
+    }
+    return { state: { stage: "idle" }, intent: { action: "watch", host }, reply: "", lang };
   }
 
   if (state.stage === "await_email") {
@@ -304,6 +352,34 @@ export function botPackPayText(lang: BotLang): string {
 
 export function botRedeemNoPack(lang: BotLang): string {
   return PACKS[lang].redeemNoPack;
+}
+
+/** Confirmation after the webhook stored the watch; current grade optional. */
+export function botWatchDone(lang: BotLang, host: string, currentGrade?: string): string {
+  const known = currentGrade
+    ? lang === "en"
+      ? `Current standing: grade ${currentGrade}.`
+      : `Текущий статус: класс ${currentGrade}.`
+    : lang === "en"
+      ? "Not scanned yet - the first check will set the baseline."
+      : "Пока не проверен - первая проверка станет стартовой точкой.";
+  return lang === "en"
+    ? `Now following ${host}. ${known}\nI will message you when its grade changes (free re-scan: once a day). Move it: /watch other.com - stop: /unwatch`
+    : `Следим за ${host}. ${known}\nНапишу, когда класс изменится (бесплатная перепроверка - раз в сутки). Сменить домен: /watch other.com - отменить: /unwatch`;
+}
+
+export function botWatchLimit(lang: BotLang, max: number): string {
+  return lang === "en"
+    ? `Free watch slots are full (${max}). Launch Pass keeps your own domain on the 6-hour watch - /buy_ru`
+    : `Бесплатные слоты наблюдения закончились (${max}). Launch Pass держит твой домен на 6-часовом наблюдении - /buy_ru`;
+}
+
+export function botWatchRemoved(lang: BotLang): string {
+  return PACKS[lang].watchRemoved;
+}
+
+export function botWatchNone(lang: BotLang): string {
+  return PACKS[lang].watchNone;
 }
 
 export function botPackPayBtn(lang: BotLang, provider: BotProvider): string {

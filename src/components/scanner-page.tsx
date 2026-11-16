@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
+import { ScoreSimulator } from "@/components/score-simulator";
 import { Stat } from "@/components/stat";
 import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, Globe, Check, Copy, Send, Menu, X, ChevronDown } from "@/components/icons/appseal-icons";
 
@@ -1244,6 +1245,11 @@ export function ScannerPage({
               </Reveal>
             ))}
           </div>
+
+          {/* pre-scan engagement: honest checkbox estimate, links into the form */}
+          <Reveal className="mt-6">
+            <ScoreSimulator />
+          </Reveal>
         </section>
 
         {/* pricing */}

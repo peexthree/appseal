@@ -9,6 +9,14 @@ export const LAST_KEY_PREFIX = "lpass:last:";
 /** per-host rescan floor: a paid domain is re-scanned at most this often */
 export const RESCAN_AFTER_S = 6 * 3600;
 
+/* Free watch via the Telegram bot: one domain per chat, rescanned once a
+ * day (a fraction of the paid 6h cadence) and rotating through the same
+ * monitor tick - one free host per tick keeps the CPU cost bounded. */
+export const FREE_WATCH_ZSET = "appmot:tg:watch";
+export const FREE_WATCH_KEY_PREFIX = "tg:watch:";
+export const FREE_WATCH_MAX = 100;
+export const FREE_RESCAN_AFTER_S = 24 * 3600;
+
 export interface WatchSnapshot {
   grade: string;
   score: number;
@@ -44,4 +52,9 @@ export function formatAlert(host: string, prev: WatchSnapshot, cur: WatchSnapsho
   if (prev.score - cur.score >= 10) reasons.push(`балл ${prev.score} → ${cur.score}`);
   if (cur.fails - prev.fails >= 3) reasons.push(`провалов ${prev.fails} → ${cur.fails}`);
   return `🔻 AppSeal: ${host}\n${reasons.join(", ")}`;
+}
+
+/** Good news matters too: watched followers hear about class jumps. */
+export function formatImprovement(host: string, prev: WatchSnapshot, cur: WatchSnapshot): string {
+  return `✅ AppSeal: ${host}\nкласс ${prev.grade} → ${cur.grade} (${prev.score} → ${cur.score}). Так держать!`;
 }
