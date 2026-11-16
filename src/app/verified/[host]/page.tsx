@@ -54,6 +54,9 @@ export async function generateMetadata({
     title: `AppSeal: ${host} - Класс ${latest.grade} (${latest.score}/100)`,
     description: `Публичный профиль безопасности домена ${host}: класс ${latest.grade} (${meta?.label.ru ?? ""}), история проверок AppSeal. ${history.length} проверок с ${dateFmt.format(new Date(history[0].ts))} года.`,
     alternates: { canonical: `/verified/${host}` },
+    // live OG trophy: social previews show the current grade of the domain
+    openGraph: { images: [`/api/og?host=${encodeURIComponent(host)}`] },
+    twitter: { card: "summary_large_image", images: [`/api/og?host=${encodeURIComponent(host)}`] },
     ...robots,
   };
 }
@@ -140,6 +143,42 @@ export default async function VerifiedPage({
               </div>
             </div>
 
+            {history.length >= 2 ? (
+              <div className="mt-8 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Динамика балла</p>
+                <div className="mt-3 flex h-24 items-end gap-1.5">
+                  {history.map((e) => {
+                    const em = GRADE_META[e.grade as keyof typeof GRADE_META];
+                    return (
+                      <div
+                        key={e.id}
+                        className="flex-1 rounded-t transition-all hover:opacity-80"
+                        style={{
+                          height: `${Math.max(e.score, 3)}%`,
+                          backgroundColor: em?.color ?? "#64748B",
+                          opacity: 0.75,
+                        }}
+                        title={`${dateFmt.format(new Date(e.ts))}: ${e.grade} · ${e.score}/100`}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="mt-1.5 flex justify-between font-mono text-[9px] text-slate-600">
+                  <span>{dateFmt.format(new Date(history[0].ts))}</span>
+                  <span>{dateFmt.format(new Date(latest.ts))}</span>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6 rounded-2xl border border-sky-500/30 bg-[#0d1220] p-5">
+              <p className="text-sm text-slate-300">
+                Хотите поднять класс? Самые частые провалы - защитные заголовки, чинятся одним конфигом:{" "}
+                <Link href="/fixes" className="font-bold text-sky-400 hover:underline">
+                  готовые конфиги под ваш хостинг →
+                </Link>
+              </p>
+            </div>
+
             <h2 className="font-display mt-10 text-xl font-extrabold">История проверок</h2>
             <ul className="mt-4 divide-y divide-slate-800/70 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
               {history.map((e) => {
@@ -177,7 +216,9 @@ export default async function VerifiedPage({
             <p className="mt-6 text-xs leading-relaxed text-slate-500">
               Профиль показывает только класс, балл и дату - перечень находок всегда остаётся у
               инициатора скана. Подробности модели:{" "}
-              <Link href="/legal" className="underline decoration-slate-600 hover:text-slate-300">правила и приватность</Link>.
+              <Link href="/legal" className="underline decoration-slate-600 hover:text-slate-300">правила и приватность</Link>
+              {" "}· живые цифры по всем проектам:{" "}
+              <Link href="/stats" className="underline decoration-slate-600 hover:text-slate-300">статистика</Link>.
             </p>
           </>
         ) : (

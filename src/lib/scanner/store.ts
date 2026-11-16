@@ -203,6 +203,8 @@ const STATS_CAT_WARNS_KEY = "appmot:stats:catwarns";
 const STATS_CAT_LOSS_KEY = "appmot:stats:catloss";
 /** UTC-hour activity bucket prefix (keys: appmot:stats:h:YYYYMMDDHH, 48h TTL) */
 export const STATS_HOUR_PREFIX = "appmot:stats:h:";
+/** UTC-day activity bucket prefix (keys: appmot:stats:d:YYYYMMDD, 60d TTL) */
+export const STATS_DAY_PREFIX = "appmot:stats:d:";
 // literal relative dir, same scheme as scans
 const REGISTRY_FILE = "db/registry.json";
 
@@ -238,6 +240,12 @@ export function statsHourKey(d = new Date()): string {
   );
 }
 
+/** Redis key of one UTC-day activity bucket (60d TTL, set at write). */
+export function statsDayKey(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return STATS_DAY_PREFIX + d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate());
+}
+
 export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
   // canonical form at the single write point: www.example.com scans never
   // fork into a second catalog row (legacy rows merge on read)
@@ -247,6 +255,7 @@ export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
     const cfg = redisConfig();
     if (cfg) {
       const hourKey = statsHourKey();
+      const dayKey = statsDayKey();
       await redisPipeline(cfg, [
         ["LPUSH", REGISTRY_KEY, JSON.stringify(entry)],
         ["LTRIM", REGISTRY_KEY, "0", String(REGISTRY_MAX - 1)],
@@ -257,6 +266,8 @@ export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
         ["ZINCRBY", STATS_SCORES_KEY, "1", String(entry.score)],
         ["INCR", hourKey],
         ["EXPIRE", hourKey, "172800"],
+        ["INCR", dayKey],
+        ["EXPIRE", dayKey, "5184000"],
       ]);
       return;
     }

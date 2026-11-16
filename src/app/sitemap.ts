@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getRegistryEntries } from "@/lib/scanner/store";
 import { dedupeRegistry } from "@/lib/registry";
+import { FIX_GUIDES } from "@/lib/fixes-content";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/fixes`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    ...FIX_GUIDES.map(
+      (g): MetadataRoute.Sitemap[number] => ({
+        url: `${baseUrl}/fixes/${g.slug}`,
+        lastModified: new Date(),
+        changeFrequency: "monthly" as const,
+        priority: 0.7,
+      }),
+    ),
+    {
+      url: `${baseUrl}/versus`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/bot`,

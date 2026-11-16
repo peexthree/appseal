@@ -8,6 +8,7 @@ import {
   gradeRowsFromCounts,
   bucketHistogram,
   statsHourKeys,
+  statsDayKeys,
   tldOf,
   tldRows,
   gradeDynamics,
@@ -108,6 +109,13 @@ describe("statsHourKeys", () => {
   it("builds n UTC keys oldest first", () => {
     const keys = statsHourKeys("appmot:stats:h:", new Date("2026-11-16T14:30:00Z"), 3);
     assert.deepEqual(keys, ["appmot:stats:h:2026111612", "appmot:stats:h:2026111613", "appmot:stats:h:2026111614"]);
+  });
+});
+
+describe("statsDayKeys", () => {
+  it("builds n UTC day keys oldest first, across month boundaries", () => {
+    const keys = statsDayKeys("appmot:stats:d:", new Date("2026-11-01T09:00:00Z"), 3);
+    assert.deepEqual(keys, ["appmot:stats:d:20261030", "appmot:stats:d:20261031", "appmot:stats:d:20261101"]);
   });
 });
 

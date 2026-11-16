@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ShieldCheck } from "@/components/icons/appseal-icons";
 import statsData from "@/data/stats-harvest.json";
-import { getRegistryEntries, redisConfig, redisPipeline, STATS_HOUR_PREFIX } from "@/lib/scanner/store";
+import { getRegistryEntries, redisConfig, redisPipeline, STATS_HOUR_PREFIX, STATS_DAY_PREFIX } from "@/lib/scanner/store";
 import { dedupeRegistry, isReferenceSite, platformOf, PLATFORM_LABELS, type PlatformKey } from "@/lib/registry";
+import { PulseChart } from "./pulse-chart";
 import {
   avgMedianFromHistogram,
   bucketHistogram,
@@ -14,6 +15,7 @@ import {
   mapFromFlat,
   pairsFromFlat,
   platformGradeCounts,
+  statsDayKeys,
   statsHourKeys,
   tldRows,
   type TopFail,
@@ -59,6 +61,7 @@ interface LiveStats {
   tick24h: number;
   hist: { from: number; to: number; count: number }[];
   hours: number[];
+  days: number[];
   catRows: { cat: string; fail: number; warn: number; loss: number }[];
   failPairs: Map<string, number>;
 }
@@ -78,6 +81,7 @@ async function readLiveStats(): Promise<LiveStats | null> {
   if (!cfg) return null;
   try {
     const hourKeys = statsHourKeys(STATS_HOUR_PREFIX, new Date(), 24);
+    const dayKeys = statsDayKeys(STATS_DAY_PREFIX, new Date(), 7);
     const responses = await redisPipeline(cfg, [
       ["GET", "appmot:stats:scans"],
       ["SCARD", "appmot:stats:hosts"],
@@ -91,6 +95,7 @@ async function readLiveStats(): Promise<LiveStats | null> {
       ["HGETALL", "appmot:stats:catwarns"],
       ["HGETALL", "appmot:stats:catloss"],
       ...hourKeys.map((k) => ["GET", k] as unknown[]),
+      ...dayKeys.map((k) => ["GET", k] as unknown[]),
     ]);
     const [scans, sites, gradesFlat, histFlat, failFlat, warnFlat, titlesFlat, tick, catFailFlat, catWarnFlat, catLossFlat] = responses;
     const scanCount = Number(scans) || 0;
@@ -121,6 +126,7 @@ async function readLiveStats(): Promise<LiveStats | null> {
       tick24h: Number(tick) || 0,
       hist: bucketHistogram(histFlat),
       hours: hourKeys.map((k, i) => Number(responses[11 + i]) || 0),
+      days: dayKeys.map((k, i) => Number(responses[11 + hourKeys.length + i]) || 0),
       catRows,
       failPairs,
     };
@@ -295,6 +301,27 @@ export default async function StatsPage() {
             </>
           )}
         </p>
+
+        {useLive && live && live.topFails.length > 0 ? (
+          <div className="mt-8 rounded-2xl border border-[#F87171]/30 bg-[#1a0f14] p-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F87171]">Угроза недели</p>
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <span className="font-display text-4xl font-extrabold text-[#F87171]">
+                {live.topFails[0].failPct + live.topFails[0].warnPct}%
+              </span>
+              <span className="font-display text-lg font-extrabold text-slate-100">
+                {live.topFails[0].title}
+              </span>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">
+              Самый частый провал на живых данных: доля проверок с красным или оранжевым статусом.
+              Чинится одним конфигом -{" "}
+              <Link href="/fixes" className="font-bold text-sky-400 hover:underline">
+                готовые исправления под ваш хостинг →
+              </Link>
+            </p>
+          </div>
+        ) : null}
 
         {!hasStatic && !v.isLive ? (
           <div className="mt-10 rounded-2xl border border-slate-800 bg-[#111827] p-8 text-center text-sm text-slate-400">
@@ -472,7 +499,13 @@ export default async function StatsPage() {
                         <span className={`font-mono text-xs ${i === 0 ? "text-amber-400" : "text-slate-600"}`}>
                           {i + 1}.
                         </span>
-                        {row.label}
+                        <Link
+                          href={`/registry?platform=${row.key}`}
+                          title={`Открыть реестр: только ${row.label}`}
+                          className="transition hover:text-sky-400"
+                        >
+                          {row.label}
+                        </Link>
                       </span>
                       {row.grades ? <span className="text-[10px] text-slate-500">{row.grades}</span> : null}
                     </span>
@@ -514,31 +547,7 @@ export default async function StatsPage() {
             ) : null}
 
             {v.isLive && live ? (
-              <section className="mt-10">
-                <h2 className="font-display text-xl font-extrabold">Пульс проверок - 24 часа</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Каждый столбик - один час (UTC): ручные проверки и авто-обход вместе. Всего за сутки:{" "}
-                  {live.hours.reduce((s, n) => s + n, 0)}.
-                </p>
-                <div className="mt-4 flex h-24 items-end gap-1">
-                  {(() => {
-                    const max = Math.max(...live.hours, 1);
-                    return live.hours.map((n, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 rounded-t bg-gradient-to-t from-sky-400/30 to-sky-400/80"
-                        style={{ height: `${Math.max((n * 100) / max, n ? 4 : 2)}%` }}
-                        title={`${i}:00-${i + 1}:00 UTC: ${n}`}
-                      />
-                    ));
-                  })()}
-                </div>
-                <div className="mt-1.5 flex justify-between font-mono text-[9px] text-slate-600">
-                  <span>-24ч</span>
-                  <span>-12ч</span>
-                  <span>сейчас</span>
-                </div>
-              </section>
+              <PulseChart hours={live.hours} days={live.days} total={v.doneCount} />
             ) : null}
 
             {v.isLive ? (

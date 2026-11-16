@@ -181,6 +181,17 @@ export function statsHourKeys(prefix: string, now: Date, n = 24): string[] {
   return keys;
 }
 
+/** Redis keys for the last n UTC-day activity buckets, oldest first. */
+export function statsDayKeys(prefix: string, now: Date, n = 7): string[] {
+  const keys: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 3600 * 1000);
+    const p = (v: number) => String(v).padStart(2, "0");
+    keys.push(prefix + d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()));
+  }
+  return keys;
+}
+
 /** Public suffix-ish label: the last dot segment of the host. */
 export function tldOf(host: string): string {
   const i = host.lastIndexOf(".");

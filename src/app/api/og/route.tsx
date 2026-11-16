@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
-import { getScan } from "@/lib/scanner/store";
+import { getScan, getLatestHostEntry } from "@/lib/scanner/store";
 import { GRADE_META } from "@/lib/scanner/grade";
+import { canonicalHost } from "@/lib/registry";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -21,11 +22,19 @@ const TROPHY_FILE = {
 
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
-  const scan = await getScan(id);
+  const hostParam = (req.nextUrl.searchParams.get("host") ?? "").trim().toLowerCase();
 
-  const grade = scan?.grade ?? "A+";
-  const score = scan ? scan.score : 100;
-  const host = scan ? scan.host : "appseal.online";
+  // host mode: live share-card - the newest registry entry for the domain
+  let entry: { host: string; grade: string; score: number; ts: number } | null = null;
+  if (hostParam && hostParam.length <= 253 && Boolean(hostParam.match(/^[a-z0-9.-]+\.[a-z]{2,}$/))) {
+    const e = await getLatestHostEntry(canonicalHost(hostParam));
+    if (e) entry = { host: e.host, grade: e.grade, score: e.score, ts: e.ts };
+  }
+  const scan = entry ? null : await getScan(id);
+
+  const grade = entry?.grade ?? scan?.grade ?? "A+";
+  const score = entry ? entry.score : scan ? scan.score : 100;
+  const host = entry ? entry.host : scan ? scan.host : "appseal.online";
   const meta = GRADE_META[grade as keyof typeof GRADE_META] ?? GRADE_META["A+"];
 
   // Read trophy image as base64
@@ -43,6 +52,10 @@ export async function GET(req: NextRequest) {
   const fails = scan ? scan.results.filter((r) => r.status === "fail").length : 0;
   const warns = scan ? scan.results.filter((r) => r.status === "warn").length : 0;
   const passes = scan ? scan.results.filter((r) => r.status === "pass" || r.status === "info").length : 24;
+  const hostMode = Boolean(entry);
+  const checkedDate = entry
+    ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(entry.ts))
+    : "";
 
   return new ImageResponse(
     (
@@ -239,35 +252,52 @@ export async function GET(req: NextRequest) {
             </div>
 
             {/* Checks counter */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "20px",
-                marginTop: "8px",
-                fontSize: "16px",
-                color: "#94A3B8",
-              }}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "#34D399" }}>✔</span> {passes} в норме
-              </span>
-              {warns > 0 && (
+            {hostMode ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "20px",
+                  marginTop: "8px",
+                  fontSize: "16px",
+                  color: "#94A3B8",
+                }}
+              >
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ color: "#FBBF24" }}>⚠</span> {warns} замечаний
+                  <span style={{ color: "#34D399" }}>✔</span> проверено {checkedDate} · живой ранг по реестру AppSeal
                 </span>
-              )}
-              {fails > 0 && (
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "20px",
+                  marginTop: "8px",
+                  fontSize: "16px",
+                  color: "#94A3B8",
+                }}
+              >
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ color: "#F87171" }}>✖</span> {fails} уязвимостей
+                  <span style={{ color: "#34D399" }}>✔</span> {passes} в норме
                 </span>
-              )}
-              {fails === 0 && warns === 0 && (
-                <span style={{ display: "flex", alignItems: "center", gap: "6px", color: "#34D399" }}>
-                  ★ 100% защита пройдена
-                </span>
-              )}
-            </div>
+                {warns > 0 && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ color: "#FBBF24" }}>⚠</span> {warns} замечаний
+                  </span>
+                )}
+                {fails > 0 && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ color: "#F87171" }}>✖</span> {fails} уязвимостей
+                  </span>
+                )}
+                {fails === 0 && warns === 0 && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "6px", color: "#34D399" }}>
+                    ★ 100% защита пройдена
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
