@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 import { ShieldCheck, Lock, Activity, KeyRound } from "@/components/icons/appseal-icons";
 
 export const metadata: Metadata = {
@@ -12,34 +13,7 @@ export const metadata: Metadata = {
 export default function BotPage() {
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
-      <header className="sticky top-0 z-40 border-b border-slate-800/70 bg-[#090d16]/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="AppSeal home">
-            <img
-              src="/ico.png"
-              alt="AppSeal"
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)] transition-transform hover:scale-105"
-            />
-            <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/registry"
-              className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition"
-            >
-              Реестр
-            </Link>
-            <Link
-              href="/"
-              className="rounded-md bg-sky-400 px-3.5 py-1.5 text-xs font-bold text-[#090d16] transition hover:bg-sky-300"
-            >
-              Сканер
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
         <div className="rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:p-10">
@@ -126,7 +100,7 @@ export default function BotPage() {
               © {new Date().getFullYear()} AppSeal · Crawler & Scanner Documentation
             </p>
             <p className="font-mono text-[10px] text-slate-700">
-              <Link href="/" className="transition hover:text-slate-500">главная</Link> · <Link href="/registry" className="transition hover:text-slate-500">реестр</Link> · <Link href="/legal" className="transition hover:text-slate-500">правила</Link>
+              <Link href="/" className="transition hover:text-slate-500">главная</Link> · <Link href="/registry" className="transition hover:text-slate-500">реестр</Link> · <Link href="/stats" className="transition hover:text-slate-500">статистика</Link> · <Link href="/fixes" className="transition hover:text-slate-500">гайды</Link> · <Link href="/legal" className="transition hover:text-slate-500">правила</Link>
             </p>
           </div>
           <div className="shrink-0 transition-transform hover:scale-[1.02]">

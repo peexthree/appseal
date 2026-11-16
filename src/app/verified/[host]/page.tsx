@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 import { getRegistryEntries } from "@/lib/scanner/store";
 import { canonicalHost, dedupeRegistry, isDofollow, type RegistryEntry } from "@/lib/registry";
 import { getTrophyPath, GRADE_META } from "@/lib/scanner/grade";
@@ -75,31 +76,7 @@ export default async function VerifiedPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
-      <header className="sticky top-0 z-40 border-b border-slate-800/70 bg-[#090d16]/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="AppSeal home">
-            <img
-              src="/ico.png"
-              alt="AppSeal"
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)] transition-transform hover:scale-105"
-            />
-            <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/registry" className="text-sm font-semibold text-slate-300 transition hover:text-sky-400">
-              Реестр
-            </Link>
-            <Link
-              href="/"
-              className="rounded-md bg-sky-400 px-4 py-1.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
-            >
-              Проверить свой
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 sm:px-6">
         {latest && gm ? (
@@ -175,6 +152,10 @@ export default async function VerifiedPage({
                 Хотите поднять класс? Самые частые провалы - защитные заголовки, чинятся одним конфигом:{" "}
                 <Link href="/fixes" className="font-bold text-sky-400 hover:underline">
                   готовые конфиги под ваш хостинг →
+                </Link>{" "}
+                Или посмотрите, как домен выглядит на фоне другого:{" "}
+                <Link href={`/versus?a=${encodeURIComponent(host)}`} className="font-bold text-sky-400 hover:underline">
+                  сравнить сайты →
                 </Link>
               </p>
             </div>

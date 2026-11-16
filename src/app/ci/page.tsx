@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 import { CI_YAML } from "@/lib/ci-yaml";
 import { CopyCode } from "../fixes/copy-code";
 
@@ -17,31 +18,7 @@ export default function CiPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
-      <header className="sticky top-0 z-40 border-b border-slate-800/70 bg-[#090d16]/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="AppSeal home">
-            <img
-              src="/ico.png"
-              alt="AppSeal"
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)] transition-transform hover:scale-105"
-            />
-            <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/fixes" className="text-sm font-semibold text-slate-300 transition hover:text-sky-400">
-              Гайды
-            </Link>
-            <Link
-              href="/"
-              className="rounded-md bg-sky-400 px-4 py-1.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
-            >
-              Проверить свой
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-400">AppSeal для CI</p>
@@ -114,9 +91,10 @@ export default function CiPage() {
       <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-xs text-slate-500 sm:px-6">
           <span>AppSeal Engine · External Black-Box Security Scanner</span>
-          <span className="inline-flex items-center gap-3">
+          <span className="inline-flex flex-wrap items-center gap-3">
             <Link href="/fixes" className="transition hover:text-slate-400">гайды</Link>
             <Link href="/stats" className="transition hover:text-slate-400">статистика</Link>
+            <Link href="/api" className="transition hover:text-slate-400">api</Link>
           </span>
         </div>
       </footer>

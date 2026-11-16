@@ -17,7 +17,7 @@ import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
 import { ScoreSimulator } from "@/components/score-simulator";
 import { Stat } from "@/components/stat";
-import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, ArrowUp, Globe, Check, CheckCircle2, Copy, Send, Menu, X, ChevronDown } from "@/components/icons/appseal-icons";
+import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, ArrowUp, Globe, Check, CheckCircle2, Copy, Send, Menu, X, ChevronDown, Scale, CodeXml, GitBranch } from "@/components/icons/appseal-icons";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
@@ -162,6 +162,7 @@ const EYEBROWS = {
   grades: { ru: "Грейды", en: "Grades" },
   case: { ru: "Кейс", en: "Case" },
   engine: { ru: "Движок", en: "Engine" },
+  eco: { ru: "Экосистема", en: "Ecosystem" },
   pricing: { ru: "Тарифы", en: "Pricing" },
   faq: { ru: "FAQ", en: "FAQ" },
 };
@@ -239,16 +240,40 @@ export function ScannerPage({
   const scanStartedAt = useRef(0);
   const lastTermStage = useRef("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const reduceMotion = useReducedMotion();
   const headerRef = useRef<HTMLElement>(null);
-  // quick-link rows for the header mini-panel (collapsed desktop + mobile burger)
+  // quick-link rows for the header mini-panel (collapsed desktop + mobile burger):
+  // product pages first, then the tool belt that grew around the scanner
   const NAV_LINKS = [
-    { href: "/", key: "navHome", icon: Globe },
-    { href: "/registry", key: "navRegistry", icon: FileCheck2 },
-    { href: "/stats", key: "navStats", icon: Activity },
+    { href: "/", key: "navHome", icon: Globe, group: "main" },
+    { href: "/registry", key: "navRegistry", icon: FileCheck2, group: "main" },
+    { href: "/stats", key: "navStats", icon: Activity, group: "main" },
+    { href: "/versus", key: "navVersus", icon: Scale, group: "tools" },
+    { href: "/fixes", key: "navFixes", icon: FileCheck2, group: "tools" },
+    { href: "/digest", key: "navDigest", icon: Activity, group: "tools" },
+    { href: "/ci", key: "navCi", icon: GitBranch, group: "tools" },
+    { href: "/bot", key: "navBot", icon: Send, group: "tools" },
+    { href: "/api", key: "navApi", icon: CodeXml, group: "tools" },
+  ] as const;
+  // legal and pricing live in the panel's "more" tail and the desktop row
+  const NAV_TAIL = [
     { href: "#pricing", key: "navPricing", icon: Zap },
     { href: "/legal", key: "navLegal", icon: ShieldCheck },
+  ] as const;
+  // the desktop at-rest row: two product pages, the tools dropdown, pricing
+  const NAV_ROW = [
+    { href: "/registry", key: "navRegistry" },
+    { href: "/stats", key: "navStats" },
+  ] as const;
+  const NAV_ROW_TOOLS = [
+    { href: "/versus", key: "navVersus", icon: Scale },
+    { href: "/fixes", key: "navFixes", icon: FileCheck2 },
+    { href: "/digest", key: "navDigest", icon: Activity },
+    { href: "/ci", key: "navCi", icon: GitBranch },
+    { href: "/bot", key: "navBot", icon: Send },
+    { href: "/api", key: "navApi", icon: CodeXml },
   ] as const;
   const [faqOpen, setFaqOpen] = useState<number[]>([]);
   const reportRef = useRef<HTMLDivElement>(null);
@@ -271,14 +296,20 @@ export function ScannerPage({
     };
   }, []);
 
-  // close the quick-links panel on an outside pointer or Escape
+  // close the quick-links panel or tools dropdown on an outside pointer or Escape
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!menuOpen && !toolsOpen) return;
     const onDown = (e: PointerEvent) => {
-      if (headerRef.current && !headerRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setToolsOpen(false);
+      }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setToolsOpen(false);
+      }
     };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
@@ -286,7 +317,7 @@ export function ScannerPage({
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [menuOpen]);
+  }, [menuOpen, toolsOpen]);
 
   // grade showcase walks the ranks on its own every 5s
   useEffect(() => {
@@ -603,7 +634,7 @@ export function ScannerPage({
             }`}
             aria-label="Site"
           >
-            {NAV_LINKS.slice(1).map((item) => (
+            {NAV_ROW.map((item) => (
               <a
                 key={item.key}
                 href={item.href}
@@ -612,6 +643,51 @@ export function ScannerPage({
                 {t(lang, item.key)}
               </a>
             ))}
+            {/* tools dropdown: the six instruments that grew around the scanner */}
+            <div className="relative">
+              <button
+                onClick={() => setToolsOpen((v) => !v)}
+                aria-expanded={toolsOpen}
+                className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+              >
+                {t(lang, "navTools")}
+                <ChevronDown
+                  className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-300 ${toolsOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              <AnimatePresence>
+                {toolsOpen && (
+                  <motion.nav
+                    key="tools-panel"
+                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
+                    style={{ transformOrigin: "top left" }}
+                    className="absolute left-0 top-[calc(100%+8px)] z-50 w-64 rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-2xl"
+                    aria-label={t(lang, "navTools")}
+                  >
+                    {NAV_ROW_TOOLS.map((item) => (
+                      <a
+                        key={item.key}
+                        href={item.href}
+                        onClick={() => setToolsOpen(false)}
+                        className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                      >
+                        <item.icon className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-sky-400" />
+                        {t(lang, item.key)}
+                      </a>
+                    ))}
+                  </motion.nav>
+                )}
+              </AnimatePresence>
+            </div>
+            <a
+              href="#pricing"
+              className="rounded-full px-3.5 py-1.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+            >
+              {t(lang, "navPricing")}
+            </a>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -656,22 +732,43 @@ export function ScannerPage({
               exit={{ opacity: 0, y: -8, scale: 0.97 }}
               transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
               style={{ transformOrigin: "top left" }}
-              className={`absolute left-4 z-50 w-60 rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-2xl md:left-6 ${
+              className={`absolute left-4 z-50 w-64 rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-2xl md:left-6 ${
                 scrolled ? "top-[64px]" : "top-[86px]"
               }`}
               aria-label="Menu"
             >
-              {NAV_LINKS.map((item) => (
-                <a
-                  key={item.key}
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-                >
-                  <item.icon className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-sky-400" />
-                  {t(lang, item.key)}
-                </a>
+              {(["main", "tools"] as const).map((g) => (
+                <div key={g}>
+                  <p className="px-3 pb-1 pt-2 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                    {t(lang, g === "main" ? "navGroupMain" : "navGroupTools")}
+                  </p>
+                  {NAV_LINKS.filter((item) => item.group === g).map((item) => (
+                    <a
+                      key={item.key}
+                      href={item.href}
+                      onClick={() => setMenuOpen(false)}
+                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+                    >
+                      <item.icon className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-sky-400" />
+                      {t(lang, item.key)}
+                    </a>
+                  ))}
+                </div>
               ))}
+              {/* tail: pricing and legal, kept out of the main groups */}
+              <div className="mt-1 border-t border-white/5 pt-1">
+                {NAV_TAIL.map((item) => (
+                  <a
+                    key={item.key}
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
+                  >
+                    <item.icon className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-sky-400" />
+                    {t(lang, item.key)}
+                  </a>
+                ))}
+              </div>
               <div className="mt-2 flex items-center justify-center gap-1 border-t border-white/5 pt-2">
                 {(["ru", "en"] as Lang[]).map((l) => (
                   <button
@@ -1316,6 +1413,42 @@ export function ScannerPage({
           </Reveal>
         </section>
 
+        {/* ecosystem: the tool belt that grew around the scanner - versus,
+            fix guides, weekly digest, CI gate, Telegram bot and the JSON API.
+            Whole cards are links, one honest sentence per card */}
+        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "ecoTitle")}>
+          <SectionHead eyebrow={EYEBROWS.eco[lang]} title={t(lang, "ecoTitle")} sub={t(lang, "ecoSub")} />
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(
+              [
+                { href: "/versus", icon: Scale, tKey: "ecoVersusT", dKey: "ecoVersusD", tone: "text-sky-400" },
+                { href: "/fixes", icon: FileCheck2, tKey: "ecoFixesT", dKey: "ecoFixesD", tone: "text-emerald-400" },
+                { href: "/digest", icon: Activity, tKey: "ecoDigestT", dKey: "ecoDigestD", tone: "text-violet-400" },
+                { href: "/ci", icon: GitBranch, tKey: "ecoCiT", dKey: "ecoCiD", tone: "text-amber-400" },
+                { href: "/bot", icon: Send, tKey: "ecoBotT", dKey: "ecoBotD", tone: "text-sky-400" },
+                { href: "/api", icon: CodeXml, tKey: "ecoApiT", dKey: "ecoApiD", tone: "text-emerald-400" },
+              ] as const
+            ).map((c, i) => (
+              <Reveal key={c.tKey} delay={(i % 3) * 0.08} className="h-full">
+                <a
+                  href={c.href}
+                  className="group flex h-full flex-col rounded-2xl border border-slate-800/80 bg-[#0b101c] p-6 transition hover:border-sky-500/40 hover:bg-[#0d1424]"
+                >
+                  <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ${c.tone}`}>
+                    <c.icon className="h-5 w-5" />
+                  </span>
+                  <h3 className="mt-4 text-sm font-bold leading-snug text-slate-100">{t(lang, c.tKey)}</h3>
+                  <p className="mt-2 flex-1 text-[13px] leading-relaxed text-slate-400">{t(lang, c.dKey)}</p>
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-sky-400">
+                    {t(lang, "ecoCardCta")}
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                  </span>
+                </a>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
         {/* pricing */}
         <section
           id="pricing"
@@ -1470,6 +1603,7 @@ export function ScannerPage({
                 ["faq6Q", "faq6A"],
                 ["faq7Q", "faq7A"],
                 ["faq8Q", "faq8A"],
+                ["faq9Q", "faq9A"],
               ] as const
             ).map(
               ([q, a], i) => {
@@ -1524,6 +1658,16 @@ export function ScannerPage({
               <span>{t(lang, "footerEngine")}</span>
               <span>·</span>
               <a href="/registry" className="transition hover:text-slate-400">реестр</a>
+              <span>·</span>
+              <a href="/versus" className="transition hover:text-slate-400">versus</a>
+              <span>·</span>
+              <a href="/fixes" className="transition hover:text-slate-400">гайды</a>
+              <span>·</span>
+              <a href="/digest" className="transition hover:text-slate-400">дайджест</a>
+              <span>·</span>
+              <a href="/ci" className="transition hover:text-slate-400">ci</a>
+              <span>·</span>
+              <a href="/api" className="transition hover:text-slate-400">api</a>
               <span>·</span>
               <a href="/bot" className="transition hover:text-slate-400">робот (bot)</a>
               <span>·</span>

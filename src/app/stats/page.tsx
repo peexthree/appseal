@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
 import { ShieldCheck } from "@/components/icons/appseal-icons";
 import statsData from "@/data/stats-harvest.json";
 import { getRegistryEntries, redisConfig, redisPipeline, STATS_HOUR_PREFIX, STATS_DAY_PREFIX } from "@/lib/scanner/store";
@@ -246,31 +247,7 @@ export default async function StatsPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
-      <header className="sticky top-0 z-40 border-b border-slate-800/70 bg-[#090d16]/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="AppSeal home">
-            <img
-              src="/ico.png"
-              alt="AppSeal"
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)] transition-transform hover:scale-105"
-            />
-            <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/registry" className="text-sm font-semibold text-slate-300 transition hover:text-sky-400">
-              Реестр
-            </Link>
-            <Link
-              href="/"
-              className="rounded-md bg-sky-400 px-4 py-1.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
-            >
-              Проверить свой
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">

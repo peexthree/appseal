@@ -20,6 +20,7 @@ import {
 import {
   CheckCircle2, XCircle, AlertTriangle, Info, MinusCircle,
   Download, RotateCcw, Copy, Check, ChevronDown, KeyRound, ShieldHeaders, Lock, Activity, Sparkles,
+  FileCheck2, Scale,
 } from "@/components/icons/appseal-icons";
 
 const CAT_ICONS: Record<CategoryId, React.ReactNode> = {
@@ -573,6 +574,26 @@ export function ReportView({
             {linkCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Ссылка" : "Copy link")}
           </Button>
         </div>
+      </div>
+
+      {/* next steps: no dead ends - fix guides for the findings, versus for the rivalry */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+        {fails + warns > 0 && (
+          <a
+            href="/fixes"
+            className="inline-flex items-center gap-1.5 font-semibold text-sky-400 transition hover:text-sky-300"
+          >
+            <FileCheck2 className="h-3.5 w-3.5" />
+            {t(lang, "repFixesCta")} →
+          </a>
+        )}
+        <a
+          href={`/versus?a=${encodeURIComponent(scan.host)}`}
+          className="inline-flex items-center gap-1.5 font-semibold text-slate-400 transition hover:text-slate-200"
+        >
+          <Scale className="h-3.5 w-3.5" />
+          {t(lang, "repVersusCta")} →
+        </a>
       </div>
 
       {/* AI-fix prompt */}

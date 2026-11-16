@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getRegistryEntries, redisConfig, redis } from "@/lib/scanner/store";
 import { dedupeRegistry, isDofollow, isReferenceSite } from "@/lib/registry";
 import RegistryList from "./registry-list";
+import { SiteHeader } from "@/components/site-header";
 
 // ISR: the catalog is a top bot crawl target and a dynamic render on every
 // request burns the Fast Origin Transfer quota; 60s staleness is fine for a
@@ -40,26 +41,7 @@ export default async function RegistryPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
-      <header className="sticky top-0 z-40 border-b border-slate-800/70 bg-[#090d16]/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="AppSeal home">
-            <img
-              src="/ico.png"
-              alt="AppSeal"
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain drop-shadow-[0_2px_8px_rgba(56,189,248,0.4)] transition-transform hover:scale-105"
-            />
-            <span className="font-display text-lg font-extrabold tracking-tight">AppSeal</span>
-          </Link>
-          <Link
-            href="/"
-            className="rounded-md bg-sky-400 px-4 py-1.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
-          >
-            Просканировать свой
-          </Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-12 sm:px-6">
         <h1 className="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
@@ -106,7 +88,7 @@ export default async function RegistryPage() {
               © {new Date().getFullYear()} AppSeal · независимый слой доверия для приложений, собранных с ИИ
             </p>
             <p className="font-mono text-[10px] text-slate-700">
-              <a href="/" className="transition hover:text-slate-500">главная</a> · <a href="/bot" className="transition hover:text-slate-500">робот</a> · <a href="/legal" className="transition hover:text-slate-500">правила</a>
+              <a href="/" className="transition hover:text-slate-500">главная</a> · <a href="/stats" className="transition hover:text-slate-500">статистика</a> · <a href="/versus" className="transition hover:text-slate-500">versus</a> · <a href="/fixes" className="transition hover:text-slate-500">гайды</a> · <a href="/bot" className="transition hover:text-slate-500">робот</a> · <a href="/legal" className="transition hover:text-slate-500">правила</a>
             </p>
           </div>
           <div className="shrink-0 transition-transform hover:scale-[1.02]">
