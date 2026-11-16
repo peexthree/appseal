@@ -284,6 +284,26 @@ export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
   }
 }
 
+/** Live monotonic totals written by pushRegistryEntry: INCR/SADD keys without
+ *  TTL, so the numbers never reset or shrink. One pipeline read - the landing
+ *  stats card must always match /stats. */
+export async function getLiveTotals(): Promise<{ scans: number; hosts: number } | null> {
+  const cfg = redisConfig();
+  if (!cfg) return null;
+  try {
+    const [scans, hosts] = (await redisPipeline(cfg, [
+      ["GET", STATS_SCANS_KEY],
+      ["SCARD", STATS_HOSTS_KEY],
+    ])) as [string | number | null, string | number | null];
+    const s = Number(scans) || 0;
+    const h = Number(hosts) || 0;
+    if (!s && !h) return null;
+    return { scans: s, hosts: h };
+  } catch {
+    return null;
+  }
+}
+
 export async function getRegistryEntries(limit = REGISTRY_MAX): Promise<RegistryEntry[]> {
   const cfg = redisConfig();
   if (cfg) {

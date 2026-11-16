@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { ScannerPage } from "@/components/scanner-page";
 import { JsonLd } from "@/components/json-ld";
+import { getLiveTotals } from "@/lib/scanner/store";
 import type { Lang } from "@/lib/scanner/types";
 
 /**
@@ -64,10 +65,13 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Home() {
   const h = await headers();
   const lang = detectInitialLang(h);
+  // live monotonic counters from the same Redis source /stats renders from -
+  // the landing stats card must never disagree with the stats page
+  const totals = await getLiveTotals();
   return (
     <>
       <JsonLd />
-      <ScannerPage initialScan={null} initialLang={lang} />
+      <ScannerPage initialScan={null} initialLang={lang} initialTotals={totals} />
     </>
   );
 }

@@ -72,8 +72,8 @@ export const DICT = {
     en: "ship without CSP - the basic XSS-shield header",
   },
   statsSource: {
-    ru: "Цифры: наш массовый техосмотр от {date}, приложения из Show HN и GitHub. Полная статистика",
-    en: "Source: our mass inspection of {date}, apps from Show HN and GitHub. Full statistics",
+    ru: "Счётчик приложений живой - растёт с каждым новым сканом и никогда не сбрасывается. Проценты: массовый техосмотр от {date}, приложения из Show HN и GitHub. Полная статистика",
+    en: "The apps counter is live - it grows with every new scan and never resets. Percentages: mass inspection of {date}, apps from Show HN and GitHub. Full statistics",
   },
   passGateTitle: { ru: "Бейдж и PDF - часть Launch Pass", en: "Badge and PDF are part of Launch Pass" },
   passGateText: {

@@ -195,6 +195,7 @@ export function ScannerPage({
   initialScan,
   initialReportKey,
   initialLang,
+  initialTotals,
 }: {
   initialScan: ScanResult | null;
   /** report key from ?key= - present only for the scan initiator */
@@ -202,6 +203,11 @@ export function ScannerPage({
   /** server-resolved seed (headers): ru for RU audience, en for everyone
    *  else; a saved localStorage choice still wins over it */
   initialLang?: Lang;
+  /** live monotonic counters from Redis (same source /stats renders from):
+   *  hosts = unique apps ever scanned, scans = scans counted. The landing
+   *  stats card uses hosts so it always matches /stats; null falls back to
+   *  the static harvest snapshot */
+  initialTotals?: { scans: number; hosts: number } | null;
 }) {
   const [lang, setLang] = useState<Lang>(initialLang ?? "ru");
   const [phase, setPhase] = useState<Phase>(initialScan ? "report" : "form");
@@ -952,16 +958,22 @@ export function ScannerPage({
         <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "statsTitle")}>
           <SectionHead eyebrow={EYEBROWS.stats[lang]} title={t(lang, "statsTitle")} />
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {STATS.map((s, i) => (
-              <Reveal key={s.label} delay={i * 0.08} className="h-full">
-                <div className="appseal-card h-full rounded-2xl p-6 text-center">
-                  <p className="font-display text-5xl font-extrabold">
-                    <Stat value={s.value} suffix={s.suffix} decimals={s.decimals} className="appseal-gradient-text" />
-                  </p>
-                  <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{t(lang, s.label)}</p>
-                </div>
-              </Reveal>
-            ))}
+            {STATS.map((s, i) => {
+              // stat1 = live apps counter (same Redis source as /stats, never
+              // resets); the two percentage cards keep the static mass-run
+              // snapshot with its fixed date
+              const value = s.label === "stat1" ? (initialTotals?.hosts ?? s.value) : s.value;
+              return (
+                <Reveal key={s.label} delay={i * 0.08} className="h-full">
+                  <div className="appseal-card h-full rounded-2xl p-6 text-center">
+                    <p className="font-display text-5xl font-extrabold">
+                      <Stat value={value} suffix={s.suffix} decimals={s.decimals} className="appseal-gradient-text" />
+                    </p>
+                    <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{t(lang, s.label)}</p>
+                  </div>
+                </Reveal>
+              );
+            })}
           </div>
           <p className="mt-5 text-center text-xs leading-relaxed text-slate-500">
             {t(lang, "statsSource").replace(
