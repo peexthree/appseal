@@ -45,6 +45,18 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: META[lang].title,
     description: META[lang].description,
+    openGraph: {
+      title: META[lang].title,
+      description: META[lang].description,
+      type: "website",
+      images: ["/OG.png"],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: META[lang].title,
+      description: META[lang].description,
+      images: ["/OG.png"],
+    },
     alternates: { canonical: "/" },
   };
 }

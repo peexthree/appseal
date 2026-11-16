@@ -1,0 +1,22 @@
+# AppSeal
+
+> AppSeal is an external black-box security scanner ("trust seal") for AI-built apps and vibe-coded sites. Paste a URL - the engine runs 125 automated checks (leaked secrets, open databases, exposed admin panels, security headers and TLS, liveness, AI-trust hygiene) and returns a grade from A+ to E with a ready-to-paste fix prompt. Operated by an independent self-employed developer in Russia.
+
+Site map:
+- [Home and scanner](https://appseal.online/): paste a URL to run a free scan (1 scan/day per IP, demo target exempt)
+- [Registry](https://appseal.online/registry): public showcase of sites graded A/A+ with auto-extracted descriptions
+- [Stats](https://appseal.online/stats): anonymous aggregate results from mass scans of AI-built apps
+- [Legal](https://appseal.online/legal): rules, privacy policy, data handling, opt-out contact
+- [Telegram bot](https://appseal.online/bot): buy the Launch Pass via Telegram
+
+## How scanning works
+- Black-box scan of a publicly reachable URL; nothing is installed and no accounts are created
+- The full report (per-check results, fix prompt, PDF) is private to the scan initiator via a secret key; the public view shows a verification card (host, grade, date)
+- Launch Pass (one-time purchase, 7 days) unlocks unlimited scans, the full PDF report and an embeddable trust badge
+
+## Contact
+- Telegram: [@peexthree](https://t.me/peexthree)
+- Email: linedrop@yandex.ru
+
+## ru
+AppSeal - «техосмотр» для приложений, собранных с ИИ: чёрный ящик-скан живого сайта на утечки секретов, открытые базы, дырявые админки, заголовки безопасности и признаки заброшенности. 125 проверок, грейд A+-E, бейдж доверия, публичный реестр.

@@ -39,17 +39,17 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "AppSeal - the trust seal for AI-built apps",
+    title: "AppSeal - техосмотр для приложений, собранных с ИИ",
     description:
-      "Scan your AI-built app for leaked secrets, open databases, exposed admin panels and abandonment. A+-E grade in a minute.",
+      "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+-E и бейдж доверия за минуту.",
     type: "website",
     images: ["/OG.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AppSeal - the trust seal for AI-built apps",
+    title: "AppSeal - техосмотр для приложений, собранных с ИИ",
     description:
-      "Scan your AI-built app for leaked secrets, open databases, exposed admin panels and abandonment. A+-E grade in a minute.",
+      "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+-E и бейдж доверия за минуту.",
     images: ["/OG.png"],
   },
 };
