@@ -198,6 +198,11 @@ const STATS_SCORES_KEY = "appmot:stats:scores";
 const STATS_FAILS_KEY = "appmot:stats:checkfails";
 const STATS_WARNS_KEY = "appmot:stats:checkwarns";
 const STATS_TITLES_KEY = "appmot:stats:titles";
+const STATS_CAT_FAILS_KEY = "appmot:stats:catfails";
+const STATS_CAT_WARNS_KEY = "appmot:stats:catwarns";
+const STATS_CAT_LOSS_KEY = "appmot:stats:catloss";
+/** UTC-hour activity bucket prefix (keys: appmot:stats:h:YYYYMMDDHH, 48h TTL) */
+export const STATS_HOUR_PREFIX = "appmot:stats:h:";
 // literal relative dir, same scheme as scans
 const REGISTRY_FILE = "db/registry.json";
 
@@ -221,6 +226,18 @@ export interface RegistryEntry {
  * Failures are swallowed: the registry is a nice-to-have, a broken push
  * must never break the scan flow.
  */
+/** Redis key of one UTC-hour activity bucket (48h TTL, set at write). */
+export function statsHourKey(d = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return (
+    STATS_HOUR_PREFIX +
+    d.getUTCFullYear() +
+    p(d.getUTCMonth() + 1) +
+    p(d.getUTCDate()) +
+    p(d.getUTCHours())
+  );
+}
+
 export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
   // canonical form at the single write point: www.example.com scans never
   // fork into a second catalog row (legacy rows merge on read)
@@ -229,6 +246,7 @@ export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
   try {
     const cfg = redisConfig();
     if (cfg) {
+      const hourKey = statsHourKey();
       await redisPipeline(cfg, [
         ["LPUSH", REGISTRY_KEY, JSON.stringify(entry)],
         ["LTRIM", REGISTRY_KEY, "0", String(REGISTRY_MAX - 1)],
@@ -237,6 +255,8 @@ export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
         ["SADD", STATS_HOSTS_KEY, entry.host],
         ["HINCRBY", STATS_GRADES_KEY, entry.grade, "1"],
         ["ZINCRBY", STATS_SCORES_KEY, "1", String(entry.score)],
+        ["INCR", hourKey],
+        ["EXPIRE", hourKey, "172800"],
       ]);
       return;
     }
@@ -295,6 +315,14 @@ export async function recordCheckStats(results: CheckResult[]): Promise<void> {
     const key = r.status === "fail" ? STATS_FAILS_KEY : STATS_WARNS_KEY;
     cmds.push(["ZINCRBY", key, "1", r.id]);
     cmds.push(["HSETNX", STATS_TITLES_KEY, r.id, JSON.stringify(r.title)]);
+    // per-category rollup + total penalty weight carried by the findings
+    if (r.category) {
+      const catKey = r.status === "fail" ? STATS_CAT_FAILS_KEY : STATS_CAT_WARNS_KEY;
+      cmds.push(["HINCRBY", catKey, r.category, "1"]);
+      if (r.penalty > 0) {
+        cmds.push(["HINCRBY", STATS_CAT_LOSS_KEY, r.category, String(Math.round(r.penalty))]);
+      }
+    }
   }
   if (cmds.length === 0) return;
   try {

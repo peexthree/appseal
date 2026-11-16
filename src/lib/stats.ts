@@ -4,6 +4,8 @@
  * it is unit-testable without a Redis connection.
  */
 
+import { platformOf } from "./registry.ts";
+
 export interface TopFail {
   id: string;
   title: string;
@@ -133,4 +135,120 @@ export function gradeRowsFromCounts(
   return GRADE_ORDER.map((g) => ({ grade: g, count: counts.get(g) ?? 0 })).filter(
     (r) => r.count > 0,
   );
+}
+
+/** A+ = 0 ... E = 5; unknown grades sink below E. */
+export function gradeIndex(grade: string): number {
+  const i = (GRADE_ORDER as readonly string[]).indexOf(grade);
+  return i === -1 ? GRADE_ORDER.length : i;
+}
+
+/** Score 0-100 folded into ten decade buckets, last one includes 100. */
+export function bucketHistogram(
+  flat: unknown,
+  width = 10,
+): { from: number; to: number; count: number }[] {
+  const pairs = pairsFromFlat(flat);
+  const n = Math.ceil(101 / width); // 0..100 -> 11 buckets of 10
+  const buckets = Array.from({ length: n }, (_, i) => ({
+    from: i * width,
+    to: Math.min(100, i * width + width - 1),
+    count: 0,
+  }));
+  for (const [score, count] of pairs) {
+    const s = Number(score);
+    if (!Number.isFinite(s) || s < 0 || s > 100) continue;
+    const idx = Math.min(n - 1, Math.floor(s / width));
+    buckets[idx].count += count;
+  }
+  return buckets;
+}
+
+/** Redis keys for the last n UTC-hour activity buckets, oldest first. */
+export function statsHourKeys(prefix: string, now: Date, n = 24): string[] {
+  const keys: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 3600 * 1000);
+    const p = (v: number) => String(v).padStart(2, "0");
+    keys.push(
+      prefix +
+        d.getUTCFullYear() +
+        p(d.getUTCMonth() + 1) +
+        p(d.getUTCDate()) +
+        p(d.getUTCHours()),
+    );
+  }
+  return keys;
+}
+
+/** Public suffix-ish label: the last dot segment of the host. */
+export function tldOf(host: string): string {
+  const i = host.lastIndexOf(".");
+  return i === -1 ? host : host.slice(i + 1).toLowerCase();
+}
+
+export function tldRows(
+  entries: { host: string; score: number }[],
+): { tld: string; count: number; avg: number }[] {
+  const m = new Map<string, { count: number; total: number }>();
+  for (const e of entries) {
+    const tld = tldOf(e.host);
+    const b = m.get(tld) ?? { count: 0, total: 0 };
+    b.count += 1;
+    b.total += e.score;
+    m.set(tld, b);
+  }
+  return [...m.entries()]
+    .map(([tld, b]) => ({ tld, count: b.count, avg: Math.round(b.total / b.count) }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Class movement across repeated scans of the same host (the registry keeps
+ * every scan): did hosts improve, drop or stay put between their oldest and
+ * newest retained scan. Entries arrive newest-first (registry LRANGE order).
+ */
+export function gradeDynamics(
+  entries: { host: string; grade: string; ts?: number }[],
+): {
+  improved: number;
+  dropped: number;
+  stable: number;
+} {
+  const byHost = new Map<string, { newest: string; oldest: string; count: number }>();
+  for (const e of entries) {
+    const host = e.host.toLowerCase().replace(/^www\./, "");
+    const cur = byHost.get(host);
+    if (!cur) {
+      byHost.set(host, { newest: e.grade, oldest: e.grade, count: 1 });
+    } else {
+      cur.count += 1;
+      cur.oldest = e.grade; // later items in a newest-first list are older
+    }
+  }
+  let improved = 0;
+  let dropped = 0;
+  let stable = 0;
+  for (const h of byHost.values()) {
+    if (h.count < 2) continue;
+    const d = gradeIndex(h.oldest) - gradeIndex(h.newest);
+    if (d > 0) improved += 1;
+    else if (d < 0) dropped += 1;
+    else stable += 1;
+  }
+  return { improved, dropped, stable };
+}
+
+/** Grade mix inside each hosting platform (leaderboard companion). */
+export function platformGradeCounts(
+  entries: { host: string; grade: string }[],
+): Map<string, Map<string, number>> {
+  const out = new Map<string, Map<string, number>>();
+  for (const e of entries) {
+    const p = platformOf(e.host);
+    const g = out.get(p) ?? new Map<string, number>();
+    g.set(e.grade, (g.get(e.grade) ?? 0) + 1);
+    out.set(p, g);
+  }
+  return out;
 }

@@ -6,6 +6,12 @@ import {
   avgMedianFromHistogram,
   buildTopFails,
   gradeRowsFromCounts,
+  bucketHistogram,
+  statsHourKeys,
+  tldOf,
+  tldRows,
+  gradeDynamics,
+  platformGradeCounts,
 } from "../src/lib/stats.ts";
 
 describe("pairsFromFlat", () => {
@@ -78,5 +84,71 @@ describe("gradeRowsFromCounts", () => {
   it("orders A+..E and drops empty grades", () => {
     const rows = gradeRowsFromCounts(new Map([["B", 3], ["A+", 1], ["E", 0], ["A", 2]]));
     assert.deepEqual(rows.map((r) => r.grade), ["A+", "A", "B"]);
+  });
+});
+
+describe("bucketHistogram", () => {
+  it("folds scores into decade buckets, 100 lands in the last one", () => {
+    const h = bucketHistogram(["0", "2", "45", "1", "99", "3", "100", "1"]);
+    assert.equal(h.length, 11);
+    assert.equal(h[0].count, 2); // 0-9
+    assert.equal(h[4].count, 1); // 40-49
+    assert.equal(h[9].count, 3); // 90-99
+    assert.equal(h[10].count, 1); // 100
+    assert.equal(h[10].to, 100);
+  });
+  it("ignores junk scores", () => {
+    const h = bucketHistogram(["250", "1", "-3", "1", "50", "2"]);
+    assert.equal(h.reduce((s, b) => s + b.count, 0), 2);
+    assert.equal(h[5].count, 2);
+  });
+});
+
+describe("statsHourKeys", () => {
+  it("builds n UTC keys oldest first", () => {
+    const keys = statsHourKeys("appmot:stats:h:", new Date("2026-11-16T14:30:00Z"), 3);
+    assert.deepEqual(keys, ["appmot:stats:h:2026111612", "appmot:stats:h:2026111613", "appmot:stats:h:2026111614"]);
+  });
+});
+
+describe("tldOf / tldRows", () => {
+  it("extracts the last label", () => {
+    assert.equal(tldOf("app.seal.online"), "online");
+    assert.equal(tldOf("plain"), "plain");
+  });
+  it("aggregates counts and averages", () => {
+    const rows = tldRows([
+      { host: "a.dev", score: 80 },
+      { host: "b.dev", score: 90 },
+      { host: "c.ru", score: 60 },
+    ]);
+    assert.deepEqual(rows[0], { tld: "dev", count: 2, avg: 85 });
+    assert.deepEqual(rows[1], { tld: "ru", count: 1, avg: 60 });
+  });
+});
+
+describe("gradeDynamics", () => {
+  it("counts improved/dropped/stable over repeated scans (newest-first)", () => {
+    const out = gradeDynamics([
+      { host: "a.example", grade: "A", ts: 300 }, // newest for a: A
+      { host: "b.example", grade: "C", ts: 300 }, // newest for b: C
+      { host: "c.example", grade: "B", ts: 300 }, // single scan - ignored
+      { host: "www.a.example", grade: "C", ts: 100 }, // oldest for a: C -> improved
+      { host: "b.example", grade: "A", ts: 100 }, // oldest for b: A -> dropped
+    ]);
+    assert.deepEqual(out, { improved: 1, dropped: 1, stable: 0 });
+  });
+});
+
+describe("platformGradeCounts", () => {
+  it("buckets grades by hosting platform", () => {
+    const m = platformGradeCounts([
+      { host: "x.lovable.app", grade: "B" },
+      { host: "x.lovable.app", grade: "A" },
+      { host: "mysite.com", grade: "C" },
+    ]);
+    assert.equal(m.get("lovable")?.get("B"), 1);
+    assert.equal(m.get("lovable")?.get("A"), 1);
+    assert.equal(m.get("custom")?.get("C"), 1);
   });
 });

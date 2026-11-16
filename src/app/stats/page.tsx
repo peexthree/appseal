@@ -2,15 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ShieldCheck } from "@/components/icons/appseal-icons";
 import statsData from "@/data/stats-harvest.json";
-import { getRegistryEntries, redisConfig, redisPipeline } from "@/lib/scanner/store";
+import { getRegistryEntries, redisConfig, redisPipeline, STATS_HOUR_PREFIX } from "@/lib/scanner/store";
 import { dedupeRegistry, isReferenceSite, platformOf, PLATFORM_LABELS, type PlatformKey } from "@/lib/registry";
 import {
   avgMedianFromHistogram,
+  bucketHistogram,
   buildTopFails,
   countsFromFlat,
+  gradeDynamics,
   gradeRowsFromCounts,
   mapFromFlat,
   pairsFromFlat,
+  platformGradeCounts,
+  statsHourKeys,
+  tldRows,
   type TopFail,
 } from "@/lib/stats";
 
@@ -52,28 +57,59 @@ interface LiveStats {
   median: number;
   topFails: TopFail[];
   tick24h: number;
+  hist: { from: number; to: number; count: number }[];
+  hours: number[];
+  catRows: { cat: string; fail: number; warn: number; loss: number }[];
+  failPairs: Map<string, number>;
 }
+
+/** RU labels for check categories (engine ids). */
+const CATEGORY_LABELS: Record<string, string> = {
+  secrets: "Секреты и утечки",
+  headers: "Заголовки и TLS",
+  admin: "Админки и авторизация",
+  liveness: "Живость и контент",
+  trust: "ИИ-доверие и гигиена",
+};
 
 /** Live Redis counters written by pushRegistryEntry/recordCheckStats. */
 async function readLiveStats(): Promise<LiveStats | null> {
   const cfg = redisConfig();
   if (!cfg) return null;
   try {
-    const [scans, sites, gradesFlat, histFlat, failFlat, warnFlat, titlesFlat, tick] =
-      await redisPipeline(cfg, [
-        ["GET", "appmot:stats:scans"],
-        ["SCARD", "appmot:stats:hosts"],
-        ["HGETALL", "appmot:stats:grades"],
-        ["ZRANGE", "appmot:stats:scores", "0", "-1", "WITHSCORES"],
-        ["ZREVRANGE", "appmot:stats:checkfails", "0", "-1", "WITHSCORES"],
-        ["ZREVRANGE", "appmot:stats:checkwarns", "0", "-1", "WITHSCORES"],
-        ["HGETALL", "appmot:stats:titles"],
-        ["GET", "appmot:pipeline:scans24h"],
-      ]);
+    const hourKeys = statsHourKeys(STATS_HOUR_PREFIX, new Date(), 24);
+    const responses = await redisPipeline(cfg, [
+      ["GET", "appmot:stats:scans"],
+      ["SCARD", "appmot:stats:hosts"],
+      ["HGETALL", "appmot:stats:grades"],
+      ["ZRANGE", "appmot:stats:scores", "0", "-1", "WITHSCORES"],
+      ["ZREVRANGE", "appmot:stats:checkfails", "0", "-1", "WITHSCORES"],
+      ["ZREVRANGE", "appmot:stats:checkwarns", "0", "-1", "WITHSCORES"],
+      ["HGETALL", "appmot:stats:titles"],
+      ["GET", "appmot:pipeline:scans24h"],
+      ["HGETALL", "appmot:stats:catfails"],
+      ["HGETALL", "appmot:stats:catwarns"],
+      ["HGETALL", "appmot:stats:catloss"],
+      ...hourKeys.map((k) => ["GET", k] as unknown[]),
+    ]);
+    const [scans, sites, gradesFlat, histFlat, failFlat, warnFlat, titlesFlat, tick, catFailFlat, catWarnFlat, catLossFlat] = responses;
     const scanCount = Number(scans) || 0;
     if (scanCount <= 0) return null;
     const gradeCounts = countsFromFlat(gradesFlat);
     const { avg, median } = avgMedianFromHistogram(histFlat);
+    const failPairs = pairsFromFlat(failFlat);
+    const warnPairs = pairsFromFlat(warnFlat);
+    const catFails = countsFromFlat(catFailFlat);
+    const catWarns = countsFromFlat(catWarnFlat);
+    const catLoss = countsFromFlat(catLossFlat);
+    const catRows = [...new Set([...catFails.keys(), ...catWarns.keys()])]
+      .map((cat) => ({
+        cat,
+        fail: catFails.get(cat) ?? 0,
+        warn: catWarns.get(cat) ?? 0,
+        loss: catLoss.get(cat) ?? 0,
+      }))
+      .sort((a, b) => b.fail + b.warn - (a.fail + a.warn));
     return {
       scans: scanCount,
       sites: Number(sites) || 0,
@@ -81,14 +117,12 @@ async function readLiveStats(): Promise<LiveStats | null> {
       gradeACount: (gradeCounts.get("A+") ?? 0) + (gradeCounts.get("A") ?? 0),
       avg,
       median,
-      topFails: buildTopFails(
-        pairsFromFlat(failFlat),
-        pairsFromFlat(warnFlat),
-        mapFromFlat(titlesFlat),
-        scanCount,
-        10,
-      ),
+      topFails: buildTopFails(failPairs, warnPairs, mapFromFlat(titlesFlat), scanCount, 10),
       tick24h: Number(tick) || 0,
+      hist: bucketHistogram(histFlat),
+      hours: hourKeys.map((k, i) => Number(responses[11 + i]) || 0),
+      catRows,
+      failPairs,
     };
   } catch {
     return null;
@@ -105,7 +139,8 @@ export default async function StatsPage() {
 
   // platform leaderboard: live registry hosts bucketed by hosting platform.
   // Reference mega-sites (never rendered anywhere) are excluded here too.
-  const registryHosts = dedupeRegistry(await getRegistryEntries()).filter(
+  const allEntries = await getRegistryEntries();
+  const registryHosts = dedupeRegistry(allEntries).filter(
     (e) => !isReferenceSite(e.host),
   );
   const buckets = new Map<PlatformKey, { count: number; total: number }>();
@@ -116,14 +151,52 @@ export default async function StatsPage() {
     b.total += e.score;
     buckets.set(key, b);
   }
+
+  // registry-derived extras (live sections)
+  const dynamics = gradeDynamics(allEntries.filter((e) => !isReferenceSite(e.host)));
+  const tlds = tldRows(registryHosts).slice(0, 8);
+  const platformGrades = platformGradeCounts(registryHosts);
+
   const leaderboard = [...buckets.entries()]
     .map(([key, b]) => ({
       key,
       label: PLATFORM_LABELS[key].ru,
       count: b.count,
       avg: Math.round(b.total / b.count),
+      grades: gradeRowsFromCounts(platformGrades.get(key) ?? new Map())
+        .map((g) => `${g.grade} ${g.count}`)
+        .join(" · "),
     }))
     .sort((a, b) => b.avg - a.avg);
+
+  // fact cards - only meaningful on live counters
+  const facts =
+    useLive && live
+      ? [
+          {
+            big: `${Math.round(((live.failPairs.get("hdr_coop") ?? 0) * 100) / live.scans)}%`,
+            text: "сайтов не ставят заголовок COOP (защита окон браузера)",
+          },
+          {
+            big: `${Math.round((live.gradeACount * 100) / Math.max(1, live.sites))}%`,
+            text: "проходят весь чек-лист на класс A/A+",
+          },
+          {
+            big: `${dynamics.improved}`,
+            text: "сайтов подняли класс между повторными проверками",
+          },
+          {
+            big: `${Math.round(
+              ([...live.failPairs.entries()]
+                .filter(([id]) => id.startsWith("admin_") || id.startsWith("secrets_"))
+                .reduce((s, [, c]) => s + c, 0) *
+                100) /
+                live.scans,
+            )}%`,
+            text: "имеют провал по секретам или служебным эндпоинтам",
+          },
+        ]
+      : [];
 
   // unified view: live counters or the static mass-run snapshot
   const v = useLive && live
@@ -249,6 +322,17 @@ export default async function StatsPage() {
               ))}
             </div>
 
+            {facts.length > 0 ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {facts.map((f) => (
+                  <div key={f.text} className="rounded-2xl border border-slate-800 bg-[#0d1220] p-4">
+                    <div className="font-display text-2xl font-extrabold text-sky-400">{f.big}</div>
+                    <div className="mt-1 text-xs leading-snug text-slate-500">{f.text}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
             <section className="mt-10">
               <h2 className="font-display text-xl font-extrabold">Распределение классов</h2>
               <div className="mt-4 space-y-2.5">
@@ -271,6 +355,36 @@ export default async function StatsPage() {
                 Шкала A+-E: класс A требуют 90+ баллов из 100 по 125 проверкам.
               </p>
             </section>
+
+            {v.isLive && live ? (
+              <section className="mt-10">
+                <h2 className="font-display text-xl font-extrabold">Гистограмма баллов</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Сколько проверок попало в каждый диапазон из 100 баллов - видно, где проходит основная масса.
+                </p>
+                <div className="mt-4 flex h-36 items-end gap-1.5">
+                  {live.hist.map((b) => {
+                    const max = Math.max(...live.hist.map((x) => x.count), 1);
+                    const isLast = b.to >= 100;
+                    return (
+                      <div key={b.from} className="group flex h-full flex-1 flex-col justify-end" title={`${b.from}-${isLast ? 100 : b.to}: ${b.count}`}>
+                        <div
+                          className={`rounded-t-md transition-colors group-hover:bg-sky-300 ${b.from >= 90 ? "bg-[#34D399]/70" : "bg-sky-400/50"}`}
+                          style={{ height: `${Math.max((b.count * 100) / max, b.count ? 3 : 0)}%` }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-1.5 flex gap-1.5 font-mono text-[9px] text-slate-600">
+                  {live.hist.map((b) => (
+                    <span key={b.from} className="flex-1 text-center">
+                      {b.from}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             <section className="mt-10">
               <h2 className="font-display text-xl font-extrabold">Чего чаще всего не хватает</h2>
@@ -300,6 +414,41 @@ export default async function StatsPage() {
               </ul>
             </section>
 
+            {v.isLive && live && live.catRows.length > 0 ? (
+              <section className="mt-10">
+                <h2 className="font-display text-xl font-extrabold">Где проваливают чаще всего</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Пять категорий чек-листа: провал (красный) и под вопросом (оранжевый), плюс суммарный вес
+                  штрафов, который категория в среднем приносит одному скану.
+                </p>
+                <ul className="mt-4 space-y-3">
+                  {live.catRows.map((c) => {
+                    const failPct = Math.round((c.fail * 100) / live.scans);
+                    const warnPct = Math.round((c.warn * 100) / live.scans);
+                    const lossAvg = Math.round(c.loss / Math.max(1, live.scans));
+                    return (
+                      <li key={c.cat} className="flex items-center gap-3">
+                        <span className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72">
+                          {CATEGORY_LABELS[c.cat] ?? c.cat}
+                        </span>
+                        <div className="flex h-5 flex-1 gap-px">
+                          {failPct + warnPct > 0 ? (
+                            <>
+                              <div className={`rounded-l-md bg-[#F87171] ${warnPct ? "" : "rounded-r-md"}`} style={{ width: `${failPct}%` }} />
+                              <div className={`bg-[#FB923C] ${warnPct ? "rounded-r-md" : ""}`} style={{ width: `${warnPct}%` }} />
+                            </>
+                          ) : null}
+                        </div>
+                        <span className="w-24 text-right font-mono text-xs text-slate-500" title="суммарный вес штрафов категории в среднем на скан">
+                          -{lossAvg} б.
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ) : null}
+
             <section className="mt-10">
               <h2 className="font-display text-xl font-extrabold">Битва платформ</h2>
               <p className="mt-1 text-sm text-slate-500">
@@ -318,11 +467,14 @@ export default async function StatsPage() {
                     key={row.key}
                     className={`flex items-center gap-3 px-5 py-3 ${i < leaderboard.length - 1 ? "border-b border-slate-800/60" : ""}`}
                   >
-                    <span className="flex flex-1 items-center gap-2.5 text-sm font-semibold text-slate-200">
-                      <span className={`font-mono text-xs ${i === 0 ? "text-amber-400" : "text-slate-600"}`}>
-                        {i + 1}.
+                    <span className="flex flex-1 flex-col gap-0.5">
+                      <span className="flex items-center gap-2.5 text-sm font-semibold text-slate-200">
+                        <span className={`font-mono text-xs ${i === 0 ? "text-amber-400" : "text-slate-600"}`}>
+                          {i + 1}.
+                        </span>
+                        {row.label}
                       </span>
-                      {row.label}
+                      {row.grades ? <span className="text-[10px] text-slate-500">{row.grades}</span> : null}
                     </span>
                     <span className="w-20 text-right font-mono text-xs text-slate-400">{row.count}</span>
                     <span
@@ -336,6 +488,76 @@ export default async function StatsPage() {
                 ))}
               </div>
             </section>
+
+            {v.isLive ? (
+              <section className="mt-10">
+                <h2 className="font-display text-xl font-extrabold">Динамика повторных проверок</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Сайты, попавшие в реестр больше одного раза: куда двинулся их класс между первым и
+                  последним сохранённым сканом.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {[
+                    { v: dynamics.improved, l: "подняли класс", c: "text-emerald-400", s: "↑" },
+                    { v: dynamics.stable, l: "держат тот же класс", c: "text-slate-300", s: "→" },
+                    { v: dynamics.dropped, l: "просели ниже", c: "text-amber-400", s: "↓" },
+                  ].map((d) => (
+                    <div key={d.l} className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
+                      <div className={`font-display text-3xl font-extrabold ${d.c}`}>
+                        {d.s} {d.v}
+                      </div>
+                      <div className="mt-1 text-xs leading-snug text-slate-500">{d.l}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            {v.isLive && live ? (
+              <section className="mt-10">
+                <h2 className="font-display text-xl font-extrabold">Пульс проверок - 24 часа</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Каждый столбик - один час (UTC): ручные проверки и авто-обход вместе. Всего за сутки:{" "}
+                  {live.hours.reduce((s, n) => s + n, 0)}.
+                </p>
+                <div className="mt-4 flex h-24 items-end gap-1">
+                  {(() => {
+                    const max = Math.max(...live.hours, 1);
+                    return live.hours.map((n, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 rounded-t bg-gradient-to-t from-sky-400/30 to-sky-400/80"
+                        style={{ height: `${Math.max((n * 100) / max, n ? 4 : 2)}%` }}
+                        title={`${i}:00-${i + 1}:00 UTC: ${n}`}
+                      />
+                    ));
+                  })()}
+                </div>
+                <div className="mt-1.5 flex justify-between font-mono text-[9px] text-slate-600">
+                  <span>-24ч</span>
+                  <span>-12ч</span>
+                  <span>сейчас</span>
+                </div>
+              </section>
+            ) : null}
+
+            {v.isLive ? (
+              <section className="mt-10">
+                <h2 className="font-display text-xl font-extrabold">По доменным зонам</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Где живут проверенные проекты и как там со средним баллом.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                  {tlds.map((t) => (
+                    <div key={t.tld} className="rounded-2xl border border-slate-800 bg-[#111827] p-4">
+                      <div className="font-mono text-sm font-bold text-sky-400">.{t.tld}</div>
+                      <div className="mt-1.5 font-display text-xl font-extrabold text-slate-100">{t.count}</div>
+                      <div className="text-xs text-slate-500">средний балл {t.avg}</div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             <section className="mt-10">
               <h2 className="font-display text-xl font-extrabold">Откуда приложения</h2>
