@@ -717,8 +717,10 @@ export function ScannerPage({
               "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(56,189,248,0.12), transparent 70%)",
           }}
         >
-          {/* looping hero backdrop: radar sweep behind the headline; the mask
-              fades it into the page background so text stays readable */}
+          {/* looping hero backdrop: radar sweep behind the headline; pulled up
+              under the transparent sticky header (-top-20 = header height) so
+              the video starts at the very top of the page, and the mask fades
+              it into the page background so text stays readable */}
           <video
             src="/video/Radar_pulse.mp4"
             poster="/img/hero-poster.jpg"
@@ -727,7 +729,7 @@ export function ScannerPage({
             muted
             playsInline
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] w-full object-cover opacity-40 [mask-image:linear-gradient(to_bottom,black_30%,transparent_96%)]"
+            className="pointer-events-none absolute inset-x-0 -top-20 -z-10 h-[600px] w-full object-cover opacity-40 [mask-image:linear-gradient(to_bottom,black_30%,transparent_96%)]"
           />
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-400">
