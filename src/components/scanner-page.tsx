@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { track } from "@vercel/analytics";
 import { ymGoal } from "@/components/yandex-metrika";
-import { AnimatePresence, animate, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, animate, motion } from "framer-motion";
 import type { Lang, ScanResult, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META } from "@/lib/scanner/types";
 import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
@@ -17,7 +17,8 @@ import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
 import { ScoreSimulator } from "@/components/score-simulator";
 import { Stat } from "@/components/stat";
-import { ShieldCheck, ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, ArrowUp, Globe, Check, CheckCircle2, Copy, Send, Menu, X, ChevronDown, Scale, CodeXml, GitBranch } from "@/components/icons/appseal-icons";
+import { ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, ArrowUp, Globe, Check, CheckCircle2, Copy, Send, ChevronDown, Scale, CodeXml, GitBranch } from "@/components/icons/appseal-icons";
+import { SiteHeader } from "@/components/site-header";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
@@ -239,85 +240,8 @@ export function ScannerPage({
   const [termLines, setTermLines] = useState<string[]>([]);
   const scanStartedAt = useRef(0);
   const lastTermStage = useRef("");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [toolsOpen, setToolsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const reduceMotion = useReducedMotion();
-  const headerRef = useRef<HTMLElement>(null);
-  // quick-link rows for the header mini-panel (collapsed desktop + mobile burger):
-  // product pages first, then the tool belt that grew around the scanner
-  const NAV_LINKS = [
-    { href: "/", key: "navHome", icon: Globe, group: "main" },
-    { href: "/registry", key: "navRegistry", icon: FileCheck2, group: "main" },
-    { href: "/stats", key: "navStats", icon: Activity, group: "main" },
-    { href: "/versus", key: "navVersus", icon: Scale, group: "tools" },
-    { href: "/fixes", key: "navFixes", icon: FileCheck2, group: "tools" },
-    { href: "/digest", key: "navDigest", icon: Activity, group: "tools" },
-    { href: "/ci", key: "navCi", icon: GitBranch, group: "tools" },
-    { href: "/bot", key: "navBot", icon: Send, group: "tools" },
-    { href: "/api", key: "navApi", icon: CodeXml, group: "tools" },
-  ] as const;
-  // legal and pricing live in the panel's "more" tail and the desktop row
-  const NAV_TAIL = [
-    { href: "#pricing", key: "navPricing", icon: Zap },
-    { href: "/legal", key: "navLegal", icon: ShieldCheck },
-  ] as const;
-  // the desktop at-rest row: two product pages, the tools dropdown, pricing
-  const NAV_ROW = [
-    { href: "/registry", key: "navRegistry" },
-    { href: "/stats", key: "navStats" },
-  ] as const;
-  const NAV_ROW_TOOLS = [
-    { href: "/versus", key: "navVersus", icon: Scale },
-    { href: "/fixes", key: "navFixes", icon: FileCheck2 },
-    { href: "/digest", key: "navDigest", icon: Activity },
-    { href: "/ci", key: "navCi", icon: GitBranch },
-    { href: "/bot", key: "navBot", icon: Send },
-    { href: "/api", key: "navApi", icon: CodeXml },
-  ] as const;
   const [faqOpen, setFaqOpen] = useState<number[]>([]);
   const reportRef = useRef<HTMLDivElement>(null);
-
-  // compact header once the page is scrolled a bit (rAF-throttled)
-  useEffect(() => {
-    let raf = 0;
-    const onScroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        setScrolled(window.scrollY > 8);
-        raf = 0;
-      });
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  // close the quick-links panel or tools dropdown on an outside pointer or Escape
-  useEffect(() => {
-    if (!menuOpen && !toolsOpen) return;
-    const onDown = (e: PointerEvent) => {
-      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-        setToolsOpen(false);
-      }
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setMenuOpen(false);
-        setToolsOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen, toolsOpen]);
 
   // grade showcase walks the ranks on its own every 5s
   useEffect(() => {
@@ -577,216 +501,9 @@ export function ScannerPage({
         )}
       </AnimatePresence>
 
-      {/* header: fully transparent at rest and when collapsed; once the page
-          scrolls the bar shrinks to a small floating logo on the left - tapping
-          it opens a glass mini-panel with quick links (the same panel the
-          mobile burger opens) */}
-      <header ref={headerRef} className="sticky top-0 z-40 w-full">
-        <div
-          className={`flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
-            scrolled
-              ? "ml-4 mt-3 h-12 md:ml-6"
-              : "ml-[calc((100%_-_min(100%,64rem))/2)] h-20 w-full max-w-5xl px-4 sm:px-6"
-          }`}
-        >
-          <a
-            href="/"
-            onClick={(e) => {
-              if (scrolled) {
-                e.preventDefault();
-                setMenuOpen((v) => !v);
-              }
-            }}
-            className="group flex shrink-0 items-center gap-3"
-            aria-label="AppSeal home"
-            aria-expanded={scrolled ? menuOpen : undefined}
-          >
-            <img
-              src="/ico.png"
-              alt="AppSeal"
-              width={56}
-              height={56}
-              className={`object-contain drop-shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-all duration-500 ${
-                scrolled ? "h-7 w-7" : "h-14 w-14"
-              }`}
-            />
-            <span
-              className={`font-display font-extrabold tracking-tight transition-all duration-500 ${
-                scrolled ? "text-lg" : "text-2xl"
-              }`}
-            >
-              AppSeal
-            </span>
-            <span
-              className={`grid place-items-center transition-all duration-300 ${
-                scrolled ? "h-6 w-6 opacity-100" : "h-0 w-0 opacity-0"
-              }`}
-            >
-              <ChevronDown
-                className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-300 ${menuOpen ? "rotate-180" : ""}`}
-              />
-            </span>
-          </a>
-
-          <nav
-            className={`hidden items-center gap-1 md:flex transition-all duration-300 ${
-              scrolled ? "pointer-events-none w-0 overflow-hidden opacity-0" : "opacity-100"
-            }`}
-            aria-label="Site"
-          >
-            {NAV_ROW.map((item) => (
-              <a
-                key={item.key}
-                href={item.href}
-                className="rounded-full px-3.5 py-1.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-              >
-                {t(lang, item.key)}
-              </a>
-            ))}
-            {/* tools dropdown: the six instruments that grew around the scanner */}
-            <div className="relative">
-              <button
-                onClick={() => setToolsOpen((v) => !v)}
-                aria-expanded={toolsOpen}
-                className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-              >
-                {t(lang, "navTools")}
-                <ChevronDown
-                  className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-300 ${toolsOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              <AnimatePresence>
-                {toolsOpen && (
-                  <motion.nav
-                    key="tools-panel"
-                    initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                    transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
-                    style={{ transformOrigin: "top left" }}
-                    className="absolute left-0 top-[calc(100%+8px)] z-50 w-64 rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-2xl"
-                    aria-label={t(lang, "navTools")}
-                  >
-                    {NAV_ROW_TOOLS.map((item) => (
-                      <a
-                        key={item.key}
-                        href={item.href}
-                        onClick={() => setToolsOpen(false)}
-                        className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-                      >
-                        <item.icon className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-sky-400" />
-                        {t(lang, item.key)}
-                      </a>
-                    ))}
-                  </motion.nav>
-                )}
-              </AnimatePresence>
-            </div>
-            <a
-              href="#pricing"
-              className="rounded-full px-3.5 py-1.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-            >
-              {t(lang, "navPricing")}
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-2">
-            <nav
-              className={`hidden items-center rounded-full border border-white/10 bg-white/5 p-0.5 transition-all duration-300 sm:flex ${
-                scrolled ? "pointer-events-none w-0 overflow-hidden opacity-0" : "opacity-100"
-              }`}
-              aria-label="Language"
-            >
-              {(["ru", "en"] as Lang[]).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => switchLang(l)}
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase transition ${
-                    lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                  aria-pressed={lang === l}
-                >
-                  {l}
-                </button>
-              ))}
-            </nav>
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:bg-white/10 md:hidden"
-              aria-expanded={menuOpen}
-              aria-label="Menu"
-            >
-              {menuOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* quick-links mini panel: shared by the mobile burger and the collapsed
-            desktop header - a small glass sheet anchored under the logo */}
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.nav
-              key="menu-panel"
-              initial={{ opacity: 0, y: -8, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.97 }}
-              transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
-              style={{ transformOrigin: "top left" }}
-              className={`absolute left-4 z-50 w-64 rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-2xl md:left-6 ${
-                scrolled ? "top-[64px]" : "top-[86px]"
-              }`}
-              aria-label="Menu"
-            >
-              {(["main", "tools"] as const).map((g) => (
-                <div key={g}>
-                  <p className="px-3 pb-1 pt-2 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
-                    {t(lang, g === "main" ? "navGroupMain" : "navGroupTools")}
-                  </p>
-                  {NAV_LINKS.filter((item) => item.group === g).map((item) => (
-                    <a
-                      key={item.key}
-                      href={item.href}
-                      onClick={() => setMenuOpen(false)}
-                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-                    >
-                      <item.icon className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-sky-400" />
-                      {t(lang, item.key)}
-                    </a>
-                  ))}
-                </div>
-              ))}
-              {/* tail: pricing and legal, kept out of the main groups */}
-              <div className="mt-1 border-t border-white/5 pt-1">
-                {NAV_TAIL.map((item) => (
-                  <a
-                    key={item.key}
-                    href={item.href}
-                    onClick={() => setMenuOpen(false)}
-                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-400 transition hover:bg-white/5 hover:text-white"
-                  >
-                    <item.icon className="h-4 w-4 shrink-0 text-slate-600 transition group-hover:text-sky-400" />
-                    {t(lang, item.key)}
-                  </a>
-                ))}
-              </div>
-              <div className="mt-2 flex items-center justify-center gap-1 border-t border-white/5 pt-2">
-                {(["ru", "en"] as Lang[]).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => switchLang(l)}
-                    className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase transition ${
-                      lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-400 hover:text-slate-200"
-                    }`}
-                    aria-pressed={lang === l}
-                  >
-                    {l}
-                  </button>
-                ))}
-              </div>
-            </motion.nav>
-          )}
-        </AnimatePresence>
-      </header>
+      {/* header: the shared site header - transparent at rest, collapses into
+          a small left logo-pill on scroll, quick-links mini-panel + RU/EN */}
+      <SiteHeader lang={lang} onSwitchLang={switchLang} />
 
       <main className="relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">
         {/* Launch Pass status (returning from YooKassa) */}
@@ -1052,7 +769,7 @@ export function ScannerPage({
         </div>
 
         {/* stats */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "statsTitle")}>
+        <section className="appseal-sect relative py-14" aria-label={t(lang, "statsTitle")}>
           <SectionHead eyebrow={EYEBROWS.stats[lang]} title={t(lang, "statsTitle")} />
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {STATS.map((s, i) => {
@@ -1092,7 +809,7 @@ export function ScannerPage({
         </section>
 
         {/* how it works */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "howTitle")}>
+        <section className="appseal-sect relative py-14" aria-label={t(lang, "howTitle")}>
           <SectionHead eyebrow={EYEBROWS.how[lang]} title={t(lang, "howTitle")} />
           <div className="mt-8 grid gap-4 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:gap-3">
             {[
@@ -1129,7 +846,7 @@ export function ScannerPage({
         </section>
 
         {/* grade showcase: what each rank means (out of the hero, its own beat) */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "showcaseHint")}>
+        <section className="appseal-sect relative py-14" aria-label={t(lang, "showcaseHint")}>
           <SectionHead eyebrow={EYEBROWS.grades[lang]} title={t(lang, "showcaseHint")} />
           <Reveal className="mt-8">
             <div
@@ -1215,7 +932,7 @@ export function ScannerPage({
         </section>
 
         {/* first real case */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "caseTitle")}>
+        <section className="appseal-sect relative py-14" aria-label={t(lang, "caseTitle")}>
           <SectionHead eyebrow={EYEBROWS.case[lang]} title={t(lang, "caseTitle")} sub={t(lang, "caseSub")} />
           <Reveal className="mt-8">
             <div className="appseal-ring mx-auto max-w-3xl">
@@ -1267,7 +984,7 @@ export function ScannerPage({
                 </div>
 
             {/* mini-terminal with the real fix-prompt fragment */}
-            <div className="mt-6 overflow-hidden rounded-xl border border-slate-800 bg-[#070b13]">
+            <div className="appseal-scanlines relative mt-6 overflow-hidden rounded-xl border border-slate-800 bg-[#070b13]">
               <div className="flex items-center gap-1.5 border-b border-slate-800 px-4 py-2.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
@@ -1306,7 +1023,7 @@ export function ScannerPage({
         </section>
 
         {/* public registry: prominent placement after the proof case */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "issue2Title")}>
+        <section className="appseal-sect relative py-14" aria-label={t(lang, "issue2Title")}>
           <Reveal>
             <div className="appseal-ring mx-auto max-w-3xl">
               <div className="rounded-[15px] bg-[#0b101c] p-6 sm:p-10">
@@ -1370,7 +1087,7 @@ export function ScannerPage({
         </section>
 
         {/* what we check */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "checksTitle")}>
+        <section className="appseal-sect relative py-14" aria-label={t(lang, "checksTitle")}>
           <SectionHead eyebrow={EYEBROWS.engine[lang]} title={t(lang, "checksTitle")} sub={t(lang, "checksSub")} />
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {CHECK_CATEGORIES.map((c, i) => (
@@ -1416,7 +1133,7 @@ export function ScannerPage({
         {/* ecosystem: the tool belt that grew around the scanner - versus,
             fix guides, weekly digest, CI gate, Telegram bot and the JSON API.
             Whole cards are links, one honest sentence per card */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "ecoTitle")}>
+        <section className="appseal-sect relative py-14" aria-label={t(lang, "ecoTitle")}>
           <SectionHead eyebrow={EYEBROWS.eco[lang]} title={t(lang, "ecoTitle")} sub={t(lang, "ecoSub")} />
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(
@@ -1432,7 +1149,7 @@ export function ScannerPage({
               <Reveal key={c.tKey} delay={(i % 3) * 0.08} className="h-full">
                 <a
                   href={c.href}
-                  className="group flex h-full flex-col rounded-2xl border border-slate-800/80 bg-[#0b101c] p-6 transition hover:border-sky-500/40 hover:bg-[#0d1424]"
+                  className="appseal-card group flex h-full flex-col rounded-2xl p-6"
                 >
                   <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ${c.tone}`}>
                     <c.icon className="h-5 w-5" />
@@ -1452,7 +1169,7 @@ export function ScannerPage({
         {/* pricing */}
         <section
           id="pricing"
-          className="scroll-mt-16 relative isolate overflow-hidden border-t border-slate-800/70 py-14"
+          className="appseal-sect scroll-mt-16 relative isolate overflow-hidden py-14"
           aria-label={t(lang, "pricingTitle")}
         >
           {/* light streak behind the plans: premium beat, lazy-loaded and
@@ -1590,7 +1307,7 @@ export function ScannerPage({
         </section>
 
         {/* FAQ */}
-        <section className="border-t border-slate-800/70 py-14" aria-label={t(lang, "faqTitle")}>
+        <section className="appseal-sect relative py-14" aria-label={t(lang, "faqTitle")}>
           <SectionHead eyebrow={EYEBROWS.faq[lang]} title={t(lang, "faqTitle")} />
           <div className="mx-auto mt-8 max-w-3xl space-y-3">
             {(
