@@ -1,6 +1,6 @@
 import type { CheckResult, Localized, ScanResult } from "./types";
 import { computeScore } from "./grade";
-import { saveScan, updateScan } from "./store";
+import { saveScan, updateScan, recordCheckStats } from "./store";
 import { extractSiteDesc, isClientRenderShell, safeFetch, truncate } from "./fetcher";
 import { renderPage, shouldRender } from "./render";
 import {
@@ -331,6 +331,11 @@ export async function runScan(
       techPassport,
       host: scan.isDemo ? "demo-app" : host,
     });
+    // live /stats top-misses: one counter per non-passing check, same gate as
+    // the registry push (demo fixture must not skew the aggregate counters)
+    if (!scan.isDemo) {
+      await recordCheckStats(results);
+    }
     // page title and description travel with the return value: the registry
     // uses them as the entry's short public description
     const titleMatch = home.body.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i);

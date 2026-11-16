@@ -121,12 +121,13 @@ function RegistryRow({ entry }: { entry: RegistryEntry }) {
           </a>
         </>
       ) : (
-        /* action CTA: the owner who found their site one click away from the
-           fix flow - the scanner opens with the domain already prefilled */
+        /* action CTA without leaking the blurred host: the scanner opens
+           clean, the owner (who found the row by searching their domain)
+           types it themselves - the blur stays meaningful */
         <a
-          href={`/?domain=${encodeURIComponent(entry.host)}`}
+          href="/"
           className="inline-flex items-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/10 px-2.5 py-1 text-[11px] font-bold text-sky-400 transition hover:bg-sky-500/20 hover:text-sky-300"
-          title="Открыть сканер с этим доменом и поднять класс"
+          title="Проверь свой сайт в сканере - класс A откроет ссылку и описание"
         >
           Исправить →
         </a>

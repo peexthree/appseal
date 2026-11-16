@@ -263,17 +263,21 @@ export function ReportView({
   }, [scan.host]);
 
   const embedCode = useMemo(() => {
+    // host-bound badge: the embedded rank follows the domain's newest scan
+    // (live), and the click-through opens the public profile with the history
+    const hostParam = encodeURIComponent(scan.host);
+    const profile = `${origin}/verified/${hostParam}`;
     if (syntax === "markdown") {
       if (badgeFormat === "trophy") {
-        return `[![AppSeal Security Verified: Grade ${scan.grade}](${origin}/api/badge?id=${scan.id}&style=trophy)](${origin}/report/${scan.id})`;
+        return `[![AppSeal Security Verified - live grade](${origin}/api/badge?host=${hostParam}&style=trophy)](${profile})`;
       }
-      return `[![AppSeal Security Verified: Grade ${scan.grade}](${origin}/api/badge?id=${scan.id})](${origin}/report/${scan.id})`;
+      return `[![AppSeal Security Verified - live grade](${origin}/api/badge?host=${hostParam})](${profile})`;
     }
     if (badgeFormat === "trophy") {
-      return `<a href="${origin}/report/${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}&style=trophy" alt="AppSeal Verified: Grade ${scan.grade}" width="80" height="80" style="filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" /></a>`;
+      return `<a href="${profile}" target="_blank" rel="noopener" title="AppSeal Security Verified - live security grade"><img src="${origin}/api/badge?host=${hostParam}&style=trophy" alt="AppSeal Verified: ${scan.host}" width="80" height="80" style="filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));" /></a>`;
     }
-    return `<a href="${origin}/report/${scan.id}" target="_blank" rel="noopener" title="AppSeal Security Verified: Grade ${scan.grade} (${scan.score}/100)"><img src="${origin}/api/badge?id=${scan.id}" alt="AppSeal Verified: Grade ${scan.grade}" width="${badgeW}" height="44"></a>`;
-  }, [badgeFormat, syntax, origin, scan.id, scan.grade, scan.score, badgeW]);
+    return `<a href="${profile}" target="_blank" rel="noopener" title="AppSeal Security Verified - live security grade"><img src="${origin}/api/badge?host=${hostParam}" alt="AppSeal Verified: ${scan.host}" width="${badgeW}" height="44"></a>`;
+  }, [badgeFormat, syntax, origin, scan.host, badgeW]);
 
   const fixPrompt = useMemo(() => buildFixPrompt(scan, lang), [scan, lang]);
 
@@ -882,7 +886,7 @@ export function ReportView({
               </div>
             ) : (
               <img
-                src={`/api/badge?id=${scan.id}`}
+                src={`/api/badge?host=${encodeURIComponent(scan.host)}`}
                 alt={`AppSeal ${scan.grade}`}
                 width={badgeW}
                 height={44}

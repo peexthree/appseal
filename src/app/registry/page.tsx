@@ -111,15 +111,15 @@ export default async function RegistryPage() {
           </div>
           <div className="shrink-0 transition-transform hover:scale-[1.02]">
             <a
-              href="/report/mweys4fr-0d7b05c638"
+              href="/verified/appseal.online"
               target="_blank"
               rel="noopener"
-              title="AppSeal Security Verified: Grade A+ (97/100)"
+              title="AppSeal Security Verified - live grade"
               className="inline-block"
             >
               <img
-                src="/api/badge?id=mweys4fr-0d7b05c638"
-                alt="AppSeal Verified: Grade A+"
+                src="/api/badge?host=appseal.online"
+                alt="AppSeal Verified"
                 width={228}
                 height={44}
                 className="h-[44px] w-[228px] drop-shadow-[0_4px_16px_rgba(192,132,252,0.18)]"

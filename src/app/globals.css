@@ -256,16 +256,29 @@
 }
 
 /* glass variants: pricing section only, so the light-streak video bleeds
-   through the cards - other appseal-card usages stay opaque */
+   through the cards - glossy pane, not frosted: low blur, sheen + top bevel */
 .appseal-card.appseal-glass {
-  background-image: linear-gradient(180deg, rgba(17, 24, 39, 0.55), rgba(13, 19, 32, 0.55));
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background-image: linear-gradient(180deg, rgba(17, 24, 39, 0.4), rgba(13, 19, 32, 0.46));
+  border-color: rgba(148, 163, 184, 0.18);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+.appseal-card.appseal-glass::after,
+.appseal-glass-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 12px),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02) 38%, rgba(255, 255, 255, 0) 58%);
+  pointer-events: none;
 }
 .appseal-glass-panel {
-  background-color: rgba(11, 16, 28, 0.55);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  position: relative;
+  background-color: rgba(11, 16, 28, 0.4);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
 }
 
 /* gradient text with a slow sheen (hero accent, stat numbers) */

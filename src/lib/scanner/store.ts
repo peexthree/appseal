@@ -1,8 +1,7 @@
-import type { ScanResult } from "./types";
-import { REGISTRY_MAX, canonicalHost } from "../registry";
+import type { CheckResult, ScanResult } from "./types";
+import { REGISTRY_MAX, canonicalHost, dedupeRegistry } from "../registry";
 import { promises as fs } from "node:fs";
 import { createHash, randomBytes } from "node:crypto";
-import path from "node:path";
 
 /**
  * Store for scan results: one JSON record per scan.
@@ -28,12 +27,18 @@ const SCAN_ID_RE = /^[a-z0-9-]{6,40}$/i;
 interface RedisCfg {
   url: string;
   token: string;
+  /** /pipeline endpoint derived from the same allowlisted env endpoint */
+  urlPipe: string;
 }
 
 export function redisConfig(): RedisCfg | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? { url, token } : null;
+  if (!url || !token) return null;
+  // derive the pipeline endpoint here (no fetch in this function): the same
+  // https + *.upstash.io allowlist governs both fetch sites
+  const base = url.replace(/\/$/, "");
+  return { url, token, urlPipe: base + "/pipeline" };
 }
 
 export async function redis(cfg: RedisCfg, command: unknown[]): Promise<unknown> {
@@ -51,8 +56,49 @@ export async function redis(cfg: RedisCfg, command: unknown[]): Promise<unknown>
   return data.result ?? null;
 }
 
+/**
+ * Upstash REST pipeline: one HTTP round-trip per batch of commands. The
+ * endpoint (cfg.urlPipe) is derived in redisConfig from the same
+ * allowlisted env endpoint; every element answers as {result, error} -
+ * the same shape as a single-command response.
+ */
+
+/** Outbound pipeline calls are pinned to https + a *.upstash.io host + the
+ *  /pipeline path (SSRF allowlist, same scheme as passes.ts). */
+function upstashPipelineOk(raw: string): boolean {
+  const parts = raw.split("/");
+  const host = parts[2] ?? "";
+  const path = "/" + (parts.slice(3).filter(Boolean).join("/"));
+  return (
+    raw.startsWith("https://") &&
+    (host === "upstash.io" || host.endsWith(".upstash.io")) &&
+    path === "/pipeline"
+  );
+}
+
+export async function redisPipeline(cfg: RedisCfg, commands: unknown[][]): Promise<unknown[]> {
+  if (!upstashPipelineOk(cfg.urlPipe)) {
+    throw new Error("redis pipeline: endpoint outside the allowlist");
+  }
+  const res = await fetch(cfg.urlPipe, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${cfg.token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(commands),
+  });
+  if (!res.ok) throw new Error(`redis pipeline ${res.status}`);
+  const data = (await res.json()) as { result?: unknown; error?: string }[];
+  if (!Array.isArray(data)) throw new Error("redis pipeline: bad response shape");
+  return data.map((d) => {
+    if (d && d.error) throw new Error(`redis: ${d.error}`);
+    return d?.result ?? null;
+  });
+}
+
 // literal relative dir (resolved against the process cwd); sha256-based
-// filenames keep any caller data out of path construction
+// filenames keep only the record identity, not the path
 const DIR = "db/scans";
 
 export async function saveScan(id: string, data: string): Promise<void> {
@@ -100,12 +146,7 @@ export async function getScan(id: string): Promise<ScanResult | null> {
     );
     return JSON.parse(raw) as ScanResult;
   } catch {
-    // legacy layout: files named <id>.json from before the hash scheme
-  }
-  try {
-    const raw = await fs.readFile(path.join(DIR, `${id}.json`), "utf-8");
-    return JSON.parse(raw) as ScanResult;
-  } catch {
+    // missing record (or the pre-hash dev layout, which is not read back)
     return null;
   }
 }
@@ -147,6 +188,16 @@ export function publicView(scan: ScanResult): ScanResult {
 /* ------------------------------------------------------------------ */
 
 const REGISTRY_KEY = "appmot:registry";
+// live-rank lookup for host-bound badges: canonical host -> newest entry
+const HOST_LATEST_KEY = "appmot:hostlatest";
+// live aggregate stats: everything that lands in the registry counts here
+const STATS_SCANS_KEY = "appmot:stats:scans";
+const STATS_HOSTS_KEY = "appmot:stats:hosts";
+const STATS_GRADES_KEY = "appmot:stats:grades";
+const STATS_SCORES_KEY = "appmot:stats:scores";
+const STATS_FAILS_KEY = "appmot:stats:checkfails";
+const STATS_WARNS_KEY = "appmot:stats:checkwarns";
+const STATS_TITLES_KEY = "appmot:stats:titles";
 // literal relative dir, same scheme as scans
 const REGISTRY_FILE = "db/registry.json";
 
@@ -162,20 +213,31 @@ export interface RegistryEntry {
 }
 
 /**
- * Append one finished, non-demo scan to the registry list (bounded).
+ * Append one finished, non-demo scan to the registry list (bounded) and move
+ * the live aggregate counters: /stats renders straight from these, so every
+ * scan that reaches the public catalog moves the stats page. Also records
+ * appmot:hostlatest - the newest entry per canonical host, the live-rank
+ * source for host-bound badges.
  * Failures are swallowed: the registry is a nice-to-have, a broken push
  * must never break the scan flow.
  */
 export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
   // canonical form at the single write point: www.example.com scans never
-  // fork into a second catalog entry (legacy rows merge on read)
+  // fork into a second catalog row (legacy rows merge on read)
   const host = canonicalHost(entry.host);
   entry = host === entry.host ? entry : { ...entry, host };
   try {
     const cfg = redisConfig();
     if (cfg) {
-      await redis(cfg, ["LPUSH", REGISTRY_KEY, JSON.stringify(entry)]);
-      await redis(cfg, ["LTRIM", REGISTRY_KEY, "0", String(REGISTRY_MAX - 1)]);
+      await redisPipeline(cfg, [
+        ["LPUSH", REGISTRY_KEY, JSON.stringify(entry)],
+        ["LTRIM", REGISTRY_KEY, "0", String(REGISTRY_MAX - 1)],
+        ["HSET", HOST_LATEST_KEY, entry.host, JSON.stringify(entry)],
+        ["INCR", STATS_SCANS_KEY],
+        ["SADD", STATS_HOSTS_KEY, entry.host],
+        ["HINCRBY", STATS_GRADES_KEY, entry.grade, "1"],
+        ["ZINCRBY", STATS_SCORES_KEY, "1", String(entry.score)],
+      ]);
       return;
     }
     let list: RegistryEntry[] = [];
@@ -215,4 +277,50 @@ export async function getRegistryEntries(limit = REGISTRY_MAX): Promise<Registry
   } catch {
     return [];
   }
+}
+
+/**
+ * Per-check aggregate counters for /stats (top misses): one ZINCRBY per
+ * non-passing result plus the title snapshot (HSETNX, so the first sighting
+ * wins and the map fills itself over time). Redis-only, best-effort.
+ */
+export async function recordCheckStats(results: CheckResult[]): Promise<void> {
+  const cfg = redisConfig();
+  if (!cfg) return;
+  const cmds: unknown[][] = [];
+  for (const r of results) {
+    if (r.status !== "fail" && r.status !== "warn") {
+      continue;
+    }
+    const key = r.status === "fail" ? STATS_FAILS_KEY : STATS_WARNS_KEY;
+    cmds.push(["ZINCRBY", key, "1", r.id]);
+    cmds.push(["HSETNX", STATS_TITLES_KEY, r.id, JSON.stringify(r.title)]);
+  }
+  if (cmds.length === 0) return;
+  try {
+    await redisPipeline(cfg, cmds);
+  } catch {
+    /* stats are best-effort, never break the scan flow */
+  }
+}
+
+/**
+ * Newest registry entry for a host (canonical, www-less): the live-rank
+ * source for host-bound badges. Writes keep appmot:hostlatest current via
+ * pushRegistryEntry; a miss falls back to a deduped registry scan, so legacy
+ * hosts resolve without waiting for a re-scan.
+ */
+export async function getLatestHostEntry(host: string): Promise<RegistryEntry | null> {
+  const c = canonicalHost(host);
+  const cfg = redisConfig();
+  if (cfg) {
+    try {
+      const raw = (await redis(cfg, ["HGET", HOST_LATEST_KEY, c])) as string | null;
+      if (raw) return JSON.parse(raw) as RegistryEntry;
+    } catch {
+      /* fall through to the registry scan */
+    }
+  }
+  const entries = await getRegistryEntries();
+  return dedupeRegistry(entries).find((e) => e.host === c) ?? null;
 }

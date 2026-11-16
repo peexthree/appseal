@@ -43,7 +43,7 @@ export const DICT = {
   },
   fixPromptBtn: { ru: "Промпт для ИИ-агента", en: "Prompt for AI agent" },
   badgeTitle: { ru: "Бейдж доверия для вашего сайта", en: "Trust badge for your site" },
-  badgeCopy: { ru: "Вставьте этот код на свой сайт, чтобы значок красовался на проверенном проекте:", en: "Embed this code on your site to proudly display your trust badge:" },
+  badgeCopy: { ru: "Бейдж привязан к домену и всегда показывает актуальный класс - после каждого нового скана ранг на вашем сайте обновляется сам:", en: "The badge is bound to your domain and always shows the live grade - every new scan updates the rank on your site automatically:" },
   badgeTrophyTab: { ru: "3D Трофей", en: "3D Trophy" },
   badgeShieldTab: { ru: "Компактный щит (SVG)", en: "Compact shield (SVG)" },
   copyBtn: { ru: "Копировать", en: "Copy" },

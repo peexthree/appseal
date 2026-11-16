@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
-import { getScan } from "@/lib/scanner/store";
+import { getScan, getLatestHostEntry } from "@/lib/scanner/store";
 import { GRADE_META } from "@/lib/scanner/grade";
 import { hasPassAccess } from "@/lib/passes";
+import { canonicalHost } from "@/lib/registry";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -23,29 +24,64 @@ const TROPHY_FILE = {
  *  the trust seal is a paid benefit, a lapsed pass must not keep displaying it. */
 const GATE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="228" height="44" viewBox="0 0 228 44" role="img" aria-label="AppSeal badge: Launch Pass required"><rect width="228" height="44" rx="8" fill="#080B11"/><rect x="0.5" y="0.5" width="227" height="43" rx="7.5" fill="none" stroke="#1E293B"/><text x="14" y="19" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#38BDF8">AppSeal</text><text x="14" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#7C8BA1">badge - Launch Pass required</text></svg>`;
 
-/** Badge endpoint:
+const GATE_HEADERS = {
+  "content-type": "image/svg+xml; charset=utf-8",
+  "cache-control": "no-store",
+} as const;
+
+/** host query values only - a badge is an image, never a URL input surface */
+const HOST_RE = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+
+/**
+ * Badge endpoint:
+ *  - ?host=<domain> -> LIVE rank: the newest registry entry for the canonical
+ *    host, so an embedded badge follows the real grade of the site over time
+ *  - ?id=<scan>     -> legacy per-scan snapshot (unchanged behavior)
  *  - style=trophy | format=png -> 512x512 3D trophy PNG
  *  - default -> vector shield SVG with cyber-security theme
  */
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
+  const hostParam = (req.nextUrl.searchParams.get("host") ?? "").trim().toLowerCase();
   const style = req.nextUrl.searchParams.get("style") ?? req.nextUrl.searchParams.get("format");
   const theme = req.nextUrl.searchParams.get("theme") === "light" ? "light" : "dark";
   const langParam = req.nextUrl.searchParams.get("lang");
-  const scan = await getScan(id);
 
-  // Launch Pass gate: without a live pass on the scanned host the badge
-  // renders as the placeholder (no-store - a purchase changes the answer)
-  if (scan && !(await hasPassAccess(scan.host))) {
-    return new Response(GATE_SVG, {
-      headers: {
-        "content-type": "image/svg+xml; charset=utf-8",
-        "cache-control": "no-store",
-      },
-    });
+  let host = "";
+  let grade = "E";
+  let score: number | null = null;
+  let scanLang: string | null = null;
+
+  if (hostParam && Boolean(hostParam.match(HOST_RE)) && hostParam.length <= 253) {
+    // host mode: same Launch Pass gate as scan badges (self-hosts included)
+    const c = canonicalHost(hostParam);
+    if (!(await hasPassAccess(c))) {
+      return new Response(GATE_SVG, { headers: GATE_HEADERS });
+    }
+    const entry = await getLatestHostEntry(c);
+    if (entry) {
+      host = entry.host;
+      grade = entry.grade;
+      score = entry.score;
+    } else {
+      // pass is live but the host was never scanned into the registry yet
+      host = c;
+    }
+  } else {
+    const scan = await getScan(id);
+    if (scan && !(await hasPassAccess(scan.host))) {
+      return new Response(GATE_SVG, { headers: GATE_HEADERS });
+    }
+    if (scan) {
+      host = scan.host;
+      grade = scan.grade;
+      score = scan.score;
+      scanLang = scan.lang;
+    } else {
+      host = "appseal.online";
+    }
   }
 
-  const grade = scan?.grade ?? "E";
   const meta = GRADE_META[grade as keyof typeof GRADE_META] ?? GRADE_META["E"];
 
   // 3D Trophy mode: return the 512x512 transparent PNG image
@@ -73,10 +109,10 @@ export async function GET(req: NextRequest) {
   }
 
   // Classic SVG badge mode with 6-tier palette
-  const score = scan ? String(scan.score) : "--";
+  const scoreText = score === null ? "--" : String(score);
   const color = meta.color;
   const secondaryColor = meta.secondaryColor;
-  const rawHost = scan ? scan.host : "appseal.online";
+  const rawHost = host || "appseal.online";
   const cleanHost = rawHost.replace(/^www\./i, "");
   const hostDisplay = cleanHost.length > 24 ? cleanHost.slice(0, 22) + "…" : cleanHost;
 
@@ -91,7 +127,7 @@ export async function GET(req: NextRequest) {
   const pillY = 6;
   const pillMidX = pillX + pillW / 2;
 
-  const isRu = langParam === "ru" || (!langParam && scan?.lang === "ru");
+  const isRu = langParam === "ru" || (!langParam && scanLang === "ru");
   const subLabel = isRu ? "APPSEAL ПРОВЕРЕНО" : "APPSEAL VERIFIED";
 
   const fontSans = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -138,12 +174,13 @@ export async function GET(req: NextRequest) {
   <!-- Right: Grade Box -->
   <rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="6" fill="${pillBg}" stroke="${color}" stroke-width="0.8" stroke-opacity="0.5"/>
   <text x="${pillMidX}" y="20.5" text-anchor="middle" font-family="${fontSans}" font-size="${grade.length > 1 ? 13.5 : 15}" font-weight="900" fill="${color}">${grade}</text>
-  <text x="${pillMidX}" y="31.5" text-anchor="middle" font-family="${fontMono}" font-size="8.5" font-weight="700" fill="#94A3B8">${score}/100</text>
+  <text x="${pillMidX}" y="31.5" text-anchor="middle" font-family="${fontMono}" font-size="8.5" font-weight="700" fill="#94A3B8">${scoreText}/100</text>
 </svg>`;
 
   return new Response(svg, {
     headers: {
       "content-type": "image/svg+xml; charset=utf-8",
+      // 5 minutes: an embedded badge shows the live rank with a small lag
       "cache-control": "public, max-age=300",
     },
   });
