@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { track } from "@vercel/analytics";
 import { ymGoal } from "@/components/yandex-metrika";
-import { AnimatePresence, animate, motion } from "framer-motion";
+import { AnimatePresence, animate, motion, useReducedMotion } from "framer-motion";
 import type { Lang, ScanResult, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META } from "@/lib/scanner/types";
 import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
@@ -234,6 +234,16 @@ export function ScannerPage({
   const lastTermStage = useRef("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const reduceMotion = useReducedMotion();
+  const headerRef = useRef<HTMLElement>(null);
+  // quick-link rows for the header mini-panel (collapsed desktop + mobile burger)
+  const NAV_LINKS = [
+    { href: "/", key: "navHome", icon: Globe },
+    { href: "/registry", key: "navRegistry", icon: FileCheck2 },
+    { href: "/stats", key: "navStats", icon: Activity },
+    { href: "#pricing", key: "navPricing", icon: Zap },
+    { href: "/legal", key: "navLegal", icon: ShieldCheck },
+  ] as const;
   const [faqOpen, setFaqOpen] = useState<number[]>([]);
   const reportRef = useRef<HTMLDivElement>(null);
 
@@ -254,6 +264,23 @@ export function ScannerPage({
       if (raf) cancelAnimationFrame(raf);
     };
   }, []);
+
+  // close the quick-links panel on an outside pointer or Escape
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   // grade showcase walks the ranks on its own every 5s
   useEffect(() => {
@@ -513,61 +540,78 @@ export function ScannerPage({
         )}
       </AnimatePresence>
 
-      {/* header: fully transparent at rest; once the page scrolls the bar
-          shrinks and slides to the left edge, morphing into a glass pill */}
-      <header className="sticky top-0 z-40 w-full">
+      {/* header: fully transparent at rest and when collapsed; once the page
+          scrolls the bar shrinks to a small floating logo on the left - tapping
+          it opens a glass mini-panel with quick links (the same panel the
+          mobile burger opens) */}
+      <header ref={headerRef} className="sticky top-0 z-40 w-full">
         <div
           className={`flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
-            scrolled && !menuOpen
-              ? "ml-4 mt-3 h-12 w-[200px] max-w-[200px] rounded-full border border-white/10 bg-black/85 px-4 shadow-[0_10px_36px_-8px_rgba(0,0,0,0.55)] backdrop-blur-2xl md:ml-6 md:w-[168px] md:max-w-[168px]"
-              : "ml-[calc((100%_-_min(100%,64rem))/2)] h-20 w-full max-w-5xl rounded-none border border-transparent bg-transparent px-4 backdrop-blur-none sm:px-6"
+            scrolled
+              ? "ml-4 mt-3 h-12 md:ml-6"
+              : "ml-[calc((100%_-_min(100%,64rem))/2)] h-20 w-full max-w-5xl px-4 sm:px-6"
           }`}
         >
-          <a href="/" className="group flex shrink-0 items-center gap-3" aria-label="AppSeal home">
+          <a
+            href="/"
+            onClick={(e) => {
+              if (scrolled) {
+                e.preventDefault();
+                setMenuOpen((v) => !v);
+              }
+            }}
+            className="group flex shrink-0 items-center gap-3"
+            aria-label="AppSeal home"
+            aria-expanded={scrolled ? menuOpen : undefined}
+          >
             <img
               src="/ico.png"
               alt="AppSeal"
               width={56}
               height={56}
               className={`object-contain drop-shadow-[0_0_14px_rgba(56,189,248,0.4)] transition-all duration-500 ${
-                scrolled && !menuOpen ? "h-7 w-7" : "h-14 w-14"
+                scrolled ? "h-7 w-7" : "h-14 w-14"
               }`}
             />
             <span
               className={`font-display font-extrabold tracking-tight transition-all duration-500 ${
-                scrolled && !menuOpen ? "text-lg" : "text-2xl"
+                scrolled ? "text-lg" : "text-2xl"
               }`}
             >
               AppSeal
+            </span>
+            <span
+              className={`grid place-items-center transition-all duration-300 ${
+                scrolled ? "h-6 w-6 opacity-100" : "h-0 w-0 opacity-0"
+              }`}
+            >
+              <ChevronDown
+                className={`h-3.5 w-3.5 text-slate-400 transition-transform duration-300 ${menuOpen ? "rotate-180" : ""}`}
+              />
             </span>
           </a>
 
           <nav
             className={`hidden items-center gap-1 md:flex transition-all duration-300 ${
-              scrolled && !menuOpen ? "pointer-events-none w-0 overflow-hidden opacity-0" : "opacity-100"
+              scrolled ? "pointer-events-none w-0 overflow-hidden opacity-0" : "opacity-100"
             }`}
             aria-label="Site"
           >
-            {[
-              { href: "/registry", label: t(lang, "navRegistry") },
-              { href: "/stats", label: t(lang, "navStats") },
-              { href: "#pricing", label: t(lang, "navPricing") },
-              { href: "/legal", label: t(lang, "navLegal") },
-            ].map((item) => (
+            {NAV_LINKS.slice(1).map((item) => (
               <a
-                key={item.href}
+                key={item.key}
                 href={item.href}
-                className="rounded-full px-3.5 py-1.5 text-[13px] font-medium text-slate-400 transition hover:bg-slate-800/70 hover:text-slate-100"
+                className="rounded-full px-3.5 py-1.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
               >
-                {item.label}
+                {t(lang, item.key)}
               </a>
             ))}
           </nav>
 
           <div className="flex items-center gap-2">
             <nav
-              className={`hidden items-center rounded-full border border-slate-800 bg-slate-900/60 p-0.5 transition-all duration-300 sm:flex ${
-                scrolled && !menuOpen ? "pointer-events-none w-0 overflow-hidden opacity-0" : "opacity-100"
+              className={`hidden items-center rounded-full border border-white/10 bg-white/5 p-0.5 transition-all duration-300 sm:flex ${
+                scrolled ? "pointer-events-none w-0 overflow-hidden opacity-0" : "opacity-100"
               }`}
               aria-label="Language"
             >
@@ -576,7 +620,7 @@ export function ScannerPage({
                   key={l}
                   onClick={() => switchLang(l)}
                   className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase transition ${
-                    lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-500 hover:text-slate-300"
+                    lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-400 hover:text-slate-200"
                   }`}
                   aria-pressed={lang === l}
                 >
@@ -586,7 +630,7 @@ export function ScannerPage({
             </nav>
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-800 text-slate-300 transition hover:bg-slate-800/70 md:hidden"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:bg-white/10 md:hidden"
               aria-expanded={menuOpen}
               aria-label="Menu"
             >
@@ -595,44 +639,50 @@ export function ScannerPage({
           </div>
         </div>
 
-        {/* mobile menu */}
-        <div
-          className={`overflow-hidden transition-all duration-300 md:hidden ${
-            menuOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <nav className="space-y-1 border-t border-slate-800/60 bg-black/90 px-4 py-3 backdrop-blur-2xl" aria-label="Mobile">
-            {[
-              { href: "/registry", label: t(lang, "navRegistry") },
-              { href: "/stats", label: t(lang, "navStats") },
-              { href: "#pricing", label: t(lang, "navPricing") },
-              { href: "/legal", label: t(lang, "navLegal") },
-            ].map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={() => setMenuOpen(false)}
-                className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800/70 hover:text-slate-100"
-              >
-                {item.label}
-              </a>
-            ))}
-            <div className="flex items-center justify-center gap-1 pt-2 pb-1 sm:hidden">
-              {(["ru", "en"] as Lang[]).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => switchLang(l)}
-                  className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase transition ${
-                    lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-500"
-                  }`}
-                  aria-pressed={lang === l}
+        {/* quick-links mini panel: shared by the mobile burger and the collapsed
+            desktop header - a small glass sheet anchored under the logo */}
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.nav
+              key="menu-panel"
+              initial={{ opacity: 0, y: -8, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.97 }}
+              transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformOrigin: "top left" }}
+              className={`absolute left-4 z-50 w-60 rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-2xl md:left-6 ${
+                scrolled ? "top-[64px]" : "top-[86px]"
+              }`}
+              aria-label="Menu"
+            >
+              {NAV_LINKS.map((item) => (
+                <a
+                  key={item.key}
+                  href={item.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
                 >
-                  {l}
-                </button>
+                  <item.icon className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-sky-400" />
+                  {t(lang, item.key)}
+                </a>
               ))}
-            </div>
-          </nav>
-        </div>
+              <div className="mt-2 flex items-center justify-center gap-1 border-t border-white/5 pt-2">
+                {(["ru", "en"] as Lang[]).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => switchLang(l)}
+                    className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase transition ${
+                      lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-400 hover:text-slate-200"
+                    }`}
+                    aria-pressed={lang === l}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </motion.nav>
+          )}
+        </AnimatePresence>
       </header>
 
       <main className="relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 sm:px-6">

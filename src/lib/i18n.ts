@@ -234,6 +234,7 @@ export const DICT = {
   },
   issue2CtaScan: { ru: "Пришли свой URL - просканировать", en: "Bring your URL - scan it" },
   issue2CtaRegistry: { ru: "Смотреть реестр", en: "Browse the registry" },
+  navHome: { ru: "Главная", en: "Home" },
   navRegistry: { ru: "Реестр", en: "Registry" },
   navStats: { ru: "Статистика", en: "Stats" },
   navPricing: { ru: "Тарифы", en: "Pricing" },
