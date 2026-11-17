@@ -214,6 +214,7 @@ interface LiveStats {
   days: number[];
   catRows: { cat: string; fail: number; warn: number; loss: number }[];
   failPairs: Map<string, number>;
+  warnPairs: Map<string, number>;
 }
 
 /** Live Redis counters written by pushRegistryEntry/recordCheckStats. */
@@ -270,6 +271,7 @@ async function readLiveStats(): Promise<LiveStats | null> {
       days: dayKeys.map((k, i) => Number(responses[11 + hourKeys.length + i]) || 0),
       catRows,
       failPairs,
+      warnPairs,
     };
   } catch {
     return null;
@@ -320,33 +322,37 @@ export default async function StatsPage() {
     }))
     .sort((a, b) => b.avg - a.avg);
 
-  // fact cards - only meaningful on live counters
+  // fact cards - only meaningful on live counters; the miss share counts
+  // fails AND warns (a warn-only check like COOP would show a false 0%)
   const facts =
     useLive && live
-      ? [
-          {
-            big: `${Math.round(((live.failPairs.get("hdr_coop") ?? 0) * 100) / live.scans)}%`,
-            text: t("fact1"),
-          },
-          {
-            big: `${Math.round((live.gradeACount * 100) / Math.max(1, live.sites))}%`,
-            text: t("fact2"),
-          },
-          {
-            big: `${dynamics.improved}`,
-            text: t("fact3"),
-          },
-          {
-            big: `${Math.round(
-              ([...live.failPairs.entries()]
-                .filter(([id]) => id.startsWith("admin_") || id.startsWith("secrets_"))
-                .reduce((acc, [, c]) => acc + c, 0) *
-                100) /
-                live.scans,
-            )}%`,
-            text: t("fact4"),
-          },
-        ]
+      ? (() => {
+          const missSum = (pred: (id: string) => boolean) =>
+            [...live.failPairs, ...live.warnPairs]
+              .filter(([id]) => pred(id))
+              .reduce((acc, [, c]) => acc + c, 0);
+          return [
+            {
+              big: `${Math.round(((live.failPairs.get("hdr_coop") ?? 0) + (live.warnPairs.get("hdr_coop") ?? 0)) * 100 / live.scans)}%`,
+              text: t("fact1"),
+            },
+            {
+              big: `${Math.round((live.gradeACount * 100) / Math.max(1, live.sites))}%`,
+              text: t("fact2"),
+            },
+            {
+              big: `${dynamics.improved}`,
+              text: t("fact3"),
+            },
+            {
+              big: `${Math.round(
+                (missSum((id) => id.startsWith("admin_") || id.startsWith("secrets_")) * 100) /
+                  live.scans,
+              )}%`,
+              text: t("fact4"),
+            },
+          ];
+        })()
       : [];
 
   // unified view: live counters or the static mass-run snapshot
