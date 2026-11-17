@@ -31,7 +31,7 @@ OUT_DIR.mkdir(exist_ok=True)
 TARGETS_TXT = pathlib.Path(__file__).parent / "targets_harvest.txt"
 META_JSON = OUT_DIR / "harvest_meta.json"
 
-UA = "appseal-harvest/0.1 (+https://appseal.online/bot; research, opt-out: linedrop@yandex.ru)"
+UA = "appseal-harvest/0.1 (+https://appseal.online/bot; research, opt-out: security@appseal.online)"
 
 HN_QUERIES = ["v0", "bolt.new", "lovable", "vibe coding", "ai-generated app", "built with ai"]
 HN_PAGES = 3  # Algolia pages of 100 hits per query

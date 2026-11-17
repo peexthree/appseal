@@ -4,7 +4,7 @@
 
 Site map:
 - [Home and scanner](https://appseal.online/): paste a URL to run a free scan (1 scan/day per IP, demo target exempt)
-- [Registry](https://appseal.online/registry): public showcase of sites graded A/A+ with auto-extracted descriptions
+- [Registry](https://appseal.online/registry): public registry of scanned apps with grades; links and descriptions unlock at grade A/A+
 - [Stats](https://appseal.online/stats): anonymous aggregate results from mass scans of AI-built apps
 - [Legal](https://appseal.online/legal): rules, privacy policy, data handling, opt-out contact
 - [Telegram bot](https://appseal.online/bot): buy the Launch Pass via Telegram
@@ -16,7 +16,7 @@ Site map:
 
 ## Contact
 - Telegram: [@peexthree](https://t.me/peexthree)
-- Email: linedrop@yandex.ru
+- Email: security@appseal.online
 
 ## ru
 AppSeal - «техосмотр» для приложений, собранных с ИИ: чёрный ящик-скан живого сайта на утечки секретов, открытые базы, дырявые админки, заголовки безопасности и признаки заброшенности. 125 проверок, грейд A+-E, бейдж доверия, публичный реестр.
