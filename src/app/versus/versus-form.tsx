@@ -2,9 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { Lang } from "@/lib/scanner/types";
+
+const D = {
+  firstAria: { ru: "Первый сайт", en: "First site" },
+  secondAria: { ru: "Второй сайт", en: "Second site" },
+  submit: { ru: "Сравнить безопасность", en: "Compare security" },
+  note: {
+    ru: "Оба сайта должны пройти бесплатный техосмотр - результат открывается ссылкой, которую можно кинуть в чат.",
+    en: "Both sites must pass the free checkup first - the result opens as a link you can drop into a chat.",
+  },
+  copied: { ru: "Ссылка скопирована ✓", en: "Link copied ✓" },
+  copy: { ru: "Скопировать ссылку", en: "Copy link" },
+} as const;
 
 /** Two-input form on /versus: pushes /versus?a=..&b=.. for a shareable URL. */
-export function VersusForm({ a = "", b = "" }: { a?: string; b?: string }) {
+export function VersusForm({ a = "", b = "", lang }: { a?: string; b?: string; lang: Lang }) {
   const router = useRouter();
   const [ha, setHa] = useState(a);
   const [hb, setHb] = useState(b);
@@ -34,16 +47,16 @@ export function VersusForm({ a = "", b = "" }: { a?: string; b?: string }) {
         <input
           value={ha}
           onChange={(e) => setHa(e.target.value)}
-          placeholder="мойпроект.dev"
-          aria-label="Первый сайт"
+          placeholder="myproject.dev"
+          aria-label={D.firstAria[lang]}
           className="w-full rounded-xl border border-slate-800 bg-white/[0.04] px-4 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-sky-400/60"
         />
         <span className="text-center font-display text-lg font-extrabold text-slate-500">VS</span>
         <input
           value={hb}
           onChange={(e) => setHb(e.target.value)}
-          placeholder="чужой-деплой.vercel.app"
-          aria-label="Второй сайт"
+          placeholder="other-deploy.vercel.app"
+          aria-label={D.secondAria[lang]}
           className="w-full rounded-xl border border-slate-800 bg-white/[0.04] px-4 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-sky-400/60"
         />
       </div>
@@ -52,17 +65,17 @@ export function VersusForm({ a = "", b = "" }: { a?: string; b?: string }) {
         disabled={busy}
         className="mt-4 w-full rounded-xl bg-sky-400 px-5 py-2.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300 disabled:opacity-60"
       >
-        Сравнить безопасность
+        {D.submit[lang]}
       </button>
       <p className="mt-2 text-center text-[11px] text-slate-500">
-        Оба сайта должны пройти бесплатный техосмотр - результат открывается ссылкой, которую можно кинуть в чат.
+        {D.note[lang]}
       </p>
     </form>
   );
 }
 
 /** Copy-share button for a ready versus link. */
-export function VersusShare() {
+export function VersusShare({ lang }: { lang: Lang }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -82,7 +95,7 @@ export function VersusShare() {
           : "border-sky-500/40 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 hover:text-sky-300"
       }`}
     >
-      {copied ? "Ссылка скопирована ✓" : "Скопировать ссылку"}
+      {copied ? D.copied[lang] : D.copy[lang]}
     </button>
   );
 }

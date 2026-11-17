@@ -5,6 +5,7 @@ import { ShieldCheck } from "@/components/icons/appseal-icons";
 import statsData from "@/data/stats-harvest.json";
 import { getRegistryEntries, redisConfig, redisPipeline, STATS_HOUR_PREFIX, STATS_DAY_PREFIX } from "@/lib/scanner/store";
 import { dedupeRegistry, isReferenceSite, platformOf, PLATFORM_LABELS, type PlatformKey } from "@/lib/registry";
+import { pageLang } from "@/lib/lang-server";
 import { PulseChart } from "./pulse-chart";
 import {
   avgMedianFromHistogram,
@@ -22,15 +23,26 @@ import {
   type TopFail,
 } from "@/lib/stats";
 
-// the page reads live Redis counters: refresh at most every minute
-export const revalidate = 60;
+// the page reads the appseal-lang cookie (set by the navbar switcher), so it
+// renders dynamically per request instead of on the revalidate clock
+export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "AppSeal - статистика AI-собранных приложений",
-  description:
-    "Живая статистика техосмотра: распределение классов A+-E, самые частые проваленные проверки, средний балл по платформам. Обновляется автоматически - каждый скан, попавший в реестр, сдвигает цифры.",
-  alternates: { canonical: "/stats" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await pageLang();
+  return lang === "en"
+    ? {
+        title: "AppSeal - stats for AI-built apps",
+        description:
+          "Live stats from the AppSeal black-box scanner: A+-E grade distribution, the most commonly failed checks, average score by hosting platform. Updates automatically - every scan that lands in the registry shifts the numbers.",
+        alternates: { canonical: "/stats" },
+      }
+    : {
+        title: "AppSeal - статистика AI-собранных приложений",
+        description:
+          "Живая статистика техосмотра: распределение классов A+-E, самые частые проваленные проверки, средний балл по платформам. Обновляется автоматически - каждый скан, попавший в реестр, сдвигает цифры.",
+        alternates: { canonical: "/stats" },
+      };
+}
 
 const GRADE_STYLES: Record<string, string> = {
   "A+": "bg-[#C084FC]",
@@ -41,15 +53,152 @@ const GRADE_STYLES: Record<string, string> = {
   E: "bg-[#F87171]",
 };
 
-const SOURCE_LABELS: Record<string, string> = {
-  hn: "Hacker News (Show HN)",
-  github: "GitHub",
-  reddit: "Reddit",
-  unknown: "Другие источники",
+const SOURCE_LABELS: Record<string, { ru: string; en: string }> = {
+  hn: { ru: "Hacker News (Show HN)", en: "Hacker News (Show HN)" },
+  github: { ru: "GitHub", en: "GitHub" },
+  reddit: { ru: "Reddit", en: "Reddit" },
+  unknown: { ru: "Другие источники", en: "Other sources" },
 };
 
-const dateFmt = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" });
-const numFmt = new Intl.NumberFormat("ru-RU");
+/** UI strings; check-title and category dicts live right below */
+const D = {
+  eyebrow: { ru: "Анонимная статистика", en: "Anonymous statistics" },
+  liveBadge: { ru: "обновляется после каждого скана", en: "updates after every scan" },
+  h1a: { ru: "Техосмотр", en: "A security checkup of" },
+  h1b: { ru: "AI-собранных приложений", en: "AI-built apps" },
+  introLiveA: { ru: "Каждый скан, попавший в ", en: "Every scan that lands in the " },
+  regWord: { ru: "реестр", en: "registry" },
+  introLiveB: {
+    ru: ", сдвигает цифры на этой странице - распределение классов, топ-провалы и битва платформ считаются автоматически. Ниже только агрегаты: никаких доменов и деталей отчётов.",
+    en: " shifts the numbers on this page: grade distribution, top gaps and the platform battle are computed automatically. Aggregates only below - no domains, no report details.",
+  },
+  introStaticA: {
+    ru: "Мы прогнали внешний чёрный ящик по публичным проектам, которыми авторы делились на Hacker News и GitHub. Ниже только агрегаты: никаких доменов и деталей отчётов. Имена появляются в ",
+    en: "We ran an external black-box scanner over public projects their authors shared on Hacker News and GitHub. Aggregates only below - no domains, no report details. Names appear in the ",
+  },
+  introStaticB: {
+    ru: " вместе с классом и датой; ссылка и описание открываются только у класса A/A+.",
+    en: " along with their grade and date; the link and description unlock only for grade A/A+.",
+  },
+  threatEyebrow: { ru: "Угроза недели", en: "Threat of the week" },
+  threatNote: {
+    ru: "Самый частый провал на живых данных: доля проверок с красным или оранжевым статусом. Чинится одним конфигом - ",
+    en: "The most common gap on live data: the share of checks that come back red or orange. Fixable with one config - ",
+  },
+  threatCta: { ru: "готовые исправления под ваш хостинг →", en: "ready-made fixes for your hosting →" },
+  pending: {
+    ru: "Первый массовый прогон ещё идёт - цифры появятся здесь сразу после его завершения.",
+    en: "The first mass run is still in progress - the numbers will appear here right after it completes.",
+  },
+  tickLead: { ru: "За 24 часа авто-проверок: ", en: "Auto-checks in the last 24 hours: " },
+  stat1: { ru: "сканов посчитано", en: "scans counted" },
+  stat2: { ru: "средний балл из 100", en: "average score out of 100" },
+  stat3: { ru: "медианный балл", en: "median score" },
+  stat4: { ru: "получили класс A/A+", en: "earned grade A/A+" },
+  fact1: { ru: "сайтов не ставят заголовок COOP (защита окон браузера)", en: "of sites skip the COOP header (browser window protection)" },
+  fact2: { ru: "проходят весь чек-лист на класс A/A+", en: "pass the full checklist for grade A/A+" },
+  fact3: { ru: "сайтов подняли класс между повторными проверками", en: "sites moved up a grade between rescans" },
+  fact4: { ru: "имеют провал по секретам или служебным эндпоинтам", en: "have a failing secrets or exposed-endpoint check" },
+  distTitle: { ru: "Распределение классов", en: "Grade distribution" },
+  scaleNote: {
+    ru: "Шкала A+-E: класс A требуют 90+ баллов из 100 по 125 проверкам.",
+    en: "The A+-E scale: grade A requires 90+ out of 100 across 125 checks.",
+  },
+  histTitle: { ru: "Гистограмма баллов", en: "Score histogram" },
+  histNote: {
+    ru: "Сколько проверок попало в каждый диапазон из 100 баллов - видно, где проходит основная масса.",
+    en: "How many scans landed in each band of the 100-point scale - where the bulk of the fleet sits.",
+  },
+  gapsTitle: { ru: "Чего чаще всего не хватает", en: "Most common gaps" },
+  gapsNote: {
+    ru: "Доля сканов, где проверка провалена (красный) или под вопросом (оранжевый).",
+    en: "Share of scans where the check failed (red) or is questionable (orange).",
+  },
+  catTitle: { ru: "Где проваливают чаще всего", en: "Where scans fail most" },
+  catNote: {
+    ru: "Пять категорий чек-листа: провал (красный) и под вопросом (оранжевый), плюс суммарный вес штрафов, который категория в среднем приносит одному скану.",
+    en: "Five checklist categories: failed (red) and questionable (orange), plus the average penalty weight a category adds to one scan.",
+  },
+  catLossTitle: {
+    ru: "суммарный вес штрафов категории в среднем на скан",
+    en: "the category's average penalty weight per scan",
+  },
+  catPts: { ru: "б.", en: "pts" },
+  battleTitle: { ru: "Битва платформ", en: "Platform battle" },
+  battleNoteA: {
+    ru: "Средний балл безопасности сборок по хостинг-платформам из ",
+    en: "Average security score of builds across the hosting platforms in the ",
+  },
+  battleNoteB: {
+    ru: ". Кто из конструкторов выпускает более защищённые приложения - цифры обновляются с каждым новым сканом.",
+    en: ". Which builders ship the most secure apps - the numbers update with every new scan.",
+  },
+  thPlatform: { ru: "Платформа", en: "Platform" },
+  thDomains: { ru: "Домены", en: "Domains" },
+  thAvg: { ru: "Средний балл", en: "Avg score" },
+  registryOnlyA: { ru: "Открыть реестр: только ", en: "Open the registry: " },
+  registryOnlyB: { ru: "", en: " only" },
+  dynTitle: { ru: "Динамика повторных проверок", en: "Rescan dynamics" },
+  dynNote: {
+    ru: "Сайты, попавшие в реестр больше одного раза: куда двинулся их класс между первым и последним сохранённым сканом.",
+    en: "Sites that entered the registry more than once: how their grade moved between the first and the latest saved scan.",
+  },
+  dynUp: { ru: "подняли класс", en: "moved up" },
+  dynSame: { ru: "держат тот же класс", en: "hold the same grade" },
+  dynDown: { ru: "просели ниже", en: "slipped down" },
+  tldTitle: { ru: "По доменным зонам", en: "By domain zone" },
+  tldNote: {
+    ru: "Где живут проверенные проекты и как там со средним баллом.",
+    en: "Where the scanned projects live and how they score on average.",
+  },
+  tldAvg: { ru: "средний балл ", en: "avg score " },
+  srcTitle: { ru: "Откуда приложения", en: "Where the apps come from" },
+  srcNote: { ru: "Разбивка исторического массового прогона от ", en: "Breakdown of the historical mass run from " },
+  srcAvg: { ru: "средний балл ", en: "avg score " },
+  srcNoAvg: { ru: "мало данных для среднего", en: "not enough data for an average" },
+  footLiveA: {
+    ru: "База включает исторический массовый прогон от ",
+    en: "The database includes the historical mass run from ",
+  },
+  footScanner: {
+    ru: ". Сканер ходит с пометкой AppSeal-Scanner, делает ~140 вежливых GET-запросов на сайт и ничего не эксплуатирует; правила для ботов - на странице ",
+    en: ". The scanner identifies as AppSeal-Scanner, makes ~140 polite GET requests per site and exploits nothing; bot rules are on the ",
+  },
+  footOptout: {
+    ru: ". Владелец домена может запросить исключение из любых публикаций: security@appseal.online (3 рабочих дня).",
+    en: " page. A domain owner can request exclusion from any publication: security@appseal.online (3 business days).",
+  },
+  footDigest: { ru: "дайджест недели", en: "weekly digest" },
+  footFixes: { ru: "гайды по исправлению", en: "fix guides" },
+  footAgg: { ru: "Aggregate-only статистика", en: "Aggregate-only stats" },
+} as const;
+
+/** EN titles for the checks most likely to hit the top-misses list; the RU
+ * title from Redis stays the fallback for anything not mapped here */
+const FAIL_TITLES_EN: Record<string, string> = {
+  hdr_coop: "COOP header missing",
+  hdr_permissions: "Permissions-Policy header missing",
+  hdr_csp: "CSP header missing",
+  hdr_xfo: "X-Frame-Options header missing",
+  hdr_referrer: "Referrer-Policy header missing",
+  hdr_xcto: "X-Content-Type-Options header missing",
+  hdr_hsts: "HSTS header missing",
+  hdr_xxss: "X-XSS-Protection header missing",
+  og_image: "og:image missing",
+  og_title: "og:title missing",
+  og_description: "og:description missing",
+  sri_missing: "Third-party scripts without SRI",
+  cors_wildcard: "CORS open to all (*)",
+};
+
+/** RU labels for check categories (engine ids) */
+const CATEGORY_LABELS: Record<string, { ru: string; en: string }> = {
+  secrets: { ru: "Секреты и утечки", en: "Secrets & leaks" },
+  headers: { ru: "Заголовки и TLS", en: "Headers & TLS" },
+  admin: { ru: "Админки и авторизация", en: "Admin panels & auth" },
+  liveness: { ru: "Живость и контент", en: "Liveness & content" },
+  trust: { ru: "ИИ-доверие и гигиена", en: "AI-trust hygiene" },
+};
 
 interface LiveStats {
   scans: number;
@@ -66,15 +215,6 @@ interface LiveStats {
   catRows: { cat: string; fail: number; warn: number; loss: number }[];
   failPairs: Map<string, number>;
 }
-
-/** RU labels for check categories (engine ids). */
-const CATEGORY_LABELS: Record<string, string> = {
-  secrets: "Секреты и утечки",
-  headers: "Заголовки и TLS",
-  admin: "Админки и авторизация",
-  liveness: "Живость и контент",
-  trust: "ИИ-доверие и гигиена",
-};
 
 /** Live Redis counters written by pushRegistryEntry/recordCheckStats. */
 async function readLiveStats(): Promise<LiveStats | null> {
@@ -137,6 +277,11 @@ async function readLiveStats(): Promise<LiveStats | null> {
 }
 
 export default async function StatsPage() {
+  const lang = await pageLang();
+  const t = (k: keyof typeof D) => D[k][lang];
+  const numFmt = new Intl.NumberFormat(lang === "en" ? "en-US" : "ru-RU");
+  const dateFmt = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "ru-RU", { day: "numeric", month: "long", year: "numeric" });
+
   const live = await readLiveStats();
   const s = statsData;
   // top-misses need the seeded check counters: without them fall back to the
@@ -167,7 +312,6 @@ export default async function StatsPage() {
   const leaderboard = [...buckets.entries()]
     .map(([key, b]) => ({
       key,
-      label: PLATFORM_LABELS[key].ru,
       count: b.count,
       avg: Math.round(b.total / b.count),
       grades: gradeRowsFromCounts(platformGrades.get(key) ?? new Map())
@@ -182,25 +326,25 @@ export default async function StatsPage() {
       ? [
           {
             big: `${Math.round(((live.failPairs.get("hdr_coop") ?? 0) * 100) / live.scans)}%`,
-            text: "сайтов не ставят заголовок COOP (защита окон браузера)",
+            text: t("fact1"),
           },
           {
             big: `${Math.round((live.gradeACount * 100) / Math.max(1, live.sites))}%`,
-            text: "проходят весь чек-лист на класс A/A+",
+            text: t("fact2"),
           },
           {
             big: `${dynamics.improved}`,
-            text: "сайтов подняли класс между повторными проверками",
+            text: t("fact3"),
           },
           {
             big: `${Math.round(
               ([...live.failPairs.entries()]
                 .filter(([id]) => id.startsWith("admin_") || id.startsWith("secrets_"))
-                .reduce((s, [, c]) => s + c, 0) *
+                .reduce((acc, [, c]) => acc + c, 0) *
                 100) /
                 live.scans,
             )}%`,
-            text: "имеют провал по секретам или служебным эндпоинтам",
+            text: t("fact4"),
           },
         ]
       : [];
@@ -240,61 +384,61 @@ export default async function StatsPage() {
 
   const sources = Object.entries(s.sources).map(([k, n]) => ({
     key: k,
-    label: SOURCE_LABELS[k] ?? k,
+    label: SOURCE_LABELS[k]?.[lang] ?? k,
     count: Number(n),
     avg: (s.avgScoreBySource as Record<string, number>)[k],
   }));
 
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
-      <SiteHeader />
+      <SiteHeader lang={lang} />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-400">Анонимная статистика</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-400">{t("eyebrow")}</p>
           {v.isLive ? (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-400">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-              обновляется после каждого скана
+              {t("liveBadge")}
             </span>
           ) : null}
         </div>
         <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
-          Техосмотр {numFmt.format(v.heroCount)} AI-собранных приложений
+          {t("h1a")} {numFmt.format(v.heroCount)} {t("h1b")}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
           {v.isLive ? (
             <>
-              Каждый скан, попавший в <Link href="/registry" className="text-sky-400 hover:underline">реестр</Link>,
-              сдвигает цифры на этой странице - распределение классов, топ-провалы и битва платформ считаются
-              автоматически. Ниже только агрегаты: никаких доменов и деталей отчётов.
+              {t("introLiveA")}
+              <Link href="/registry" className="text-sky-400 hover:underline">{t("regWord")}</Link>
+              {t("introLiveB")}
             </>
           ) : (
             <>
-              Мы прогнали внешний чёрный ящик по публичным проектам, которыми авторы делились
-              на Hacker News и GitHub. Ниже только агрегаты: никаких доменов и деталей отчётов.
-              Имена появляются в <Link href="/registry" className="text-sky-400 hover:underline">реестре</Link> -
-              и только для класса A/A+ или с согласия владельца.
+              {t("introStaticA")}
+              <Link href="/registry" className="text-sky-400 hover:underline">{t("regWord")}</Link>
+              {t("introStaticB")}
             </>
           )}
         </p>
 
         {useLive && live && live.topFails.length > 0 ? (
           <div className="mt-8 rounded-2xl border border-[#F87171]/30 bg-[#1a0f14] p-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F87171]">Угроза недели</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F87171]">{t("threatEyebrow")}</p>
             <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
               <span className="font-display text-4xl font-extrabold text-[#F87171]">
                 {live.topFails[0].failPct + live.topFails[0].warnPct}%
               </span>
               <span className="font-display text-lg font-extrabold text-slate-100">
-                {live.topFails[0].title}
+                {lang === "en"
+                  ? FAIL_TITLES_EN[live.topFails[0].id] ?? live.topFails[0].title
+                  : live.topFails[0].title}
               </span>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-slate-400">
-              Самый частый провал на живых данных: доля проверок с красным или оранжевым статусом.
-              Чинится одним конфигом -{" "}
+              {t("threatNote")}
               <Link href="/fixes" className="font-bold text-sky-400 hover:underline">
-                готовые исправления под ваш хостинг →
+                {t("threatCta")}
               </Link>
             </p>
           </div>
@@ -302,22 +446,22 @@ export default async function StatsPage() {
 
         {!hasStatic && !v.isLive ? (
           <div className="mt-10 rounded-2xl border border-slate-800 bg-[#111827] p-8 text-center text-sm text-slate-400">
-            Первый массовый прогон ещё идёт - цифры появятся здесь сразу после его завершения.
+            {t("pending")}
           </div>
         ) : (
           <>
             {v.isLive && v.tick24h > 0 ? (
               <p className="mt-4 text-sm text-emerald-400">
-                За 24 часа авто-проверок: {numFmt.format(v.tick24h)}
+                {t("tickLead")}{numFmt.format(v.tick24h)}
               </p>
             ) : null}
 
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { v: numFmt.format(v.doneCount), l: "сканов посчитано" },
-                { v: `${v.avg}`, l: "средний балл из 100" },
-                { v: `${v.median}`, l: "медианный балл" },
-                { v: `${v.gradeACount}`, l: "получили класс A/A+" },
+                { v: numFmt.format(v.doneCount), l: t("stat1") },
+                { v: `${v.avg}`, l: t("stat2") },
+                { v: `${v.median}`, l: t("stat3") },
+                { v: `${v.gradeACount}`, l: t("stat4") },
               ].map((c) => (
                 <div key={c.l} className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
                   <div className="font-display text-3xl font-extrabold text-slate-100">{c.v}</div>
@@ -338,7 +482,7 @@ export default async function StatsPage() {
             ) : null}
 
             <section className="mt-10">
-              <h2 className="font-display text-xl font-extrabold">Распределение классов</h2>
+              <h2 className="font-display text-xl font-extrabold">{t("distTitle")}</h2>
               <div className="mt-4 space-y-2.5">
                 {v.gradeRows.map((r) => (
                   <div key={r.grade} className="flex items-center gap-3">
@@ -356,15 +500,15 @@ export default async function StatsPage() {
                 ))}
               </div>
               <p className="mt-3 text-xs text-slate-600">
-                Шкала A+-E: класс A требуют 90+ баллов из 100 по 125 проверкам.
+                {t("scaleNote")}
               </p>
             </section>
 
             {v.isLive && live ? (
               <section className="mt-10">
-                <h2 className="font-display text-xl font-extrabold">Гистограмма баллов</h2>
+                <h2 className="font-display text-xl font-extrabold">{t("histTitle")}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Сколько проверок попало в каждый диапазон из 100 баллов - видно, где проходит основная масса.
+                  {t("histNote")}
                 </p>
                 <div className="mt-4 flex h-36 items-end gap-1.5">
                   {live.hist.map((b) => {
@@ -391,17 +535,20 @@ export default async function StatsPage() {
             ) : null}
 
             <section className="mt-10">
-              <h2 className="font-display text-xl font-extrabold">Чего чаще всего не хватает</h2>
+              <h2 className="font-display text-xl font-extrabold">{t("gapsTitle")}</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Доля сканов, где проверка провалена (красный) или под вопросом (оранжевый).
+                {t("gapsNote")}
               </p>
               <ul className="mt-4 space-y-2.5">
                 {v.topFails.map((f) => {
                   const miss = f.failPct + f.warnPct;
                   return (
                     <li key={f.id} className="flex items-center gap-3">
-                      <span className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72" title={f.title}>
-                        {f.title}
+                      <span
+                        className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72"
+                        title={lang === "en" ? FAIL_TITLES_EN[f.id] ?? f.title : f.title}
+                      >
+                        {lang === "en" ? FAIL_TITLES_EN[f.id] ?? f.title : f.title}
                       </span>
                       <div className="flex h-5 flex-1 gap-px">
                         {miss > 0 ? (
@@ -420,10 +567,9 @@ export default async function StatsPage() {
 
             {v.isLive && live && live.catRows.length > 0 ? (
               <section className="mt-10">
-                <h2 className="font-display text-xl font-extrabold">Где проваливают чаще всего</h2>
+                <h2 className="font-display text-xl font-extrabold">{t("catTitle")}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Пять категорий чек-листа: провал (красный) и под вопросом (оранжевый), плюс суммарный вес
-                  штрафов, который категория в среднем приносит одному скану.
+                  {t("catNote")}
                 </p>
                 <ul className="mt-4 space-y-3">
                   {live.catRows.map((c) => {
@@ -433,7 +579,7 @@ export default async function StatsPage() {
                     return (
                       <li key={c.cat} className="flex items-center gap-3">
                         <span className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72">
-                          {CATEGORY_LABELS[c.cat] ?? c.cat}
+                          {CATEGORY_LABELS[c.cat]?.[lang] ?? c.cat}
                         </span>
                         <div className="flex h-5 flex-1 gap-px">
                           {failPct + warnPct > 0 ? (
@@ -443,8 +589,11 @@ export default async function StatsPage() {
                             </>
                           ) : null}
                         </div>
-                        <span className="w-24 text-right font-mono text-xs text-slate-500" title="суммарный вес штрафов категории в среднем на скан">
-                          -{lossAvg} б.
+                        <span
+                          className="w-24 text-right font-mono text-xs text-slate-500"
+                          title={t("catLossTitle")}
+                        >
+                          -{lossAvg} {t("catPts")}
                         </span>
                       </li>
                     );
@@ -454,17 +603,17 @@ export default async function StatsPage() {
             ) : null}
 
             <section className="mt-10">
-              <h2 className="font-display text-xl font-extrabold">Битва платформ</h2>
+              <h2 className="font-display text-xl font-extrabold">{t("battleTitle")}</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Средний балл безопасности сборок по хостинг-платформам из{" "}
-                <Link href="/registry" className="text-sky-400 hover:underline">реестра</Link>.
-                Кто из конструкторов выпускает более защищённые приложения - цифры обновляются с каждым новым сканом.
+                {t("battleNoteA")}
+                <Link href="/registry" className="text-sky-400 hover:underline">{t("regWord")}</Link>
+                {t("battleNoteB")}
               </p>
               <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
                 <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  <span className="flex-1">Платформа</span>
-                  <span className="w-20 text-right">Домены</span>
-                  <span className="w-24 text-right">Средний балл</span>
+                  <span className="flex-1">{t("thPlatform")}</span>
+                  <span className="w-20 text-right">{t("thDomains")}</span>
+                  <span className="w-24 text-right">{t("thAvg")}</span>
                 </div>
                 {leaderboard.map((row, i) => (
                   <div
@@ -478,10 +627,10 @@ export default async function StatsPage() {
                         </span>
                         <Link
                           href={`/registry?platform=${row.key}`}
-                          title={`Открыть реестр: только ${row.label}`}
+                          title={`${t("registryOnlyA")}${PLATFORM_LABELS[row.key][lang]}${t("registryOnlyB")}`}
                           className="transition hover:text-sky-400"
                         >
-                          {row.label}
+                          {PLATFORM_LABELS[row.key][lang]}
                         </Link>
                       </span>
                       {row.grades ? <span className="text-[10px] text-slate-500">{row.grades}</span> : null}
@@ -501,16 +650,15 @@ export default async function StatsPage() {
 
             {v.isLive ? (
               <section className="mt-10">
-                <h2 className="font-display text-xl font-extrabold">Динамика повторных проверок</h2>
+                <h2 className="font-display text-xl font-extrabold">{t("dynTitle")}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Сайты, попавшие в реестр больше одного раза: куда двинулся их класс между первым и
-                  последним сохранённым сканом.
+                  {t("dynNote")}
                 </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {[
-                    { v: dynamics.improved, l: "подняли класс", c: "text-emerald-400", s: "↑" },
-                    { v: dynamics.stable, l: "держат тот же класс", c: "text-slate-300", s: "→" },
-                    { v: dynamics.dropped, l: "просели ниже", c: "text-amber-400", s: "↓" },
+                    { v: dynamics.improved, l: t("dynUp"), c: "text-emerald-400", s: "↑" },
+                    { v: dynamics.stable, l: t("dynSame"), c: "text-slate-300", s: "→" },
+                    { v: dynamics.dropped, l: t("dynDown"), c: "text-amber-400", s: "↓" },
                   ].map((d) => (
                     <div key={d.l} className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
                       <div className={`font-display text-3xl font-extrabold ${d.c}`}>
@@ -524,21 +672,21 @@ export default async function StatsPage() {
             ) : null}
 
             {v.isLive && live ? (
-              <PulseChart hours={live.hours} days={live.days} total={v.doneCount} />
+              <PulseChart hours={live.hours} days={live.days} total={v.doneCount} lang={lang} />
             ) : null}
 
             {v.isLive ? (
               <section className="mt-10">
-                <h2 className="font-display text-xl font-extrabold">По доменным зонам</h2>
+                <h2 className="font-display text-xl font-extrabold">{t("tldTitle")}</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Где живут проверенные проекты и как там со средним баллом.
+                  {t("tldNote")}
                 </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                  {tlds.map((t) => (
-                    <div key={t.tld} className="rounded-2xl border border-slate-800 bg-[#111827] p-4">
-                      <div className="font-mono text-sm font-bold text-sky-400">.{t.tld}</div>
-                      <div className="mt-1.5 font-display text-xl font-extrabold text-slate-100">{t.count}</div>
-                      <div className="text-xs text-slate-500">средний балл {t.avg}</div>
+                  {tlds.map((tl) => (
+                    <div key={tl.tld} className="rounded-2xl border border-slate-800 bg-[#111827] p-4">
+                      <div className="font-mono text-sm font-bold text-sky-400">.{tl.tld}</div>
+                      <div className="mt-1.5 font-display text-xl font-extrabold text-slate-100">{tl.count}</div>
+                      <div className="text-xs text-slate-500">{t("tldAvg")}{tl.avg}</div>
                     </div>
                   ))}
                 </div>
@@ -546,9 +694,9 @@ export default async function StatsPage() {
             ) : null}
 
             <section className="mt-10">
-              <h2 className="font-display text-xl font-extrabold">Откуда приложения</h2>
+              <h2 className="font-display text-xl font-extrabold">{t("srcTitle")}</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Разбивка исторического массового прогона от {dateFmt.format(new Date(s.generatedAt))}.
+                {t("srcNote")}{dateFmt.format(new Date(s.generatedAt))}.
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {sources.map((src) => (
@@ -558,7 +706,7 @@ export default async function StatsPage() {
                       {numFmt.format(src.count)}
                     </div>
                     <div className="mt-1 text-xs text-slate-500">
-                      {typeof src.avg === "number" ? `средний балл ${src.avg}` : "мало данных для среднего"}
+                      {typeof src.avg === "number" ? `${t("srcAvg")}${src.avg}` : t("srcNoAvg")}
                     </div>
                   </div>
                 ))}
@@ -568,19 +716,15 @@ export default async function StatsPage() {
             <p className="mt-10 text-xs leading-relaxed text-slate-600">
               {v.isLive ? (
                 <>
-                  База включает исторический массовый прогон от {dateFmt.format(new Date(s.generatedAt))}.
-                  Сканер ходит с пометкой AppSeal-Scanner, делает ~140 вежливых GET-запросов на сайт и ничего
-                  не эксплуатирует; правила для ботов - на странице{" "}
-                  <Link href="/bot" className="underline hover:text-slate-400">/bot</Link>.
-                  Владелец домена может запросить исключение из любых публикаций: linedrop@yandex.ru
-                  (3 рабочих дня).
+                  {t("footLiveA")}{dateFmt.format(new Date(s.generatedAt))}{t("footScanner")}
+                  <Link href="/bot" className="underline hover:text-slate-400">/bot</Link>
+                  {t("footOptout")}
                 </>
               ) : (
                 <>
-                  Прогон от {dateFmt.format(new Date(s.generatedAt))}. Сканер ходит с пометкой
-                  AppSeal-Scanner, делает ~140 вежливых GET-запросов на сайт и ничего не эксплуатирует;
-                  правила для ботов - на странице <Link href="/bot" className="underline hover:text-slate-400">/bot</Link>.
-                  Владелец домена может запросить исключение из любых публикаций: linedrop@yandex.ru (3 рабочих дня).
+                  {t("srcNote")}{dateFmt.format(new Date(s.generatedAt))}{t("footScanner")}
+                  <Link href="/bot" className="underline hover:text-slate-400">/bot</Link>
+                  {t("footOptout")}
                 </>
               )}
             </p>
@@ -592,10 +736,10 @@ export default async function StatsPage() {
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-xs text-slate-500 sm:px-6">
           <span>AppSeal Engine v1.0 · External Black-Box Security Scanner</span>
           <span className="inline-flex items-center gap-3">
-            <Link href="/digest" className="transition hover:text-slate-400">дайджест недели</Link>
-            <Link href="/fixes" className="transition hover:text-slate-400">гайды по исправлению</Link>
+            <Link href="/digest" className="transition hover:text-slate-400">{t("footDigest")}</Link>
+            <Link href="/fixes" className="transition hover:text-slate-400">{t("footFixes")}</Link>
             <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-emerald-400" /> Aggregate-only статистика
+              <ShieldCheck className="h-4 w-4 text-emerald-400" /> {t("footAgg")}
             </span>
           </span>
         </div>

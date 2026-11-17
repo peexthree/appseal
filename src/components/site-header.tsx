@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { Lang } from "@/lib/scanner/types";
 import { t } from "@/lib/i18n";
@@ -79,6 +79,7 @@ export function SiteHeader({
   }, [langProp]);
 
   const lang = langProp ?? internalLang;
+  const router = useRouter();
   const switchLang = (l: Lang) => {
     if (onSwitchLang) {
       onSwitchLang(l);
@@ -86,6 +87,12 @@ export function SiteHeader({
       setInternalLang(l);
       try {
         localStorage.setItem("appseal-lang", l);
+        // inner pages render server-side in the cookie language: persist the
+        // choice and refresh the RSC tree so the whole page switches, not
+        // just the navbar; client views also get the instant event
+        document.cookie = `appseal-lang=${l}; path=/; max-age=31536000; samesite=lax`;
+        window.dispatchEvent(new CustomEvent("appseal-lang", { detail: l }));
+        router.refresh();
       } catch {
         /* private mode */
       }

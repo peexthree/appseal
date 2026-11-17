@@ -2,18 +2,94 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { ShieldCheck, Lock, Activity, KeyRound } from "@/components/icons/appseal-icons";
+import { pageLang } from "@/lib/lang-server";
+import type { Lang } from "@/lib/scanner/types";
 
-export const metadata: Metadata = {
-  title: "AppSeal Scanner Bot - Политика сканирования и Opt-out",
-  description:
-    "Информация о краулере AppSeal-Scanner: частота запросов, пассивный режим проверки безопасности и правила исключения через robots.txt.",
-  alternates: { canonical: "/bot" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const lang = await pageLang();
+  return lang === "en"
+    ? {
+        title: "AppSeal Scanner Bot - Scan Policy & Opt-out",
+        description:
+          "About the AppSeal-Scanner crawler: request rate, passive security-check mode and exclusion rules via robots.txt.",
+        alternates: { canonical: "/bot" },
+      }
+    : {
+        title: "AppSeal Scanner Bot - Политика сканирования и Opt-out",
+        description:
+          "Информация о краулере AppSeal-Scanner: частота запросов, пассивный режим проверки безопасности и правила исключения через robots.txt.",
+        alternates: { canonical: "/bot" },
+      };
+}
 
-export default function BotPage() {
+const D = {
+  whatTitle: { ru: "Что это за робот?", en: "What is this bot?" },
+  whatBody: {
+    ru: " - это автоматизированный сканер внешней гигиены веб-приложений. Он запускается разработчиками или владельцами ресурсов для аудита базовой конфигурации безопасности перед релизом (наличие HTTPS, заголовки защиты, отсутствие открытых служебных файлов, утечек ключей и битых страниц).",
+    en: " is an automated external web-app hygiene scanner. Developers and site owners run it to audit the basic security configuration before a release (HTTPS, protection headers, no exposed service files, leaked keys or broken pages).",
+  },
+  passiveTitle: { ru: "Принципы пассивного аудита", en: "Passive audit principles" },
+  p1Lead: { ru: "Исключительно пассивный black-box анализ:", en: "Strictly passive black-box analysis:" },
+  p1Body: {
+    ru: "сканер делает только стандартные HTTP ",
+    en: "the scanner only issues standard HTTP ",
+  },
+  p1Tail: { ru: " запросы.", en: " requests." },
+  p2Lead: { ru: "Никаких деструктивных действий:", en: "No destructive actions:" },
+  p2Body: {
+    ru: "сканер не производит попыток авторизации, брутфорса, SQL-инъекций, отправки форм или перегрузки каналов связи (DoS).",
+    en: "the scanner never attempts authentication, brute force, SQL injection, form submission or channel flooding (DoS).",
+  },
+  p3Lead: { ru: "Ограничение частоты (Rate Limiting):", en: "Rate limiting:" },
+  p3Body: {
+    ru: "краулер выполняет параллельно не более 4 лёгких потоков (GET/HEAD/OPTIONS). Полный цикл v0.6 состоит из ~140 точечных запросов и завершается за 20-45 секунд.",
+    en: "the crawler runs at most 4 lightweight parallel threads (GET/HEAD/OPTIONS). A full v0.6 cycle is ~140 targeted requests and completes in 20-45 seconds.",
+  },
+  p4Lead: { ru: "Маскирование секретов (Privacy):", en: "Secret masking (privacy):" },
+  p4Body: {
+    ru: "сканер никогда не сохраняет и не отображает содержимое обнаруженных файлов конфигурации или приватных ключей. Любые найденные токены принудительно маскируются звездочками.",
+    en: "the scanner never stores or displays the contents of discovered configuration files or private keys. Any found tokens are force-masked with asterisks.",
+  },
+  p5Lead: { ru: "Повторные сканы платных доменов:", en: "Paid-domain rescans:" },
+  p5Body: {
+    ru: "домены с активным Launch Pass проходят фоновую перепроверку не чаще одного раза в 6 часов (тот же пассивный цикл ~140 запросов). Владелец ресурса может исключить домен из перепроверки директивой AppSeal-Scanner в robots.txt - она действует и для фоновых сканов.",
+    en: "domains with an active Launch Pass get a background re-check at most once every 6 hours (the same passive ~140-request cycle). A site owner can exclude the domain from rescans with an AppSeal-Scanner directive in robots.txt - it applies to background scans too.",
+  },
+  optoutTitle: { ru: "Мгновенный запрет сканирования (Opt-out)", en: "Instant opt-out" },
+  optoutA: {
+    ru: "Сканер AppSeal строго следует правилам ",
+    en: "AppSeal strictly follows ",
+  },
+  optoutB: {
+    ru: ". Перед началом любой проверки робот запрашивает ",
+    en: ". Before any scan the bot fetches ",
+  },
+  optoutC: {
+    ru: ". Если вы хотите запретить сканирование вашего ресурса, добавьте директиву:",
+    en: ". To disallow scanning of your site, add the directive:",
+  },
+  optoutNote: {
+    ru: "При обнаружении этого правила в ",
+    en: "When this rule is found in ",
+  },
+  optoutNoteB: {
+    ru: " скан немедленно останавливается с уведомлением пользователю о запрете со стороны администратора.",
+    en: ", the scan stops immediately and the user is told the site administrator has disallowed it.",
+  },
+  fHome: { ru: "главная", en: "home" },
+  fRegistry: { ru: "реестр", en: "registry" },
+  fStats: { ru: "статистика", en: "stats" },
+  fFixes: { ru: "гайды", en: "guides" },
+  fLegal: { ru: "правила", en: "legal" },
+} as const;
+
+export default async function BotPage() {
+  const lang: Lang = await pageLang();
+  const t = (k: keyof typeof D) => D[k][lang];
+
   return (
     <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
-      <SiteHeader />
+      <SiteHeader lang={lang} />
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
         <div className="rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:p-10">
@@ -39,34 +115,39 @@ export default function BotPage() {
             <section>
               <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
                 <Activity className="h-4 w-4 text-sky-400" />
-                Что это за робот?
+                {t("whatTitle")}
               </h2>
               <p className="mt-2 text-slate-300">
-                <strong className="text-slate-100">AppSeal-Scanner</strong> - это автоматизированный сканер внешней гигиены веб-приложений.
-                Он запускается разработчиками или владельцами ресурсов для аудита базовой конфигурации безопасности перед релизом (наличие HTTPS, заголовки защиты, отсутствие открытых служебных файлов, утечек ключей и битых страниц).
+                <strong className="text-slate-100">AppSeal-Scanner</strong>{t("whatBody")}
               </p>
             </section>
 
             <section className="pt-2">
               <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
                 <Lock className="h-4 w-4 text-sky-400" />
-                Принципы пассивного аудита
+                {t("passiveTitle")}
               </h2>
               <ul className="mt-3 list-inside list-disc space-y-2 text-slate-300 pl-1">
                 <li>
-                  <strong className="text-slate-100">Исключительно пассивный black-box анализ:</strong> сканер делает только стандартные HTTP <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">GET</code>, <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">HEAD</code> и <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">OPTIONS</code> запросы.
+                  <strong className="text-slate-100">{t("p1Lead")}</strong>{" "}
+                  {t("p1Body")}
+                  <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">GET</code>,{" "}
+                  <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">HEAD</code>{" "}
+                  {lang === "en" ? "and" : "и"}{" "}
+                  <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">OPTIONS</code>
+                  {t("p1Tail")}
                 </li>
                 <li>
-                  <strong className="text-slate-100">Никаких деструктивных действий:</strong> сканер не производит попыток авторизации, брутфорса, SQL-инъекций, отправки форм или перегрузки каналов связи (DoS).
+                  <strong className="text-slate-100">{t("p2Lead")}</strong> {t("p2Body")}
                 </li>
                 <li>
-                  <strong className="text-slate-100">Ограничение частоты (Rate Limiting):</strong> краулер выполняет параллельно не более 4 лёгких потоков (GET/HEAD/OPTIONS). Полный цикл v0.6 состоит из ~140 точечных запросов и завершается за 20-45 секунд.
+                  <strong className="text-slate-100">{t("p3Lead")}</strong> {t("p3Body")}
                 </li>
                 <li>
-                  <strong className="text-slate-100">Маскирование секретов (Privacy & 152-ФЗ):</strong> сканер никогда не сохраняет и не отображает содержимое обнаруженных файлов конфигурации или приватных ключей. Любые найденные токены принудительно маскируются звездочками.
+                  <strong className="text-slate-100">{t("p4Lead")}</strong> {t("p4Body")}
                 </li>
                 <li>
-                  <strong className="text-slate-100">Повторные сканы платных доменов:</strong> домены с активным Launch Pass проходят фоновую перепроверку не чаще одного раза в 6 часов (тот же пассивный цикл ~140 запросов). Владелец ресурса может исключить домен из перепроверки директивой AppSeal-Scanner в robots.txt - она действует и для фоновых сканов.
+                  <strong className="text-slate-100">{t("p5Lead")}</strong> {t("p5Body")}
                 </li>
               </ul>
             </section>
@@ -74,19 +155,23 @@ export default function BotPage() {
             <section className="pt-4 border-t border-slate-800">
               <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
                 <KeyRound className="h-4 w-4 text-sky-400" />
-                Мгновенный запрет сканирования (Opt-out)
+                {t("optoutTitle")}
               </h2>
               <p className="mt-2 text-slate-300">
-                Сканер AppSeal строго следует правилам <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">robots.txt</code>. 
-                Перед началом любой проверки робот запрашивает <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">/robots.txt</code>. 
-                Если вы хотите запретить сканирование вашего ресурса, добавьте директиву:
+                {t("optoutA")}
+                <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">robots.txt</code>
+                {t("optoutB")}
+                <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-200">/robots.txt</code>
+                {t("optoutC")}
               </p>
               <div className="mt-3 rounded-lg border border-slate-800 bg-[#090d16] p-4 font-mono text-xs text-slate-200">
                 User-agent: AppSeal-Scanner<br />
                 Disallow: /
               </div>
               <p className="mt-2 text-xs text-slate-400">
-                При обнаружении этого правила в <code className="text-slate-300">robots.txt</code> скан немедленно останавливается с уведомлением пользователю о запрете со стороны администратора.
+                {t("optoutNote")}
+                <code className="text-slate-300">robots.txt</code>
+                {t("optoutNoteB")}
               </p>
             </section>
           </div>
@@ -100,7 +185,7 @@ export default function BotPage() {
               © {new Date().getFullYear()} AppSeal · Crawler & Scanner Documentation
             </p>
             <p className="font-mono text-[10px] text-slate-700">
-              <Link href="/" className="transition hover:text-slate-500">главная</Link> · <Link href="/registry" className="transition hover:text-slate-500">реестр</Link> · <Link href="/stats" className="transition hover:text-slate-500">статистика</Link> · <Link href="/fixes" className="transition hover:text-slate-500">гайды</Link> · <Link href="/legal" className="transition hover:text-slate-500">правила</Link>
+              <Link href="/" className="transition hover:text-slate-500">{t("fHome")}</Link> · <Link href="/registry" className="transition hover:text-slate-500">{t("fRegistry")}</Link> · <Link href="/stats" className="transition hover:text-slate-500">{t("fStats")}</Link> · <Link href="/fixes" className="transition hover:text-slate-500">{t("fFixes")}</Link> · <Link href="/legal" className="transition hover:text-slate-500">{t("fLegal")}</Link>
             </p>
           </div>
           <div className="shrink-0 transition-transform hover:scale-[1.02]">
