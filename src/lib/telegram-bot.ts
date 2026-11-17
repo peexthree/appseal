@@ -365,6 +365,23 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
             lang: deepLang,
           };
         }
+        const lpLink = param.match(/^(ru|en)-lp$/i);
+        if (lpLink) {
+          // Launch Pass deep link from the landing pricing card: same shape
+          // as -pro, the bot asks for the domain itself
+          const deepLang: BotLang = lpLink[1].toLowerCase() === "en" ? "en" : "ru";
+          return {
+            state: {
+              stage: "await_host",
+              provider: deepLang === "en" ? "lava" : "yk",
+              mode: "single",
+              plan: "launch",
+            },
+            intent: { action: "reply" },
+            reply: PACKS[deepLang].step1,
+            lang: deepLang,
+          };
+        }
         const m = param.match(/^(ru|en)-([a-z0-9_-]{3,60})$/i);
         if (m) {
           const deepLang: BotLang = m[1].toLowerCase() === "en" ? "en" : "ru";

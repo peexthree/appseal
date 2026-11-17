@@ -105,6 +105,19 @@ describe("telegram bot purchase flow", () => {
     assert.equal(step.state.stage, "await_email");
   });
 
+  it("deep link /start ru-lp opens the Launch Pass dialog with the plan preset", () => {
+    const step = handleBotInput({ stage: "idle" }, "/start ru-lp");
+    assert.equal(step.state.stage, "await_host");
+    assert.equal(step.state.provider, "yk");
+    assert.equal(step.state.mode, "single");
+    assert.equal(step.state.plan, "launch");
+    assert.match(step.reply, /Шаг 1\/2/);
+    const en = handleBotInput({ stage: "idle" }, "/start en-lp");
+    assert.equal(en.state.provider, "lava");
+    assert.equal(en.state.plan, "launch");
+    assert.equal(en.lang, "en");
+  });
+
   it("bad deep-link param falls back to the greeting", () => {
     const bad = handleBotInput({ stage: "idle" }, "/start ru-not!a!domain");
     assert.equal(bad.state.stage, "idle");
