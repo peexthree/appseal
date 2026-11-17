@@ -119,6 +119,24 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+    /* shared page backdrop: dark hex-grid photo, tinted so every text layer
+       keeps AA contrast; page roots stay transparent and let it through */
+    background-color: #090d16;
+    background-image:
+      linear-gradient(180deg, rgba(9, 13, 22, 0.45), rgba(9, 13, 22, 0.72)),
+      url("/img/bg.webp");
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+  /* iOS Safari ignores background-attachment: fixed and stretches scrolling -
+     let the backdrop scroll with the page there instead of glitching */
+  @supports (-webkit-touch-callout: none) {
+    body {
+      background-attachment: scroll;
+      background-size: auto 100vh;
+    }
   }
 }
 

@@ -22,6 +22,19 @@ export const DICT = {
     ru: "Быстрый демо-скан в 1 клик:",
     en: "One-click demo scan:",
   },
+  // smart suggestions inside the hero input
+  suggestTitle: {
+    ru: "Примеры - нажми, чтобы проверить",
+    en: "Examples - click to scan",
+  },
+  suggestDemoNote: {
+    ru: "безопасная демо-цель, ничего не ломает",
+    en: "safe demo target, breaks nothing",
+  },
+  urlHint: {
+    ru: "Пробуем:",
+    en: "Will scan:",
+  },
   showcaseHint: {
     ru: "Что означает каждый ранг",
     en: "What each rank means",
@@ -348,6 +361,14 @@ export const DICT = {
     en: "AppSeal Engine v1.0 · External Black-Box Security Scanner",
   },
   footerStatus: { ru: "All systems operational", en: "All systems operational" },
+  footerStatusCheck: {
+    ru: "Проверяем состояние систем...",
+    en: "Checking system status...",
+  },
+  footerStatusDeg: {
+    ru: "Сервис деградирован: база сканов отвечает с ошибками",
+    en: "Degraded: the scan store is responding with errors",
+  },
   // footer nav links, pipe-aligned with the hrefs in scanner-page footer
   footerNav: {
     ru: "реестр|versus|гайды|дайджест|ci|api|робот (bot)|правила",

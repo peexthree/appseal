@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function FixesHubPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
+    <div className="flex min-h-screen flex-col text-slate-100">
       <SiteHeader />
       <FixesView />
       <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">

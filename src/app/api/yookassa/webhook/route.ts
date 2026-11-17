@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPayment } from "@/lib/yookassa";
-import { activatePass, ensurePackGranted, setChatPack } from "@/lib/passes";
-import { getClientIp, ipAllowed } from "@/lib/sec";
+import { activatePass, daysForKind, ensurePackGranted, setChatPack } from "@/lib/passes";
+import { getConnIp, ipAllowed } from "@/lib/sec";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,7 +34,9 @@ export async function POST(req: NextRequest) {
     .map((s) => s.trim())
     .filter(Boolean);
   const list = allowlist.length ? allowlist : YOOKASSA_NOTIFICATION_IPS;
-  const ip = getClientIp(req.headers);
+  // getConnIp prefers x-real-ip / the last XFF hop: a client-supplied
+  // first-XFF entry can no longer spoof the YooKassa allowlist
+  const ip = getConnIp(req.headers);
   if (!ipAllowed(ip, list)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
@@ -55,11 +57,12 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({ ok: true });
     }
-    if (meta.kind !== "lpass") {
+    // "lpro" is the 30-day Pro Pass; the metadata contract is unchanged
+    if (meta.kind !== "lpass" && meta.kind !== "lpro") {
       return NextResponse.json({ ok: true });
     }
     // no personal data is stored: the payer email lives in YooKassa only
-    await activatePass(payment.id, meta.host ?? "");
+    await activatePass(payment.id, meta.host ?? "", daysForKind(meta.kind));
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: true });

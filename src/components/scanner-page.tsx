@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { CSSProperties } from "react";
 import { track } from "@vercel/analytics";
 import { ymGoal } from "@/components/yandex-metrika";
@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
-import { ScoreSimulator } from "@/components/score-simulator";
 import { Stat } from "@/components/stat";
 import { ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, ArrowUp, Globe, Check, CheckCircle2, Copy, Send, ChevronDown, Scale, CodeXml, GitBranch } from "@/components/icons/appseal-icons";
 import { SiteHeader } from "@/components/site-header";
@@ -218,7 +217,29 @@ export function ScannerPage({
    *  as /api/verify); null/empty falls back to the static DEMO_CHIPS */
   initialChips?: { target: string; grade: Grade; score: number }[] | null;
 }) {
-  const [lang, setLang] = useState<Lang>(initialLang ?? "ru");
+  // language: derived, not stored. useSyncExternalStore reads the same
+  // cookie/localStorage the switcher writes (server snapshot "" keeps the
+  // SSR seed authoritative through hydration, the client snapshot wins after
+  // a saved choice or an appseal-lang event)
+  const savedLang = useSyncExternalStore(
+    (cb) => {
+      window.addEventListener("appseal-lang", cb);
+      return () => window.removeEventListener("appseal-lang", cb);
+    },
+    () => {
+      const m = document.cookie.match(/(?:^|; )appseal-lang=(ru|en)/);
+      if (m) return m[1] as Lang;
+      try {
+        const saved = localStorage.getItem("appseal-lang");
+        if (saved === "ru" || saved === "en") return saved;
+      } catch {
+        /* private mode */
+      }
+      return "";
+    },
+    () => "",
+  );
+  const lang: Lang = savedLang === "ru" || savedLang === "en" ? savedLang : (initialLang ?? "ru");
   const [phase, setPhase] = useState<Phase>(initialScan ? "report" : "form");
   const [showGrade, setShowGrade] = useState<Grade>("A+");
   // auto-showcase: pointer or keyboard focus inside the card pauses the cycle,
@@ -241,6 +262,25 @@ export function ScannerPage({
   const [lpErr, setLpErr] = useState("");
   // one-click demo chips: server-resolved live grades when available
   const demoChips = initialChips && initialChips.length > 0 ? initialChips : DEMO_CHIPS;
+  // honest footer status: the "All systems operational" claim is backed by a
+  // real /api/healthz probe, not hardcoded - degrade visibly when it fails
+  const [sysOk, setSysOk] = useState<boolean | null>(null);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch("/api/healthz", { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((j: { ok?: boolean; redis?: string }) => setSysOk(j.ok === true && j.redis !== "down"))
+      .catch(() => setSysOk(false));
+    return () => ctrl.abort();
+  }, []);
+  // smart suggestions inside the hero input: empty query shows all examples,
+  // typing narrows them by substring ("akul" -> akulenok-tmz.ru)
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const suggestionMatches = useMemo(() => {
+    const q = url.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "");
+    if (!q) return demoChips;
+    return demoChips.filter((c) => c.target.toLowerCase().includes(q));
+  }, [url, demoChips]);
   // live terminal: engine stage strings timestamped as the scan advances
   const [termLines, setTermLines] = useState<string[]>([]);
   const scanStartedAt = useRef(0);
@@ -279,18 +319,12 @@ export function ScannerPage({
     }
   });
 
-  useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("appseal-lang") : null;
-    if (saved === "ru" || saved === "en") {
-      setLang(saved);
-    } else if (initialLang) {
-      // SSR already picked the language from headers; navigator check would
-      // only duplicate it and risk a flash of the other language
-      return;
-    } else if (typeof navigator !== "undefined" && !navigator.language.toLowerCase().startsWith("ru")) {
-      setLang("en");
-    }
-  }, [initialLang]);
+  // saved language wins over the server seed; without a saved choice the SSR
+  // header detection stays authoritative (no navigator re-check - it would
+  // only duplicate it and risk a flash of the other language)
+  // saved language wins over the server seed; without a saved choice the SSR
+  // header detection stays authoritative (no navigator re-check - it would
+  // only duplicate it and risk a flash of the other language)
 
   // keep <html lang> in sync with the active UI language (layout is static)
   useEffect(() => {
@@ -298,18 +332,23 @@ export function ScannerPage({
   }, [lang]);
 
   // deep link from the registry Fix CTA: /?domain=example.com prefills the
-  // scanner input so the owner is one click from the re-scan
+  // scanner input so the owner is one click from the re-scan (deferred to a
+  // macrotask: the sync setState in the effect body cascades a render)
   useEffect(() => {
-    const d = new URLSearchParams(window.location.search).get("domain");
-    if (d && /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d.trim())) {
-      setUrl(d.trim());
-    }
+    const id = window.setTimeout(() => {
+      const d = new URLSearchParams(window.location.search).get("domain");
+      if (d && /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(d.trim())) {
+        setUrl(d.trim());
+      }
+    }, 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   const switchLang = (l: Lang) => {
-    setLang(l);
     try {
       localStorage.setItem("appseal-lang", l);
+      document.cookie = `appseal-lang=${l}; path=/; max-age=31536000; samesite=lax`;
+      window.dispatchEvent(new CustomEvent("appseal-lang", { detail: l }));
     } catch {
       /* private mode */
     }
@@ -447,7 +486,7 @@ export function ScannerPage({
   };
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-clip bg-[#090d16] text-slate-100">
+    <div className="flex min-h-screen flex-col overflow-x-clip text-slate-100">
       {/* ambient layer: aurora + noise, purely decorative */}
       <div className="appseal-ambient" aria-hidden>
         <div className="appseal-aurora">
@@ -530,18 +569,68 @@ export function ScannerPage({
                       className="flex flex-col gap-3 sm:flex-row"
                       onSubmit={(e) => {
                         e.preventDefault();
+                        setSuggestOpen(false);
                         if (url.trim() && consent) void startScan(url.trim());
                       }}
                     >
-                      <Input
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        placeholder={t(lang, "inputPlaceholder")}
-                        className="h-12 flex-1 border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
-                        inputMode="url"
-                        aria-label="App URL"
-                        required
-                      />
+                      <div className="relative flex-1">
+                        <Input
+                          value={url}
+                          onChange={(e) => setUrl(e.target.value)}
+                          onFocus={() => setSuggestOpen(true)}
+                          onBlur={() => window.setTimeout(() => setSuggestOpen(false), 140)}
+                          placeholder={t(lang, "inputPlaceholder")}
+                          className="h-12 w-full border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
+                          inputMode="url"
+                          aria-label="App URL"
+                          autoComplete="off"
+                          required
+                        />
+                        {/* smart suggestions: live-grade examples, substring-filtered
+                            by what the user is typing; items fire on mousedown so the
+                            blur-delay never swallows the click */}
+                        {suggestOpen && suggestionMatches.length > 0 && (
+                          <div
+                            className="absolute inset-x-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-xl border border-slate-700 bg-[#0b101c] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)]"
+                            role="listbox"
+                            aria-label={t(lang, "suggestTitle")}
+                          >
+                            <p className="px-3.5 pb-1 pt-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                              {t(lang, "suggestTitle")}
+                            </p>
+                            {suggestionMatches.map((c) => (
+                              <button
+                                key={c.target}
+                                type="button"
+                                role="option"
+                                aria-selected={false}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setSuggestOpen(false);
+                                  track("chip_scan", { target: c.target });
+                                  ymGoal("chip_scan", { target: c.target });
+                                  void startScan(c.target);
+                                }}
+                                className="appseal-chip flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-semibold text-slate-300 hover:bg-slate-800/70"
+                                style={{ "--grade-color": GRADE_META[c.grade].color } as CSSProperties}
+                              >
+                                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: GRADE_META[c.grade].color }} />
+                                <span className="font-mono">{c.target}</span>
+                                <span className="ml-auto flex shrink-0 items-center gap-2 font-mono text-xs">
+                                  <span style={{ color: GRADE_META[c.grade].color }}>
+                                    {c.grade} · {c.score}
+                                  </span>
+                                  {c.target === "demo://app" && (
+                                    <span className="hidden text-[10px] font-medium text-slate-500 sm:inline">
+                                      {t(lang, "suggestDemoNote")}
+                                    </span>
+                                  )}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <Button
                         type="submit"
                         disabled={!consent}
@@ -554,6 +643,14 @@ export function ScannerPage({
                   </div>
                 </div>
               </Reveal>
+
+              {/* live hint: what the engine will actually scan */}
+              {url.trim().length > 0 && !/^https?:\/\//i.test(url.trim()) && (
+                <p className="mt-2 px-1 text-left text-[11px] text-slate-500">
+                  {t(lang, "urlHint")}{" "}
+                  <span className="font-mono text-slate-400">https://{url.trim().replace(/^https?:\/\//i, "").replace(/^www\./i, "")}</span>
+                </p>
+              )}
 
               {/* Consent & legal checkbox (152-FZ & passive scan notice) */}
               <label className="mt-3.5 flex items-start gap-2.5 text-left cursor-pointer select-none px-1">
@@ -570,29 +667,6 @@ export function ScannerPage({
                     : "By starting the scan, you confirm that you are the owner/developer of the resource or have authorization. The scan runs in passive mode reading public HTTP responses."}
                 </span>
               </label>
-
-              {/* one-click demo scans: real past results, no typing needed */}
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                <span className="text-[11px] font-semibold text-slate-500">{t(lang, "demoChipsTitle")}</span>
-                {demoChips.map((c) => (
-                  <button
-                    key={c.target}
-                    onClick={() => {
-                      track("chip_scan", { target: c.target });
-                      ymGoal("chip_scan", { target: c.target });
-                      void startScan(c.target);
-                    }}
-                    className="appseal-chip inline-flex items-center gap-2 rounded-full border border-slate-700 bg-[#111827] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-800"
-                    style={{ "--grade-color": GRADE_META[c.grade].color } as CSSProperties}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: GRADE_META[c.grade].color }} />
-                    <span className="font-mono">{c.target}</span>
-                    <span className="font-mono font-bold" style={{ color: GRADE_META[c.grade].color }}>
-                      {c.grade} · {c.score}
-                    </span>
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
@@ -1080,11 +1154,6 @@ export function ScannerPage({
               </Reveal>
             ))}
           </div>
-
-          {/* pre-scan engagement: honest checkbox estimate, links into the form */}
-          <Reveal className="mt-6">
-            <ScoreSimulator lang={lang} />
-          </Reveal>
         </section>
 
         {/* ecosystem: the tool belt that grew around the scanner - versus,
@@ -1344,9 +1413,21 @@ export function ScannerPage({
                 telegram
               </a>
               <span>·</span>
-              <span className="inline-flex items-center gap-1.5 text-emerald-500/90">
-                <span className="appseal-pulse h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                {t(lang, "footerStatus")}
+              <span
+                className={
+                  sysOk === false
+                    ? "inline-flex items-center gap-1.5 text-amber-500/90"
+                    : sysOk === true
+                      ? "inline-flex items-center gap-1.5 text-emerald-500/90"
+                      : "inline-flex items-center gap-1.5 text-slate-600"
+                }
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    sysOk === false ? "bg-amber-400" : sysOk === true ? "appseal-pulse bg-emerald-400" : "bg-slate-600"
+                  }`}
+                />
+                {t(lang, sysOk === false ? "footerStatusDeg" : sysOk === true ? "footerStatus" : "footerStatusCheck")}
               </span>
             </p>
           </div>

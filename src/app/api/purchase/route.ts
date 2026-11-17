@@ -3,6 +3,7 @@ import { createPayment, getPayment, ykConfig, type YkPayment } from "@/lib/yooka
 import { createLavaInvoice, getLavaInvoice, lavaConfig } from "@/lib/lava";
 import {
   activatePass,
+  daysForKind,
   ensurePackGranted,
   getLavaInvoiceHost,
   getNonceFinal,
@@ -10,6 +11,8 @@ import {
   getPassByPayment,
   getPaymentIdByNonce,
   hashIp,
+  proHostFromLavaMarker,
+  PRO_PASS_DAYS,
   redisCommand,
   setChatPack,
   setLavaInvoiceHost,
@@ -24,9 +27,13 @@ export const dynamic = "force-dynamic";
 
 const PASS_PRICE_RUB = "490.00";
 const PACK_PRICE_RUB = "1490.00";
+// Pro Pass: 30 days of unlimited scans on one domain, one-time purchase
+const PRO_PRICE_RUB = "1490.00";
 // the USD pack goes through a separate Lava offer (LAVA_PACK_OFFER_ID);
 // until it is configured the card path sells single passes only
 const PACK_PRICE_USD_OFFER = process.env.LAVA_PACK_OFFER_ID ?? "";
+// the $19 Pro offer is the same idea: a distinct Lava offer id per product
+const PRO_PRICE_USD_OFFER = process.env.LAVA_PRO_OFFER_ID ?? "";
 const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
 const CHAT_RE = /^[A-Za-z0-9_-]{3,64}$/;
 // return URL is pinned to our own origin - YooKassa sends the payer back here
@@ -63,10 +70,14 @@ export async function POST(req: NextRequest) {
       provider?: string;
       kind?: string;
       chatId?: string;
+      plan?: string;
     };
     const email = (body.email ?? "").trim();
     const nonce = (body.nonce ?? "").trim();
-    const kind = body.kind === "lpack" ? "lpack" : "lpass";
+    // the bot sends plan: "pro" for the 30-day pass; "lpro" in kind is the
+    // same variant spelled the way the payment payload carries it
+    const kind =
+      body.kind === "lpack" ? "lpack" : body.plan === "pro" || body.kind === "lpro" ? "lpro" : "lpass";
     const chatId = (body.chatId ?? "").trim();
     // ru buyers pay in RUB via YooKassa; the EN storefront pays $6 in USD via
     // Lava.top (foreign Visa/MC) - provider is chosen by the client locale
@@ -107,6 +118,17 @@ export async function POST(req: NextRequest) {
         await setLavaInvoiceHost(invoice.invoiceId, chatId ? `pack:${chatId}` : "pack");
         return NextResponse.json({ confirmationUrl: invoice.url });
       }
+      if (kind === "lpro") {
+        if (!PRO_PRICE_USD_OFFER) {
+          return NextResponse.json({ error: "pro unavailable via card" }, { status: 503 });
+        }
+        const invoice = await createLavaInvoice(lava, { email, nonce, offerId: PRO_PRICE_USD_OFFER });
+        await setNonceMapping(nonce, `lava:${invoice.invoiceId}`);
+        // the Pro marker rides in the invoice->host map like the pack one:
+        // both activation paths branch on it and add 30 days
+        await setLavaInvoiceHost(invoice.invoiceId, `pro:${host}`);
+        return NextResponse.json({ confirmationUrl: invoice.url });
+      }
       const invoice = await createLavaInvoice(lava, { email, nonce });
       // the nonce is the only browser-held reference; the invoice->host map
       // feeds both the webhook and the return-page activation
@@ -120,13 +142,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "payments unavailable" }, { status: 503 });
     }
     const payment = await createPayment({
-      amountRub: kind === "lpack" ? PACK_PRICE_RUB : PASS_PRICE_RUB,
+      amountRub: kind === "lpack" ? PACK_PRICE_RUB : kind === "lpro" ? PRO_PRICE_RUB : PASS_PRICE_RUB,
       description:
         kind === "lpack"
           ? "AppSeal Agency Pack - 5 пропусков по 7 дней"
-          : `AppSeal Launch Pass - неделя безлимитных проверок ${host}`,
+          : kind === "lpro"
+            ? `AppSeal Pro Pass - 30 дней безлимитных проверок ${host}`
+            : `AppSeal Launch Pass - неделя безлимитных проверок ${host}`,
       returnUrl: `${SITE_ORIGIN}/?paid=${encodeURIComponent(nonce)}`,
-      metadata: kind === "lpack" ? { kind: "lpack", nonce, chatId } : { kind: "lpass", host, nonce },
+      metadata: kind === "lpack" ? { kind: "lpack", nonce, chatId } : { kind, host, nonce },
       receiptEmail: email,
     });
     const url = payment.confirmation?.confirmation_url;
@@ -195,8 +219,11 @@ export async function GET(req: NextRequest) {
       await setNonceFinal(nonce, result);
       return NextResponse.json(result);
     }
+    // Pro Pass invoice: "pro:<host>" marker -> 30 days on the plain host
+    const proHost = proHostFromLavaMarker(host);
+    const passHost = proHost ?? host;
     const existing = await getPassByPayment(invoiceId);
-    const pass = existing ?? (await activatePass(invoiceId, host));
+    const pass = existing ?? (await activatePass(invoiceId, passHost, proHost ? PRO_PASS_DAYS : undefined));
     const result = pass.host
       ? { status: "succeeded" as const, host: pass.host, until: pass.until }
       : { status: "succeeded" as const, host: "", until: "" };
@@ -232,8 +259,9 @@ export async function GET(req: NextRequest) {
   }
   // idempotent: reuse the stored pass if the webhook already activated it.
   // The payer email stays with YooKassa (receipt); we store no personal data.
+  // kind "lpro" in the metadata extends the pass to the 30-day Pro term.
   const existing = await getPassByPayment(payment.id);
-  const pass = existing ?? (await activatePass(payment.id, meta.host ?? ""));
+  const pass = existing ?? (await activatePass(payment.id, meta.host ?? "", daysForKind(meta.kind)));
   const result = pass.host
     ? { status: "succeeded" as const, host: pass.host, until: pass.until }
     : { status: "succeeded" as const, host: "", until: "" };

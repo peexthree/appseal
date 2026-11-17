@@ -201,7 +201,7 @@ export default async function LegalPage() {
   const t = (k: keyof typeof D) => D[k][lang];
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-[#090d16] text-slate-100">
+    <div className="relative flex min-h-screen flex-col text-slate-100">
       <Ambient />
       <SiteHeader lang={lang} />
 

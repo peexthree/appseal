@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import {
+  addChatRedeemedHost,
   consumePackCredit,
   getChatPack,
+  getChatRedeemedHosts,
   getPackCredits,
   hasActivePass,
   redeemPackPass,
@@ -18,6 +20,7 @@ import {
   botPayText,
   botPackPayBtn,
   botPackPayText,
+  botPlanBtn,
   botRedeemNoPack,
   botRedeemResultText,
   botStatusText,
@@ -26,8 +29,12 @@ import {
   botWatchNone,
   botWatchRemoved,
   BotLang,
+  BotPlan,
+  BotProvider,
   BotState,
+  buildMyScansText,
   handleBotInput,
+  MyScanEntry,
 } from "@/lib/telegram-bot";
 
 export const runtime = "nodejs";
@@ -49,6 +56,20 @@ const STATE_TTL_SECONDS = 3600;
 // literal on purpose: the purchase route exists only on our production
 // origin, and a literal URL keeps the outbound fetch SSRF-scannable
 const HOSTED_ORIGIN = "https://appseal.online";
+// one /myscans grade lookup must not stall the whole reply on a dead store
+const MYSCANS_LOOKUP_TIMEOUT_MS = 5000;
+
+/** Resolve with null when the promise outlives the budget (unref'd timer - the
+ *  timeout never keeps the process alive on its own). */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    p,
+    new Promise<null>((resolve) => {
+      const t = setTimeout(() => resolve(null), ms);
+      if (typeof t === "object" && t !== null && "unref" in t) (t as { unref(): void }).unref();
+    }),
+  ]);
+}
 
 interface TgUser {
   language_code?: string;
@@ -99,6 +120,17 @@ function scannerKeyboard(): object {
   };
 }
 
+// tariff menu right after the domain step: Launch (7d) vs Pro (30d) -
+// both are one-time purchases, the currency wording follows the provider
+function planKeyboard(provider: BotProvider): object {
+  return {
+    inline_keyboard: [
+      [{ text: botPlanBtn(provider, "launch"), callback_data: "plan_launch" }],
+      [{ text: botPlanBtn(provider, "pro"), callback_data: "plan_pro" }],
+    ],
+  };
+}
+
 async function createPurchase(
   provider: string,
   host: string,
@@ -106,11 +138,12 @@ async function createPurchase(
   nonce: string,
   kind?: "lpack",
   chatId?: string,
+  plan?: BotPlan,
 ): Promise<string> {
   const res = await fetch(`${HOSTED_ORIGIN}/api/purchase`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ host, email, nonce, provider, kind, chatId }),
+    body: JSON.stringify({ host, email, nonce, provider, kind, chatId, plan }),
     cache: "no-store",
   });
   const data = (await res.json().catch(() => ({}))) as { confirmationUrl?: string; error?: string };
@@ -176,11 +209,12 @@ export async function POST(req: NextRequest) {
     if (step.intent.action === "create_purchase") {
       const nonce = `tg-${randomUUID()}`;
       const provider = step.intent.provider;
+      const plan: BotPlan = step.intent.plan === "pro" ? "pro" : "launch";
       try {
-        const url = await createPurchase(provider, step.intent.host, step.intent.email, nonce);
+        const url = await createPurchase(provider, step.intent.host, step.intent.email, nonce, undefined, undefined, plan);
         const paidState: BotState = { ...step.state, provider, host: step.intent.host, nonce };
         await saveState(chatId, paidState);
-        await sendTelegramMessage(chatId, botPayText(step.lang, step.intent.host), {
+        await sendTelegramMessage(chatId, botPayText(step.lang, step.intent.host, plan === "pro" ? 30 : 7), {
           inline_keyboard: [[{ text: botPayBtn(step.lang, provider), url }]],
         });
         return NextResponse.json({ ok: true });
@@ -242,6 +276,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
       const record = await redeemPackPass(packPaymentId, host);
+      // remember the host for /myscans (single purchases have no chat binding,
+      // but a pack redemption always happens inside this chat)
+      await addChatRedeemedHost(chatId, record.host);
       await sendTelegramMessage(
         chatId,
         botRedeemResultText(step.lang, "done", record.host, record.until),
@@ -298,8 +335,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    if (step.intent.action === "my_scans") {
+      // domains the chat owns: the free watch (one per chat) plus every host a
+      // pack credit was redeemed onto here. Lookups are best-effort - a slow
+      // or broken store lookup must not kill the whole answer.
+      const watchHost = await redisCommand<string>(["GET", FREE_WATCH_KEY_PREFIX + chatId]);
+      const redeemedHosts = await getChatRedeemedHosts(chatId);
+      const hosts = [...new Set([watchHost ?? "", ...redeemedHosts].filter((h) => h.length > 0))];
+      const entries: MyScanEntry[] = [];
+      for (const h of hosts) {
+        try {
+          const entry = await withTimeout(getLatestHostEntry(h), MYSCANS_LOOKUP_TIMEOUT_MS);
+          entries.push({ host: h, grade: entry?.grade, score: entry?.score, ts: entry?.ts });
+        } catch (e) {
+          console.warn("[appseal-bot] myscans lookup failed:", e instanceof Error ? e.message : String(e));
+          entries.push({ host: h });
+        }
+      }
+      await sendTelegramMessage(chatId, buildMyScansText(entries, step.lang), scannerKeyboard());
+      return NextResponse.json({ ok: true });
+    }
+
     await saveState(chatId, step.state);
-    await sendTelegramMessage(chatId, step.reply, step.state.stage === "idle" ? idleKeyboard() : undefined);
+    const keyboard =
+      step.state.stage === "idle"
+        ? idleKeyboard()
+        : step.state.stage === "await_plan"
+          ? planKeyboard(step.state.provider ?? "yk")
+          : undefined;
+    await sendTelegramMessage(chatId, step.reply, keyboard);
     return NextResponse.json({ ok: true });
   } catch {
     // Telegram retries non-2xx; swallow errors after best-effort replies

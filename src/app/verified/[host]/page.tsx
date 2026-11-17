@@ -84,7 +84,7 @@ export default async function VerifiedPage({
   const latest = history.length ? history[history.length - 1] : null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
+    <div className="flex min-h-screen flex-col text-slate-100">
       <SiteHeader />
       <HostView host={host} history={history} latest={latest} />
     </div>

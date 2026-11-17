@@ -1,5 +1,7 @@
 /**
- * Launch Pass store: one paid pass = one domain, unlimited scans for 7 days.
+ * Launch Pass store: one paid pass = one domain, unlimited scans for a fixed
+ * term - 7 days (Launch Pass) or 30 days (Pro Pass). The key layout is shared
+ * (lp-style lpass:{pay,host}:... keys); the record itself carries `days`.
  *
  * Redis-only (Upstash REST, same env vars as the scan store): passes are
  * payment-backed data, they must survive restarts and never fall back to a
@@ -10,7 +12,15 @@
 import { createHash, randomUUID } from "node:crypto";
 import { WATCH_KEY } from "./watch.ts";
 
-const PASS_TTL_SECONDS = 8 * 24 * 3600; // 7-day pass + 1 day of grace
+const DEFAULT_PASS_DAYS = 7;
+export const PRO_PASS_DAYS = 30;
+/** mapping TTLs keep the old 8-day window (7-day pass + 1 day of grace) */
+const PASS_TTL_SECONDS = 8 * 24 * 3600;
+
+/** Redis TTL for a pass record: the pass term + 1 day of grace */
+function passTtlSeconds(days: number): number {
+  return (days + 1) * 24 * 3600;
+}
 
 // 152-FZ data localization (part 5, art. 18): storing payer emails here would
 // require an RF-hosted database. The email goes to YooKassa for the receipt
@@ -20,6 +30,23 @@ export interface PassRecord {
   paymentId: string;
   host: string;
   until: string; // ISO timestamp
+  /** pass length in days (7 = Launch, 30 = Pro); legacy records may omit it */
+  days?: number;
+}
+
+/** Payment kind (YooKassa metadata) -> pass length: "lpro" is the 30-day
+ *  Pro Pass, anything else activates a 7-day Launch Pass. */
+export function daysForKind(kind?: string): number {
+  return kind === "lpro" ? PRO_PASS_DAYS : DEFAULT_PASS_DAYS;
+}
+
+/** Lava invoices carry no metadata, so the Pro marker rides in the
+ *  invoice->host map as "pro:<host>" (the pack uses "pack:<chatId>").
+ *  Returns the host for a well-formed Pro marker, null otherwise. */
+export function proHostFromLavaMarker(marker: string): string | null {
+  if (!marker.startsWith("pro:")) return null;
+  const host = marker.slice(4).trim().toLowerCase();
+  return /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(host) ? host : null;
 }
 
 interface RedisCfg {
@@ -68,14 +95,18 @@ function passHostKey(host: string): string {
   return `lpass:host:${createHash("sha256").update(clean).digest("hex")}`;
 }
 
-export async function activatePass(paymentId: string, host: string): Promise<PassRecord> {
+/** days defaults to the 7-day Launch Pass; the Pro Pass activates with 30 */
+export async function activatePass(paymentId: string, host: string, days: number = DEFAULT_PASS_DAYS): Promise<PassRecord> {
+  const d = Number.isFinite(days) && days >= 1 && days <= 365 ? Math.floor(days) : DEFAULT_PASS_DAYS;
   const record: PassRecord = {
     paymentId,
     host: host.replace(/^www\./i, "").toLowerCase(),
-    until: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
+    until: new Date(Date.now() + d * 24 * 3600 * 1000).toISOString(),
+    days: d,
   };
-  await redisCommand(["SET", `lpass:pay:${paymentId}`, JSON.stringify(record), "EX", String(PASS_TTL_SECONDS)]);
-  await redisCommand(["SET", passHostKey(record.host), JSON.stringify(record), "EX", String(PASS_TTL_SECONDS)]);
+  const ttl = passTtlSeconds(d);
+  await redisCommand(["SET", `lpass:pay:${paymentId}`, JSON.stringify(record), "EX", String(ttl)]);
+  await redisCommand(["SET", passHostKey(record.host), JSON.stringify(record), "EX", String(ttl)]);
   // paid hosts join the background watchlist; score 0 = rescan ASAP
   await redisCommand(["ZADD", WATCH_KEY, "0", record.host]);
   return record;
@@ -200,6 +231,25 @@ export async function getChatPack(chatId: string): Promise<string | null> {
   if (!/^[A-Za-z0-9_-]{3,64}$/.test(chatId)) return null;
   const raw = await redisCommand<string>(["GET", `tg:pack:${chatId}`]);
   return raw ?? null;
+}
+
+/** Redeemed hosts per chat (the /myscans data source): single purchases carry
+ *  no chat binding, but a pack redemption always happens inside a bot chat -
+ *  remember the hosts there so the chat can list its own domains. SADD + a
+ *  refreshed pack-TTL EXPIRE keeps the set alive while credits may still
+ *  be redeemed. */
+export async function addChatRedeemedHost(chatId: string, host: string): Promise<void> {
+  if (!/^[A-Za-z0-9_-]{3,64}$/.test(chatId)) return;
+  const clean = host.replace(/^www\./i, "").toLowerCase();
+  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(clean)) return;
+  await redisCommand(["SADD", `tg:redeem:${chatId}`, clean]);
+  await redisCommand(["EXPIRE", `tg:redeem:${chatId}`, String(PACK_TTL_SECONDS)]);
+}
+
+export async function getChatRedeemedHosts(chatId: string): Promise<string[]> {
+  if (!/^[A-Za-z0-9_-]{3,64}$/.test(chatId)) return [];
+  const raw = await redisCommand<string[]>(["SMEMBERS", `tg:redeem:${chatId}`]);
+  return Array.isArray(raw) ? raw.filter((h) => typeof h === "string" && h.length > 0) : [];
 }
 
 /** Redeem one pack credit onto a host: unique pass record per redemption. */

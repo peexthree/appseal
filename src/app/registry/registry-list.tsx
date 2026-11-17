@@ -199,12 +199,17 @@ export default function RegistryList({
   const mounted = useRef(false);
 
   // deep link from the /stats platform battle: /registry?platform=vercel
-  // preselects the matching chip (client-side, the page itself is static)
+  // preselects the matching chip (client-side, the page itself is static).
+  // Deferred to a macrotask: the sync setState in the effect body triggers
+  // a cascading render and would fight the hydration pass
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get("platform");
-    if (p === "custom" || p === "lovable" || p === "github" || p === "vercel" || p === "other") {
-      setChip(p);
-    }
+    const id = window.setTimeout(() => {
+      const p = new URLSearchParams(window.location.search).get("platform");
+      if (p === "custom" || p === "lovable" || p === "github" || p === "vercel" || p === "other") {
+        setChip(p);
+      }
+    }, 0);
+    return () => window.clearTimeout(id);
   }, []);
 
   // domain match ignores the www. prefix on both sides; the query also

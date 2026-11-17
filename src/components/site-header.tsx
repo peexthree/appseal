@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -51,6 +51,11 @@ const NAV_ROW_TOOLS = [
 const pillIdle = "text-slate-300 hover:bg-white/5 hover:text-white";
 const pillActive = "bg-sky-400/10 text-sky-400";
 
+/** module-level so the component body never writes to document globals */
+function persistLangCookie(l: Lang): void {
+  document.cookie = `appseal-lang=${l}; path=/; max-age=31536000; samesite=lax`;
+}
+
 export function SiteHeader({
   lang: langProp,
   onSwitchLang,
@@ -62,35 +67,43 @@ export function SiteHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [internalLang, setInternalLang] = useState<Lang>("ru");
+  // standalone pages seed the language from the same cookie/localStorage the
+  // switcher writes, via a store subscription instead of a sync setState in
+  // an effect (no cascading renders; SSR snapshot "" keeps server output)
+  const storedLang = useSyncExternalStore(
+    (cb) => {
+      window.addEventListener("appseal-lang", cb);
+      return () => window.removeEventListener("appseal-lang", cb);
+    },
+    () => {
+      const m = document.cookie.match(/(?:^|; )appseal-lang=(ru|en)/);
+      if (m) return m[1] as Lang;
+      try {
+        const saved = localStorage.getItem("appseal-lang");
+        if (saved === "ru" || saved === "en") return saved;
+      } catch {
+        /* private mode */
+      }
+      return "";
+    },
+    () => "",
+  );
   const reduceMotion = useReducedMotion();
   const headerRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
 
-  // standalone pages seed the language the same way the landing resumes it
-  useEffect(() => {
-    if (langProp !== undefined) return;
-    try {
-      const saved = localStorage.getItem("appseal-lang");
-      if (saved === "ru" || saved === "en") setInternalLang(saved);
-    } catch {
-      /* private mode */
-    }
-  }, [langProp]);
-
-  const lang = langProp ?? internalLang;
+  const lang = langProp ?? (storedLang === "ru" || storedLang === "en" ? storedLang : "ru");
   const router = useRouter();
   const switchLang = (l: Lang) => {
     if (onSwitchLang) {
       onSwitchLang(l);
     } else {
-      setInternalLang(l);
       try {
         localStorage.setItem("appseal-lang", l);
         // inner pages render server-side in the cookie language: persist the
         // choice and refresh the RSC tree so the whole page switches, not
         // just the navbar; client views also get the instant event
-        document.cookie = `appseal-lang=${l}; path=/; max-age=31536000; samesite=lax`;
+        persistLangCookie(l);
         window.dispatchEvent(new CustomEvent("appseal-lang", { detail: l }));
         router.refresh();
       } catch {

@@ -27,11 +27,8 @@ export function Stat({
   const [shown, setShown] = useState(value);
 
   useEffect(() => {
-    if (reduce) {
-      setShown(value);
-      return;
-    }
-    if (!inView) return;
+    // reduced-motion keeps the initial value (already `value` from useState)
+    if (reduce || !inView) return;
     const ctrl = animate(0, value, {
       duration: 1.2,
       ease: "easeOut",

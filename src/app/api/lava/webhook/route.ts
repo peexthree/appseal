@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { activatePass, ensurePackGranted, getLavaInvoiceHost, setChatPack } from "@/lib/passes";
+import {
+  activatePass,
+  ensurePackGranted,
+  getLavaInvoiceHost,
+  PRO_PASS_DAYS,
+  proHostFromLavaMarker,
+  setChatPack,
+} from "@/lib/passes";
 import { secretsMatch } from "@/lib/sec";
 
 export const runtime = "nodejs";
@@ -54,9 +61,15 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ ok: true });
   }
-  // idempotent by design: activatePass overwrites the pass record
+  // idempotent by design: activatePass overwrites the pass record;
+  // the "pro:<host>" marker marks the 30-day Pro Pass invoice
   if (host) {
-    await activatePass(invoiceId, host);
+    const proHost = proHostFromLavaMarker(host);
+    if (proHost) {
+      await activatePass(invoiceId, proHost, PRO_PASS_DAYS);
+    } else {
+      await activatePass(invoiceId, host);
+    }
   }
   return NextResponse.json({ ok: true });
 }

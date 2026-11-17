@@ -88,7 +88,7 @@ export default async function BotPage() {
   const t = (k: keyof typeof D) => D[k][lang];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
+    <div className="flex min-h-screen flex-col text-slate-100">
       <SiteHeader lang={lang} />
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 sm:py-16">

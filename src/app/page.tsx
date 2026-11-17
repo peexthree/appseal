@@ -13,6 +13,12 @@ import type { Grade, Lang } from "@/lib/scanner/types";
  * decide the seed: RU audience gets ru, everyone else gets en + USD.
  */
 function detectInitialLang(h: Headers): Lang {
+  // explicit choice wins: the appseal-lang cookie is set by the switcher and
+  // by the /en|/ru middleware rewrite - SSR must match what the client store
+  // resolves to, or hydration flips the language visibly
+  const cookie = h.get("cookie") ?? "";
+  const m = cookie.match(/(?:^|;\s*)appseal-lang=(ru|en)/);
+  if (m) return m[1] as Lang;
   const country = (h.get("x-vercel-ip-country") ?? h.get("cf-ipcountry") ?? "").toUpperCase();
   if (country === "RU") return "ru";
   const al = (h.get("accept-language") ?? "").toLowerCase();
@@ -59,7 +65,14 @@ export async function generateMetadata(): Promise<Metadata> {
       description: META[lang].description,
       images: ["/OG.png"],
     },
-    alternates: { canonical: "/" },
+    alternates: {
+      canonical: "/",
+      languages: {
+        ru: "/",
+        en: "/en",
+        "x-default": "/",
+      },
+    },
   };
 }
 

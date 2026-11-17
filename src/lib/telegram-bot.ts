@@ -1,13 +1,20 @@
 /**
- * Telegram bot purchase flow for Launch Pass and the Agency Pack - a pure
- * state machine, so the transitions are unit-testable without Telegram or
- * Redis. The webhook route feeds each update through handleBotInput and
+ * Telegram bot purchase flow for Launch Pass, Pro Pass and the Agency Pack -
+ * a pure state machine, so the transitions are unit-testable without Telegram
+ * or Redis. The webhook route feeds each update through handleBotInput and
  * executes the returned intent.
  *
  * Language: the route resolves the buyer's language from the Telegram
  * language_code (site deep links carry an explicit ru-/en- prefix that wins).
  * Provider and language are independent - a Russian speaker buying via
- * /buy_en gets RU texts with the USD invoice.
+ * /buy_en gets RU texts with the USD invoice; the tariff prices follow the
+ * provider (yk = RUB, lava = USD) the same way the payment button does.
+ *
+ * Single purchases ask the domain, then a tariff menu: Launch Pass (7 days)
+ * or Pro Pass (30 days) - both one-time payments, no auto-renewals. The plan
+ * step applies only to dialogs opened via /buy_ru|/buy_en (mode "single"):
+ * landing deep links sell Launch directly, and /plan_pro|/plan_launch typed
+ * cold preset the plan so the menu is skipped.
  *
  * Agency Pack (5 pass-credits bought at once): /buy5 collects the email and
  * creates the pack payment; after the webhook grants the credits, /redeem
@@ -15,9 +22,13 @@
  * The chat->pack binding lives in Redis (tg:pack:{chatId}), not in the
  * dialog state, so /redeem works days later with no live dialog.
  *
+ * /myscans lists the chat's own domains: the free watch host plus every host
+ * a pack credit was redeemed onto (tg:redeem:{chatId}), each with its live
+ * grade from the scan store. Single pass purchases carry no chat binding.
+ *
  * 152-FZ note: the per-chat state stored in Redis holds stage/provider/mode/
- * nonce only - the buyer email never lands there, it transits to the payment
- * provider inside the invoice call and is forgotten.
+ * plan/nonce only - the buyer email never lands there, it transits to the
+ * payment provider inside the invoice call and is forgotten.
  */
 
 const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
@@ -25,24 +36,29 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export type BotProvider = "yk" | "lava";
 export type BotLang = "ru" | "en";
+/** single-purchase tariff: Launch = 7 days, Pro = 30 days (one-time, no renewals) */
+export type BotPlan = "launch" | "pro";
 
 export interface BotState {
-  stage: "idle" | "await_host" | "await_email" | "paid_pending" | "await_redeem_host" | "await_watch_host";
+  stage: "idle" | "await_host" | "await_email" | "await_plan" | "paid_pending" | "await_redeem_host" | "await_watch_host";
   provider?: BotProvider;
   host?: string;
   nonce?: string;
   /** "pack" - the email step belongs to the Agency Pack (no host involved) */
   mode?: "single" | "pack";
+  /** chosen tariff for single purchases; dialogs without it sell Launch */
+  plan?: BotPlan;
 }
 
 export type BotIntent =
   | { action: "reply" }
-  | { action: "create_purchase"; provider: BotProvider; host: string; email: string }
+  | { action: "create_purchase"; provider: BotProvider; host: string; email: string; plan: BotPlan }
   | { action: "create_pack_purchase"; provider: BotProvider; email: string }
   | { action: "redeem"; host: string }
   | { action: "watch"; host: string }
   | { action: "unwatch" }
-  | { action: "check_status" };
+  | { action: "check_status" }
+  | { action: "my_scans" };
 
 export interface BotStep {
   state: BotState;
@@ -50,6 +66,23 @@ export interface BotStep {
   reply: string;
   lang: BotLang; // effective language - the route needs it for status/purchase texts
 }
+
+/** per-domain line source for /myscans - a scan-registry entry in its
+ *  smallest form (all fields optional: an unscanned domain still lists) */
+export interface MyScanEntry {
+  host: string;
+  grade?: string;
+  score?: number;
+  ts?: number; // ms epoch of the newest scan
+}
+
+interface PlanPrices {
+  launch: string;
+  pro: string;
+}
+
+const RU_PRICES: PlanPrices = { launch: "490 ₽", pro: "1 490 ₽" };
+const EN_PRICES: PlanPrices = { launch: "$6", pro: "$19" };
 
 interface LangPack {
   greeting: string;
@@ -69,20 +102,27 @@ interface LangPack {
   watchPrompt: string;
   watchRemoved: string;
   watchNone: string;
-  payText: (host: string) => string;
+  myscansEmpty: string;
+  myscansHeader: string;
+  myscansNoData: string;
+  planPrompt: (host: string, prices: PlanPrices) => string;
+  payText: (host: string, days: number) => string;
   payFail: (msg: string, retryCmd: string) => string;
   btnPay: string;
   btnPackPay: string;
+  btnPlanLaunch: string;
+  btnPlanPro: string;
 }
 
 const RU: LangPack = {
   greeting:
     "AppSeal - печать доверия для ИИ-приложений (appseal.online).\n\n" +
-    "/buy_ru - Launch Pass за 490 ₽ (ЮKassa, РФ)\n" +
-    "/buy_en - Launch Pass за $6 (любая зарубежная карта)\n" +
+    "/buy_ru - купить пропуск (ЮKassa, РФ): Launch 7 дней за 490 ₽ или Pro 30 дней за 1 490 ₽\n" +
+    "/buy_en - купить пропуск картой ($6 / $19, зарубежные карты)\n" +
     "/buy5 - Agency Pack: 5 пропусков за 1 490 ₽ (выгоднее на 39%)\n" +
     "/redeem - активировать пропуск из купленного пакета\n" +
     "/watch - следить за одним доменом бесплатно (алерт при изменении)\n" +
+    "/myscans - твои домены и их свежие классы\n" +
     "/unwatch - перестать следить\n" +
     "/status - статус последней покупки\n" +
     "/cancel - сброс диалога",
@@ -104,21 +144,35 @@ const RU: LangPack = {
   watchPrompt: "Пришли домен для бесплатного наблюдения (например myapp.vercel.app). Один домен на чат: напишу, когда класс изменится после проверки. Перепроверка - раз в сутки.",
   watchRemoved: "Наблюдение снято. Вернуть: /watch myapp.com",
   watchNone: "Я и так ничего не наблюдаю в этом чате. Добавить: /watch myapp.com",
-  payText: (host) =>
-    `Пропуск для домена: ${host}. После оплаты активируется автоматически (до пары минут) - проверяй /status.`,
+  myscansEmpty:
+    "Пока нет доменов. Пришли /watch myapp.com - следить бесплатно, или запусти скан на appseal.online.",
+  myscansHeader: "Твои домены (свежие классы):",
+  myscansNoData: "нет данных",
+  planPrompt: (host, prices) =>
+    `Домен принят: ${host}. Выбери тариф - разовая покупка, без автосписаний:\n` +
+    `Launch Pass - 7 дней безлимита - ${prices.launch}\n` +
+    `Pro Pass - 30 дней безлимита одного домена, приоритетная очередь сканов - ${prices.pro}\n\n` +
+    `Нажми кнопку или пришли /plan_launch (или /plan_pro).`,
+  payText: (host, days) =>
+    days > 7
+      ? `Pro-пропуск (30 дней) для домена: ${host}. После оплаты активируется автоматически (до пары минут) - проверяй /status.`
+      : `Пропуск для домена: ${host}. После оплаты активируется автоматически (до пары минут) - проверяй /status.`,
   payFail: (msg, retryCmd) => `Не удалось создать платёж: ${msg}. Попробуй /${retryCmd} ещё раз.`,
   btnPay: "Оплатить 490 ₽ (ЮKassa)",
   btnPackPay: "Оплатить пакет 1 490 ₽ (ЮKassa)",
+  btnPlanLaunch: "Launch Pass - 7 дней - 490 ₽",
+  btnPlanPro: "Pro Pass - 30 дней - 1 490 ₽",
 };
 
 const EN: LangPack = {
   greeting:
     "AppSeal - the trust seal for AI-built apps (appseal.online).\n\n" +
-    "/buy_ru - Launch Pass for 490 RUB (YooKassa, RF cards)\n" +
-    "/buy_en - Launch Pass for $6 (any international card)\n" +
+    "/buy_ru - buy a pass (YooKassa, RF cards): Launch 7 days for 490 RUB or Pro 30 days for 1 490 RUB\n" +
+    "/buy_en - buy a pass with a card ($6 / $19, international cards)\n" +
     "/buy5 - Agency Pack: 5 passes for $19 (39% cheaper)\n" +
     "/redeem - activate a pass from a purchased pack\n" +
     "/watch - follow one domain for free (alert on any change)\n" +
+    "/myscans - your domains and their live grades\n" +
     "/unwatch - stop following\n" +
     "/status - status of your last purchase\n" +
     "/cancel - reset the dialog",
@@ -140,11 +194,24 @@ const EN: LangPack = {
   watchPrompt: "Send the domain to follow for free (e.g. myapp.vercel.app). One domain per chat: I will message you whenever its grade changes after a check. Free re-scan cadence - once a day.",
   watchRemoved: "Unfollowed. Follow again with /watch myapp.com",
   watchNone: "Nothing is followed in this chat yet. Add one: /watch myapp.com",
-  payText: (host) =>
-    `Pass for ${host}. It activates automatically right after payment (up to a couple of minutes) - check /status.`,
+  myscansEmpty:
+    "No domains yet. Send /watch myapp.com to follow one for free - or run a scan at appseal.online.",
+  myscansHeader: "Your domains (live grades):",
+  myscansNoData: "no data yet",
+  planPrompt: (host, prices) =>
+    `Domain accepted: ${host}. Pick a plan - one-time purchase, no auto-renewals:\n` +
+    `Launch Pass - 7 days of unlimited scans - ${prices.launch}\n` +
+    `Pro Pass - 30 days of unlimited scans on one domain, priority scan queue - ${prices.pro}\n\n` +
+    `Tap a button or send /plan_launch (or /plan_pro).`,
+  payText: (host, days) =>
+    days > 7
+      ? `Pro Pass (30 days) for ${host}. It activates automatically right after payment (up to a couple of minutes) - check /status.`
+      : `Pass for ${host}. It activates automatically right after payment (up to a couple of minutes) - check /status.`,
   payFail: (msg, retryCmd) => `Could not create the payment: ${msg}. Try /${retryCmd} again.`,
   btnPay: "Pay $6 with card",
   btnPackPay: "Pay pack $19 with card",
+  btnPlanLaunch: "Launch Pass - 7 days - $6",
+  btnPlanPro: "Pro Pass - 30 days - $19",
 };
 
 const PACKS: Record<BotLang, LangPack> = { ru: RU, en: EN };
@@ -205,6 +272,30 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
           reply: EN.step1,
           lang: "en",
         };
+      case "/plan_launch":
+      case "/plan_pro": {
+        // plan choice from the inline buttons (callback data arrives here as a
+        // command). Inside an open plan-choice dialog it keeps the collected
+        // host+provider; typed on its own it starts the dialog with the plan
+        // preset so the domain step goes straight to the email afterwards.
+        const plan: BotPlan = cmd === "/plan_pro" ? "pro" : "launch";
+        if (state.stage === "await_plan" && state.host) {
+          return {
+            state: { ...state, stage: "await_email", plan },
+            intent: { action: "reply" },
+            reply: pack.step2,
+            lang,
+          };
+        }
+        return {
+          state: { stage: "await_host", provider: lang === "en" ? "lava" : "yk", mode: "single", plan },
+          intent: { action: "reply" },
+          reply: pack.step1,
+          lang,
+        };
+      }
+      case "/myscans":
+        return { state, intent: { action: "my_scans" }, reply: "", lang };
       case "/buy5":
         // pack provider follows the language: RU -> YooKassa, EN -> Lava offer
         return {
@@ -273,10 +364,30 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
     if (!HOST_RE.test(host)) {
       return { state, intent: { action: "reply" }, reply: pack.hostBad, lang };
     }
+    if (state.mode === "single" && !state.plan) {
+      // bot purchase dialog: after the domain comes the tariff menu -
+      // Launch (7 days) vs Pro (30 days); prices follow the provider
+      return {
+        state: { ...state, stage: "await_plan", host },
+        intent: { action: "reply" },
+        reply: pack.planPrompt(host, state.provider === "lava" ? EN_PRICES : RU_PRICES),
+        lang,
+      };
+    }
     return {
       state: { ...state, stage: "await_email", host },
       intent: { action: "reply" },
       reply: pack.step2,
+      lang,
+    };
+  }
+
+  if (state.stage === "await_plan") {
+    // anything but a plan button/command re-shows the tariff menu
+    return {
+      state,
+      intent: { action: "reply" },
+      reply: pack.planPrompt(state.host ?? "", state.provider === "lava" ? EN_PRICES : RU_PRICES),
       lang,
     };
   }
@@ -326,6 +437,7 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
         provider: state.provider ?? "yk",
         host: state.host ?? "",
         email: text,
+        plan: state.plan === "pro" ? "pro" : "launch",
       },
       reply: "",
       lang,
@@ -338,12 +450,54 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
 /* texts the webhook route needs after the state machine (payment attempt,
  * status poll) - kept next to the machine so copy edits land in one file */
 
-export function botPayText(lang: BotLang, host: string): string {
-  return PACKS[lang].payText(host);
+export function botPayText(lang: BotLang, host: string, days = 7): string {
+  return PACKS[lang].payText(host, days);
 }
 
 export function botPayBtn(lang: BotLang, provider: BotProvider): string {
   return provider === "lava" ? EN.btnPay : RU.btnPay;
+}
+
+/** Tariff-menu text after the domain is accepted; prices follow the provider
+ *  (yk = RUB, lava = USD), phrasing follows the language - same rule as the
+ *  payment button. */
+export function botPlanPrompt(lang: BotLang, host: string, provider: BotProvider): string {
+  return PACKS[lang].planPrompt(host, provider === "lava" ? EN_PRICES : RU_PRICES);
+}
+
+/** Inline-button label for one of the two tariff buttons (Launch/Pro). */
+export function botPlanBtn(provider: BotProvider, plan: BotPlan): string {
+  const pack = provider === "lava" ? EN : RU;
+  return plan === "pro" ? pack.btnPlanPro : pack.btnPlanLaunch;
+}
+
+/* ------------------------- /myscans text builder ------------------------ */
+
+const MONTHS_SHORT_RU = ["янв.", "февр.", "мар.", "апр.", "мая", "июн.", "июл.", "авг.", "сен.", "окт.", "нояб.", "дек."];
+const MONTHS_SHORT_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function shortDate(d: Date, lang: BotLang): string {
+  return lang === "en"
+    ? `${MONTHS_SHORT_EN[d.getUTCMonth()]} ${d.getUTCDate()}`
+    : `${d.getUTCDate()} ${MONTHS_SHORT_RU[d.getUTCMonth()]}`;
+}
+
+/** Compact /myscans answer: one line per domain with its live grade, e.g.
+ *  "akulenok-tmz.ru - A 91 (17 нояб.)". Pure - the route feeds it with the
+ *  store lookups (or empty entries on failures), so tests need no Redis. */
+export function buildMyScansText(entries: MyScanEntry[], lang: BotLang): string {
+  const pack = PACKS[lang];
+  if (entries.length === 0) return pack.myscansEmpty;
+  const lines = entries.map((e) => {
+    const grade = e.grade
+      ? [e.grade, typeof e.score === "number" ? String(e.score) : ""].filter(Boolean).join(" ")
+      : "";
+    const date = typeof e.ts === "number" && Number.isFinite(e.ts) ? new Date(e.ts) : null;
+    const when = date && !Number.isNaN(date.getTime()) ? shortDate(date, lang) : "";
+    if (!grade && !when) return `${e.host} - ${pack.myscansNoData}`;
+    return `${e.host} - ${[grade, when ? `(${when})` : ""].filter(Boolean).join(" ")}`;
+  });
+  return `${pack.myscansHeader}\n${lines.join("\n")}`;
 }
 
 export function botPackPayText(lang: BotLang): string {

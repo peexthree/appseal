@@ -174,10 +174,8 @@ export function ReportView({
   const [passActive, setPassActive] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!reportKey) {
-      setPassActive(null);
-      return;
-    }
+    // reportKey is constant per mount; when absent the optimistic null stays
+    if (!reportKey) return;
     let alive = true;
     fetch(`/api/pass-status?id=${encodeURIComponent(scan.id)}&key=${encodeURIComponent(reportKey)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
@@ -197,18 +195,24 @@ export function ReportView({
   const passes = scan.results.filter((r) => r.status === "pass").length;
   const gm = GRADE_META[scan.grade] ?? GRADE_META["E"];
 
+  // localStorage access must stay out of the hydration pass: deferred to a
+  // macrotask so the sync setState lands outside the effect body (no
+  // cascading renders, no SSR/CSR mismatch)
   useEffect(() => {
-    try {
-      const key = `appseal_hist_${scan.host}`;
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.id && parsed.id !== scan.id) {
-          setPrevScan(parsed);
+    const id = window.setTimeout(() => {
+      try {
+        const key = `appseal_hist_${scan.host}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.id && parsed.id !== scan.id) {
+            setPrevScan(parsed);
+          }
         }
-      }
-      localStorage.setItem(key, JSON.stringify({ score: scan.score, grade: scan.grade, id: scan.id }));
-    } catch {}
+        localStorage.setItem(key, JSON.stringify({ score: scan.score, grade: scan.grade, id: scan.id }));
+      } catch {}
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [scan.host, scan.id, scan.score, scan.grade]);
 
   const byCategory = useMemo(() => {

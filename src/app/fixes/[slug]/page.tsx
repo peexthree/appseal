@@ -36,7 +36,7 @@ export default async function FixGuidePage({
   if (!guide) notFound();
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#090d16] text-slate-100">
+    <div className="flex min-h-screen flex-col text-slate-100">
       <SiteHeader />
       <FixGuideView guide={guide} />
       <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">
