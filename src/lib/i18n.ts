@@ -146,8 +146,12 @@ export const DICT = {
   },
   how2Title: { ru: "Движок гоняет 125 проверок", en: "The engine runs 125 checks" },
   how2Text: {
-    ru: "Секреты и ключи в клиентском коде, открытые .env/.git, дырявые правила Firebase и Supabase, CORS, админки четырёх CMS, бэкапы и дампы, отладочные эндпоинты, source maps, заголовки, TLS, куки, ошибки СУБД в разметке, битые ссылки, заглушки - плюс ИИ-доверие: llms.txt, SPF/DMARC, трекеры без политики приватности.",
-    en: "Secrets and keys in client code, open .env/.git, misconfigured Firebase and Supabase rules, CORS, admin panels of four CMSes, backups and dumps, debug endpoints, source maps, headers, TLS, cookies, DB errors in markup, broken links, placeholders - plus AI trust: llms.txt, SPF/DMARC, trackers without a privacy policy.",
+    ru: "Один внешний прогон закрывает всё, что болит у вайб-кодеров: от утечки ключей до незаявленных трекеров. Каждая находка - с доказательством.",
+    en: "One external run covers everything that hurts in vibe-coded apps: from leaked keys to undisclosed trackers. Every finding ships with evidence.",
+  },
+  how2Chips: {
+    ru: ".env / .git|Firebase|Supabase|CORS|TLS|llms.txt|SPF / DMARC",
+    en: ".env / .git|Firebase|Supabase|CORS|TLS|llms.txt|SPF / DMARC",
   },
   how3Title: { ru: "Получаете оценку и план", en: "Get a grade and a plan" },
   how3Text: {

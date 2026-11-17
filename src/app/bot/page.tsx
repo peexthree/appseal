@@ -92,7 +92,7 @@ export default async function BotPage() {
       <SiteHeader lang={lang} />
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
-        <div className="rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:p-10">
+        <div className="rounded-2xl appseal-glass-card p-6 sm:p-10">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/15 text-sky-400 border border-sky-500/30">
               <ShieldCheck className="h-5 w-5" />

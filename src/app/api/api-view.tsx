@@ -106,14 +106,14 @@ export function ApiView() {
 
       <section className="mt-10">
         <h2 className="font-display text-xl font-extrabold">{t("verifyTitle")}</h2>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+        <div className="mt-3 overflow-hidden rounded-2xl appseal-glass-card">
           <div className="flex items-center gap-4 border-b border-slate-800/60 px-5 py-3 text-sm">
             <span className="w-40 shrink-0 font-mono text-xs font-bold text-sky-400">host</span>
             <span className="flex-1 text-xs text-slate-400">{t("hostParam")}</span>
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+        <div className="mt-4 rounded-2xl appseal-glass-card p-5">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-xs font-bold text-slate-400">{t("request")}</span>
             <CopyCode code={CURL} label={t("copyCurl")} />
@@ -123,7 +123,7 @@ export function ApiView() {
           </pre>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+        <div className="mt-4 rounded-2xl appseal-glass-card p-5">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-xs font-bold text-slate-400">{t("response")}</span>
             <CopyCode code={RESPONSE} label={t("copyResponse")} />
@@ -134,14 +134,14 @@ export function ApiView() {
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
+          <div className="rounded-2xl appseal-glass-card p-5">
             <p className="font-mono text-xs font-bold text-amber-400">400 invalid_host</p>
             <p className="mt-2 text-xs leading-relaxed text-slate-400">
               {t("err400")}
               <span className="font-mono text-slate-300">{`{"error":"invalid_host"}`}</span>
             </p>
           </div>
-          <div className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
+          <div className="rounded-2xl appseal-glass-card p-5">
             <p className="font-mono text-xs font-bold text-red-400">404 not_scanned</p>
             <p className="mt-2 text-xs leading-relaxed text-slate-400">
               {t("err404")}
@@ -155,7 +155,7 @@ export function ApiView() {
 
       <section className="mt-10">
         <h2 className="font-display text-xl font-extrabold">{t("jsTitle")}</h2>
-        <div className="mt-3 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+        <div className="mt-3 rounded-2xl appseal-glass-card p-5">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-xs font-bold text-slate-400">fetch</span>
             <CopyCode code={FETCH_JS} label={t("copyCode")} />
@@ -171,7 +171,7 @@ export function ApiView() {
         <p className="mt-2 text-sm text-slate-400">
           {t("badgeIntro")}
         </p>
-        <div className="mt-3 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+        <div className="mt-3 rounded-2xl appseal-glass-card p-5">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-xs font-bold text-slate-400">HTML</span>
             <CopyCode code={BADGE_IMG} label={t("copyHtml")} />
@@ -190,7 +190,7 @@ export function ApiView() {
             {t("badgeVariantsCta")}
           </Link>
         </p>
-        <div className="mt-3 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+        <div className="mt-3 rounded-2xl appseal-glass-card p-5">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-xs font-bold text-slate-400">{t("badgeVariantsB")}</span>
             <CopyCode code={BADGE_TROPHY} label={t("copyPlain")} />
@@ -201,7 +201,7 @@ export function ApiView() {
         </div>
       </section>
 
-      <div className="mt-10 rounded-2xl border border-sky-500/30 bg-[#0d1220] p-6">
+      <div className="appseal-glass-card mt-10 rounded-2xl border-sky-500/30 p-6">
         <p className="text-sm text-slate-300">
           {t("ctaA")}
           <Link href="/" className="font-bold text-sky-400 hover:underline">

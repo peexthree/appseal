@@ -53,7 +53,7 @@ export function FixesView() {
           <Link
             key={g.slug}
             href={`/fixes/${g.slug}`}
-            className="appseal-card group rounded-2xl border border-slate-800 bg-[#111827] p-5 transition hover:border-sky-400/40"
+            className="appseal-card group rounded-2xl p-5"
           >
             <div className="font-display text-lg font-extrabold text-slate-100 group-hover:text-sky-400">
               {lang === "en" ? g.labelEn : g.label}
@@ -69,7 +69,7 @@ export function FixesView() {
 
       <section className="mt-12">
         <h2 className="font-display text-xl font-extrabold">{t("whyTitle")}</h2>
-        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+        <div className="appseal-glass-card mt-4 overflow-hidden rounded-2xl">
           {HEADER_WHY.map((h, i) => (
             <div
               key={h.name}
@@ -85,7 +85,7 @@ export function FixesView() {
         </div>
       </section>
 
-      <div className="mt-10 rounded-2xl border border-sky-500/30 bg-[#0d1220] p-6">
+      <div className="appseal-glass-card mt-10 rounded-2xl border-sky-500/30 p-6">
         <p className="text-sm text-slate-300">
           {t("cta")}
         </p>

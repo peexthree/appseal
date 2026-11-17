@@ -61,7 +61,7 @@ export function DigestView({ d }: { d: DigestData }) {
         {t("intro")}
       </p>
 
-      <div className="mt-6 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+      <div className="mt-6 rounded-2xl appseal-glass-card p-5">
         <div className="font-display text-3xl font-extrabold text-sky-400">{d.weekScans}</div>
         <div className="mt-1 text-xs text-slate-500">{t("weekScans")}</div>
       </div>
@@ -79,7 +79,7 @@ export function DigestView({ d }: { d: DigestData }) {
             {d.namedImprovers.map((i) => {
               const em = GRADE_META[i.to as keyof typeof GRADE_META];
               return (
-                <li key={i.host} className="flex items-center gap-4 rounded-xl border border-slate-800 bg-[#111827] px-4 py-3">
+                <li key={i.host} className="flex items-center gap-4 rounded-xl appseal-glass-card px-4 py-3">
                   <img src={getTrophyPath(i.to)} alt={`AppSeal ${i.to}`} width={36} height={36} className="h-9 w-9 object-contain" />
                   <div className="min-w-0 flex-1">
                     <Link
@@ -98,7 +98,7 @@ export function DigestView({ d }: { d: DigestData }) {
               );
             })}
             {d.anonymousImproved > 0 ? (
-              <li className="rounded-xl border border-slate-800 bg-[#111827] px-4 py-3 text-sm text-slate-400">
+              <li className="rounded-xl appseal-glass-card px-4 py-3 text-sm text-slate-400">
                 {t("moreImprovedA")}{d.anonymousImproved}{t("moreImprovedB")}
                 <Link href="/registry" className="text-sky-400 hover:underline">{t("moreImprovedC")}</Link>
               </li>
@@ -116,7 +116,7 @@ export function DigestView({ d }: { d: DigestData }) {
             {d.newA.map((n) => {
               const em = GRADE_META[n.grade as keyof typeof GRADE_META];
               return (
-                <li key={n.host} className="flex items-center gap-4 rounded-xl border border-slate-800 bg-[#111827] px-4 py-3">
+                <li key={n.host} className="flex items-center gap-4 rounded-xl appseal-glass-card px-4 py-3">
                   <img src={getTrophyPath(n.grade)} alt={`AppSeal ${n.grade}`} width={36} height={36} className="h-9 w-9 object-contain" />
                   <div className="min-w-0 flex-1">
                     <Link
@@ -136,7 +136,7 @@ export function DigestView({ d }: { d: DigestData }) {
         )}
       </section>
 
-      <div className="mt-10 rounded-2xl border border-sky-500/30 bg-[#0d1220] p-6">
+      <div className="appseal-glass-card mt-10 rounded-2xl border-sky-500/30 p-6">
         <p className="text-sm text-slate-300">
           {t("telegram")}
         </p>

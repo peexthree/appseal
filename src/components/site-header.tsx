@@ -244,7 +244,7 @@ export function SiteHeader({
                   exit={{ opacity: 0, y: -8, scale: 0.97 }}
                   transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
                   style={{ transformOrigin: "top left" }}
-                  className="absolute left-0 top-[calc(100%+8px)] z-50 w-64 rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-2xl"
+                  className="appseal-dropdown absolute left-0 top-[calc(100%+8px)] z-50 w-64 rounded-2xl p-2"
                   aria-label={t(lang, "navTools")}
                 >
                   {NAV_ROW_TOOLS.map((item) => (
@@ -318,7 +318,7 @@ export function SiteHeader({
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
             transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
             style={{ transformOrigin: "top left" }}
-            className={`absolute left-4 z-50 w-64 rounded-2xl border border-white/10 bg-black/85 p-2 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-2xl md:left-6 ${
+            className={`appseal-dropdown absolute left-4 z-50 w-64 rounded-2xl p-2 md:left-6 ${
               scrolled ? "top-[64px]" : "top-[86px]"
             }`}
             aria-label="Menu"

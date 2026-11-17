@@ -72,7 +72,7 @@ export function CookieConsent() {
       <div
         role="dialog"
         aria-label="Согласие на cookie-файлы и аналитику"
-        className="w-full max-w-3xl rounded-2xl border border-slate-800 bg-[#111827]/95 p-4 shadow-[0_8px_40px_rgba(0,0,0,0.45)] backdrop-blur sm:p-5"
+        className="appseal-dropdown w-full max-w-3xl rounded-2xl p-4 sm:p-5"
       >
         <div className="flex gap-3">
           <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-sky-500/30 bg-sky-500/15 text-sky-400 sm:flex">

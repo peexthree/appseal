@@ -451,7 +451,7 @@ export default async function StatsPage() {
         ) : null}
 
         {!hasStatic && !v.isLive ? (
-          <div className="mt-10 rounded-2xl border border-slate-800 bg-[#111827] p-8 text-center text-sm text-slate-400">
+          <div className="mt-10 rounded-2xl appseal-glass-card p-8 text-center text-sm text-slate-400">
             {t("pending")}
           </div>
         ) : (
@@ -469,7 +469,7 @@ export default async function StatsPage() {
                 { v: `${v.median}`, l: t("stat3") },
                 { v: `${v.gradeACount}`, l: t("stat4") },
               ].map((c) => (
-                <div key={c.l} className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
+                <div key={c.l} className="rounded-2xl appseal-glass-card p-5">
                   <div className="font-display text-3xl font-extrabold text-slate-100">{c.v}</div>
                   <div className="mt-1 text-xs leading-snug text-slate-500">{c.l}</div>
                 </div>
@@ -479,7 +479,7 @@ export default async function StatsPage() {
             {facts.length > 0 ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {facts.map((f) => (
-                  <div key={f.text} className="rounded-2xl border border-slate-800 bg-[#0d1220] p-4">
+                  <div key={f.text} className="appseal-glass-card rounded-2xl p-4">
                     <div className="font-display text-2xl font-extrabold text-sky-400">{f.big}</div>
                     <div className="mt-1 text-xs leading-snug text-slate-500">{f.text}</div>
                   </div>
@@ -493,7 +493,7 @@ export default async function StatsPage() {
                 {v.gradeRows.map((r) => (
                   <div key={r.grade} className="flex items-center gap-3">
                     <span className="w-8 font-display text-sm font-extrabold text-slate-300">{r.grade}</span>
-                    <div className="h-6 flex-1 overflow-hidden rounded-md bg-[#111827]">
+                    <div className="appseal-track h-6 flex-1 overflow-hidden rounded-md">
                       <div
                         className={`h-full rounded-md ${GRADE_STYLES[r.grade] ?? "bg-slate-600"}`}
                         style={{ width: `${Math.max(r.pct, r.count ? 2 : 0)}%` }}
@@ -615,7 +615,7 @@ export default async function StatsPage() {
                 <Link href="/registry" className="text-sky-400 hover:underline">{t("regWord")}</Link>
                 {t("battleNoteB")}
               </p>
-              <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+              <div className="mt-4 overflow-hidden rounded-2xl appseal-glass-card">
                 <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   <span className="flex-1">{t("thPlatform")}</span>
                   <span className="w-20 text-right">{t("thDomains")}</span>
@@ -666,7 +666,7 @@ export default async function StatsPage() {
                     { v: dynamics.stable, l: t("dynSame"), c: "text-slate-300", s: "→" },
                     { v: dynamics.dropped, l: t("dynDown"), c: "text-amber-400", s: "↓" },
                   ].map((d) => (
-                    <div key={d.l} className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
+                    <div key={d.l} className="rounded-2xl appseal-glass-card p-5">
                       <div className={`font-display text-3xl font-extrabold ${d.c}`}>
                         {d.s} {d.v}
                       </div>
@@ -689,7 +689,7 @@ export default async function StatsPage() {
                 </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-4">
                   {tlds.map((tl) => (
-                    <div key={tl.tld} className="rounded-2xl border border-slate-800 bg-[#111827] p-4">
+                    <div key={tl.tld} className="rounded-2xl appseal-glass-card p-4">
                       <div className="font-mono text-sm font-bold text-sky-400">.{tl.tld}</div>
                       <div className="mt-1.5 font-display text-xl font-extrabold text-slate-100">{tl.count}</div>
                       <div className="text-xs text-slate-500">{t("tldAvg")}{tl.avg}</div>
@@ -706,7 +706,7 @@ export default async function StatsPage() {
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {sources.map((src) => (
-                  <div key={src.key} className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
+                  <div key={src.key} className="rounded-2xl appseal-glass-card p-5">
                     <div className="text-sm font-bold text-slate-200">{src.label}</div>
                     <div className="mt-2 font-display text-2xl font-extrabold text-slate-100">
                       {numFmt.format(src.count)}

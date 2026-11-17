@@ -73,7 +73,7 @@ export function HostView({ host, history, latest }: { host: string; history: Reg
               </span>
             )}
           </div>
-          <div className="mt-4 flex flex-col items-start gap-6 rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:flex-row sm:items-center sm:p-8">
+          <div className="mt-4 flex flex-col items-start gap-6 rounded-2xl appseal-glass-card p-6 sm:flex-row sm:items-center sm:p-8">
             <img
               src={getTrophyPath(latest.grade)}
               alt={`AppSeal ${latest.grade}`}
@@ -102,7 +102,7 @@ export function HostView({ host, history, latest }: { host: string; history: Reg
           </div>
 
           {history.length >= 2 ? (
-            <div className="mt-8 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+            <div className="mt-8 rounded-2xl appseal-glass-card p-5">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{t("dynTitle")}</p>
               <div className="mt-3 flex h-24 items-end gap-1.5">
                 {history.map((e) => {
@@ -128,7 +128,7 @@ export function HostView({ host, history, latest }: { host: string; history: Reg
             </div>
           ) : null}
 
-          <div className="mt-6 rounded-2xl border border-sky-500/30 bg-[#0d1220] p-5">
+          <div className="appseal-glass-card mt-6 rounded-2xl border-sky-500/30 p-5">
             <p className="text-sm text-slate-300">
               {t("liftTitle")}
               <Link href="/fixes" className="font-bold text-sky-400 hover:underline">
@@ -142,7 +142,7 @@ export function HostView({ host, history, latest }: { host: string; history: Reg
           </div>
 
           <h2 className="font-display mt-10 text-xl font-extrabold">{t("histTitle")}</h2>
-          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+          <div className="mt-4 overflow-hidden rounded-2xl appseal-glass-card">
             <p className="px-5 pt-4 text-xs font-bold uppercase tracking-wider text-slate-500">{t("dynLabel")}</p>
             <ul className="mt-2 divide-y divide-slate-800/70">
               {shownGroups.map((g) => {
@@ -188,7 +188,7 @@ export function HostView({ host, history, latest }: { host: string; history: Reg
           </p>
         </>
       ) : (
-        <div className="mt-6 rounded-2xl border border-slate-800 bg-[#111827] p-10 text-center">
+        <div className="mt-6 rounded-2xl appseal-glass-card p-10 text-center">
           <h1 className="font-display text-2xl font-extrabold text-slate-50">{host}</h1>
           <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-400">
             {t("notScanned")}

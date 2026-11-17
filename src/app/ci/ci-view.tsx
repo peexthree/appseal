@@ -60,7 +60,7 @@ export function CiView() {
 
       <section className="mt-8">
         <h2 className="font-display text-xl font-extrabold">{t("step1")}</h2>
-        <div className="mt-3 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+        <div className="mt-3 overflow-hidden rounded-2xl appseal-glass-card">
           <div className="flex items-center gap-4 border-b border-slate-800/60 px-5 py-3 text-sm">
             <span className="w-56 shrink-0 font-mono text-xs font-bold text-sky-400">APPSEAL_TARGET_URL</span>
             <span className="flex-1 text-xs text-slate-400">{t("s1a")}</span>
@@ -79,7 +79,7 @@ export function CiView() {
           <span className="font-mono text-xs text-slate-300">.github/workflows/appseal.yml</span>
           {t("s2b")}
         </p>
-        <div className="mt-3 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+        <div className="mt-3 rounded-2xl appseal-glass-card p-5">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-xs font-bold text-slate-400">appseal.yml</span>
             <CopyCode code={CI_YAML} label={t("copyWorkflow")} />
@@ -95,7 +95,7 @@ export function CiView() {
         <p className="mt-2 text-sm text-slate-400">
           {t("s3")}
         </p>
-        <div className="mt-3 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+        <div className="mt-3 rounded-2xl appseal-glass-card p-5">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-xs font-bold text-slate-400">README.md</span>
             <CopyCode code={badgeMd} label={t("copyBadge")} />
@@ -106,7 +106,7 @@ export function CiView() {
         </div>
       </section>
 
-      <div className="mt-10 rounded-2xl border border-sky-500/30 bg-[#0d1220] p-6">
+      <div className="appseal-glass-card mt-10 rounded-2xl border-sky-500/30 p-6">
         <p className="text-sm text-slate-300">
           {t("cta")}
           <Link href="/fixes" className="font-bold text-sky-400 hover:underline">

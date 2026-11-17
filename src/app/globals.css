@@ -243,15 +243,23 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* glass card: replaces flat border-slate-800 bg-[#111827] cards */
+/* obsidian glass card: translucent dark pane over the hex-grid backdrop -
+   darker and clearer than the old flat #111827 slab, with a 1px crystal
+   edge, a top-light bevel and a deep drop shadow (Linear/Raycast style) */
 .appseal-card {
   position: relative;
-  border: 1px solid rgba(30, 41, 59, 0.8);
-  background-image: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(13, 19, 32, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background-image: linear-gradient(180deg, rgba(12, 16, 24, 0.55), rgba(5, 7, 11, 0.78));
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 24px rgba(56, 189, 248, 0.02),
+    0 20px 40px -15px rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
   transition:
-    transform 0.3s cubic-bezier(0.21, 0.6, 0.35, 1),
-    border-color 0.3s,
-    box-shadow 0.3s;
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .appseal-card::before {
   content: "";
@@ -265,9 +273,12 @@
   pointer-events: none;
 }
 .appseal-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(56, 189, 248, 0.3);
-  box-shadow: 0 18px 44px -22px rgba(56, 189, 248, 0.25);
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.28);
+  box-shadow:
+    inset 0 1px 0 0 rgba(56, 189, 248, 0.3),
+    inset 0 0 30px rgba(56, 189, 248, 0.05),
+    0 24px 48px -12px rgba(0, 0, 0, 0.85);
 }
 .appseal-card:hover::before {
   opacity: 1;
@@ -306,6 +317,62 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   -webkit-backdrop-filter: blur(5px);
   backdrop-filter: blur(5px);
+}
+
+/* outer ring pane (case study, registry banner): very light smoked glass so
+   the hex-grid reads through while inner tiles keep their contrast */
+.appseal-glass-outer {
+  background-color: rgba(8, 11, 16, 0.45);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  backdrop-filter: blur(12px) saturate(130%);
+}
+
+/* big ghost step numbers (01/02/03): gradient fading into the glass */
+.appseal-step-num {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* uniform icon tile for the ecosystem grid: neutral glass square, the icon
+   itself glows cold sky - the six cards read as one instrument panel */
+.appseal-glass-tile {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.appseal-glass-tile svg {
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4));
+}
+
+/* the won case tile: delicate emerald glow rising from the top edge */
+.appseal-case-win {
+  background: radial-gradient(circle at top, rgba(16, 185, 129, 0.15), transparent 70%);
+}
+
+/* navbar dropdowns (tools menu, quick-links panel): obsidian glass floating
+   over content - slightly denser than cards so menu text stays crisp */
+.appseal-dropdown {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-image: linear-gradient(180deg, rgba(12, 16, 24, 0.72), rgba(5, 7, 11, 0.85));
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+    0 18px 50px -12px rgba(0, 0, 0, 0.75);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* static glass pane for inner-page panels: same obsidian surface as
+   .appseal-card but without the hover lift (tables, accordions, summaries) */
+.appseal-glass-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background-image: linear-gradient(180deg, rgba(12, 16, 24, 0.55), rgba(5, 7, 11, 0.78));
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+    0 12px 32px -18px rgba(0, 0, 0, 0.65);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
 }
 
 /* gradient text with a slow sheen (hero accent, stat numbers) */

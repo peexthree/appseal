@@ -273,7 +273,7 @@ export default function RegistryList({
         </p>
 
         {entries.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-slate-800 bg-[#111827] p-10 text-center">
+          <div className="mt-10 rounded-2xl appseal-glass-card p-10 text-center">
             <p className="text-slate-400">{D.emptyTitle[lang]}</p>
             <Link
               href="/"
@@ -374,13 +374,13 @@ export default function RegistryList({
             </div>
 
             {items.length === 0 ? (
-              <div className="mt-4 rounded-2xl border border-slate-800 bg-[#111827] p-10 text-center">
+              <div className="mt-4 rounded-2xl appseal-glass-card p-10 text-center">
                 <p className="text-slate-400">
                   {D.noResults[lang]}{query.trim() || (chip !== "all" && chip !== "top" ? PLATFORM_LABELS[chip as PlatformKey]?.[lang] : "")}{D.noResultsEnd[lang]}
                 </p>
               </div>
             ) : (
-              <ul className="mt-4 divide-y divide-slate-800/70 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+              <ul className="mt-4 divide-y divide-slate-800/70 overflow-hidden rounded-2xl appseal-glass-card">
                 {items.map((e) => (
                   <RegistryRow key={e.id} entry={e} lang={lang} />
                 ))}

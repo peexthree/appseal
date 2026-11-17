@@ -41,7 +41,7 @@ export function VersusForm({ a = "", b = "", lang }: { a?: string; b?: string; l
         setBusy(true);
         router.push(`/versus?a=${encodeURIComponent(x)}&b=${encodeURIComponent(y)}`);
       }}
-      className="mt-8 rounded-2xl border border-slate-800 bg-[#111827] p-5 sm:p-6"
+      className="appseal-glass-card mt-8 rounded-2xl p-5 sm:p-6"
     >
       <div className="grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr]">
         <input

@@ -83,7 +83,7 @@ function CheckRow({ r, lang }: { r: CheckResult; lang: Lang }) {
   const showFinding = r.finding && (r.status === "fail" || r.status === "warn" || r.status === "info");
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="rounded-lg border border-slate-800 bg-[#111827]">
+      <div className="rounded-lg appseal-glass-card">
         <CollapsibleTrigger
           className="flex w-full items-center gap-3 px-4 py-3 text-left"
           aria-expanded={open}
@@ -323,7 +323,7 @@ export function ReportView({
     );
     return (
       <div className="w-full">
-        <div className="flex flex-col items-start gap-6 rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:flex-row sm:items-center sm:p-8">
+        <div className="flex flex-col items-start gap-6 rounded-2xl appseal-glass-card p-6 sm:flex-row sm:items-center sm:p-8">
           <TrophyHero grade={scan.grade} score={scan.score} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -368,7 +368,7 @@ export function ReportView({
   return (
     <div className="w-full">
       {/* header card with 3D trophy */}
-      <div className="flex flex-col items-start gap-6 rounded-2xl border border-slate-800 bg-[#111827] p-6 sm:flex-row sm:items-center sm:p-8">
+      <div className="flex flex-col items-start gap-6 rounded-2xl appseal-glass-card p-6 sm:flex-row sm:items-center sm:p-8">
         <TrophyHero grade={scan.grade} score={scan.score} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -639,7 +639,7 @@ export function ReportView({
 
       {/* CI/CD grade gate: turns every report owner into a pipeline user */}
       {reportKey && (
-        <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
+        <div className="mt-6 rounded-xl appseal-glass-card p-5">
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-sky-300">{t(lang, "ciTitle")}</p>
@@ -662,7 +662,7 @@ export function ReportView({
       )}
 
       {/* trust-file generators: llms.txt / security.txt from parsed site data */}
-      <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
+      <div className="mt-6 rounded-xl appseal-glass-card p-5">
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-sky-300">
@@ -745,7 +745,7 @@ export function ReportView({
 
       {/* hosting-specific header config: copy-paste fix for the detected platform */}
       <Collapsible open={patchOpen} onOpenChange={setPatchOpen}>
-        <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
+        <div className="mt-6 rounded-xl appseal-glass-card p-5">
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-sky-300">
@@ -802,7 +802,7 @@ export function ReportView({
 
       {/* badge embed (Launch Pass gated) */}
       {passActive === false ? (
-        <div className="mt-6 rounded-xl border border-sky-900/60 bg-[#111827] p-5">
+        <div className="appseal-glass-card mt-6 rounded-xl border-sky-900/60 p-5">
           <p className="text-sm font-semibold text-slate-200">{t(lang, "passGateTitle")}</p>
           <p className="mt-1 text-xs leading-relaxed text-slate-500">
             {t(lang, "passGateText").replace("{host}", scan.host)}
@@ -832,7 +832,7 @@ export function ReportView({
           </Button>
         </div>
       ) : (
-      <div className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-5">
+      <div className="mt-6 rounded-xl appseal-glass-card p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-200">{t(lang, "badgeTitle")}</p>

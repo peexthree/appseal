@@ -192,13 +192,6 @@ const STATS: { value: number; suffix: string; decimals: number; label: "stat1" |
   { value: HARVEST_CSP_MISS, suffix: "%", decimals: 0, label: "stat3" },
 ];
 
-/** decorative registry rows for the CTA banner (static, no API calls) */
-const REGISTRY_DECOR: { host: string; color: string }[] = [
-  { host: "akulenok-tmz.ru", color: "#34D399" },
-  { host: "appseal.online", color: "#C084FC" },
-  { host: "demo://app", color: "#F87171" },
-];
-
 export function ScannerPage({
   initialScan,
   initialReportKey,
@@ -580,7 +573,7 @@ export function ScannerPage({
               <div className="relative">
                 <Reveal>
                   <div className="appseal-ring">
-                    <div className="rounded-[15px] bg-[#0b101c] p-3">
+                    <div className="appseal-glass-outer rounded-[15px] p-3">
                       <form
                         className="flex flex-col gap-3 sm:flex-row"
                         onSubmit={(e) => {
@@ -618,7 +611,7 @@ export function ScannerPage({
                     blur-delay never swallows the click */}
                 {suggestOpen && suggestionMatches.length > 0 && (
                   <div
-                    className="absolute inset-x-0 top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-slate-700 bg-[#0b101c] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)]"
+                    className="appseal-dropdown absolute inset-x-0 top-full z-30 mt-1.5 overflow-hidden rounded-xl"
                     role="listbox"
                     aria-label={t(lang, "suggestTitle")}
                   >
@@ -859,9 +852,9 @@ export function ScannerPage({
           <SectionHead eyebrow={EYEBROWS.how[lang]} title={t(lang, "howTitle")} />
           <div className="mt-8 grid gap-4 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:gap-3">
             {[
-              { icon: <Globe className="h-5 w-5" />, n: "01", ti: t(lang, "how1Title"), tx: t(lang, "how1Text") },
-              { icon: <Zap className="h-5 w-5" />, n: "02", ti: t(lang, "how2Title"), tx: t(lang, "how2Text") },
-              { icon: <FileCheck2 className="h-5 w-5" />, n: "03", ti: t(lang, "how3Title"), tx: t(lang, "how3Text") },
+              { icon: <Globe className="h-5 w-5" />, n: "01", ti: t(lang, "how1Title"), tx: t(lang, "how1Text"), chips: [] as string[] },
+              { icon: <Zap className="h-5 w-5" />, n: "02", ti: t(lang, "how2Title"), tx: t(lang, "how2Text"), chips: list(lang, "how2Chips") },
+              { icon: <FileCheck2 className="h-5 w-5" />, n: "03", ti: t(lang, "how3Title"), tx: t(lang, "how3Text"), chips: [] as string[] },
             ].map((x, i) => (
               <div key={x.n} className="contents">
                 {i > 0 && (
@@ -872,10 +865,10 @@ export function ScannerPage({
                   </Reveal>
                 )}
                 <Reveal delay={i * 0.08} className="h-full">
-                  <div className="appseal-card relative h-full overflow-hidden rounded-2xl p-6">
+                  <div className="appseal-card relative flex h-full flex-col overflow-hidden rounded-2xl p-6">
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute right-5 top-2 select-none font-mono text-5xl font-extrabold text-slate-800"
+                      className="appseal-step-num pointer-events-none absolute right-5 top-2 select-none font-mono text-5xl font-extrabold"
                     >
                       {x.n}
                     </span>
@@ -884,6 +877,20 @@ export function ScannerPage({
                     </span>
                     <h3 className="font-display mt-4 text-base font-bold text-slate-100">{x.ti}</h3>
                     <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{x.tx}</p>
+                    {/* compact translucent tags keep card 02 the same visual
+                        weight as its shorter neighbours */}
+                    {x.chips.length > 0 && (
+                      <div className="mt-auto flex flex-wrap gap-1.5 pt-4">
+                        {x.chips.map((chip) => (
+                          <span
+                            key={chip}
+                            className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-mono text-[10px] text-slate-400"
+                          >
+                            {chip}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </Reveal>
               </div>
@@ -982,13 +989,13 @@ export function ScannerPage({
           <SectionHead eyebrow={EYEBROWS.case[lang]} title={t(lang, "caseTitle")} sub={t(lang, "caseSub")} />
           <Reveal className="mt-8">
             <div className="appseal-ring mx-auto max-w-3xl">
-              <div className="rounded-[15px] bg-[#0b101c] p-6 sm:p-8">
+              <div className="appseal-glass-outer rounded-[15px] p-6 sm:p-8">
                 {/* timeline: lime 86 -> emerald 91, revealed step by step */}
                 <div className="grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
                   {[
                     {
                       d: 0,
-                      cls: "rounded-xl border border-slate-800 bg-[#111827] p-5 text-center",
+                      cls: "rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center",
                       t: "caseStep1t" as const,
                       n: "caseStep1n" as const,
                       nc: "text-lime-400",
@@ -996,7 +1003,7 @@ export function ScannerPage({
                     },
                     {
                       d: 0.06,
-                      cls: "rounded-xl border border-slate-800 bg-[#111827] p-5 text-center",
+                      cls: "rounded-xl border border-white/[0.06] bg-white/[0.02] p-5 text-center",
                       t: "caseStep2t" as const,
                       n: "caseStep2n" as const,
                       nc: "text-slate-300",
@@ -1004,7 +1011,7 @@ export function ScannerPage({
                     },
                     {
                       d: 0.12,
-                      cls: "relative rounded-xl border border-emerald-900/50 bg-emerald-500/[0.05] p-5 text-center",
+                      cls: "appseal-case-win relative rounded-xl border border-white/[0.06] p-5 text-center",
                       t: "caseStep3t" as const,
                       n: "caseStep3n" as const,
                       nc: "text-emerald-400",
@@ -1029,9 +1036,11 @@ export function ScannerPage({
                   ])}
                 </div>
 
-            {/* mini-terminal with the real fix-prompt fragment */}
-            <div className="appseal-scanlines relative mt-6 overflow-hidden rounded-xl border border-slate-800 bg-[#070b13]">
-              <div className="flex items-center gap-1.5 border-b border-slate-800 px-4 py-2.5">
+            {/* mini-terminal with the real fix-prompt fragment: deep charcoal
+                pane reads as a recessed screen inside the glass panel, the
+                striped scanline raster is dropped - it shimmered over text */}
+            <div className="relative mt-6 overflow-hidden rounded-xl border border-white/[0.06] bg-[#020408]/85">
+              <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-2.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
@@ -1072,7 +1081,7 @@ export function ScannerPage({
         <section className="appseal-sect relative py-14" aria-label={t(lang, "issue2Title")}>
           <Reveal>
             <div className="appseal-ring mx-auto max-w-3xl">
-              <div className="rounded-[15px] bg-[#0b101c] p-6 sm:p-10">
+              <div className="appseal-glass-outer rounded-[15px] p-6 sm:p-10">
                 <div className="flex flex-col items-center gap-7 sm:flex-row sm:gap-9">
                   <div className="min-w-0 flex-1 text-center sm:text-left">
                     <h2 className="font-display text-2xl font-bold text-slate-100">
@@ -1083,7 +1092,7 @@ export function ScannerPage({
                     </p>
                     <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap sm:justify-start">
                       <Button
-                        className="bg-sky-400 px-5 text-sm font-bold text-[#090d16] hover:bg-sky-300"
+                        className="rounded-[10px] bg-sky-400 px-5 text-sm font-bold text-[#090d16] hover:bg-sky-300"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
                           document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
@@ -1094,38 +1103,42 @@ export function ScannerPage({
                       </Button>
                       <a
                         href="/registry"
-                        className="rounded-md border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
+                        className="rounded-[10px] border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
                       >
                         {t(lang, "issue2CtaRegistry")} →
                       </a>
                     </div>
                   </div>
-                  {/* trust seal artwork, cropped from a wide canvas to a square */}
-                  <div
-                    aria-hidden
-                    className="relative hidden h-60 w-60 shrink-0 overflow-hidden rounded-2xl border border-slate-800 sm:block md:h-72 md:w-72"
-                  >
+                  {/* trust seal artwork: no box inside the box - the hologram
+                      floats in the glass, edges melt out via a radial mask */}
+                  <div aria-hidden className="relative hidden h-60 w-60 shrink-0 sm:block md:h-72 md:w-72">
                     <img
                       src="/img/seal.png"
                       alt=""
                       loading="lazy"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover [mask-image:radial-gradient(circle,black_48%,transparent_72%)]"
                     />
                   </div>
                 </div>
 
-                {/* decorative hint of registry contents: host + grade dot (static) */}
-                <div aria-hidden className="mx-auto mt-8 flex max-w-xs flex-col gap-2 font-mono text-[11px] text-slate-600">
-                  {REGISTRY_DECOR.map((r) => (
-                    <div key={r.host} className="flex items-center justify-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: r.color }} />
-                      <span>{r.host}</span>
-                    </div>
+                {/* live registry hint: glass pills with real grades from the
+                    same server-resolved source as the hero chips */}
+                <div className="mx-auto mt-8 flex max-w-md flex-wrap items-center justify-center gap-2 font-mono text-[11px]">
+                  {demoChips.map((c) => (
+                    <span
+                      key={c.target}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-slate-400"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: GRADE_META[c.grade].color }} />
+                      <span>{c.target}</span>
+                      <span className="font-bold" style={{ color: GRADE_META[c.grade].color }}>
+                        {c.grade}
+                      </span>
+                    </span>
                   ))}
-                  <div className="flex items-center justify-center gap-2 text-slate-700">
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
-                    <span>···</span>
-                  </div>
+                  <span className="inline-flex items-center rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-slate-600">
+                    ···
+                  </span>
                 </div>
               </div>
             </div>
@@ -1142,7 +1155,7 @@ export function ScannerPage({
                 delay={(i % 2) * 0.08}
                 className={`h-full ${c.key === "trust" ? "sm:col-span-2" : ""}`}
               >
-                <div className="appseal-card h-full rounded-2xl p-6">
+                <div className="appseal-card flex h-full flex-col overflow-hidden rounded-2xl p-6">
                   <div className="flex items-center gap-3">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-sky-400/10 text-sky-400">
                       {c.icon}
@@ -1162,9 +1175,13 @@ export function ScannerPage({
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-4 rounded-lg border border-slate-800/80 bg-[#090d16]/60 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
-                    {c.extra[lang]}
-                  </p>
+                  {/* footer strip: one hairline across the card + a light
+                      bottom shade instead of yet another bordered box */}
+                  <div className="mt-auto border-t border-white/[0.06] bg-black/[0.25] px-6 pb-5 pt-3 -mx-6 -mb-6">
+                    <p className="text-[11px] leading-relaxed text-slate-500">
+                      {c.extra[lang]}
+                    </p>
+                  </div>
                 </div>
               </Reveal>
             ))}
@@ -1179,12 +1196,12 @@ export function ScannerPage({
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(
               [
-                { href: "/versus", icon: Scale, tKey: "ecoVersusT", dKey: "ecoVersusD", tone: "text-sky-400" },
-                { href: "/fixes", icon: FileCheck2, tKey: "ecoFixesT", dKey: "ecoFixesD", tone: "text-emerald-400" },
-                { href: "/digest", icon: Activity, tKey: "ecoDigestT", dKey: "ecoDigestD", tone: "text-violet-400" },
-                { href: "/ci", icon: GitBranch, tKey: "ecoCiT", dKey: "ecoCiD", tone: "text-amber-400" },
-                { href: "/bot", icon: Send, tKey: "ecoBotT", dKey: "ecoBotD", tone: "text-sky-400" },
-                { href: "/api", icon: CodeXml, tKey: "ecoApiT", dKey: "ecoApiD", tone: "text-emerald-400" },
+                { href: "/versus", icon: Scale, tKey: "ecoVersusT", dKey: "ecoVersusD" },
+                { href: "/fixes", icon: FileCheck2, tKey: "ecoFixesT", dKey: "ecoFixesD" },
+                { href: "/digest", icon: Activity, tKey: "ecoDigestT", dKey: "ecoDigestD" },
+                { href: "/ci", icon: GitBranch, tKey: "ecoCiT", dKey: "ecoCiD" },
+                { href: "/bot", icon: Send, tKey: "ecoBotT", dKey: "ecoBotD" },
+                { href: "/api", icon: CodeXml, tKey: "ecoApiT", dKey: "ecoApiD" },
               ] as const
             ).map((c, i) => (
               <Reveal key={c.tKey} delay={(i % 3) * 0.08} className="h-full">
@@ -1192,7 +1209,10 @@ export function ScannerPage({
                   href={c.href}
                   className="appseal-card group flex h-full flex-col rounded-2xl p-6"
                 >
-                  <span className={`flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 ${c.tone}`}>
+                  {/* one uniform glass tile + cold white icon with a faint sky
+                      glow: the six-card grid reads as a single instrument
+                      panel instead of a color patchwork */}
+                  <span className="appseal-glass-tile flex h-9 w-9 items-center justify-center rounded-lg text-slate-200">
                     <c.icon className="h-5 w-5" />
                   </span>
                   <h3 className="mt-4 text-sm font-bold leading-snug text-slate-100">{t(lang, c.tKey)}</h3>

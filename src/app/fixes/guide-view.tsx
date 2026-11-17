@@ -51,7 +51,7 @@ export function FixGuideView({ guide }: { guide: FixGuide }) {
         ({place}){t("introB")}
       </p>
 
-      <div className="mt-6 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+      <div className="mt-6 rounded-2xl appseal-glass-card p-5">
         <div className="flex items-center justify-between gap-3">
           <span className="font-mono text-xs font-bold text-slate-400">{guide.file}</span>
           <CopyCode code={guide.code} />
@@ -66,7 +66,7 @@ export function FixGuideView({ guide }: { guide: FixGuide }) {
         <h2 className="font-display text-xl font-extrabold">{t("whyTitle")}</h2>
         <ul className="mt-4 space-y-2.5">
           {HEADER_WHY.map((h) => (
-            <li key={h.name} className="rounded-xl border border-slate-800 bg-[#111827] px-4 py-3">
+            <li key={h.name} className="rounded-xl appseal-glass-card px-4 py-3">
               <span className="font-mono text-xs font-bold text-sky-400">{h.name}</span>
               <span className="mt-0.5 block text-sm text-slate-300">{lang === "en" ? h.whyEn : h.why}</span>
             </li>
@@ -74,7 +74,7 @@ export function FixGuideView({ guide }: { guide: FixGuide }) {
         </ul>
       </section>
 
-      <div className="mt-10 rounded-2xl border border-sky-500/30 bg-[#0d1220] p-6">
+      <div className="appseal-glass-card mt-10 rounded-2xl border-sky-500/30 p-6">
         <p className="text-sm text-slate-300">
           {t("cta")}
         </p>

@@ -99,7 +99,7 @@ const dateFmt = {
 function SideCard({ side, lang }: { side: Side; lang: "ru" | "en" }) {
   const gm = GRADE_META[side.grade as keyof typeof GRADE_META] ?? GRADE_META.E;
   return (
-    <div className="flex-1 rounded-2xl border border-slate-800 bg-[#111827] p-6">
+    <div className="appseal-glass-card flex-1 rounded-2xl p-6">
       <div className="flex items-center gap-4">
         <img src={getTrophyPath(side.grade)} alt={`AppSeal ${side.grade}`} width={64} height={64} className="h-16 w-16 object-contain" />
         <div className="min-w-0">
@@ -110,7 +110,7 @@ function SideCard({ side, lang }: { side: Side; lang: "ru" | "en" }) {
           <div className="text-[11px] text-slate-500">{D.checked[lang]}{dateFmt[lang].format(new Date(side.ts))}</div>
         </div>
       </div>
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#0b101c]">
+      <div className="appseal-track mt-4 h-3 overflow-hidden rounded-full">
         <div
           className="h-full rounded-full"
           style={{ width: `${(side.score / Math.max(100, 1)) * 100}%`, backgroundColor: gm.color }}
@@ -168,7 +168,7 @@ export default async function VersusPage({
         ) : null}
 
         {(a === "unknown" || b === "unknown") && (
-          <div className="mt-6 rounded-xl border border-slate-700 bg-[#111827] p-5 text-sm text-slate-300">
+          <div className="mt-6 rounded-xl appseal-glass-card p-5 text-sm text-slate-300">
             {t("unknownA")}
             <Link href="/" className="font-bold text-sky-400 hover:underline">{t("homeWord")}</Link>
             {t("unknownB")}
