@@ -16,8 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Reveal } from "@/components/reveal";
 import { SectionHead } from "@/components/section-head";
 import { Stat } from "@/components/stat";
-import { ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, ArrowUp, Globe, Check, CheckCircle2, Copy, Send, ChevronDown, Scale, CodeXml, GitBranch } from "@/components/icons/appseal-icons";
+import { ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, ArrowUp, Globe, Check, Copy, Send, ChevronDown, Scale, CodeXml, GitBranch } from "@/components/icons/appseal-icons";
 import { SiteHeader } from "@/components/site-header";
+// React Bits preview (local only, not committed to prod decision yet)
+import DecryptedText from "@/components/bits/DecryptedText";
+import SpotlightCard from "@/components/bits/SpotlightCard";
+import Particles from "@/components/bits/Particles";
 
 type Phase = "form" | "scanning" | "report" | "error";
 
@@ -258,8 +262,6 @@ export function ScannerPage({
   const [quotaHit, setQuotaHit] = useState(false);
   const [passInfo, setPassInfo] = useState<{ host: string; until: string } | null>(null);
   const [paidPending, setPaidPending] = useState(false);
-  const [lpHost, setLpHost] = useState("");
-  const [lpErr, setLpErr] = useState("");
   // one-click demo chips: server-resolved live grades when available
   const demoChips = initialChips && initialChips.length > 0 ? initialChips : DEMO_CHIPS;
   // honest footer status: the "All systems operational" claim is backed by a
@@ -424,22 +426,6 @@ export function ScannerPage({
     void check();
   }, []);
 
-  // the site collects only the domain; the receipt email is the bot's job
-  // (it asks in the chat and passes it transit-only to the payment provider).
-  // start_param allows A-Z a-z 0-9 _ and - only, so dots map to underscores.
-  const buyPass = () => {
-    setLpErr("");
-    const host = lpHost.trim().replace(/^https?:\/\//i, "").replace(/\/.*$/, "").replace(/^www\./i, "");
-    if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i.test(host)) {
-      setLpErr(t(lang, "lpDomainBad"));
-      return;
-    }
-    const prefix = lang === "en" ? "en" : "ru";
-    track("checkout_bot", { lang });
-    ymGoal("checkout_bot", { lang });
-    window.location.href = `https://t.me/AppSeal_Monitor_Bot?start=${prefix}-${host.toLowerCase().replace(/\./g, "_")}`;
-  };
-
   useEffect(() => {
     if (!scanId) return;
     let alive = true;
@@ -538,13 +524,49 @@ export function ScannerPage({
             aria-hidden
             className="pointer-events-none absolute left-1/2 -top-20 -z-10 h-[600px] w-screen max-w-none -translate-x-1/2 object-cover opacity-50 [mask-image:linear-gradient(to_bottom,black_30%,transparent_96%)]"
           />
+          {/* React Bits preview: particle drift over the radar video; canvas
+              pauses off-screen and respects prefers-reduced-motion internally */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 -z-[5] [mask-image:linear-gradient(to_bottom,transparent,black_28%,black_72%,transparent)]"
+          >
+            <Particles
+              particleCount={70}
+              particleColors={["#38BDF8", "#34D399", "#94A3B8"]}
+              particleBaseSize={60}
+              sizeRandomness={1}
+              speed={0.08}
+              glow={0.3}
+              twinkle={0.45}
+              hoverEffect="parallax"
+              particleHoverFactor={0.5}
+              clickBurst={false}
+              opacity={0.5}
+            />
+          </div>
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-400">
               {t(lang, "tagline")}
             </p>
             <h1 className="font-display mt-4 text-4xl font-extrabold leading-tight tracking-tight text-slate-50 sm:text-5xl">
-              {t(lang, "heroTitle")}{" "}
-              <span className="appseal-gradient-text">{t(lang, "heroTitleAccent")}</span>
+              <DecryptedText
+                text={t(lang, "heroTitle")}
+                animateOn="view"
+                effect="fade"
+                speed={36}
+                maxIterations={7}
+                characters={lang === "ru" ? "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЫЭЮЯ01<>/#@$%" : undefined}
+                encryptedClassName="text-sky-200/40"
+              />{" "}
+              <DecryptedText
+                text={t(lang, "heroTitleAccent")}
+                parentClassName="appseal-gradient-text"
+                animateOn="view"
+                effect="fade"
+                speed={36}
+                maxIterations={7}
+                characters={lang === "ru" ? "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЫЭЮЯ01<>/#@$%" : undefined}
+              />
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-slate-400">
               {t(lang, "heroSub")}
@@ -1200,31 +1222,38 @@ export function ScannerPage({
           <SectionHead eyebrow={EYEBROWS.pricing[lang]} title={t(lang, "pricingTitle")} sub={t(lang, "pricingSub")} />
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {/* Free plan */}
-            <Reveal className="h-full md:my-4">
-              <div className="appseal-card appseal-glass flex h-full flex-col rounded-2xl p-6">
-                <span className="mx-auto rounded-full bg-gradient-to-b from-slate-200 to-slate-400 px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-slate-900">
-                  {t(lang, "planFree")}
-                </span>
-                <p className="font-display mt-4 text-center text-5xl font-extrabold text-slate-100">{t(lang, "planFreePrice")}</p>
-                <ul className="mt-6 flex-1 space-y-3">
+            <Reveal className="h-full">
+              <SpotlightCard
+                className="appseal-plan-calm flex h-full flex-col rounded-2xl p-6"
+                spotlightColor="rgba(148,163,184,0.35)"
+                intensity={0.45}
+                spotlightSize={280}
+              >
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-400">{t(lang, "planFree")}</p>
+                <p className="font-display mt-4 text-4xl font-extrabold text-slate-100">{t(lang, "planFreePrice")}</p>
+                <div className="my-5 h-px bg-white/5" />
+                <ul className="space-y-2.5">
                   {list(lang, "planFreeFeats").map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-[13px] text-slate-300">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+                    <li key={f} className="flex items-start gap-2.5 text-[13px] leading-snug text-slate-300">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-sky-400/70" strokeWidth={2.5} />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <Button
-                  className="mt-6 h-11 w-full rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(56,189,248,0.7)] hover:from-sky-300 hover:to-blue-400"
-                  onClick={() => {
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                    document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
-                  }}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                  {t(lang, "planFreeCta")}
-                </Button>
-              </div>
+                <div className="mt-auto pt-5">
+                  <p className="mb-2.5 text-center text-[10px] text-slate-500">{t(lang, "planFreeNote")}</p>
+                  <Button
+                    className="h-11 w-full rounded-xl border border-white/[0.15] bg-white/[0.05] text-[13px] font-bold text-slate-100 shadow-none hover:bg-white/[0.09]"
+                    onClick={() => {
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                      document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
+                    }}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                    {t(lang, "planFreeCta")}
+                  </Button>
+                </div>
+              </SpotlightCard>
             </Reveal>
             {/* Launch Pass: static neon emerald frame, featured center card */}
             <Reveal delay={0.08} className="h-full">
@@ -1234,18 +1263,13 @@ export function ScannerPage({
                 </span>
                 <div className="appseal-glass-panel flex h-full flex-col rounded-2xl border border-emerald-400/60 p-6 shadow-[0_0_32px_-8px_rgba(52,211,153,0.55),0_0_90px_-28px_rgba(52,211,153,0.4)]">
                   <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-2xl bg-emerald-400/[0.05]" />
-                  <p className="text-center text-sm font-bold uppercase tracking-[0.18em] text-slate-100">{t(lang, "planLP")}</p>
-                  <div className="mt-3 flex items-center justify-center gap-1.5">
-                    <span aria-hidden="true" className="appseal-wave font-display text-2xl font-bold text-emerald-400/30">(</span>
-                    <span aria-hidden="true" className="appseal-wave appseal-wave-2 font-display text-2xl font-bold text-emerald-400/60">(</span>
-                    <span className="font-display whitespace-nowrap text-4xl font-extrabold text-emerald-400 drop-shadow-[0_0_16px_rgba(52,211,153,0.35)] lg:text-5xl">{t(lang, "planLPPrice")}</span>
-                    <span aria-hidden="true" className="appseal-wave appseal-wave-2 font-display text-2xl font-bold text-emerald-400/60">)</span>
-                    <span aria-hidden="true" className="appseal-wave font-display text-2xl font-bold text-emerald-400/30">)</span>
-                  </div>
-                  <p className="mt-2 text-center text-[11px] leading-snug text-slate-400">{t(lang, "planLPSub")}</p>
-                  <ul className="mt-5 flex-1 space-y-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-400">{t(lang, "planLP")}</p>
+                  <p className="font-display mt-4 text-5xl font-extrabold text-emerald-400 drop-shadow-[0_0_16px_rgba(52,211,153,0.35)]">{t(lang, "planLPPrice")}</p>
+                  <p className="mt-2 text-[11px] leading-snug text-slate-400">{t(lang, "planLPSub")}</p>
+                  <div className="my-5 h-px bg-white/5" />
+                  <ul className="space-y-2.5">
                     {list(lang, "planLPFeats").map((f) => (
-                      <li key={f} className="flex items-start gap-2.5 text-[13px] text-slate-300">
+                      <li key={f} className="flex items-start gap-2.5 text-[13px] leading-snug text-slate-300">
                         <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-emerald-400">
                           <Check className="h-2.5 w-2.5 text-[#090d16]" strokeWidth={3.5} />
                         </span>
@@ -1253,23 +1277,22 @@ export function ScannerPage({
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-6 space-y-2.5">
-                    <input
-                      value={lpHost}
-                      onChange={(e) => setLpHost(e.target.value)}
-                      placeholder={t(lang, "lpDomainPh")}
-                      aria-label="Pass domain"
-                      className="w-full rounded-xl border border-emerald-500/30 bg-black/30 px-3.5 py-2.5 text-xs text-slate-200 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/20"
-                    />
-                    <Button
-                      className="h-11 w-full rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(52,211,153,0.7)] hover:from-emerald-300 hover:to-teal-300"
-                      onClick={buyPass}
+                  <div className="mt-auto pt-5">
+                    <p className="mb-2.5 text-center text-[10px] text-slate-400">{t(lang, "planPaidNote")}</p>
+                    {/* the whole funnel lives in the bot: it asks for the domain
+                        and the receipt email in the chat (start=ru-lp falls
+                        through to the greeting menu with the plan buttons) */}
+                    <a
+                      href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-lp`}
+                      onClick={() => {
+                        track("checkout_bot", { lang });
+                        ymGoal("checkout_bot", { lang });
+                      }}
+                      className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(52,211,153,0.55)] transition hover:bg-emerald-300"
                     >
                       <Zap className="h-4 w-4" />
                       {t(lang, "planLPCta")}
-                    </Button>
-                    <p className="text-center text-[10px] leading-relaxed text-slate-500">{t(lang, "lpNote")}</p>
-                    {lpErr && <p className="text-[11px] leading-snug text-red-400">{lpErr}</p>}
+                    </a>
                   </div>
                 </div>
               </div>
@@ -1277,58 +1300,77 @@ export function ScannerPage({
 
             {/* Pro Pass: 30 days one-time, violet beat between LP and Agency */}
             <Reveal delay={0.16} className="h-full">
-              <div className="appseal-glass-panel flex h-full flex-col rounded-2xl border border-violet-400/45 p-6 shadow-[0_0_28px_-10px_rgba(167,139,250,0.45)]">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full border border-violet-400/30 bg-violet-500/15 px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest text-violet-200">
-                    {t(lang, "planPro")}
-                  </span>
-                  <span className="font-display text-lg font-extrabold text-violet-300">{t(lang, "planProPrice")}</span>
-                </div>
-                <p className="mt-3 text-[11px] leading-snug text-slate-400">{t(lang, "planProSub")}</p>
-                <ul className="mt-4 flex-1 space-y-2.5">
+              <SpotlightCard
+                className="appseal-plan-calm flex h-full flex-col rounded-2xl p-6"
+                spotlightColor="rgba(148,163,184,0.35)"
+                intensity={0.45}
+                spotlightSize={280}
+              >
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-400">{t(lang, "planPro")}</p>
+                <p className="font-display mt-4 text-4xl font-extrabold text-slate-100">
+                  {t(lang, "planProPrice")}{" "}
+                  <span className="whitespace-nowrap text-sm font-semibold text-slate-400">{t(lang, "planProPer")}</span>
+                </p>
+                <p className="mt-2 text-[11px] leading-snug text-slate-400">{t(lang, "planProSub")}</p>
+                <div className="my-5 h-px bg-white/5" />
+                <ul className="space-y-2.5">
                   {list(lang, "planProFeats").map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-[13px] leading-snug text-slate-300">
-                      <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-violet-400">
-                        <Check className="h-2.5 w-2.5 text-[#090d16]" strokeWidth={3.5} />
-                      </span>
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-sky-400/70" strokeWidth={2.5} />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <a
-                  href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-pro`}
-                  className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-400 to-purple-400 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(167,139,250,0.7)] transition hover:from-violet-300 hover:to-purple-300"
-                >
-                  <Send className="h-4 w-4" />
-                  {t(lang, "planProCta")}
-                </a>
-              </div>
+                <div className="mt-auto pt-5">
+                  <p className="mb-2.5 text-center text-[10px] text-slate-400">{t(lang, "planPaidNote")}</p>
+                  <a
+                    href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-pro`}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.15] bg-white/[0.05] text-[13px] font-bold text-slate-100 transition hover:bg-white/[0.09]"
+                  >
+                    <Send className="h-4 w-4" />
+                    {t(lang, "planProCta")}
+                  </a>
+                </div>
+              </SpotlightCard>
             </Reveal>
 
             {/* Agency Pack: wholesale passes for studios, same one-time bot flow */}
             <Reveal delay={0.24} className="h-full">
-              <div className="appseal-card appseal-glass flex h-full flex-col rounded-2xl p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full border border-slate-400/25 bg-slate-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-200">
-                    {t(lang, "planAgencyTitle")}
-                  </span>
-                  <span className="font-display whitespace-nowrap text-base font-extrabold text-slate-100">{t(lang, "planAgencyPrice")}</span>
-                </div>
-                <ul className="mt-5 flex-1 space-y-2.5">
+              <SpotlightCard
+                className="appseal-plan-calm flex h-full flex-col rounded-2xl p-6"
+                spotlightColor="rgba(148,163,184,0.35)"
+                intensity={0.45}
+                spotlightSize={280}
+              >
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-400">{t(lang, "planAgencyTitle")}</p>
+                <p className="font-display mt-4 text-4xl font-extrabold text-slate-100">
+                  {t(lang, "planAgencyPrice")}{" "}
+                  <span className="whitespace-nowrap text-sm font-semibold text-slate-400">{t(lang, "planAgencyPer")}</span>
+                </p>
+                <span className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                  {t(lang, "planAgencyDeal")}
+                </span>
+                <p className="mt-2 text-[11px] leading-snug text-slate-400">{t(lang, "planAgencySub")}</p>
+                <div className="my-5 h-px bg-white/5" />
+                <ul className="space-y-2.5">
                   {list(lang, "planAgencyFeats").map((f) => (
-                    <li key={f} className="text-[13px] leading-snug text-slate-300">
+                    <li key={f} className="flex items-start gap-2.5 text-[13px] leading-snug text-slate-300">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-sky-400/70" strokeWidth={2.5} />
                       {f}
                     </li>
                   ))}
                 </ul>
-                <a
-                  href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-pack5`}
-                  className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(52,211,153,0.7)] transition hover:from-emerald-300 hover:to-teal-300"
-                >
-                  <Send className="h-4 w-4" />
-                  {t(lang, "planAgencyCta")}
-                </a>
-              </div>
+                <div className="mt-auto pt-5">
+                  <p className="mb-2.5 text-center text-[10px] text-slate-400">{t(lang, "planPaidNote")}</p>
+                  <a
+                    href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-pack5`}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.15] bg-white/[0.05] text-[13px] font-bold text-slate-100 transition hover:bg-white/[0.09]"
+                  >
+                    <Send className="h-4 w-4" />
+                    {t(lang, "planAgencyCta")}
+                  </a>
+                </div>
+              </SpotlightCard>
             </Reveal>
           </div>
           {/* platform: wide contact bar under the plans */}
@@ -1345,7 +1387,7 @@ export function ScannerPage({
                   href="https://t.me/peexthree"
                   target="_blank"
                   rel="noopener"
-                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 px-6 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(56,189,248,0.7)] transition hover:from-sky-300 hover:to-blue-400"
+                  className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-white/[0.15] bg-white/[0.05] px-6 text-[13px] font-bold text-slate-100 transition hover:bg-white/[0.09]"
                 >
                   <Send className="h-4 w-4" />
                   {t(lang, "telegramCta")}
