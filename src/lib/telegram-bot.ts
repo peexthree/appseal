@@ -181,7 +181,7 @@ const RU: LangPack = {
     "/cancel - сброс диалога",
   help:
     "🔐 <b>Что делает AppSeal:</b> проверяет живое приложение на утечки секретов, открытые базы, дырявые админки и заголовки безопасности. Класс A+-E и бейдж доверия на сайт за минуту.\n\n" +
-    "<b>Пропуск</b> = безлимитные сканы одного домена: Launch Pass - 7 дней, Pro Pass - 30 дней и приоритетная очередь. Разовые платежи, без автосписаний.\n\n" +
+    "<b>Пропуск</b> = безлимитные сканы одного домена: Launch Pass - 7 дней, Pro Pass - 30 дней. Разовые платежи, без автосписаний.\n\n" +
     "Начать: /buy_ru (ЮKassa) или /buy_en (карта). Всё остальное - в <a href=\"https://appseal.online\">сканере</a>: /scan myapp.com покажет класс прямо в чате.",
   unknown: "Не понял сообщение. Команды: /start - меню, /scan myapp.com - проверка домена, /buy_ru - купить.",
   step1: "Шаг 1/2. Пришли домен, для которого нужен пропуск (например <code>myapp.vercel.app</code>).",
@@ -214,7 +214,7 @@ const RU: LangPack = {
   planPrompt: (host, prices) =>
     `Домен принят: <code>${esc(host)}</code>. Выбери тариф - разовая покупка, без автосписаний:\n\n` +
     `💜 <b>Launch Pass</b> - 7 дней безлимита - ${prices.launch}\n` +
-    `🚀 <b>Pro Pass</b> - 30 дней безлимита одного домена, приоритетная очередь сканов - ${prices.pro}\n\n` +
+    `🚀 <b>Pro Pass</b> - 30 дней безлимита одного домена - ${prices.pro}\n\n` +
     `Нажми кнопку или пришли /plan_launch (или /plan_pro).`,
   payText: (host, days) =>
     days > 7
@@ -245,7 +245,7 @@ const EN: LangPack = {
     "<b>A pass</b> - unlimited scans of one domain, one-time payment, no auto-renewals:\n" +
     "/buy_ru - YooKassa (RF cards): Launch 7 days - 490 RUB, Pro 30 days - 1 490 RUB\n" +
     "/buy_en - international card: $6 / $19\n" +
-    "/buy5 - Agency Pack: 5 passes for $19 (39% cheaper)\n\n" +
+    "/buy5 - Agency Pack: 5 passes for $19 (37% cheaper)\n\n" +
     "<b>Free:</b>\n" +
     "/scan myapp.com - the freshest grade of a domain from the registry\n" +
     "/watch myapp.com - follow a domain, alert on any change\n" +
@@ -255,7 +255,7 @@ const EN: LangPack = {
     "/cancel - reset the dialog",
   help:
     "🔐 <b>What AppSeal does:</b> scans a live app for leaked secrets, open databases, exposed admin panels and security headers. An A+-E grade and a trust badge for your site in a minute.\n\n" +
-    "<b>A pass</b> = unlimited scans of one domain: Launch Pass - 7 days, Pro Pass - 30 days with a priority scan queue. One-time payments, no auto-renewals.\n\n" +
+    "<b>A pass</b> = unlimited scans of one domain: Launch Pass - 7 days, Pro Pass - 30 days. One-time payments, no auto-renewals.\n\n" +
     "Start: /buy_ru (YooKassa) or /buy_en (card). Everything else lives in the <a href=\"https://appseal.online\">scanner</a>: /scan myapp.com shows the grade right in the chat.",
   unknown: "Not sure what you mean. Commands: /start - menu, /scan myapp.com - check a domain, /buy_ru - buy a pass.",
   step1: "Step 1/2. Send the domain for the pass (e.g. <code>myapp.vercel.app</code>).",
@@ -288,7 +288,7 @@ const EN: LangPack = {
   planPrompt: (host, prices) =>
     `Domain accepted: <code>${esc(host)}</code>. Pick a plan - one-time purchase, no auto-renewals:\n\n` +
     `💜 <b>Launch Pass</b> - 7 days of unlimited scans - ${prices.launch}\n` +
-    `🚀 <b>Pro Pass</b> - 30 days of unlimited scans on one domain, priority scan queue - ${prices.pro}\n\n` +
+    `🚀 <b>Pro Pass</b> - 30 days of unlimited scans on one domain - ${prices.pro}\n\n` +
     `Tap a button or send /plan_launch (or /plan_pro).`,
   payText: (host, days) =>
     days > 7

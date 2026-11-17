@@ -76,6 +76,15 @@ const D = {
     ru: " скан немедленно останавливается с уведомлением пользователю о запрете со стороны администратора.",
     en: ", the scan stops immediately and the user is told the site administrator has disallowed it.",
   },
+  buyTitle: {
+    ru: "Покупка пропусков и мониторинг - в Telegram-боте",
+    en: "Pass purchases and monitoring live in the Telegram bot",
+  },
+  buyBody: {
+    ru: "Эта страница описывает краулер. Пропуски Launch и Pro, Agency Pack, /scan и /myscans - у бота @AppSeal_Monitor_Bot:",
+    en: "This page is about the crawler. Launch/Pro passes, the Agency Pack, /scan and /myscans live in the bot @AppSeal_Monitor_Bot:",
+  },
+  buyBtn: { ru: "Открыть бот в Telegram", en: "Open the bot in Telegram" },
   fHome: { ru: "главная", en: "home" },
   fRegistry: { ru: "реестр", en: "registry" },
   fStats: { ru: "статистика", en: "stats" },
@@ -173,6 +182,22 @@ export default async function BotPage() {
                 <code className="text-slate-300">robots.txt</code>
                 {t("optoutNoteB")}
               </p>
+            </section>
+
+            <section className="pt-4 border-t border-slate-800">
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                {t("buyTitle")}
+              </h2>
+              <p className="mt-2 text-slate-300">{t("buyBody")}</p>
+              <a
+                href="https://t.me/AppSeal_Monitor_Bot"
+                target="_blank"
+                rel="noopener"
+                className="mt-3 inline-flex items-center gap-2 rounded-md bg-sky-400 px-5 py-2.5 text-sm font-bold text-[#090d16] transition hover:bg-sky-300"
+              >
+                {t("buyBtn")}
+              </a>
             </section>
           </div>
         </div>

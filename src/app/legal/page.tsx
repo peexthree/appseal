@@ -78,8 +78,8 @@ const D = {
     en: "; none of it is stored on the Service side. The counter loads only after you consent to analytics in the cookie banner: without consent the Metrica script never starts, and the choice itself lives in your browser's localStorage (no other cookies are set by the Service). You can withdraw consent at any time - the block below resets the choice and the banner reappears.",
   },
   s2c: {
-    ru: "Исключение - покупка Launch Pass: адрес электронной почты плательщика обрабатывается только транзитом и передаётся платёжному провайдеру ЮKassa для формирования чека и идентификации платежа. Оператор электронную почту не хранит: у оператора остаются лишь неперсональные данные - идентификатор платежа, домен пропуска и срок его действия (в течение 8 дней). Оператор не публикует эти сведения и не передаёт их третьим лицам, кроме ЮKassa и налоговых органов.",
-    en: "The exception is a Launch Pass purchase: the payer's email address is processed in transit only and handed to the payment provider YooKassa for the receipt and payment identification. The operator does not store the email: only non-personal data stays with the operator - the payment id, the pass domain and its expiry (kept for 8 days). The operator does not publish this information and does not share it with third parties, except YooKassa and the tax authorities.",
+    ru: "Исключение - покупка платного пропуска (Launch Pass, Pro Pass, Agency Pack): адрес электронной почты плательщика обрабатывается только транзитом и передаётся платёжному провайдеру (ЮKassa; для иностранных карт Lava.top) для формирования чека и идентификации платежа. Оператор электронную почту не хранит: у оператора остаются лишь неперсональные данные - идентификатор платежа, домен пропуска и срок его действия (в течение 8 дней). Оператор не публикует эти сведения и не передаёт их третьим лицам, кроме платёжных провайдеров и налоговых органов.",
+    en: "The exception is a paid pass purchase (Launch Pass, Pro Pass, Agency Pack): the payer's email address is processed in transit only and handed to the payment provider (YooKassa; Lava.top for foreign cards) for the receipt and payment identification. The operator does not store the email: only non-personal data stays with the operator - the payment id, the pass domain and its expiry (kept for 8 days). The operator does not publish this information and does not share it with third parties, except the payment providers and the tax authorities.",
   },
   s2d: {
     ru: "В localStorage браузера хранится только выбранный язык интерфейса. Эти данные не покидают ваш браузер.",
@@ -135,10 +135,10 @@ const D = {
     en: "The Service is provided \"as is\", without any warranty. The operator is not liable for decisions made based on scan results or for any direct or indirect damage related to the use of the Service.",
   },
   s4c: {
-    ru: "Условия использования бесплатных функций Сервиса не являются публичной офертой; условия приобретения платного Launch Pass закреплены в разделе 5 ниже (публичная оферта). К отношениям по использованию Сервиса применяется законодательство Российской Федерации.",
-    en: "The terms of the Service's free features do not constitute a public offer; the terms of the paid Launch Pass are set out in section 5 below (a public offer). Russian law governs the use of the Service.",
+    ru: "Условия использования бесплатных функций Сервиса не являются публичной офертой; условия приобретения платных пропусков (Launch Pass, Pro Pass, Agency Pack) закреплены в разделе 5 ниже (публичная оферта). К отношениям по использованию Сервиса применяется законодательство Российской Федерации.",
+    en: "The terms of the Service's free features do not constitute a public offer; the terms of the paid passes (Launch Pass, Pro Pass, Agency Pack) are set out in section 5 below (a public offer). Russian law governs the use of the Service.",
   },
-  s5Title: { ru: "5. Условия приобретения Launch Pass (публичная оферта)", en: "5. Launch Pass purchase terms (public offer)" },
+  s5Title: { ru: "5. Условия приобретения пропусков (публичная оферта)", en: "5. Pass purchase terms (public offer)" },
   s5a: {
     ru: "Акцепт настоящего раздела - оплата, оформленная в Telegram-боте Сервиса (@AppSeal_Monitor_Bot) по ссылке с сайта. Оплата означает полное и безоговорочное принятие условий этого раздела.",
     en: "Acceptance of this section is a payment made in the Service's Telegram bot (@AppSeal_Monitor_Bot) via the link from the site. Payment means full and unconditional acceptance of this section's terms.",
@@ -170,6 +170,15 @@ const D = {
     ru: " за 5 пропусков (каждый - на отдельный домен, 7 суток с момента его активации). После оплаты покупатель активирует пропуска командой /redeem в Telegram-боте; кредиты пакета действуют 30 суток с момента оплаты. Автопродления нет: пакет не восполняется автоматически.",
     en: " for 5 passes (each for a separate domain, 7 days from its activation). After payment the buyer activates the passes with the /redeem command in the Telegram bot; pack credits live 30 days from the moment of payment. No auto-renewal: the pack is not refilled automatically.",
   },
+  s5pA: {
+    ru: "Pro Pass - тот же продукт на длинный срок: ",
+    en: "Pro Pass - the same product with a longer term: ",
+  },
+  s5pPrice: { ru: "1 490 ₽", en: "1,490 RUB ($19)" },
+  s5pB: {
+    ru: " за 30 суток безлимита сканов одного домена (Launch Pass действует 7 суток). Состав функций тот же: неограниченные повторные сканы, фоновый перескан каждые 6 ч с алертом при падении класса, PDF-отчёт и встраиваемый бейдж доверия. Разовый платёж, автопродления нет.",
+    en: " for 30 days of unlimited scans of one domain (Launch Pass covers 7). The feature set is the same: unlimited rescans, a background re-check every 6 hours with a grade-drop alert, the PDF report and the embeddable trust badge. One-time payment, no auto-renewal.",
+  },
   s5e: {
     ru: "Оплата проходит через платёжных провайдеров, подключённых в Telegram-боте (эквайринг ЮKassa; для иностранных карт - Lava.top). Чек самозанятого (НПД) направляется плательщику в Telegram. Оператор - самозанятый гражданин РФ; контакт для всех вопросов: ",
     en: "Payment goes through the payment providers connected in the Telegram bot (YooKassa acquiring; Lava.top for foreign cards). The self-employed tax receipt is sent to the payer in Telegram. The operator is a self-employed Russian citizen; contact for all questions: ",
@@ -184,8 +193,8 @@ const D = {
   },
   s6Title: { ru: "6. Возвраты", en: "6. Refunds" },
   s6aA: {
-    ru: "Разовая покупка Launch Pass не подлежит возврату после активации, потому что продукт моментально открывает полный доступ к функциям на купленный период. Если оплата прошла, а доступ не активировался - напишите на ",
-    en: "One-time Launch Pass purchases are non-refundable once activated, since the pass instantly unlocks full features for the paid period. If payment succeeded but the pass did not activate, email ",
+    ru: "Разовые покупки платных пропусков (Launch Pass, Pro Pass, Agency Pack) не подлежат возврату после активации, потому что продукт моментально открывает полный доступ к функциям на купленный период. Если оплата прошла, а доступ не активировался - напишите на ",
+    en: "One-time purchases of the paid passes (Launch Pass, Pro Pass, Agency Pack) are non-refundable once activated, since the pass instantly unlocks full features for the paid period. If payment succeeded but the pass did not activate, email ",
   },
   s6aB: {
     ru: ", активируем вручную или вернём платёж в течение 3 рабочих дней.",
@@ -358,6 +367,11 @@ export default async function LegalPage() {
                   {t("s5dB")}
                 </li>
                 <li>
+                  {t("s5pA")}
+                  <strong className="text-slate-100">{t("s5pPrice")}</strong>
+                  {t("s5pB")}
+                </li>
+                <li>
                   {t("s5e")}
                   {CONTACT_EMAIL}.
                 </li>
@@ -416,6 +430,12 @@ export default async function LegalPage() {
                     badge - no auto-renewal. If the pass fails to activate, a full refund is issued
                     within 3 business days (email the contact above). Once activated, the pass is
                     non-refundable.
+                  </li>
+                  <li>
+                    Pro Pass: 1,490 RUB ($19) one-time purchase, valid 30 days per domain - the same
+                    feature set as Launch Pass with a longer term. Agency Pack: 1,490 RUB ($19) for 5
+                    Launch Passes (activated one by one with /redeem, credits live 30 days). The
+                    refund rule above applies to every paid pass.
                   </li>
                   <li>
                     No accounts, no forms. Web analytics: the Yandex.Metrica counter #114248324

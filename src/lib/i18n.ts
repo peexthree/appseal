@@ -186,7 +186,8 @@ export const DICT = {
   planFreeNote: { ru: "Без карты и регистрации", en: "No card, no sign-up" },
   planPaidNote: {
     ru: "Моментальная выдача в Telegram • Чек ЮKassa",
-    en: "Instant delivery in Telegram • YooKassa receipt",
+    // EN buyers pay via Lava.top - a YooKassa receipt would be a false promise
+    en: "Instant delivery in Telegram • receipt by email",
   },
   planFreePrice: { ru: "0 ₽", en: "$0" },
   planFreeFeats: {
@@ -195,14 +196,16 @@ export const DICT = {
   },
   planPro: { ru: "Pro Pass", en: "Pro Pass" },
   planProPrice: { ru: "1 490 ₽", en: "$19" },
-  planProPer: { ru: "/ мес", en: "/ mo" },
+  // one-time purchase - a "/ mo" suffix would read as a subscription
+  planProPer: { ru: "/ 30 дней", en: "/ 30 days" },
   planProSub: {
     ru: "30 дней безлимита одного домена - разовая покупка, без автосписаний",
     en: "30 days of unlimited scans for one domain - one-time purchase, no auto-renewal",
   },
   planProFeats: {
-    ru: "Приоритетная очередь сканов|Фоновый перескан каждые 6 ч и алерт при падении класса|PDF-отчёт и embed-бейдж доверия",
-    en: "Priority scan queue|Background rescan every 6h with a grade-drop alert|PDF report and the embeddable trust badge",
+    // no "priority queue" claim: the engine has none, Pro = the Launch feature set for 30 days
+    ru: "Всё из Launch Pass - срок 30 дней вместо 7|Фоновый перескан каждые 6 ч и алерт при падении класса|PDF-отчёт и embed-бейдж доверия",
+    en: "Everything in Launch Pass - 30 days instead of 7|Background rescan every 6h with a grade-drop alert|PDF report and the embeddable trust badge",
   },
   planProCta: { ru: "Купить Pro в Telegram", en: "Buy Pro in Telegram" },
   planPlatform: { ru: "Platform", en: "Platform" },
@@ -217,7 +220,7 @@ export const DICT = {
   planAgencyPrice: { ru: "1 490 ₽", en: "$19" },
   planAgencyPer: { ru: "/ 5 сайтов", en: "/ 5 sites" },
   planAgencyDeal: {
-    ru: "298 ₽ за проект - выгода 40%",
+    ru: "298 ₽ за проект - выгода 39%",
     en: "$3.80 per project - save 37%",
   },
   planAgencySub: {
