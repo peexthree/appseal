@@ -91,7 +91,8 @@ async function getLiveChips(): Promise<{ target: string; grade: Grade; score: nu
         return entry ? { target: host, grade: entry.grade as Grade, score: entry.score } : null;
       }),
     );
-    return chips.every((c) => c !== null) ? chips : null;
+    // the vulnerable demo fixture is static - it never comes from the registry
+    return chips.every((c) => c !== null) ? [...chips, { target: "demo://app", grade: "E" as Grade, score: 0 }] : null;
   } catch {
     return null;
   }

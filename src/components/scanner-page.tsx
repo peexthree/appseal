@@ -562,87 +562,89 @@ export function ScannerPage({
 
           {phase === "form" && (
             <div className="mx-auto mt-8 max-w-2xl">
-              <Reveal>
-                <div className="appseal-ring">
-                  <div className="rounded-[15px] bg-[#0b101c] p-3">
-                    <form
-                      className="flex flex-col gap-3 sm:flex-row"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        setSuggestOpen(false);
-                        if (url.trim() && consent) void startScan(url.trim());
-                      }}
-                    >
-                      <div className="relative flex-1">
+              {/* relative wrapper anchors the suggestions dropdown; it lives
+                  OUTSIDE .appseal-ring because the ring clips overflow */}
+              <div className="relative">
+                <Reveal>
+                  <div className="appseal-ring">
+                    <div className="rounded-[15px] bg-[#0b101c] p-3">
+                      <form
+                        className="flex flex-col gap-3 sm:flex-row"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          setSuggestOpen(false);
+                          if (url.trim() && consent) void startScan(url.trim());
+                        }}
+                      >
                         <Input
                           value={url}
                           onChange={(e) => setUrl(e.target.value)}
                           onFocus={() => setSuggestOpen(true)}
                           onBlur={() => window.setTimeout(() => setSuggestOpen(false), 140)}
                           placeholder={t(lang, "inputPlaceholder")}
-                          className="h-12 w-full border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
+                          className="h-12 w-full flex-1 border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
                           inputMode="url"
                           aria-label="App URL"
                           autoComplete="off"
                           required
                         />
-                        {/* smart suggestions: live-grade examples, substring-filtered
-                            by what the user is typing; items fire on mousedown so the
-                            blur-delay never swallows the click */}
-                        {suggestOpen && suggestionMatches.length > 0 && (
-                          <div
-                            className="absolute inset-x-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-xl border border-slate-700 bg-[#0b101c] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)]"
-                            role="listbox"
-                            aria-label={t(lang, "suggestTitle")}
-                          >
-                            <p className="px-3.5 pb-1 pt-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                              {t(lang, "suggestTitle")}
-                            </p>
-                            {suggestionMatches.map((c) => (
-                              <button
-                                key={c.target}
-                                type="button"
-                                role="option"
-                                aria-selected={false}
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  setSuggestOpen(false);
-                                  track("chip_scan", { target: c.target });
-                                  ymGoal("chip_scan", { target: c.target });
-                                  void startScan(c.target);
-                                }}
-                                className="appseal-chip flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-semibold text-slate-300 hover:bg-slate-800/70"
-                                style={{ "--grade-color": GRADE_META[c.grade].color } as CSSProperties}
-                              >
-                                <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: GRADE_META[c.grade].color }} />
-                                <span className="font-mono">{c.target}</span>
-                                <span className="ml-auto flex shrink-0 items-center gap-2 font-mono text-xs">
-                                  <span style={{ color: GRADE_META[c.grade].color }}>
-                                    {c.grade} · {c.score}
-                                  </span>
-                                  {c.target === "demo://app" && (
-                                    <span className="hidden text-[10px] font-medium text-slate-500 sm:inline">
-                                      {t(lang, "suggestDemoNote")}
-                                    </span>
-                                  )}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        type="submit"
-                        disabled={!consent}
-                        className="h-12 bg-sky-400 px-6 text-base font-bold text-[#090d16] shadow-[0_0_30px_-5px_rgba(56,189,248,0.5)] hover:bg-sky-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <Zap className="h-4 w-4" />
-                        {t(lang, "scanBtn")}
-                      </Button>
-                    </form>
+                        <Button
+                          type="submit"
+                          disabled={!consent}
+                          className="h-12 bg-sky-400 px-6 text-base font-bold text-[#090d16] shadow-[0_0_30px_-5px_rgba(56,189,248,0.5)] hover:bg-sky-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Zap className="h-4 w-4" />
+                          {t(lang, "scanBtn")}
+                        </Button>
+                      </form>
+                    </div>
                   </div>
-                </div>
-              </Reveal>
+                </Reveal>
+                {/* smart suggestions: live-grade examples, substring-filtered
+                    by what the user is typing; items fire on mousedown so the
+                    blur-delay never swallows the click */}
+                {suggestOpen && suggestionMatches.length > 0 && (
+                  <div
+                    className="absolute inset-x-0 top-full z-30 mt-1.5 overflow-hidden rounded-xl border border-slate-700 bg-[#0b101c] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)]"
+                    role="listbox"
+                    aria-label={t(lang, "suggestTitle")}
+                  >
+                    <p className="px-3.5 pb-1 pt-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                      {t(lang, "suggestTitle")}
+                    </p>
+                    {suggestionMatches.map((c) => (
+                      <button
+                        key={c.target}
+                        type="button"
+                        role="option"
+                        aria-selected={false}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          setSuggestOpen(false);
+                          track("chip_scan", { target: c.target });
+                          ymGoal("chip_scan", { target: c.target });
+                          void startScan(c.target);
+                        }}
+                        className="appseal-chip flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm font-semibold text-slate-300 hover:bg-slate-800/70"
+                        style={{ "--grade-color": GRADE_META[c.grade].color } as CSSProperties}
+                      >
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: GRADE_META[c.grade].color }} />
+                        <span className="font-mono">{c.target}</span>
+                        <span className="ml-auto flex shrink-0 items-center gap-2 font-mono text-xs">
+                          <span style={{ color: GRADE_META[c.grade].color }}>
+                            {c.grade} · {c.score}
+                          </span>
+                          {c.target === "demo://app" && (
+                            <span className="hidden text-[10px] font-medium text-slate-500 sm:inline">
+                              {t(lang, "suggestDemoNote")}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* live hint: what the engine will actually scan */}
               {url.trim().length > 0 && !/^https?:\/\//i.test(url.trim()) && (
