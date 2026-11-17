@@ -1,5 +1,5 @@
 import type { CheckResult, Severity, TechPassport } from "../types";
-import { extractLinks, safeFetch } from "../fetcher";
+import { extractLinks, safeFetch } from "../fetcher.ts";
 
 interface Ctx {
   origin: string;
@@ -224,7 +224,10 @@ export async function checkBrokenLinks(ctx: Ctx): Promise<CheckResult[]> {
       return { u, status: r.status };
     }),
   );
-  const broken = results.filter((r) => r.status >= 400 || r.status === 0);
+  // status 0 (timeout / no response) is not proof of a dead link: the target
+  // may simply be slow. It gets its own counter and never feeds the fail.
+  const broken = results.filter((r) => r.status >= 400);
+  const timeouts = results.filter((r) => r.status === 0);
   if (broken.length && broken.length / results.length > 0.25) {
     return [done(
       "broken_links",
@@ -235,17 +238,41 @@ export async function checkBrokenLinks(ctx: Ctx): Promise<CheckResult[]> {
       {
         code: "BROKEN_LINKS",
         detail: {
-          ru: `${broken.length} из ${results.length} внутренних ссылок не отвечают. Классический признак недостроенного приложения: разделы, на которые кликают пользователи, ведут в никуда.`,
-          en: `${broken.length} of ${results.length} internal links are dead. A classic sign of an unfinished app: sections users click lead nowhere.`,
+          ru: `${broken.length} из ${results.length} внутренних ссылок отвечают ошибкой 4xx/5xx. Классический признак недостроенного приложения: разделы, на которые кликают пользователи, ведут в никуда.${timeouts.length ? ` Ещё ${timeouts.length} не ответили в срок (учтены отдельно).` : ""}`,
+          en: `${broken.length} of ${results.length} internal links answer with 4xx/5xx. A classic sign of an unfinished app: sections users click lead nowhere.${timeouts.length ? ` ${timeouts.length} more did not answer in time (counted separately).` : ""}`,
         },
-        evidence: broken.slice(0, 5).map((b) => `${b.u.replace(ctx.origin, "")} → ${b.status || "no response"}`),
+        evidence: broken.slice(0, 5).map((b) => `${b.u.replace(ctx.origin, "")} → ${b.status}`),
+      },
+      Date.now() - t0,
+    )];
+  }
+  // every "dead" link was actually a timeout - warn honestly instead of
+  // pretending the links are broken (or fine)
+  if (!broken.length && timeouts.length) {
+    return [done(
+      "broken_links",
+      "warn",
+      "medium",
+      0,
+      { ru: "Не удалось дождаться ответов от внутренних ссылок", en: "Internal links did not answer in time" },
+      {
+        code: "LINK_TIMEOUTS",
+        detail: {
+          ru: `${timeouts.length} из ${results.length} внутренних ссылок не ответили за 6 секунд: цель может быть просто медленной, поэтому это не считается битыми ссылками. Медленный сайт всё равно плох для пользователей и краулеров - стоит проверить скорость ответа.`,
+          en: `${timeouts.length} of ${results.length} internal links did not answer within 6 seconds: the target may just be slow, so this is not counted as broken links. Slow responses are still bad for users and crawlers - worth checking response times.`,
+        },
+        evidence: timeouts.slice(0, 5).map((b) => `${b.u.replace(ctx.origin, "")} → нет ответа (таймаут)`),
       },
       Date.now() - t0,
     )];
   }
   return [done("broken_links", "pass", "medium", 0, {
-    ru: `Внутренние ссылки живы (проверено ${results.length})`,
-    en: `Internal links alive (${results.length} checked)`,
+    ru: timeouts.length
+      ? `Внутренние ссылки живы (проверено ${results.length}, ${timeouts.length} не ответили в срок)`
+      : `Внутренние ссылки живы (проверено ${results.length})`,
+    en: timeouts.length
+      ? `Internal links alive (${results.length} checked, ${timeouts.length} timed out)`
+      : `Internal links alive (${results.length} checked)`,
   }, undefined, Date.now() - t0)];
 }
 

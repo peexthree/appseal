@@ -5,7 +5,7 @@
 
 ## Что уже готово в репо
 
-- `Dockerfile` - продакшн-образ (Node 22, standalone, non-root, volume под `db/scans`)
+- `Dockerfile` - продакшн-образ (Node 22, standalone, non-root, volume под `db`, healthcheck на `/api/healthz`)
 - `next.config.ts` - `outputFileTracingIncludes` кладёт DejaVu-шрифты в бандл `/api/report`
 - Сканер ходит только на внешние http/https-цели; для тестов локально поднимаются
   мини-сервисы (`scripts/start-demo-app.sh`, `scripts/start-secure-app.sh`)
@@ -36,7 +36,7 @@
 ```bash
 # на ПК, в корне проекта
 docker build -t appmot .
-docker run -d --name appmot -p 80:3000 -v appmot_scans:/app/db/scans --restart unless-stopped appmot
+docker run -d --name appmot -p 80:3000 -v appmot_db:/app/db --restart unless-stopped appmot
 
 # TLS/домен: Caddy перед контейнером
 # Caddyfile уже в репо - проксирует :80 → app:3000 и выдаёт сертификаты Let's Encrypt
@@ -62,3 +62,50 @@ Amvera, Timeweb Cloud Apps - деплой через git push или загру�
    в проде кнопка «Скан демо-приложения» требует живого демо-сервиса в той же сети
    (см. mini-services) или замены цели на публичную демо-страницу
 3. Rate limit и opt-out - по плану MVP (спека, раздел 10)
+4. Healthcheck: `GET /api/healthz` отвечает JSON `{"ok":true,"uptime":...,"redis":"up|down|skipped","ts":...}`
+   без секретов; в Docker-образе уже прописан `HEALTHCHECK` на этот эндпоинт
+
+## Бэкапы
+
+### Docker/VPS (файловый store в `db/`)
+
+Готов скрипт `scripts/backup-db.sh`: складывает `db/` (записи сканов + `registry.json`)
+в `backups/db-YYYYMMDD-HHMM.tar.gz` и удаляет архивы старше 14 дней.
+
+```bash
+# разово
+./scripts/backup-db.sh
+
+# ежедневно в 04:10 (crontab -e)
+10 4 * * * /path/to/appmot/scripts/backup-db.sh >> /path/to/appmot/backups/backup.log 2>&1
+```
+
+Восстановление: `tar -xzf backups/db-<date>.tar.gz` в корне контейнера-маунта (или
+распаковать в директорию, которая примонтирована как `/app/db`), затем перезапуск контейнера.
+
+### Upstash (вариант А, Vercel)
+
+Данные сканов и passes живут в Upstash Redis - делай ежедневный снапшот из консоли
+Upstash: Console → твоя база → Backups → включи ежедневный snapshot (на бесплатном
+тарифе бэкапы ограничены, при апгрейде - полноценный daily backup с retention).
+Восстановление тоже из консоли (Restore backup).
+
+## TICK_SECRET
+
+Крон-эндпоинты `/api/monitor-tick`, `/api/pipeline-tick`, `/api/digest-tick` поддерживают
+общий секрет: если в окружении задан `TICK_SECRET`, каждый вызов обязан передать его
+в заголовке `x-tick-secret` (или в query `?secret=...`), иначе - 401. Сравнение
+констант-тайм. Если переменная не задана - эндпоинты остаются публичными (старое
+поведение, троттлинг через Redis-лок сохраняется).
+
+Что сделать при включении:
+
+1. Vercel (или Docker-окружение): добавь переменную `TICK_SECRET` с длинной случайной
+   строкой (например `openssl rand -hex 24`)
+2. GitHub: Settings → Secrets and variables → Actions → New repository secret,
+   имя `TICK_SECRET`, то же значение - workflows `monitor-tick`, `pipeline-tick` и
+   `digest-tick` уже передают заголовок из `${{ secrets.TICK_SECRET }}`
+3. Если секрет в GitHub не задан, workflow шлёт вызов без заголовка - это нормально,
+   пока на сервере тоже не задан `TICK_SECRET` (задай синхронно в обоих местах)
+
+CI: `.github/workflows/ci.yml` гоняет `npm test` на каждый push в `main` и на PR.

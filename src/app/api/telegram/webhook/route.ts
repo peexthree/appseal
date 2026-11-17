@@ -10,7 +10,7 @@ import {
 } from "@/lib/passes";
 import { getLatestHostEntry } from "@/lib/scanner/store";
 import { FREE_WATCH_KEY_PREFIX, FREE_WATCH_MAX, FREE_WATCH_ZSET } from "@/lib/watch";
-import { sendTelegramMessage } from "@/lib/telegram";
+import { answerCallbackQuery, sendTelegramMessage } from "@/lib/telegram";
 import { secretsMatch } from "@/lib/sec";
 import {
   botPayBtn,
@@ -59,7 +59,7 @@ interface TgChat {
 interface TgMessage {
   message?: { chat?: TgChat; from?: TgUser; text?: string };
   edited_message?: { chat?: TgChat; from?: TgUser; text?: string };
-  callback_query?: { data?: string; from?: TgUser; message?: { chat?: TgChat } };
+  callback_query?: { id?: string; data?: string; from?: TgUser; message?: { chat?: TgChat } };
 }
 
 function stateKey(chatId: string): string {
@@ -143,6 +143,17 @@ export async function POST(req: NextRequest) {
     update = (await req.json()) as TgMessage;
   } catch {
     return NextResponse.json({ ok: true });
+  }
+
+  // acknowledge the inline-button press immediately, before the slow Redis /
+  // purchase round-trips: Telegram keeps the button in loading state until
+  // answerCallbackQuery arrives for the callback_query.id
+  if (update.callback_query?.id) {
+    try {
+      await answerCallbackQuery(update.callback_query.id);
+    } catch (e) {
+      console.warn("[appseal-bot] answerCallbackQuery failed:", e instanceof Error ? e.message : String(e));
+    }
   }
 
   const chat = update.message?.chat ?? update.edited_message?.chat ?? update.callback_query?.message?.chat;

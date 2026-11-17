@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { normalizeInputUrl } from "@/lib/scanner/url";
 import { assertPublicTarget } from "@/lib/scanner/guard";
 import { redisConfig, redis } from "@/lib/scanner/store";
+import { tickSecretOk } from "@/lib/sec";
 
 export const runtime = "nodejs";
 // the tick itself only submits the target; the scan runs inside the scan
@@ -38,6 +39,12 @@ const COUNTER = "appmot:pipeline:scans24h";
 
 const MIN_INTERVAL_S = 1200; // one auto scan per 20 min at most
 const HARVEST_THROTTLE_S = 3600; // fresh-target refresh at most once an hour
+
+/** Self-origin to loop the scan route through: NEXT_PUBLIC_APP_URL when set,
+ *  otherwise the origin this request arrived on (new URL(req.url).origin). */
+function appOrigin(req: NextRequest): string {
+  return process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+}
 
 // fresh-target sources: only first pages - recent posts are what we want
 const HN_QUERIES = ["v0", "bolt.new", "lovable", "vibe coding", "ai-generated app", "built with ai"];
@@ -167,11 +174,11 @@ async function harvestFresh(cfg: NonNullable<ReturnType<typeof redisConfig>>): P
 /**
  * Submit a target to the scan route over HTTP. The scan route owns the
  * browser engine bundle; machine-triggered scans bypass the free quota via
- * the admin key. Literal URL keeps the SSRF surface explicit; the vercel.app
- * origin loops back without the Cloudflare proxy in the path.
+ * the admin key. The origin comes from NEXT_PUBLIC_APP_URL or the request
+ * itself - no hardcoded deployment host.
  */
-async function submitScan(url: string): Promise<{ id: string; rkey: string }> {
-  const res = await fetch("https://appseal.vercel.app/api/scan", {
+async function submitScan(url: string, origin: string): Promise<{ id: string; rkey: string }> {
+  const res = await fetch(origin + "/api/scan", {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -186,7 +193,12 @@ async function submitScan(url: string): Promise<{ id: string; rkey: string }> {
   return { id: d.id, rkey: d.rkey };
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // TICK_SECRET configured -> the scheduler must present it (header or
+  // ?secret=, constant-time compare); unset -> public as before
+  if (!tickSecretOk(req.headers, req.url, process.env.TICK_SECRET)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   const cfg = redisConfig();
   if (!cfg) {
     return NextResponse.json({ error: "redis backend required" }, { status: 503 });
@@ -198,6 +210,7 @@ export async function GET() {
     return NextResponse.json({ skipped: true, reason: "rate-locked" });
   }
 
+  const origin = appOrigin(req);
   try {
     let queueSize = Number(await redis(cfg, ["ZCARD", QUEUE]));
     let added = 0;
@@ -209,20 +222,45 @@ export async function GET() {
       return NextResponse.json({ skipped: true, reason: "queue-empty", harvested: added });
     }
 
-    // newest targets first: score 0 on enqueue, popped one at a time
+    // newest targets first: score 0 on enqueue, popped one at a time. The
+    // score is kept until the submit succeeds - a lost submit must not lose
+    // the target (see the ZADD retry below).
     const popped = (await redis(cfg, ["ZPOPMIN", QUEUE])) as string[];
     const url = popped?.[0] ?? "";
+    const score = popped?.[1] ?? "0";
     if (!url) {
       return NextResponse.json({ skipped: true, reason: "queue-empty", harvested: added });
     }
 
-    const norm = normalizeInputUrl(url);
-    await assertPublicTarget(new URL(norm.url).hostname);
+    // a target that can never pass the public-target guard is dropped for
+    // good - re-queuing it would only pin the queue head forever
+    let norm: ReturnType<typeof normalizeInputUrl>;
+    try {
+      norm = normalizeInputUrl(url);
+      await assertPublicTarget(new URL(norm.url).hostname);
+    } catch (e) {
+      return NextResponse.json({
+        skipped: true,
+        reason: "target-rejected",
+        target: hostOf(url),
+        detail: e instanceof Error ? e.message : String(e),
+        harvested: added,
+      });
+    }
 
     // the scan route publishes the finished scan to the registry itself
-    const started = await submitScan(norm.url);
-    await redis(cfg, ["INCR", COUNTER]);
-    await redis(cfg, ["EXPIRE", COUNTER, "86400", "NX"]);
+    let started: { id: string; rkey: string };
+    try {
+      started = await submitScan(norm.url, origin);
+    } catch (e) {
+      // transient submit failure: put the target back with its ORIGINAL score
+      // so the next tick retries it in the same order instead of losing it
+      await redis(cfg, ["ZADD", QUEUE, score, url]).catch(() => undefined);
+      throw e;
+    }
+    // cosmetic counters only - they must never trip the retry path above
+    await redis(cfg, ["INCR", COUNTER]).catch(() => undefined);
+    await redis(cfg, ["EXPIRE", COUNTER, "86400", "NX"]).catch(() => undefined);
 
     return NextResponse.json({
       scanned: new URL(norm.url).hostname,

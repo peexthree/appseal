@@ -1,6 +1,6 @@
 import type { CheckResult, Severity } from "../types";
-import { registrableDomain, safeFetch, tlsInfo, truncate } from "../fetcher";
-import { detectPlatform } from "./liveness";
+import { registrableDomain, safeFetch, tlsInfo, truncate } from "../fetcher.ts";
+import { detectPlatform } from "./liveness.ts";
 
 interface Ctx {
   origin: string;
@@ -717,8 +717,24 @@ function aiEndpointResult(
 
 interface ProbeOutcome {
   path: string;
-  state: "open" | "protected" | "absent" | "html" | "unreachable";
+  state: "open" | "protected" | "absent" | "html" | "unreachable" | "healthcheck";
   evidence: string[];
+}
+
+/** A GET that answers with a pure health-check JSON (status/ok/health/uptime
+ *  style keys only) is a status endpoint, not an open LLM proxy: the real AI
+ *  route is POST-only and the scanner never sends POST (it would burn the
+ *  owner's LLM balance). Such hits soften to warn in checkAiEndpoints. */
+function isHealthCheckJson(body: string): boolean {
+  const b = body.trim();
+  if (!b.startsWith("{") || !b.endsWith("}")) return false;
+  try {
+    const data = JSON.parse(b) as Record<string, unknown>;
+    const keys = Object.keys(data);
+    return keys.length > 0 && keys.every((k) => /^(?:status|ok|health|healthy|uptime|version|message|detail|timestamp|ready)$/i.test(k));
+  } catch {
+    return false;
+  }
 }
 
 async function probeAiRoute(origin: string, basePath: string, path: string): Promise<ProbeOutcome> {
@@ -729,7 +745,8 @@ async function probeAiRoute(origin: string, basePath: string, path: string): Pro
   }
   const ct = (r.headers["content-type"] ?? "").toLowerCase();
   const acao = r.headers["access-control-allow-origin"] ?? "";
-  const body = (r.body ?? "").slice(0, 400);
+  const fullBody = r.body ?? "";
+  const body = fullBody.slice(0, 400);
   const ev = [`GET ${path} -> ${r.status}`, ct ? `content-type: ${ct.split(";")[0]}` : ""];
   if (acao) ev.push(`access-control-allow-origin: ${acao}`);
   if (body) ev.push(truncate(body.replace(/\s+/g, " "), 120));
@@ -747,6 +764,7 @@ async function probeAiRoute(origin: string, basePath: string, path: string): Pro
   // Auth-error JSON bodies (e.g. {"error":"Missing API key"}) still count as
   // protected - the route responds but refuses to work without a key.
   if (AUTH_ERROR_RE.test(body)) return { path, state: "protected", evidence: ev };
+  if (isHealthCheckJson(fullBody)) return { path, state: "healthcheck", evidence: ev };
   return { path, state: "open", evidence: ev };
 }
 
@@ -760,6 +778,7 @@ export async function checkAiEndpoints(ctx: Ctx): Promise<CheckResult[]> {
     const outcomes = await Promise.all(group.paths.map((p) => probeAiRoute(ctx.origin, base, p)));
     const dur = Date.now() - t0;
     const open = outcomes.find((o) => o.state === "open");
+    const health = outcomes.find((o) => o.state === "healthcheck");
     const html = outcomes.find((o) => o.state === "html");
     const probed = outcomes.find((o) => o.state === "protected" || o.state === "absent");
     const unreachable = outcomes.every((o) => o.state === "unreachable");
@@ -776,6 +795,22 @@ export async function checkAiEndpoints(ctx: Ctx): Promise<CheckResult[]> {
             en: "A public endpoint with no key check: any visitor can run LLM calls on your tab, burning the OpenAI/Anthropic balance (a classic vibe-coder loss - thousands of dollars overnight). Add a server-side API-key/session check or restrict the route by origin.",
           },
           evidence: open.evidence.filter(Boolean),
+        }, dur),
+      );
+      continue;
+    }
+    if (health) {
+      out.push(
+        aiEndpointResult(group.id, "warn", {
+          ru: `ИИ-эндпоинт ${health.path} отвечает только health-check JSON (метод не определён)`,
+          en: `AI endpoint ${health.path} only serves a health-check JSON (method unclear)`,
+        }, {
+          code: "AI_PROXY_HEALTHCHECK",
+          detail: {
+            ru: "GET вернул только health-check JSON ({status/ok/health}), значит настоящий AI-маршрут может быть POST-only и сканер его не видит (POST не отправляем, чтобы не жечь баланс LLM). Проверьте вручную, что маршрут требует авторизации.",
+            en: "GET returned only a health-check JSON ({status/ok/health}), so the real AI route may be POST-only and invisible to the scanner (no POST is sent - it would burn LLM credit). Verify manually that the route requires auth.",
+          },
+          evidence: health.evidence.filter(Boolean),
         }, dur),
       );
       continue;

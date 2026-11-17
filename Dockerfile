@@ -21,7 +21,9 @@ RUN addgroup -S appmot && adduser -S appmot -G appmot
 COPY --from=builder /app/.next/standalone ./
 USER appmot
 EXPOSE 3000
-# scans are stored as JSON files under /app/db/scans - mount a volume here
-# for persistence across container restarts
-VOLUME ["/app/db/scans"]
+# scans (db/scans) and the public registry (db/registry.json) live under
+# /app/db - mount a volume here for persistence across container restarts
+VOLUME ["/app/db"]
+# liveness probe: the /api/healthz endpoint answers 200 JSON without secrets
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD node -e "fetch('http://localhost:3000/api/healthz').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
 CMD ["node", "server.js"]

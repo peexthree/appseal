@@ -1,9 +1,12 @@
 node_modules
+node_modules/.cache
 .next
 .git
 *.log
 *.pid
 .env
+.env.local
+.env.*
 .mimosa
 db
 docs
@@ -14,3 +17,4 @@ examples
 mini-services
 TRANSFER.md
 Caddyfile
+backups

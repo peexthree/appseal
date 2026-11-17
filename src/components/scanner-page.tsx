@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { track } from "@vercel/analytics";
 import { ymGoal } from "@/components/yandex-metrika";
-import { AnimatePresence, animate, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import type { Lang, ScanResult, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META } from "@/lib/scanner/types";
 import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
@@ -142,6 +142,9 @@ const DEMO_CHIPS: { target: string; grade: Grade; score: number }[] = [
   { target: "demo://app", grade: "E", score: 0 },
 ];
 
+/** footer nav hrefs, index-aligned with the i18n "footerNav" labels */
+const FOOTER_NAV_HREFS = ["/registry", "/versus", "/fixes", "/digest", "/ci", "/api", "/bot", "/legal"];
+
 /** the re-scan of the aqua center case (A/91, current engine), public verification view */
 const CASE_REPORT_ID = "mwgtru41-31b2e3c030";
 
@@ -198,6 +201,7 @@ export function ScannerPage({
   initialReportKey,
   initialLang,
   initialTotals,
+  initialChips,
 }: {
   initialScan: ScanResult | null;
   /** report key from ?key= - present only for the scan initiator */
@@ -210,6 +214,9 @@ export function ScannerPage({
    *  stats card uses hosts so it always matches /stats; null falls back to
    *  the static harvest snapshot */
   initialTotals?: { scans: number; hosts: number } | null;
+  /** live chip grades resolved server-side from the registry (same source
+   *  as /api/verify); null/empty falls back to the static DEMO_CHIPS */
+  initialChips?: { target: string; grade: Grade; score: number }[] | null;
 }) {
   const [lang, setLang] = useState<Lang>(initialLang ?? "ru");
   const [phase, setPhase] = useState<Phase>(initialScan ? "report" : "form");
@@ -232,10 +239,8 @@ export function ScannerPage({
   const [paidPending, setPaidPending] = useState(false);
   const [lpHost, setLpHost] = useState("");
   const [lpErr, setLpErr] = useState("");
-  // boot splash shows once per browser (localStorage gate), never on reloads
-  const [booting, setBooting] = useState(false);
-  const [bootPct, setBootPct] = useState(0);
-  const [bootStage, setBootStage] = useState(0);
+  // one-click demo chips: server-resolved live grades when available
+  const demoChips = initialChips && initialChips.length > 0 ? initialChips : DEMO_CHIPS;
   // live terminal: engine stage strings timestamped as the scan advances
   const [termLines, setTermLines] = useState<string[]>([]);
   const scanStartedAt = useRef(0);
@@ -318,24 +323,6 @@ export function ScannerPage({
     const secs = scanStartedAt.current ? Math.round((Date.now() - scanStartedAt.current) / 1000) : 0;
     setTermLines((prev) => [...prev.slice(-14), `[${String(secs).padStart(2, "0")}s] ${stage}`]);
   }, [scan, lang]);
-
-  // playful fake boot: 1.2s splash with a progress bar, shown exactly once
-  // per browser (localStorage marker); reloads and revisits skip it entirely,
-  // as do reduced-motion users
-  useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    if (window.localStorage.getItem("appseal-boot-seen") === "1") return;
-    window.localStorage.setItem("appseal-boot-seen", "1");
-    setBooting(true);
-    const ctrl = animate(0, 100, { duration: 1.1, ease: "easeInOut", onUpdate: (v) => setBootPct(Math.round(v)) });
-    const stages = setInterval(() => setBootStage((s) => (s + 1) % 3), 360);
-    const done = setTimeout(() => setBooting(false), 1350);
-    return () => {
-      ctrl.stop();
-      clearInterval(stages);
-      clearTimeout(done);
-    };
-  }, []);
 
   const startScan = useCallback(async (target: string) => {
     setError("");
@@ -471,36 +458,6 @@ export function ScannerPage({
         <div className="appseal-noise" />
       </div>
 
-      {/* fake boot splash: playful SaaS-style loader, ~1.2s */}
-      <AnimatePresence>
-        {booting && (
-          <motion.div
-            key="boot"
-            exit={{ opacity: 0, transition: { duration: 0.3 } }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#090d16]"
-          >
-            <div className="w-64 text-center">
-              <motion.img
-                src="/ico.png"
-                alt=""
-                width={56}
-                height={56}
-                animate={{ scale: [1, 1.08, 1], opacity: [0.8, 1, 0.8] }}
-                transition={{ repeat: Infinity, duration: 1.15 }}
-                className="mx-auto h-14 w-14 object-contain drop-shadow-[0_0_26px_rgba(56,189,248,0.45)]"
-              />
-              <p className="font-display mt-4 text-lg font-extrabold tracking-tight text-slate-100">AppSeal</p>
-              <div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-800">
-                <div className="h-full rounded-full bg-sky-400 transition-all duration-150" style={{ width: `${bootPct}%` }} />
-              </div>
-              <p className="mt-2 font-mono text-[11px] text-slate-500">
-                {bootStage === 0 ? t(lang, "bootStage1") : bootStage === 1 ? t(lang, "bootStage2") : t(lang, "bootStage3")} {bootPct}%
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* header: the shared site header - transparent at rest, collapses into
           a small left logo-pill on scroll, quick-links mini-panel + RU/EN */}
       <SiteHeader lang={lang} onSwitchLang={switchLang} />
@@ -617,7 +574,7 @@ export function ScannerPage({
               {/* one-click demo scans: real past results, no typing needed */}
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <span className="text-[11px] font-semibold text-slate-500">{t(lang, "demoChipsTitle")}</span>
-                {DEMO_CHIPS.map((c) => (
+                {demoChips.map((c) => (
                   <button
                     key={c.target}
                     onClick={() => {
@@ -1126,7 +1083,7 @@ export function ScannerPage({
 
           {/* pre-scan engagement: honest checkbox estimate, links into the form */}
           <Reveal className="mt-6">
-            <ScoreSimulator />
+            <ScoreSimulator lang={lang} />
           </Reveal>
         </section>
 
@@ -1374,21 +1331,14 @@ export function ScannerPage({
             <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 font-mono text-[10px] text-slate-700 sm:justify-start">
               <span>{t(lang, "footerEngine")}</span>
               <span>·</span>
-              <a href="/registry" className="transition hover:text-slate-400">реестр</a>
-              <span>·</span>
-              <a href="/versus" className="transition hover:text-slate-400">versus</a>
-              <span>·</span>
-              <a href="/fixes" className="transition hover:text-slate-400">гайды</a>
-              <span>·</span>
-              <a href="/digest" className="transition hover:text-slate-400">дайджест</a>
-              <span>·</span>
-              <a href="/ci" className="transition hover:text-slate-400">ci</a>
-              <span>·</span>
-              <a href="/api" className="transition hover:text-slate-400">api</a>
-              <span>·</span>
-              <a href="/bot" className="transition hover:text-slate-400">робот (bot)</a>
-              <span>·</span>
-              <a href="/legal" className="transition hover:text-slate-400">правила</a>
+              {list(lang, "footerNav").map((label, i) => (
+                <span key={FOOTER_NAV_HREFS[i]} className="inline-flex items-center gap-1.5">
+                  {i > 0 && <span>·</span>}
+                  <a href={FOOTER_NAV_HREFS[i]} className="transition hover:text-slate-400">
+                    {label}
+                  </a>
+                </span>
+              ))}
               <span>·</span>
               <a href="https://t.me/peexthree" target="_blank" rel="noopener" className="transition hover:text-slate-400">
                 telegram

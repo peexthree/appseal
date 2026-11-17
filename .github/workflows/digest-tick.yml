@@ -1,5 +1,9 @@
 name: digest-tick
 
+# Weekly digest post to Telegram. When TICK_SECRET is configured on the
+# server (and in the repo secrets) the tick presents it via the
+# x-tick-secret header.
+
 on:
   schedule:
     # Mondays 09:00 UTC (14:00 in Tuiymazy) - weekly digest post to Telegram
@@ -11,4 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger digest tick
-        run: curl -fsS -m 60 https://appseal.online/api/digest-tick || true
+        env:
+          TICK_SECRET: ${{ secrets.TICK_SECRET }}
+        run: |
+          if [ -n "$TICK_SECRET" ]; then
+            curl -fsS -m 60 -H "x-tick-secret: $TICK_SECRET" https://appseal.online/api/digest-tick || true
+          else
+            curl -fsS -m 60 https://appseal.online/api/digest-tick || true
+          fi

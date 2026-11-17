@@ -348,6 +348,11 @@ export const DICT = {
     en: "AppSeal Engine v1.0 · External Black-Box Security Scanner",
   },
   footerStatus: { ru: "All systems operational", en: "All systems operational" },
+  // footer nav links, pipe-aligned with the hrefs in scanner-page footer
+  footerNav: {
+    ru: "реестр|versus|гайды|дайджест|ci|api|робот (bot)|правила",
+    en: "registry|versus|fixes|digest|ci|api|bot|legal",
+  },
   footerBadgeNote: {
     ru: "Наш собственный сайт проверен AppSeal - нажмите на бейдж, чтобы подтвердить подлинность",
     en: "Our own site verified by AppSeal - click the badge to verify its authenticity",

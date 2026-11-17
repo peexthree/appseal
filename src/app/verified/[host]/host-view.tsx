@@ -4,6 +4,13 @@ import Link from "next/link";
 import { getTrophyPath, GRADE_META } from "@/lib/scanner/grade";
 import { isDofollow, type RegistryEntry } from "@/lib/registry";
 import { useLang } from "@/lib/use-lang";
+import {
+  buildHistGroups,
+  pickHistGroups,
+  histDateLabel,
+  dateFmt,
+  type HistGroup,
+} from "./history-groups";
 
 const D = {
   eyebrow: { ru: "Публичный профиль безопасности", en: "Public security profile" },
@@ -14,6 +21,7 @@ const D = {
   },
   optout: { ru: "Владелец может запросить исключение", en: "The owner can request removal" },
   dynTitle: { ru: "Динамика балла", en: "Score dynamics" },
+  dynLabel: { ru: "Динамика", en: "Dynamics" },
   liftTitle: {
     ru: "Хотите поднять класс? Самые частые провалы - защитные заголовки, чинятся одним конфигом: ",
     en: "Want a higher grade? The most common gaps are protection headers - fixable with one config: ",
@@ -41,18 +49,15 @@ const D = {
   footerRegistry: { ru: "реестр", en: "registry" },
 } as const;
 
-// UTC on both sides: the calendar day never depends on the visitor's timezone,
-// so SSR markup and client hydration always agree
-const dateFmt = {
-  ru: new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }),
-  en: new Intl.DateTimeFormat("en-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }),
-};
+
 
 export function HostView({ host, history, latest }: { host: string; history: RegistryEntry[]; latest: RegistryEntry | null }) {
   const lang = useLang();
   const t = (k: keyof typeof D) => D[k][lang];
   const dofollow = latest ? isDofollow(latest) : false;
   const gm = latest ? GRADE_META[latest.grade as keyof typeof GRADE_META] : null;
+  const shownGroups: HistGroup[] = latest ? pickHistGroups(buildHistGroups(history), 15) : [];
+  const latestYear = latest ? new Date(latest.ts).getUTCFullYear() : 0;
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 sm:px-6">
@@ -137,38 +142,43 @@ export function HostView({ host, history, latest }: { host: string; history: Reg
           </div>
 
           <h2 className="font-display mt-10 text-xl font-extrabold">{t("histTitle")}</h2>
-          <ul className="mt-4 divide-y divide-slate-800/70 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
-            {history.map((e) => {
-              const em = GRADE_META[e.grade as keyof typeof GRADE_META];
-              const first = e.id === history[0].id;
-              const last = e.id === latest.id;
-              return (
-                <li key={e.id} className="flex items-center gap-4 px-5 py-3.5">
-                  <img
-                    src={getTrophyPath(e.grade)}
-                    alt={`AppSeal ${e.grade}`}
-                    width={36}
-                    height={36}
-                    className="h-9 w-9 object-contain"
-                  />
-                  <span
-                    className="inline-flex h-7 min-w-8 items-center justify-center rounded-md border px-2 font-display text-sm font-extrabold"
-                    style={{ color: em?.color, borderColor: `${em?.color}66`, backgroundColor: `${em?.color}1a` }}
-                  >
-                    {e.grade}
-                  </span>
-                  <span className="font-mono text-sm font-bold text-slate-200">{e.score}/100</span>
-                  <span className="flex-1 text-sm text-slate-400">{dateFmt[lang].format(new Date(e.ts))}</span>
-                  <Link
-                    href={`/report/${e.id}`}
-                    className="text-xs font-semibold text-sky-400 transition hover:text-sky-300"
-                  >
-                    {first ? t("firstScan") : last ? t("verifyLast") : t("verifyMid")}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+            <p className="px-5 pt-4 text-xs font-bold uppercase tracking-wider text-slate-500">{t("dynLabel")}</p>
+            <ul className="mt-2 divide-y divide-slate-800/70">
+              {shownGroups.map((g) => {
+                const em = GRADE_META[g.grade as keyof typeof GRADE_META];
+                const first = g.firstId === history[0].id;
+                const last = g.lastId === latest.id;
+                return (
+                  <li key={g.firstId} className="flex items-center gap-4 px-5 py-3.5">
+                    <img
+                      src={getTrophyPath(g.grade)}
+                      alt={`AppSeal ${g.grade}`}
+                      width={36}
+                      height={36}
+                      className="h-9 w-9 object-contain"
+                    />
+                    <span
+                      className="inline-flex h-7 min-w-8 items-center justify-center rounded-md border px-2 font-display text-sm font-extrabold"
+                      style={{ color: em?.color, borderColor: `${em?.color}66`, backgroundColor: `${em?.color}1a` }}
+                    >
+                      {g.grade}
+                    </span>
+                    <span className="font-mono text-sm font-bold text-slate-200">{g.score}/100</span>
+                    <span className="flex-1 text-sm text-slate-400">
+                      {histDateLabel(g, lang, new Date(g.from).getUTCFullYear() < latestYear)}
+                    </span>
+                    <Link
+                      href={`/report/${last ? latest.id : g.firstId}`}
+                      className="text-xs font-semibold text-sky-400 transition hover:text-sky-300"
+                    >
+                      {first ? t("firstScan") : last ? t("verifyLast") : t("verifyMid")}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
 
           <p className="mt-6 text-xs leading-relaxed text-slate-500">
             {t("privacyNoteA")}

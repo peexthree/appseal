@@ -19,9 +19,17 @@ const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)
 const dateFmt = new Intl.DateTimeFormat("ru-RU", {
   day: "numeric",
   month: "long",
-  year: "numeric",
   timeZone: "UTC",
 });
+
+// russian plural forms: 1 проверка / 2-4 проверки / 5+ проверок (11-14 -> проверок)
+function ruPlural(n: number, one: string, few: string, many: string): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
+}
 
 async function loadHostHistory(rawHost: string): Promise<RegistryEntry[]> {
   if (!HOST_RE.test(rawHost) || rawHost.length > 100) return [];
@@ -53,9 +61,10 @@ export async function generateMetadata({
     };
   }
   const meta = GRADE_META[latest.grade as keyof typeof GRADE_META];
+  const firstScan = new Date(history[0].ts);
   return {
     title: `AppSeal: ${host} - Класс ${latest.grade} (${latest.score}/100)`,
-    description: `Публичный профиль безопасности домена ${host}: класс ${latest.grade} (${meta?.label.ru ?? ""}), история проверок AppSeal. ${history.length} проверок с ${dateFmt.format(new Date(history[0].ts))} года.`,
+    description: `Публичный профиль безопасности домена ${host}: класс ${latest.grade} (${meta?.label.ru ?? ""}), история проверок AppSeal. ${history.length} ${ruPlural(history.length, "проверка", "проверки", "проверок")} с ${dateFmt.format(firstScan)} ${firstScan.getUTCFullYear()} года.`,
     alternates: { canonical: `/verified/${host}` },
     // live OG trophy: social previews show the current grade of the domain
     openGraph: { images: [`/api/og?host=${encodeURIComponent(host)}`] },

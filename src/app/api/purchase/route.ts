@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPayment, getPayment, ykConfig } from "@/lib/yookassa";
+import { createPayment, getPayment, ykConfig, type YkPayment } from "@/lib/yookassa";
 import { createLavaInvoice, getLavaInvoice, lavaConfig } from "@/lib/lava";
 import {
   activatePass,
@@ -9,11 +9,14 @@ import {
   getPackCredits,
   getPassByPayment,
   getPaymentIdByNonce,
+  hashIp,
+  redisCommand,
   setChatPack,
   setLavaInvoiceHost,
   setNonceFinal,
   setNonceMapping,
 } from "@/lib/passes";
+import { getClientIp } from "@/lib/sec";
 import type { Lang } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
@@ -28,9 +31,30 @@ const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)
 const CHAT_RE = /^[A-Za-z0-9_-]{3,64}$/;
 // return URL is pinned to our own origin - YooKassa sends the payer back here
 const SITE_ORIGIN = process.env.NEXT_PUBLIC_APP_URL || "https://appseal.online";
+// POST rate limit: 10 checkout starts per hour per IP (the GET return-page
+// poll is exempt - it is the buyer's own status refresh)
+const PURCHASE_RATE_LIMIT = 10;
+const PURCHASE_RATE_WINDOW_S = 3600;
 
 export async function POST(req: NextRequest) {
   try {
+    // per-IP POST rate limit over the same Upstash REST mechanism as the pass
+    // store: SET NX wins once per window and pins the TTL atomically, INCR
+    // counts the rest (an expire can no longer be lost between two commands).
+    // Redis absent/hiccuping -> the counter fails open, the purchase flow works.
+    const ip = getClientIp(req.headers);
+    const rlKey = `rl:purchase:${hashIp(ip)}`;
+    const fresh = await redisCommand<string>([
+      "SET", rlKey, "1", "EX", String(PURCHASE_RATE_WINDOW_S), "NX",
+    ]);
+    let hits = 1;
+    if (fresh !== "OK") {
+      hits = (await redisCommand<number>(["INCR", rlKey])) ?? 1;
+    }
+    if (hits > PURCHASE_RATE_LIMIT) {
+      return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    }
+
     const body = (await req.json()) as {
       host?: string;
       email?: string;
@@ -145,7 +169,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "global payments unavailable" }, { status: 503 });
     }
     const invoiceId = raw.slice(5);
-    const invoice = await getLavaInvoice(lava, invoiceId);
+    // a provider hiccup (timeout, network) must not 500 the buyer's return
+    // page - answer "status pending" instead, the nonce can be re-polled
+    let invoice: Awaited<ReturnType<typeof getLavaInvoice>>;
+    try {
+      invoice = await getLavaInvoice(lava, invoiceId);
+    } catch {
+      return NextResponse.json({ error: "status_check_failed" }, { status: 200 });
+    }
     if (!invoice) {
       return NextResponse.json({ error: "payment not found" }, { status: 404 });
     }
@@ -174,7 +205,14 @@ export async function GET(req: NextRequest) {
   }
 
   const paymentId = raw.startsWith("yk:") ? raw.slice(3) : raw;
-  const payment = await getPayment(paymentId);
+  // same rule as the lava branch: a timeout/network failure answers "status
+  // pending" (HTTP-level failures still mean a genuinely missing payment)
+  let payment: YkPayment | null;
+  try {
+    payment = await getPayment(paymentId);
+  } catch {
+    return NextResponse.json({ error: "status_check_failed" }, { status: 200 });
+  }
   if (!payment) {
     return NextResponse.json({ error: "payment not found" }, { status: 404 });
   }

@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { redisConfig, redis, getRegistryEntries } from "@/lib/scanner/store";
 import { buildDigest, buildDigestText } from "@/lib/digest";
 import { sendTelegramAlert } from "@/lib/telegram";
+import { tickSecretOk } from "@/lib/sec";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -12,10 +13,15 @@ const LOCK_TTL_S = 6 * 24 * 3600;
 
 /**
  * Weekly digest post (GHA cron, Monday 09:00 UTC): composes the digest from
- * the live registry and sends it to the Telegram channel. Public endpoint,
- * the week-long lock is the throttle - extra calls are no-ops.
+ * the live registry and sends it to the Telegram channel. TICK_SECRET
+ * configured -> the scheduler must present it (header or ?secret=); unset ->
+ * public endpoint, the week-long lock is the throttle - extra calls are
+ * no-ops.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!tickSecretOk(req.headers, req.url, process.env.TICK_SECRET)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   const cfg = redisConfig();
   if (!cfg) {
     return NextResponse.json({ error: "redis backend required" }, { status: 503 });

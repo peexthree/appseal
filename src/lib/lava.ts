@@ -57,26 +57,39 @@ function isPaidStatus(status: string): boolean {
   return /^(success|paid|succeeded|completed)$/i.test(status.trim());
 }
 
+const LAVA_TIMEOUT_MS = 10_000; // provider hiccup must never hang a request
+
 export async function createLavaInvoice(
   cfg: LavaCfg,
   opts: { email: string; nonce: string; offerId?: string },
 ): Promise<LavaInvoice> {
-  const res = await fetch(`${API_ORIGIN}/api/v3/invoice`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      accept: "application/json",
-      "x-api-key": cfg.apiKey,
-    },
-    body: JSON.stringify({
-      email: opts.email,
-      // a second offer id (Agency Pack) can override the default one
-      offerId: opts.offerId ?? cfg.offerId,
-      currency: "USD",
-      // Lava appends invoiceId + status to this URL; our own ?paid= stays intact
-      successful_return_url: `${SITE_ORIGIN}/?paid=${encodeURIComponent(opts.nonce)}`,
-    }),
-  });
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), LAVA_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${API_ORIGIN}/api/v3/invoice`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
+        "x-api-key": cfg.apiKey,
+      },
+      body: JSON.stringify({
+        email: opts.email,
+        // a second offer id (Agency Pack) can override the default one
+        offerId: opts.offerId ?? cfg.offerId,
+        currency: "USD",
+        // Lava appends invoiceId + status to this URL; our own ?paid= stays intact
+        successful_return_url: `${SITE_ORIGIN}/?paid=${encodeURIComponent(opts.nonce)}`,
+      }),
+      signal: ac.signal,
+    });
+  } catch (e) {
+    const detail = ac.signal.aborted ? `timeout after ${LAVA_TIMEOUT_MS}ms` : e instanceof Error ? e.message : String(e);
+    throw new Error(`lava invoice request failed: ${detail}`);
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`lava invoice HTTP ${res.status}${text.slice(0, 120)}`);
@@ -92,9 +105,22 @@ export async function createLavaInvoice(
 
 export async function getLavaInvoice(cfg: LavaCfg, invoiceId: string): Promise<LavaInvoice | null> {
   if (!/^[a-zA-Z0-9-]{8,80}$/.test(invoiceId)) return null;
-  const res = await fetch(`${API_ORIGIN}/api/v1/invoices/${encodeURIComponent(invoiceId)}`, {
-    headers: { accept: "application/json", "x-api-key": cfg.apiKey },
-  });
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), LAVA_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${API_ORIGIN}/api/v1/invoices/${encodeURIComponent(invoiceId)}`, {
+      headers: { accept: "application/json", "x-api-key": cfg.apiKey },
+      signal: ac.signal,
+    });
+  } catch (e) {
+    // rethrow (same contract as before: a network failure is not "not found")
+    // so the caller can answer "status pending" instead of a false 404
+    const detail = ac.signal.aborted ? `timeout after ${LAVA_TIMEOUT_MS}ms` : e instanceof Error ? e.message : String(e);
+    throw new Error(`lava invoice request failed: ${detail}`);
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) return null;
   const raw = unwrap(await res.json().catch(() => ({})));
   const status = pickString(raw, ["status"]) || "unknown";

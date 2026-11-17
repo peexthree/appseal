@@ -1,8 +1,9 @@
 name: pipeline tick
 
 # Living-registry heartbeat: hit the production tick endpoint every 30 min.
-# The endpoint is public but rate-locked (one auto scan per 20 min), so stray
-# calls are harmless no-ops and no secrets are needed here.
+# The endpoint is rate-locked (one auto scan per 20 min), so stray calls are
+# harmless no-ops; when TICK_SECRET is configured on the server (and in the
+# repo secrets) the tick presents it via the x-tick-secret header.
 
 on:
   schedule:
@@ -16,4 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: hit the tick endpoint
-        run: curl -fsS -m 70 https://appseal.online/api/pipeline-tick || true
+        env:
+          TICK_SECRET: ${{ secrets.TICK_SECRET }}
+        run: |
+          if [ -n "$TICK_SECRET" ]; then
+            curl -fsS -m 70 -H "x-tick-secret: $TICK_SECRET" https://appseal.online/api/pipeline-tick || true
+          else
+            curl -fsS -m 70 https://appseal.online/api/pipeline-tick || true
+          fi

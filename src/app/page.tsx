@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { ScannerPage } from "@/components/scanner-page";
 import { JsonLd } from "@/components/json-ld";
-import { getLiveTotals } from "@/lib/scanner/store";
-import type { Lang } from "@/lib/scanner/types";
+import { getLiveTotals, getLatestHostEntry } from "@/lib/scanner/store";
+import { canonicalHost } from "@/lib/registry";
+import type { Grade, Lang } from "@/lib/scanner/types";
 
 /**
  * Language is resolved on the server, not after hydration: crawlers (Google,
@@ -62,16 +63,37 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/**
+ * Live grades for the hero demo chips, straight from the registry (the same
+ * source /api/verify answers from). A stale chip claiming "A+ · 97" next to a
+ * live profile showing "A · 88" reads as dishonesty - so chips follow the
+ * registry, falling back to the static snapshot when Redis is unavailable.
+ */
+async function getLiveChips(): Promise<{ target: string; grade: Grade; score: number }[] | null> {
+  const hosts = ["akulenok-tmz.ru", "appseal.online"];
+  try {
+    const chips = await Promise.all(
+      hosts.map(async (host) => {
+        const entry = await getLatestHostEntry(canonicalHost(host));
+        return entry ? { target: host, grade: entry.grade as Grade, score: entry.score } : null;
+      }),
+    );
+    return chips.every((c) => c !== null) ? chips : null;
+  } catch {
+    return null;
+  }
+}
+
 export default async function Home() {
   const h = await headers();
   const lang = detectInitialLang(h);
   // live monotonic counters from the same Redis source /stats renders from -
   // the landing stats card must never disagree with the stats page
-  const totals = await getLiveTotals();
+  const [totals, chips] = await Promise.all([getLiveTotals(), getLiveChips()]);
   return (
     <>
       <JsonLd />
-      <ScannerPage initialScan={null} initialLang={lang} initialTotals={totals} />
+      <ScannerPage initialScan={null} initialLang={lang} initialTotals={totals} initialChips={chips} />
     </>
   );
 }

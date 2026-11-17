@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getScan } from "@/lib/scanner/store";
 import { buildReportPdf } from "@/lib/scanner/report-pdf";
 import { hasPassAccess } from "@/lib/passes";
+import { secretsMatch } from "@/lib/sec";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   }
   // the PDF lists every finding: serve it only to the scan initiator
   // holding the report key (bare ids must stay on the public view)
-  if (!scan.rkey || scan.rkey !== key) {
+  if (!scan.rkey || !secretsMatch(key, scan.rkey)) {
     return new Response("forbidden", { status: 403 });
   }
   // PDF is a Launch Pass benefit: the scanned host needs a live pass

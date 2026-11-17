@@ -1,7 +1,8 @@
 name: monitor tick
 
 # Launch Pass background monitor: rescans one watched paid host and alerts
-# on degradation. Public endpoint, rate-locked - no secrets needed here.
+# on degradation. Rate-locked; when TICK_SECRET is configured on the server
+# (and in the repo secrets) the tick presents it via the x-tick-secret header.
 
 on:
   schedule:
@@ -15,4 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: hit the monitor endpoint
-        run: curl -fsS -m 90 https://appseal.online/api/monitor-tick || true
+        env:
+          TICK_SECRET: ${{ secrets.TICK_SECRET }}
+        run: |
+          if [ -n "$TICK_SECRET" ]; then
+            curl -fsS -m 90 -H "x-tick-secret: $TICK_SECRET" https://appseal.online/api/monitor-tick || true
+          else
+            curl -fsS -m 90 https://appseal.online/api/monitor-tick || true
+          fi

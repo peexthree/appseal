@@ -3,11 +3,53 @@ import { NextRequest } from "next/server";
 import { getScan, getLatestHostEntry } from "@/lib/scanner/store";
 import { GRADE_META } from "@/lib/scanner/grade";
 import { canonicalHost } from "@/lib/registry";
+import type { Lang } from "@/lib/scanner/types";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** Share-card texts per ?lang=en|ru (default ru). Text-only strings - safe
+ *  for the Satori/JSX render below. */
+const OG_TEXT = {
+  ru: {
+    badge: "ТЕХОСМОТР БЕЗОПАСНОСТИ • 24 ПРОВЕРКИ",
+    grade: "Класс",
+    pointForms: ["балл", "балла", "баллов"],
+    checked: "проверено",
+    liveRank: "живой ранг по реестру AppSeal",
+    passing: "в норме",
+    warnForms: ["замечание", "замечания", "замечаний"],
+    failForms: ["уязвимость", "уязвимости", "уязвимостей"],
+    allClear: "100% защита пройдена",
+    footerTagline: "Независимый слой доверия для веб-приложений, собранных с ИИ",
+    footerCta: "Проверить свой сайт → appseal.online",
+  },
+  en: {
+    badge: "SECURITY CHECKUP • 24 CHECKS",
+    grade: "Grade",
+    pointForms: ["point", "points", "points"],
+    checked: "checked",
+    liveRank: "live rank from the AppSeal registry",
+    passing: "passed",
+    warnForms: ["warning", "warnings", "warnings"],
+    failForms: ["vulnerability", "vulnerabilities", "vulnerabilities"],
+    allClear: "100% protection passed",
+    footerTagline: "An independent trust layer for AI-built web apps",
+    footerCta: "Check your site → appseal.online",
+  },
+} as const;
+
+/** 1 балл / 2 балла / 5 баллов (ru); 1 point / 5 points (en). */
+function ogPlural(n: number, forms: readonly [string, string, string], lang: Lang): string {
+  if (lang === "en") return n === 1 ? forms[0] : forms[1];
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return forms[0];
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return forms[1];
+  return forms[2];
+}
 
 /** Whitelist of trophy images per grade. Kept in-file on purpose: the file
  *  path must never depend on any externally influenced value. */
@@ -23,6 +65,10 @@ const TROPHY_FILE = {
 export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
   const hostParam = (req.nextUrl.searchParams.get("host") ?? "").trim().toLowerCase();
+  // share-card language: ?lang=en|ru, ru by default
+  const langParam = (req.nextUrl.searchParams.get("lang") ?? "").trim().toLowerCase();
+  const lang: Lang = langParam === "en" ? "en" : "ru";
+  const T = OG_TEXT[lang];
 
   // host mode: live share-card - the newest registry entry for the domain
   let entry: { host: string; grade: string; score: number; ts: number } | null = null;
@@ -54,7 +100,7 @@ export async function GET(req: NextRequest) {
   const passes = scan ? scan.results.filter((r) => r.status === "pass" || r.status === "info").length : 24;
   const hostMode = Boolean(entry);
   const checkedDate = entry
-    ? new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(entry.ts))
+    ? new Intl.DateTimeFormat(lang === "en" ? "en-US" : "ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(entry.ts))
     : "";
 
   return new ImageResponse(
@@ -145,7 +191,7 @@ export async function GET(req: NextRequest) {
               color: "#94A3B8",
             }}
           >
-            ТЕХОСМОТР БЕЗОПАСНОСТИ • 24 ПРОВЕРКИ
+            {T.badge}
           </div>
         </div>
 
@@ -224,7 +270,7 @@ export async function GET(req: NextRequest) {
                   textTransform: "uppercase",
                 }}
               >
-                Класс {grade} • {meta.label.ru}
+                {T.grade} {grade} • {meta.label[lang]}
               </span>
               <span
                 style={{
@@ -233,7 +279,7 @@ export async function GET(req: NextRequest) {
                   color: meta.color,
                 }}
               >
-                {score}/100 баллов
+                {score}/100 {ogPlural(score, T.pointForms, lang)}
               </span>
             </div>
 
@@ -264,7 +310,7 @@ export async function GET(req: NextRequest) {
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ color: "#34D399" }}>✔</span> проверено {checkedDate} · живой ранг по реестру AppSeal
+                  <span style={{ color: "#34D399" }}>✔</span> {T.checked} {checkedDate} · {T.liveRank}
                 </span>
               </div>
             ) : (
@@ -279,21 +325,21 @@ export async function GET(req: NextRequest) {
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ color: "#34D399" }}>✔</span> {passes} в норме
+                  <span style={{ color: "#34D399" }}>✔</span> {passes} {T.passing}
                 </span>
                 {warns > 0 && (
                   <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ color: "#FBBF24" }}>⚠</span> {warns} замечаний
+                    <span style={{ color: "#FBBF24" }}>⚠</span> {warns} {ogPlural(warns, T.warnForms, lang)}
                   </span>
                 )}
                 {fails > 0 && (
                   <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ color: "#F87171" }}>✖</span> {fails} уязвимостей
+                    <span style={{ color: "#F87171" }}>✖</span> {fails} {ogPlural(fails, T.failForms, lang)}
                   </span>
                 )}
                 {fails === 0 && warns === 0 && (
                   <span style={{ display: "flex", alignItems: "center", gap: "6px", color: "#34D399" }}>
-                    ★ 100% защита пройдена
+                    ★ {T.allClear}
                   </span>
                 )}
               </div>
@@ -314,8 +360,8 @@ export async function GET(req: NextRequest) {
             zIndex: 10,
           }}
         >
-          <div>Независимый слой доверия для веб-приложений, собранных с ИИ</div>
-          <div style={{ color: "#38BDF8", fontWeight: 600 }}>Проверить свой сайт → appseal.online</div>
+          <div>{T.footerTagline}</div>
+          <div style={{ color: "#38BDF8", fontWeight: 600 }}>{T.footerCta}</div>
         </div>
       </div>
     ),

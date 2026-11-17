@@ -29,6 +29,18 @@ export function ykConfig(): { shopId: string; secret: string } | null {
   return { shopId, secret };
 }
 
+const YK_TIMEOUT_MS = 10_000; // provider hiccup must never hang a request
+
+/** Thrown when the provider call was aborted by our own timeout - callers
+ *  distinguish it from a clean HTTP failure ("not found") and can answer
+ *  "status pending" instead. */
+export class YkTimeoutError extends Error {
+  constructor() {
+    super(`yookassa timeout after ${YK_TIMEOUT_MS}ms`);
+    this.name = "YkTimeoutError";
+  }
+}
+
 async function ykRequest<T>(
   method: string,
   path: string,
@@ -42,12 +54,23 @@ async function ykRequest<T>(
     "content-type": "application/json",
   };
   if (idempotenceKey) headers["idempotence-key"] = idempotenceKey;
-  const res = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-    cache: "no-store",
-  });
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), YK_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      cache: "no-store",
+      signal: ac.signal,
+    });
+  } catch (e) {
+    if (ac.signal.aborted) throw new YkTimeoutError();
+    throw new Error(`yookassa request failed: ${e instanceof Error ? e.message : String(e)}`);
+  } finally {
+    clearTimeout(timer);
+  }
   const data = (await res.json().catch(() => ({}))) as T & { description?: string };
   if (!res.ok) {
     throw new Error(`yookassa ${res.status}: ${data.description ?? "request failed"}`);
@@ -92,12 +115,15 @@ export async function createPayment(opts: {
   return ykRequest<YkPayment>("POST", "/payments", payment, randomUUID());
 }
 
-/** Re-fetch a payment by id - the only trusted way to confirm a webhook. */
+/** Re-fetch a payment by id - the only trusted way to confirm a webhook.
+ *  HTTP failures mean "not found" (null); our own timeout rethrows so the
+ *  return page can show "status pending" instead of a false 404. */
 export async function getPayment(paymentId: string): Promise<YkPayment | null> {
   if (!/^[0-9a-f-]{10,64}$/i.test(paymentId)) return null;
   try {
     return await ykRequest<YkPayment>("GET", `/payments/${paymentId}`);
-  } catch {
+  } catch (e) {
+    if (e instanceof YkTimeoutError) throw e;
     return null;
   }
 }

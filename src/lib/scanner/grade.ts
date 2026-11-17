@@ -1,5 +1,13 @@
 import type { CheckResult, Grade, Severity } from "./types";
 
+/**
+ * Total granular checks the engine can produce, per the landing breakdown
+ * (21 signatures + 26 header rules + 27 endpoints + 23 patterns + 28 AI-trust
+ * checks). Single source of truth - copy and UI must derive from this, not
+ * hardcode the number separately.
+ */
+export const TOTAL_CHECKS = 125;
+
 export interface GradeMetaItem {
   color: string;
   secondaryColor: string;

@@ -11,6 +11,65 @@
 
 const RENDER_TIMEOUT_MS = 20000;
 
+/* Global render semaphore: each playwright browser costs ~150-300 MB RSS, so
+ * more than two concurrent renders can OOM a small serverless container or a
+ * thin VPS. A simple promise queue caps in-flight renderPage() calls; callers
+ * beyond the cap wait, and waiting longer than RENDER_QUEUE_WAIT_MS aborts
+ * with an error (renderPage turns it into null - the scan falls back to raw
+ * HTML, same as any other render failure). */
+const MAX_CONCURRENT_RENDERS = 2;
+const RENDER_QUEUE_WAIT_MS = 30_000;
+
+interface RenderQueueWaiter {
+  settled: boolean;
+  timer: ReturnType<typeof setTimeout> | null;
+  resolve: () => void;
+  reject: (e: Error) => void;
+}
+
+const renderQueue: RenderQueueWaiter[] = [];
+let activeRenders = 0;
+
+function releaseRenderSlot(): void {
+  activeRenders = Math.max(0, activeRenders - 1);
+  while (renderQueue.length > 0) {
+    const w = renderQueue.shift() as RenderQueueWaiter;
+    if (w.settled) continue; // timed out while queued - already rejected
+    w.settled = true;
+    if (w.timer) clearTimeout(w.timer);
+    activeRenders += 1; // hand the slot over without dropping the count
+    w.resolve();
+    return;
+  }
+}
+
+function acquireRenderSlot(): Promise<void> {
+  if (activeRenders < MAX_CONCURRENT_RENDERS) {
+    activeRenders += 1;
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve, reject) => {
+    const w: RenderQueueWaiter = {
+      settled: false,
+      timer: null,
+      resolve,
+      reject,
+    };
+    w.timer = setTimeout(() => {
+      if (w.settled) return;
+      w.settled = true;
+      const i = renderQueue.indexOf(w);
+      if (i >= 0) renderQueue.splice(i, 1);
+      reject(
+        new Error(
+          `render queue timeout: waited ${RENDER_QUEUE_WAIT_MS}ms for a free slot (max ${MAX_CONCURRENT_RENDERS} concurrent renders)`,
+        ),
+      );
+    }, RENDER_QUEUE_WAIT_MS);
+    renderQueue.push(w);
+  });
+}
+
 export function shouldRender(csr: boolean, isDemo: boolean): boolean {
   if (!csr || isDemo) return false;
   return process.env.APPSEAL_RENDER !== "off";
@@ -71,6 +130,12 @@ async function launchBrowser(): Promise<RenderBrowser | null> {
 
 /** Render a public URL in headless chromium; null on any failure. */
 export async function renderPage(url: string): Promise<Rendered | null> {
+  try {
+    await acquireRenderSlot();
+  } catch (e) {
+    console.warn("[appseal-render] queue:", e instanceof Error ? e.message : String(e));
+    return null;
+  }
   let browser: RenderBrowser | null = null;
   try {
     browser = await launchBrowser();
@@ -89,6 +154,7 @@ export async function renderPage(url: string): Promise<Rendered | null> {
     console.warn("[appseal-render] failed:", e instanceof Error ? e.message : String(e));
     return null;
   } finally {
+    releaseRenderSlot();
     await browser?.close().catch(() => {});
   }
 }

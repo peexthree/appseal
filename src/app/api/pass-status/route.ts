@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getScan } from "@/lib/scanner/store";
 import { hasPassAccess } from "@/lib/passes";
+import { secretsMatch } from "@/lib/sec";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   const id = req.nextUrl.searchParams.get("id") ?? "";
   const key = req.nextUrl.searchParams.get("key") ?? "";
   const scan = await getScan(id);
-  if (!scan || scan.status !== "done" || !scan.rkey || scan.rkey !== key) {
+  if (!scan || scan.status !== "done" || !scan.rkey || !secretsMatch(key, scan.rkey)) {
     return new Response("forbidden", { status: 403 });
   }
   return Response.json(

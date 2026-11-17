@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getScan, publicView, updateScan } from "@/lib/scanner/store";
+import { secretsMatch } from "@/lib/sec";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export async function GET(
   // done scans carry the findings: full record only for the initiator who
   // holds the report key, everyone else gets the public verification view
   if (scan.status === "done") {
-    if (scan.rkey && scan.rkey === key) {
+    if (scan.rkey && secretsMatch(key, scan.rkey)) {
       return NextResponse.json({ ...scan, rkey: undefined }, {
         headers: { "cache-control": "no-store" },
       });

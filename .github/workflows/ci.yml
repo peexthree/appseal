@@ -1,0 +1,25 @@
+name: ci
+
+# Tests only: npm lint carries a backlog of pre-existing errors, so CI gates
+# on the node:test suite until that debt is paid down.
+
+on:
+  push:
+    branches: [main]
+  pull_request: {}
+
+permissions: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: install dependencies
+        run: npm ci
+      - name: run tests
+        run: npm test

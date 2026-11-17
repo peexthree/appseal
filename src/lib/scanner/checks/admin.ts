@@ -1,6 +1,6 @@
 import type { CheckResult, Severity } from "../types";
 import { randomBytes } from "node:crypto";
-import { bodiesEquivalent, safeFetch, truncate } from "../fetcher";
+import { bodiesEquivalent, safeFetch, truncate } from "../fetcher.ts";
 
 interface Ctx {
   origin: string;
@@ -12,6 +12,9 @@ interface Ctx {
   basePath?: string;
   /** set once the soft-404 probe has run (catch-all routing) */
   catchAll?: boolean;
+  /** rate-limit header lines observed on probed responses (429/4xx mainly),
+   *  accumulated by admin probes for checkRateLimitProtection */
+  rateLimitEvidence?: string[];
 }
 
 const done = (
@@ -31,6 +34,33 @@ function isRealFile(body: string, contentType: string, homeBody: string): boolea
   return !isHtml && !bodiesEquivalent(body, homeBody);
 }
 
+/** Headers whose presence on a probed response is genuine evidence that the
+ *  site rate-limits: they typically ride on 429/4xx answers, but servers
+ *  configured globally also send them with 200s. */
+const RATE_LIMIT_HEADERS = [
+  "ratelimit-limit",
+  "ratelimit-remaining",
+  "ratelimit-reset",
+  "x-ratelimit-limit",
+  "x-ratelimit-remaining",
+  "x-rate-limit-limit",
+  "retry-after",
+  "cf-mitigated",
+];
+
+/** Stash rate-limit headers seen on any probe. Best-effort: heavy checks run
+ *  with concurrency 4, so a probe may finish after checkRateLimitProtection
+ *  already answered - it reads whatever evidence accumulated by then. */
+function noteRateLimit(ctx: Ctx, headers: Record<string, string>): void {
+  for (const h of RATE_LIMIT_HEADERS) {
+    const v = headers[h];
+    if (!v) continue;
+    ctx.rateLimitEvidence ??= [];
+    const line = `${h}: ${truncate(v, 40)}`;
+    if (!ctx.rateLimitEvidence.includes(line)) ctx.rateLimitEvidence.push(line);
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Soft-404 / catch-all routing detector (shared context for probes)   */
 /* ------------------------------------------------------------------ */
@@ -39,6 +69,7 @@ export async function checkSoft404(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
   const probePath = "/appseal-probe-" + randomBytes(4).toString("hex");
   const probe = await safeFetch(base(ctx) + probePath, { timeoutMs: 5000, maxBody: 200 * 1024 });
+  noteRateLimit(ctx, probe.headers);
   const catchAll = probe.status === 200 && !bodiesEquivalent(probe.body, ctx.homeBody);
   ctx.catchAll = catchAll;
   return [done("soft404_routing", catchAll ? "info" : "pass", "low", 0, {
@@ -83,6 +114,7 @@ function probeAdminTarget(ctx: Ctx, t: AdminTarget, t0: number): Promise<CheckRe
   return (async () => {
     for (const p of t.paths) {
       const r = await safeFetch(base(ctx) + p, { timeoutMs: 5000, maxBody: 200 * 1024 });
+      noteRateLimit(ctx, r.headers);
       if (r.status === 200 && r.body) {
         if (bodiesEquivalent(r.body, ctx.homeBody)) continue;
         let redirected = false;
@@ -151,21 +183,31 @@ export async function checkBackups(ctx: Ctx): Promise<CheckResult[]> {
     const probed = await Promise.all(
       paths.map(async (p) => {
         const r = await safeFetch(base(ctx) + p, { timeoutMs: 5000, maxBody: 512 });
+        noteRateLimit(ctx, r.headers);
         if (r.status === 200 && (r.bodyBytes > 64 || r.body.length > 32)) {
           if (!isRealFile(r.body, r.contentType, ctx.homeBody)) return null;
           return p;
         }
-        return null;
+        return r.status === 200 ? "soft200" : null;
       }),
     );
-    const found = probed.filter((p): p is string => Boolean(p));
+    const found = probed.filter((p): p is string => Boolean(p) && p !== "soft200");
     if (found.length) {
-      out.push(done(id, "fail", sev, pen, label, {
+      // catch-all routing answers 200 on every path (ctx.catchAll from the
+      // soft-404 probe, or this very group where every path answered 200):
+      // the "file" may be a JSON/SPA fallback, so soften fail to warn
+      const soft = ctx.catchAll === true || probed.every((p) => p !== null);
+      out.push(done(id, soft ? "warn" : "fail", sev, pen, label, {
         code: id.toUpperCase(),
-        detail: {
-          ru: "По прямому URL лежит файл без защиты: скачивание даёт либо данные приложения, либо структуру проекта. Файлы нужно немедленно убрать из веб-корня.",
-          en: "An unprotected file sits at a direct URL: downloading it yields app data or project structure. Remove these files from the web root immediately.",
-        },
+        detail: soft
+          ? {
+              ru: "Сайт отвечает 200 на любой адрес (catch-all), поэтому найденный ответ может быть заглушкой, а не настоящим файлом. Проверьте вручную, скачивается ли содержимое, и всё равно уберите веб-доступ к резервным копиям.",
+              en: "The site answers 200 to any address (catch-all), so the hit may be a fallback page rather than a real file. Verify manually whether the content downloads, and still block web access to backups.",
+            }
+          : {
+              ru: "По прямому URL лежит файл без защиты: скачивание даёт либо данные приложения, либо структуру проекта. Файлы нужно немедленно убрать из веб-корня.",
+              en: "An unprotected file sits at a direct URL: downloading it yields app data or project structure. Remove these files from the web root immediately.",
+            },
         evidence: found.map((p) => `${p} → файл доступен (содержимое скрыто политикой безопасности)`),
       }, Date.now() - t0));
     } else {
@@ -538,6 +580,7 @@ export async function checkCorsPreflightMethods(ctx: Ctx): Promise<CheckResult[]
       "access-control-request-method": "DELETE",
     },
   });
+  noteRateLimit(ctx, r.headers);
   const allowMethods = (r.headers["access-control-allow-methods"] ?? "").toUpperCase();
   const allowOrigin = r.headers["access-control-allow-origin"] ?? "";
   const dangerousMethods = ["DELETE", "PUT", "PATCH"].filter((m) => allowMethods.includes(m));
@@ -574,20 +617,25 @@ export async function checkCorsPreflightMethods(ctx: Ctx): Promise<CheckResult[]
 
 export async function checkRateLimitProtection(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
-  const rlHeader =
-    ctx.homeHeaders["ratelimit-limit"] ||
-    ctx.homeHeaders["x-ratelimit-limit"] ||
-    ctx.homeHeaders["x-rate-limit-limit"] ||
-    ctx.homeHeaders["cf-mitigated"];
-  return [done("auth_rate_limit", "pass", "low", 0, {
-    ru: rlHeader ? "Обнаружены заголовки Rate-Limit защиты" : "Rate limit проверен",
-    en: rlHeader ? "Rate-limiting headers detected" : "Rate limiting checked",
-  }, rlHeader ? {
-    code: "RATELIMIT_PRESENT",
-    detail: {
-      ru: "Сервер возвращает заголовки ограничения частоты запросов (RateLimit), защищая эндпоинты от брутфорса и перегрузки.",
-      en: "Server returns rate-limiting headers, protecting resources against brute-force and scraping.",
-    },
-    evidence: [`limit: ${rlHeader}`],
-  } : undefined, Date.now() - t0)];
+  noteRateLimit(ctx, ctx.homeHeaders);
+  const ev = ctx.rateLimitEvidence ?? [];
+  if (ev.length) {
+    return [done("auth_rate_limit", "pass", "low", 0, {
+      ru: "Обнаружены заголовки Rate-Limit защиты",
+      en: "Rate-limiting headers detected",
+    }, {
+      code: "RATELIMIT_PRESENT",
+      detail: {
+        ru: "Ответы сервера содержат заголовки ограничения частоты запросов (X-RateLimit-*, Retry-After): эндпоинты защищены от брутфорса и перегрузки.",
+        en: "Server responses carry rate-limit headers (X-RateLimit-*, Retry-After): endpoints are protected against brute-force and overload.",
+      },
+      evidence: ["заголовки rate-limit присутствуют", ...ev.slice(0, 3)],
+    }, Date.now() - t0)];
+  }
+  // honest skip: a passive scan never triggers the limiter, so absence of
+  // rate-limit headers proves nothing - do not fake a pass
+  return [done("auth_rate_limit", "skip", "low", 0, {
+    ru: "Rate limit не проверяется в пассивном режиме",
+    en: "Rate limiting is not verified in passive mode",
+  }, undefined, Date.now() - t0)];
 }

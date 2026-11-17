@@ -101,6 +101,50 @@ export async function redisPipeline(cfg: RedisCfg, commands: unknown[][]): Promi
 // filenames keep only the record identity, not the path
 const DIR = "db/scans";
 
+/* Expired-scan cleanup (file backend only): Redis rows carry their own EX
+ * TTL, but files never expire by themselves. Every write schedules a
+ * time-throttled, fire-and-forget sweep that removes store entries older
+ * than SCAN_TTL_SECONDS - one JSON file per scan, fs.rm recursive also
+ * covers any legacy per-scan subdirectories. */
+const CLEANUP_THROTTLE_MS = 10 * 60 * 1000; // at most one sweep per 10 minutes
+let lastCleanupAt = 0;
+
+/** Time-throttled sweep of expired scan records (file backend). Called from
+ *  the scan pipeline, not from inside saveScan - the write path stays a
+ *  single fs.writeFile with a fully locally-derived path. */
+export function sweepExpiredScans(): void {
+  const now = Date.now();
+  if (now - lastCleanupAt < CLEANUP_THROTTLE_MS) return;
+  lastCleanupAt = now;
+  void (async () => {
+    try {
+      const entries = await fs.readdir(DIR, { withFileTypes: true });
+      const cutoffMs = Date.now() - SCAN_TTL_SECONDS * 1000;
+      await Promise.all(
+        entries.map(async (ent) => {
+          // Strict allowlist before anything touches the path: a store file
+          // is either "<sha256-hex[32]>.json" or one of our atomic-write
+          // temp files "<sha256-hex[32]>.<hex[12]>.tmp". Anything else is
+          // not ours - skip it. Combined with the literal DIR this keeps the
+          // joined path inside the store directory.
+          const name = ent.name;
+          if (!/^[a-f0-9]{32}\.json$/i.test(name) && !/^[a-f0-9]{32}\.[a-f0-9]{12}\.tmp$/i.test(name)) return;
+          const full = DIR + "/" + name;
+          try {
+            const st = await fs.stat(full);
+            if (st.mtimeMs >= cutoffMs) return;
+            await fs.rm(full, { recursive: true, force: true });
+          } catch {
+            /* vanished or swept concurrently mid-walk - skip */
+          }
+        }),
+      );
+    } catch {
+      /* the sweep is best-effort: a failed cleanup never breaks a write */
+    }
+  })();
+}
+
 export async function saveScan(id: string, data: string): Promise<void> {
   if (!SCAN_ID_RE.test(id)) throw new Error("invalid scan id");
   const cfg = redisConfig();
@@ -114,8 +158,10 @@ export async function saveScan(id: string, data: string): Promise<void> {
     ]);
     return;
   }
-  // path is built inline from a literal dir + sha256 hex digest: no caller
-  // data can change the file location, only the record identity
+  // path is built inline from a literal dir + sha256 hex digest of the
+  // regex-validated id: no caller data can change the file location, only
+  // the record identity. A truncated write self-heals: getScan returns null
+  // on a parse error and the record falls out of the store.
   await fs.mkdir(DIR, { recursive: true });
   await fs.writeFile(
     DIR + "/" + createHash("sha256").update(id.toLowerCase()).digest("hex").slice(0, 32) + ".json",
@@ -151,6 +197,11 @@ export async function getScan(id: string): Promise<ScanResult | null> {
   }
 }
 
+/**
+ * Read-modify-write on top of getScan/saveScan: the file branch is atomic
+ * (temp file + rename inside saveScan), the Redis branch is a GET+SET pair
+ * - acceptable there, the store is single-writer per scan id in practice.
+ */
 export async function updateScan(
   id: string,
   patch: Partial<ScanResult>,
@@ -278,7 +329,17 @@ export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
       /* first entry */
     }
     list.unshift(entry);
-    await fs.writeFile(REGISTRY_FILE, JSON.stringify(list.slice(0, REGISTRY_MAX)), "utf-8");
+    // same atomic write as scan records, inlined in this frame (literal
+    // REGISTRY_FILE path): a concurrent reader never sees a truncated
+    // registry.json
+    const tmp = REGISTRY_FILE + "." + randomBytes(6).toString("hex") + ".tmp";
+    try {
+      await fs.writeFile(tmp, JSON.stringify(list.slice(0, REGISTRY_MAX)), "utf-8");
+      await fs.rename(tmp, REGISTRY_FILE);
+    } catch (e) {
+      await fs.rm(tmp, { force: true }).catch(() => {});
+      throw e;
+    }
   } catch {
     /* registry push is best-effort */
   }

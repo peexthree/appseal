@@ -57,3 +57,35 @@ export async function sendTelegramMessage(
     req.end(body);
   });
 }
+
+/** Acknowledge an inline-button press (stops the loading spinner on the
+ *  client). Best-effort: false just means the button stays in loading state. */
+export async function answerCallbackQuery(callbackQueryId: string): Promise<boolean> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token || !callbackQueryId) return false;
+  const body = JSON.stringify({ callback_query_id: callbackQueryId });
+  return new Promise((resolve) => {
+    const req = request(
+      {
+        host: "api.telegram.org",
+        method: "POST",
+        path: `/bot${token}/answerCallbackQuery`,
+        timeout: 10000,
+        headers: {
+          "content-type": "application/json",
+          "content-length": Buffer.byteLength(body).toString(),
+        },
+      },
+      (res) => {
+        res.resume();
+        resolve(res.statusCode === 200);
+      },
+    );
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(false);
+    });
+    req.on("error", () => resolve(false));
+    req.end(body);
+  });
+}

@@ -229,17 +229,19 @@ export async function hasPassAccess(host: string): Promise<boolean> {
   return hasActivePass(host);
 }
 
-/** Daily free quota for the scan API (per IP hash, UTC-day bucket). */
+/** Daily free quota for the scan API (per IP hash, UTC-day bucket).
+ *  The TTL is pinned by an atomic SET NX first, then INCR counts: the old
+ *  INCR-then-EXPIRE pair could lose the expire to a crash or an Upstash
+ *  hiccup between the two commands, leaving a TTL-less key that ate the
+ *  daily counter forever. The first INCR after SET "0" NX still returns 1. */
 export async function bumpDailyQuota(
   ipHash: string,
   limit: number,
 ): Promise<{ used: number; allowed: boolean }> {
   const day = new Date().toISOString().slice(0, 10);
   const key = `quota:${ipHash}:${day}`;
+  await redisCommand(["SET", key, "0", "EX", "172800", "NX"]);
   const used = (await redisCommand<number>(["INCR", key])) ?? 1;
-  if (used === 1) {
-    await redisCommand(["EXPIRE", key, "172800"]);
-  }
   return { used, allowed: used <= limit };
 }
 

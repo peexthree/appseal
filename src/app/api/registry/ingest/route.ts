@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pushRegistryEntry } from "@/lib/scanner/store";
+import { secretsMatch } from "@/lib/sec";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "ingest not configured" }, { status: 503 });
   }
   const auth = req.headers.get("authorization") ?? "";
-  if (auth !== `Bearer ${key}`) {
+  if (!secretsMatch(auth, `Bearer ${key}`)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

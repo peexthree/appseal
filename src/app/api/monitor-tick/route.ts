@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { normalizeInputUrl } from "@/lib/scanner/url";
 import { assertPublicTarget } from "@/lib/scanner/guard";
 import { redisConfig, redis } from "@/lib/scanner/store";
 import { hasPassAccess } from "@/lib/passes";
+import { tickSecretOk } from "@/lib/sec";
 import {
   WATCH_KEY,
   LAST_KEY_PREFIX,
@@ -28,6 +29,13 @@ const MIN_INTERVAL_S = 1500; // tick throttle; the scheduler fires every 30 min
 const SNAP_TTL_S = 11 * 24 * 3600; // outlives the 8-day pass TTL
 const POLL_DEADLINE_MS = 48_000; // leave headroom under maxDuration
 const POLL_INTERVAL_MS = 2500;
+const SUBMIT_TIMEOUT_MS = 30_000; // a hung scan-route submit must not eat the poll budget
+
+/** Self-origin to loop the scan route through: NEXT_PUBLIC_APP_URL when set,
+ *  otherwise the origin this request arrived on (new URL(req.url).origin). */
+function appOrigin(req: NextRequest): string {
+  return process.env.NEXT_PUBLIC_APP_URL || new URL(req.url).origin;
+}
 
 /**
  * Launch Pass background monitor (driven by GHA cron every 30 min).
@@ -51,22 +59,36 @@ const POLL_INTERVAL_MS = 2500;
 
 /**
  * Submit a target to the scan route over HTTP (admin key bypasses the free
- * quota for machine-triggered scans) and poll until it finishes. Literal URL
- * prefix keeps the SSRF surface explicit; the vercel.app origin loops back
- * without the Cloudflare proxy in the path.
+ * quota for machine-triggered scans) and poll until it finishes. The origin
+ * comes from NEXT_PUBLIC_APP_URL or the request itself - no hardcoded
+ * deployment host. A timed-out submit throws; a failed poll returns null.
  */
-async function rescanViaScanRoute(url: string): Promise<ScanResult | null> {
-  const res = await fetch("https://appseal.vercel.app/api/scan", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "user-agent": "AppSeal-Tick/0.1 (+https://appseal.online/bot)",
-    },
-    body: JSON.stringify({ url, lang: "ru", adminKey: process.env.ADMIN_SCAN_KEY ?? "" }),
-  });
-  const d = (await res.json().catch(() => ({}))) as { id?: string; rkey?: string; error?: string };
-  if (!res.ok || !d.id || !d.rkey) {
-    throw new Error(d.error ?? `scan submit failed: ${res.status}`);
+async function rescanViaScanRoute(url: string, origin: string): Promise<ScanResult | null> {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), SUBMIT_TIMEOUT_MS);
+  let ok = false;
+  let status = 0;
+  let d: { id?: string; rkey?: string; error?: string };
+  try {
+    const res = await fetch(origin + "/api/scan", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "user-agent": "AppSeal-Tick/0.1 (+https://appseal.online/bot)",
+      },
+      body: JSON.stringify({ url, lang: "ru", adminKey: process.env.ADMIN_SCAN_KEY ?? "" }),
+      signal: ac.signal,
+    });
+    ok = res.ok;
+    status = res.status;
+    d = (await res.json().catch(() => ({}))) as { id?: string; rkey?: string; error?: string };
+  } catch (e) {
+    throw new Error(`scan submit failed: ${e instanceof Error ? e.message : String(e)}`);
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!ok || !d.id || !d.rkey) {
+    throw new Error(d.error ?? `scan submit failed: ${status}`);
   }
   // both values are server-generated (id = uuid-like, rkey = 32 hex); the
   // format check keeps malformed responses from ever reaching the poll URL
@@ -78,7 +100,7 @@ async function rescanViaScanRoute(url: string): Promise<ScanResult | null> {
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
     try {
-      const pres = await fetch("https://appseal.vercel.app/api/scan/" + d.id + "?key=" + d.rkey, {
+      const pres = await fetch(origin + "/api/scan/" + d.id + "?key=" + d.rkey, {
         cache: "no-store",
         headers: { "user-agent": "AppSeal-Tick/0.1 (+https://appseal.online/bot)" },
       });
@@ -100,6 +122,7 @@ async function rescanViaScanRoute(url: string): Promise<ScanResult | null> {
  */
 async function processFreeWatch(
   cfg: NonNullable<ReturnType<typeof redisConfig>>,
+  origin: string,
 ): Promise<Record<string, unknown>> {
   try {
     const top = (await redis(cfg, ["ZRANGE", FREE_WATCH_ZSET, "0", "0", "WITHSCORES"])) as string[] | null;
@@ -119,7 +142,7 @@ async function processFreeWatch(
 
     const norm = normalizeInputUrl(`https://${host}`);
     await assertPublicTarget(new URL(norm.url).hostname);
-    const rec = await rescanViaScanRoute(norm.url);
+    const rec = await rescanViaScanRoute(norm.url, origin);
 
     // rotate even on failure so a dead host cannot starve the queue
     await redis(cfg, ["ZADD", FREE_WATCH_ZSET, String(now), chatId]);
@@ -144,7 +167,12 @@ async function processFreeWatch(
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // TICK_SECRET configured -> the scheduler must present it (header or
+  // ?secret=, constant-time compare); unset -> public as before
+  if (!tickSecretOk(req.headers, req.url, process.env.TICK_SECRET)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   const cfg = redisConfig();
   if (!cfg) {
     return NextResponse.json({ error: "redis backend required" }, { status: 503 });
@@ -156,8 +184,9 @@ export async function GET() {
     return NextResponse.json({ skipped: true, reason: "rate-locked" });
   }
 
+  const origin = appOrigin(req);
   try {
-    const free = await processFreeWatch(cfg);
+    const free = await processFreeWatch(cfg, origin);
 
     const top = (await redis(cfg, ["ZRANGE", WATCH_KEY, "0", "0", "WITHSCORES"])) as string[] | null;
     const host = top?.[0] ?? "";
@@ -186,7 +215,7 @@ export async function GET() {
     const inputUrl = `https://${host}`;
     const norm = normalizeInputUrl(inputUrl);
     await assertPublicTarget(new URL(norm.url).hostname);
-    const rec = await rescanViaScanRoute(norm.url);
+    const rec = await rescanViaScanRoute(norm.url, origin);
 
     // rotate regardless of the outcome so a dead site cannot hog the queue
     await redis(cfg, ["ZADD", WATCH_KEY, String(now), host]);

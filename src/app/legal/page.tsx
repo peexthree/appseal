@@ -182,6 +182,15 @@ const D = {
     ru: " с указанием домена и даты оплаты - платёж возвращается полностью в течение 3 рабочих дней. По остальным основаниям возвраты не предусмотрены (цифровой товар, оказан и использован мгновенно).",
     en: " with the domain and payment date - a full refund is issued within 3 business days. No other refunds are provided (a digital product, delivered and consumed instantly).",
   },
+  s6Title: { ru: "6. Возвраты", en: "6. Refunds" },
+  s6aA: {
+    ru: "Разовая покупка Launch Pass не подлежит возврату после активации, потому что продукт моментально открывает полный доступ к функциям на купленный период. Если оплата прошла, а доступ не активировался - напишите на ",
+    en: "One-time Launch Pass purchases are non-refundable once activated, since the pass instantly unlocks full features for the paid period. If payment succeeded but the pass did not activate, email ",
+  },
+  s6aB: {
+    ru: ", активируем вручную или вернём платёж в течение 3 рабочих дней.",
+    en: " - we will activate it manually or refund within 3 business days.",
+  },
   fHome: { ru: "главная", en: "home" },
   fRegistry: { ru: "реестр", en: "registry" },
   fBot: { ru: "робот", en: "bot" },
@@ -360,6 +369,25 @@ export default async function LegalPage() {
               </ul>
             </section>
 
+            <section>
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <FileCheck2 className="h-4 w-4 text-sky-400" />
+                {t("s6Title")}
+              </h2>
+              <ul className="mt-3 list-inside list-disc space-y-2 pl-1">
+                <li>
+                  {t("s6aA")}
+                  <a
+                    href={`mailto:${CONTACT_EMAIL}`}
+                    className="font-mono text-sky-400 underline decoration-sky-400/40 hover:text-sky-300"
+                  >
+                    {CONTACT_EMAIL}
+                  </a>
+                  {t("s6aB")}
+                </li>
+              </ul>
+            </section>
+
             {lang === "ru" ? (
               <section className="rounded-xl border border-slate-800 bg-[#090d16] p-5">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400">
@@ -386,7 +414,8 @@ export default async function LegalPage() {
                     Launch Pass: 490 RUB one-time purchase in the Service&apos;s Telegram bot, valid 7
                     days per domain, unlocks unlimited rescans, the PDF report and the embeddable
                     badge - no auto-renewal. If the pass fails to activate, a full refund is issued
-                    within 3 business days (email the contact above).
+                    within 3 business days (email the contact above). Once activated, the pass is
+                    non-refundable.
                   </li>
                   <li>
                     No accounts, no forms. Web analytics: the Yandex.Metrica counter #114248324

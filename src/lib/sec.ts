@@ -115,3 +115,44 @@ export function ipAllowed(ip: string, allowlist: string[]): boolean {
   if (!allowlist.length || allowlist.includes("*")) return true;
   return allowlist.some((entry) => ipInCidr(ip, entry));
 }
+
+/** Connection IP for our own edge topology (no Cloudflare in front): prefers
+ *  x-real-ip (set by the nearest trusted proxy), then the LAST well-formed
+ *  entry of x-forwarded-for - the one appended by the closest proxy, which a
+ *  spoofing client cannot overwrite - then falls back to the first well-formed
+ *  entry (the original getClientIp rule). Garbage falls back to "unknown"
+ *  exactly like getClientIp; getClientIp itself stays untouched because its
+ *  Cloudflare-first order is correct where CF is present. */
+export function getConnIp(headers: Headers): string {
+  const real = headers.get("x-real-ip");
+  if (real && ipToBigInt(real) !== null) return real.trim();
+  const xff = headers.get("x-forwarded-for");
+  if (xff) {
+    const parts = xff.split(",").map((p) => p.trim());
+    const last = parts[parts.length - 1] ?? "";
+    if (last && ipToBigInt(last) !== null) return last;
+    for (const part of parts) {
+      if (ipToBigInt(part) !== null) return part;
+    }
+  }
+  return "unknown";
+}
+
+/** Cron-tick gate: when a TICK_SECRET is configured, every call must present
+ *  it via the x-tick-secret header or a ?secret= query parameter (both are
+ *  compared constant-time). Without the env var the endpoint stays public -
+ *  backward compatible with deployments that rely on the lock-based throttle.
+ *  Pure function over the request's Headers and URL, so it is trivially
+ *  testable without a running server. */
+export function tickSecretOk(headers: Headers, url: string, configured: string | undefined | null): boolean {
+  const secret = (configured ?? "").trim();
+  if (!secret) return true;
+  if (secretsMatch(headers.get("x-tick-secret") ?? "", secret)) return true;
+  let querySecret = "";
+  try {
+    querySecret = new URL(url).searchParams.get("secret") ?? "";
+  } catch {
+    querySecret = "";
+  }
+  return secretsMatch(querySecret, secret);
+}

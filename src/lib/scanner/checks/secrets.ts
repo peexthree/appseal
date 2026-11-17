@@ -6,7 +6,7 @@ import {
   maskSecret,
   safeFetch,
   shannonEntropy,
-} from "../fetcher";
+} from "../fetcher.ts";
 
 interface Ctx {
   origin: string; // e.g. https://example.com
@@ -189,12 +189,15 @@ interface Sig {
   structural?: boolean;
 }
 
-const SIG_GROUPS: { id: string; group: { ru: string; en: string }; sigs: Sig[] }[] = [
+// exported for the agent-quality tests (provider regex boundaries)
+export const SIG_GROUPS: { id: string; group: { ru: string; en: string }; sigs: Sig[] }[] = [
   {
     id: "sig_ai_keys",
     group: { ru: "ключи ИИ-сервисов", en: "AI service keys" },
     sigs: [
-      { name: "OpenAI API key", re: /sk-(?:proj-)?[A-Za-z0-9_-]{20,}/g, sev: "critical", pen: 40 },
+      // negative lookahead keeps Anthropic keys (sk-ant-...) out of the OpenAI
+      // bucket: they have their own signature below and must be named as such
+      { name: "OpenAI API key", re: /sk-(?!ant-)(?:proj-)?[A-Za-z0-9_-]{20,}/g, sev: "critical", pen: 40 },
       { name: "Anthropic API key", re: /sk-ant-[A-Za-z0-9_-]{20,}/g, sev: "critical", pen: 40 },
       { name: "Groq/Mistral key", re: /gsk_[A-Za-z0-9]{20,}|mistral-[A-Za-z0-9]{20,}/g, sev: "critical", pen: 30 },
     ],
@@ -465,7 +468,17 @@ export async function checkFirebaseOpenRead(ctx: Ctx): Promise<CheckResult[]> {
 
 export async function checkSupabaseOpenRead(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
-  const blob = ctx.homeBody;
+  // homepage + same-origin JS bundles, exactly like the Firebase check: the
+  // project URL and the anon key usually live in a bundle, not in the HTML
+  const allJs = [ctx.homeBody];
+  const bundles = extractScripts(ctx.homeBody, ctx.origin, 4);
+  await Promise.all(
+    bundles.map(async (u) => {
+      const r = await safeFetch(u, { timeoutMs: 6000, maxBody: 400 * 1024 });
+      if (r.ok && r.body) allJs.push(r.body);
+    }),
+  );
+  const blob = allJs.join("\n");
   const sb = blob.match(/https:\/\/([a-z0-9]{15,30})\.supabase\.co/i);
   if (!sb) {
     return [done("supabase_open_read", "pass", "critical", 0, {
@@ -588,6 +601,15 @@ const DANGEROUS_CLIENT_ENV = [
   /NUXT_PUBLIC_(?:SECRET|PRIVATE|TOKEN|PASSWORD)\b/i,
 ];
 
+/** A dangerous env name only counts as a leak when it appears in a
+ *  definition/assignment position with a quoted literal right next to it:
+ *  NAME:"value" (object / JSON key), NAME: 'value', NAME = "value",
+ *  NAME="value", plus the escaped-JSON form \"NAME\":\"value\" used by
+ *  inline RSC/flight payloads. A bare mention (docs copy, a comment, passing
+ *  the name as a header reference) says nothing about whether the value
+ *  actually shipped to the client. */
+const ENV_ASSIGN_RE_SUFFIX = String.raw`\\?["']?\s*[:=]\s*\\?["'][^"'\n]+\\?["']`;
+
 export async function checkClientEnvLeak(ctx: Ctx): Promise<CheckResult[]> {
   const t0 = Date.now();
   const bundles = extractScripts(ctx.homeBody, ctx.origin, 3);
@@ -595,9 +617,11 @@ export async function checkClientEnvLeak(ctx: Ctx): Promise<CheckResult[]> {
 
   const checkText = (text: string, srcLabel: string) => {
     for (const re of DANGEROUS_CLIENT_ENV) {
-      const match = text.match(re);
+      // group 1 keeps just the variable name for the evidence line, so the
+      // literal value never lands in the report unmasked
+      const match = text.match(new RegExp(`(${re.source})${ENV_ASSIGN_RE_SUFFIX}`, "i"));
       if (match) {
-        found.push(`${srcLabel} → ${match[0]}`);
+        found.push(`${srcLabel} → ${match[1]}=********`);
       }
     }
   };
