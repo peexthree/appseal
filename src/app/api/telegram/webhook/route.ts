@@ -12,26 +12,28 @@ import {
 } from "@/lib/passes";
 import { getLatestHostEntry } from "@/lib/scanner/store";
 import { FREE_WATCH_KEY_PREFIX, FREE_WATCH_MAX, FREE_WATCH_ZSET } from "@/lib/watch";
-import { answerCallbackQuery, sendTelegramMessage } from "@/lib/telegram";
+import { answerCallbackQuery, sendChatAction, sendTelegramMessage } from "@/lib/telegram";
 import { secretsMatch } from "@/lib/sec";
 import {
-  botPayBtn,
+  BotLang,
+  BotPlan,
+  BotState,
+  botCancelKeyboard,
+  botIdleKeyboard,
+  botInvoiceKeyboard,
+  botPackPayText,
   botPayFail,
   botPayText,
-  botPackPayBtn,
-  botPackPayText,
-  botPlanBtn,
+  botPlanKeyboard,
   botRedeemNoPack,
   botRedeemResultText,
+  botScanText,
+  botScannerKeyboard,
   botStatusText,
   botWatchDone,
   botWatchLimit,
   botWatchNone,
   botWatchRemoved,
-  BotLang,
-  BotPlan,
-  BotProvider,
-  BotState,
   buildMyScansText,
   handleBotInput,
   MyScanEntry,
@@ -50,6 +52,11 @@ export const dynamic = "force-dynamic";
  * The purchase itself is submitted over HTTPS to our own /api/purchase
  * (literal URL - the route exists only on appseal.online), reusing the same
  * provider branches and activation chain as the landing.
+ *
+ * Feel-alive layer: button presses are acknowledged with a toast, slow
+ * operations (payment creation, status poll, registry lookups) flip the
+ * "typing…" indicator, dialogs carry a ✖️ cancel button, the invoice message
+ * carries a ✅ check-payment button, and every bot message is Telegram HTML.
  */
 
 const STATE_TTL_SECONDS = 3600;
@@ -101,34 +108,35 @@ async function saveState(chatId: string, state: BotState): Promise<void> {
   await redisCommand(["SET", stateKey(chatId), JSON.stringify(state), "EX", String(STATE_TTL_SECONDS)]);
 }
 
-function idleKeyboard(): object {
-  return {
-    inline_keyboard: [
-      [{ text: "Открыть сканер AppSeal", url: "https://appseal.online" }],
-      [
-        { text: "Купить 490 ₽", callback_data: "buy_ru" },
-        { text: "Pay $6", callback_data: "buy_en" },
-      ],
-      [{ text: "Agency Pack - 5 пропусков за 1 490 ₽", callback_data: "buy5" }],
-    ],
-  };
+/** Short toast shown above the tapped button - the buyer knows the press
+ *  registered and what is happening while the slow round-trips run. */
+function toastFor(callbackData: string, lang: BotLang): string {
+  const ru = lang === "ru";
+  switch (callbackData) {
+    case "buy_ru":
+    case "buy_en":
+    case "buy5":
+      return ru ? "Открываю покупку…" : "Starting checkout…";
+    case "plan_launch":
+      return ru ? "Тариф: Launch Pass ✅" : "Plan: Launch Pass ✅";
+    case "plan_pro":
+      return ru ? "Тариф: Pro Pass ✅" : "Plan: Pro Pass ✅";
+    case "status":
+      return ru ? "Проверяю оплату…" : "Checking payment…";
+    case "cancel":
+      return ru ? "Диалог сброшен ✅" : "Dialog reset ✅";
+    case "watch":
+      return ru ? "Включаю наблюдение…" : "Enabling the watch…";
+    case "myscans":
+      return ru ? "Смотрю реестр…" : "Checking the registry…";
+    default:
+      return ru ? "Секунду…" : "One moment…";
+  }
 }
 
-function scannerKeyboard(): object {
-  return {
-    inline_keyboard: [[{ text: "Открыть сканер AppSeal", url: "https://appseal.online" }]],
-  };
-}
-
-// tariff menu right after the domain step: Launch (7d) vs Pro (30d) -
-// both are one-time purchases, the currency wording follows the provider
-function planKeyboard(provider: BotProvider): object {
-  return {
-    inline_keyboard: [
-      [{ text: botPlanBtn(provider, "launch"), callback_data: "plan_launch" }],
-      [{ text: botPlanBtn(provider, "pro"), callback_data: "plan_pro" }],
-    ],
-  };
+/** Best-effort typing indicator while a slow operation runs. */
+function typing(chatId: string): void {
+  void sendChatAction(chatId).catch(() => undefined);
 }
 
 async function createPurchase(
@@ -178,17 +186,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // acknowledge the inline-button press immediately, before the slow Redis /
-  // purchase round-trips: Telegram keeps the button in loading state until
-  // answerCallbackQuery arrives for the callback_query.id
-  if (update.callback_query?.id) {
-    try {
-      await answerCallbackQuery(update.callback_query.id);
-    } catch (e) {
-      console.warn("[appseal-bot] answerCallbackQuery failed:", e instanceof Error ? e.message : String(e));
-    }
-  }
-
   const chat = update.message?.chat ?? update.edited_message?.chat ?? update.callback_query?.message?.chat;
   const from = update.message?.from ?? update.edited_message?.from ?? update.callback_query?.from;
   const chatId = chat?.id !== undefined ? String(chat.id) : "";
@@ -198,15 +195,25 @@ export async function POST(req: NextRequest) {
   // buyer language: Telegram language_code (ru* -> RU, everything else EN)
   const lang: BotLang = (from?.language_code ?? "").toLowerCase().startsWith("ru") ? "ru" : "en";
   // callback_query data is re-interpreted as a command (/buy_ru, /buy_en)
-  const raw = update.callback_query?.data
-    ? `/${update.callback_query.data.replace(/^\//, "")}`
-    : (update.message?.text ?? "");
+  const callbackData = update.callback_query?.data?.replace(/^\//, "") ?? "";
+  const raw = callbackData ? `/${callbackData}` : (update.message?.text ?? "");
+
+  // acknowledge the button press right away with a meaningful toast: Telegram
+  // keeps the button in loading state until answerCallbackQuery arrives
+  if (update.callback_query?.id) {
+    try {
+      await answerCallbackQuery(update.callback_query.id, toastFor(callbackData, lang));
+    } catch (e) {
+      console.warn("[appseal-bot] answerCallbackQuery failed:", e instanceof Error ? e.message : String(e));
+    }
+  }
 
   const state = await loadState(chatId);
   const step = handleBotInput(state, raw, lang);
 
   try {
     if (step.intent.action === "create_purchase") {
+      typing(chatId);
       const nonce = `tg-${randomUUID()}`;
       const provider = step.intent.provider;
       const plan: BotPlan = step.intent.plan === "pro" ? "pro" : "launch";
@@ -214,9 +221,12 @@ export async function POST(req: NextRequest) {
         const url = await createPurchase(provider, step.intent.host, step.intent.email, nonce, undefined, undefined, plan);
         const paidState: BotState = { ...step.state, provider, host: step.intent.host, nonce };
         await saveState(chatId, paidState);
-        await sendTelegramMessage(chatId, botPayText(step.lang, step.intent.host, plan === "pro" ? 30 : 7), {
-          inline_keyboard: [[{ text: botPayBtn(step.lang, provider), url }]],
-        });
+        await sendTelegramMessage(
+          chatId,
+          botPayText(step.lang, step.intent.host, plan === "pro" ? 30 : 7),
+          botInvoiceKeyboard(step.lang, provider, url, plan),
+          "HTML",
+        );
         return NextResponse.json({ ok: true });
       } catch (e) {
         await saveState(chatId, { stage: "idle" });
@@ -224,37 +234,41 @@ export async function POST(req: NextRequest) {
         await sendTelegramMessage(
           chatId,
           botPayFail(step.lang, e instanceof Error ? e.message : String(e), retryCmd),
+          undefined,
+          "HTML",
         );
         return NextResponse.json({ ok: true });
       }
     }
 
     if (step.intent.action === "create_pack_purchase") {
+      typing(chatId);
       const nonce = `tg-${randomUUID()}`;
       const provider = step.intent.provider;
       try {
         const url = await createPurchase(provider, "", step.intent.email, nonce, "lpack", chatId);
         const paidState: BotState = { ...step.state, provider, nonce };
         await saveState(chatId, paidState);
-        await sendTelegramMessage(chatId, botPackPayText(step.lang), {
-          inline_keyboard: [[{ text: botPackPayBtn(step.lang, provider), url }]],
-        });
+        await sendTelegramMessage(chatId, botPackPayText(step.lang), botInvoiceKeyboard(step.lang, provider, url, "pack"), "HTML");
         return NextResponse.json({ ok: true });
       } catch (e) {
         await saveState(chatId, { stage: "idle" });
         await sendTelegramMessage(
           chatId,
           botPayFail(step.lang, e instanceof Error ? e.message : String(e), "buy5"),
+          undefined,
+          "HTML",
         );
         return NextResponse.json({ ok: true });
       }
     }
 
     if (step.intent.action === "redeem") {
+      typing(chatId);
       const host = step.intent.host;
       const packPaymentId = await getChatPack(chatId);
       if (!packPaymentId) {
-        await sendTelegramMessage(chatId, botRedeemNoPack(step.lang), scannerKeyboard());
+        await sendTelegramMessage(chatId, botRedeemNoPack(step.lang), botScannerKeyboard(step.lang), "HTML");
         return NextResponse.json({ ok: true });
       }
       // pass check FIRST: a credit must never be spent on a host that is
@@ -263,16 +277,17 @@ export async function POST(req: NextRequest) {
       if (await hasActivePass(host)) {
         await sendTelegramMessage(
           chatId,
-          "ru" === step.lang
-            ? `У домена ${host} уже есть активный пропуск - кредит не списан. Пришли другой домен: /redeem site.ru`
-            : `${host} already has an active pass - the credit was not spent. Send another domain: /redeem myapp.com`,
-          scannerKeyboard(),
+          step.lang === "ru"
+            ? `У домена <code>${host}</code> уже есть активный пропуск - кредит не списан. Пришли другой домен: /redeem site.ru`
+            : `<code>${host}</code> already has an active pass - the credit was not spent. Send another domain: /redeem myapp.com`,
+          botScannerKeyboard(step.lang),
+          "HTML",
         );
         return NextResponse.json({ ok: true });
       }
       const credits = await getPackCredits(packPaymentId);
       if (credits <= 0 || !(await consumePackCredit(packPaymentId))) {
-        await sendTelegramMessage(chatId, botRedeemResultText(step.lang, "empty"), scannerKeyboard());
+        await sendTelegramMessage(chatId, botRedeemResultText(step.lang, "empty"), botScannerKeyboard(step.lang), "HTML");
         return NextResponse.json({ ok: true });
       }
       const record = await redeemPackPass(packPaymentId, host);
@@ -282,18 +297,20 @@ export async function POST(req: NextRequest) {
       await sendTelegramMessage(
         chatId,
         botRedeemResultText(step.lang, "done", record.host, record.until),
-        scannerKeyboard(),
+        botScannerKeyboard(step.lang),
+        "HTML",
       );
       return NextResponse.json({ ok: true });
     }
 
     if (step.intent.action === "watch") {
+      typing(chatId);
       const host = step.intent.host;
       // free watch capacity guard: one domain per chat, bounded total slots
       const existing = await redisCommand<string>(["GET", FREE_WATCH_KEY_PREFIX + chatId]);
       const count = await redisCommand<number>(["ZCARD", FREE_WATCH_ZSET]);
       if (!existing && (count ?? 0) >= FREE_WATCH_MAX) {
-        await sendTelegramMessage(chatId, botWatchLimit(step.lang, FREE_WATCH_MAX), scannerKeyboard());
+        await sendTelegramMessage(chatId, botWatchLimit(step.lang, FREE_WATCH_MAX), botScannerKeyboard(step.lang), "HTML");
         return NextResponse.json({ ok: true });
       }
       await redisCommand([
@@ -307,7 +324,8 @@ export async function POST(req: NextRequest) {
       await sendTelegramMessage(
         chatId,
         botWatchDone(step.lang, host, entry?.grade),
-        scannerKeyboard(),
+        botScannerKeyboard(step.lang),
+        "HTML",
       );
       return NextResponse.json({ ok: true });
     }
@@ -318,12 +336,14 @@ export async function POST(req: NextRequest) {
       await sendTelegramMessage(
         chatId,
         removed ? botWatchRemoved(step.lang) : botWatchNone(step.lang),
-        scannerKeyboard(),
+        botScannerKeyboard(step.lang),
+        "HTML",
       );
       return NextResponse.json({ ok: true });
     }
 
     if (step.intent.action === "check_status") {
+      typing(chatId);
       const d = await checkStatus(state.nonce ?? "");
       const text =
         d.status === "succeeded"
@@ -331,11 +351,12 @@ export async function POST(req: NextRequest) {
           : d.status
             ? botStatusText(step.lang, "pending", undefined, undefined, d.status)
             : botStatusText(step.lang, "fail");
-      await sendTelegramMessage(chatId, text, scannerKeyboard());
+      await sendTelegramMessage(chatId, text, botScannerKeyboard(step.lang), "HTML");
       return NextResponse.json({ ok: true });
     }
 
     if (step.intent.action === "my_scans") {
+      typing(chatId);
       // domains the chat owns: the free watch (one per chat) plus every host a
       // pack credit was redeemed onto here. Lookups are best-effort - a slow
       // or broken store lookup must not kill the whole answer.
@@ -346,24 +367,46 @@ export async function POST(req: NextRequest) {
       for (const h of hosts) {
         try {
           const entry = await withTimeout(getLatestHostEntry(h), MYSCANS_LOOKUP_TIMEOUT_MS);
-          entries.push({ host: h, grade: entry?.grade, score: entry?.score, ts: entry?.ts });
+          entries.push({ host: h, grade: entry?.grade, score: entry?.score, ts: entry?.ts, id: entry?.id });
         } catch (e) {
           console.warn("[appseal-bot] myscans lookup failed:", e instanceof Error ? e.message : String(e));
           entries.push({ host: h });
         }
       }
-      await sendTelegramMessage(chatId, buildMyScansText(entries, step.lang), scannerKeyboard());
+      await sendTelegramMessage(chatId, buildMyScansText(entries, step.lang), botScannerKeyboard(step.lang), "HTML");
+      return NextResponse.json({ ok: true });
+    }
+
+    if (step.intent.action === "scan") {
+      typing(chatId);
+      let entry: Awaited<ReturnType<typeof getLatestHostEntry>> = null;
+      try {
+        entry = await withTimeout(getLatestHostEntry(step.intent.host), MYSCANS_LOOKUP_TIMEOUT_MS);
+      } catch (e) {
+        console.warn("[appseal-bot] scan lookup failed:", e instanceof Error ? e.message : String(e));
+      }
+      const text = botScanText(
+        step.lang,
+        entry
+          ? { host: step.intent.host, grade: entry.grade, score: entry.score, ts: entry.ts, id: entry.id, desc: entry.desc }
+          : { host: step.intent.host },
+      );
+      await sendTelegramMessage(chatId, text, botScannerKeyboard(step.lang), "HTML");
       return NextResponse.json({ ok: true });
     }
 
     await saveState(chatId, step.state);
     const keyboard =
       step.state.stage === "idle"
-        ? idleKeyboard()
+        ? botIdleKeyboard(step.lang)
         : step.state.stage === "await_plan"
-          ? planKeyboard(step.state.provider ?? "yk")
-          : undefined;
-    await sendTelegramMessage(chatId, step.reply, keyboard);
+          ? botPlanKeyboard(step.state.provider ?? "yk", step.lang)
+          : ["await_host", "await_email", "await_redeem_host", "await_watch_host", "await_scan_host"].includes(
+                step.state.stage,
+              )
+            ? botCancelKeyboard(step.lang)
+            : undefined;
+    await sendTelegramMessage(chatId, step.reply, keyboard, "HTML");
     return NextResponse.json({ ok: true });
   } catch {
     // Telegram retries non-2xx; swallow errors after best-effort replies

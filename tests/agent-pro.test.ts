@@ -262,10 +262,10 @@ describe("buildMyScansText", () => {
     const entries: MyScanEntry[] = [{ host: "akulenok-tmz.ru", grade: "A", score: 91, ts: NOV17 }];
     const ru = buildMyScansText(entries, "ru");
     assert.match(ru, /Твои домены/);
-    assert.match(ru, /akulenok-tmz\.ru - A 91 \(17 нояб\.\)/);
+    assert.match(ru, /akulenok-tmz\.ru<\/code> - 💚 A 91 \(17 нояб\.\)/);
     const en = buildMyScansText(entries, "en");
     assert.match(en, /Your domains/);
-    assert.match(en, /akulenok-tmz\.ru - A 91 \(Nov 17\)/);
+    assert.match(en, /akulenok-tmz\.ru<\/code> - 💚 A 91 \(Nov 17\)/);
   });
 
   it("several domains and a never-scanned one degrade gracefully", () => {
@@ -277,14 +277,14 @@ describe("buildMyScansText", () => {
     const ru = buildMyScansText(entries, "ru");
     const lines = ru.split("\n");
     assert.equal(lines.length, 4);
-    assert.match(lines[1], /a\.ru - B 74/);
-    assert.match(lines[2], /b\.ru - нет данных/);
-    assert.match(lines[3], /c\.ru - C$/);
+    assert.match(lines[1], /a\.ru<\/code> - 💙 B 74/);
+    assert.match(lines[2], /b\.ru<\/code> - нет данных/);
+    assert.match(lines[3], /c\.ru<\/code> - 💛 C$/);
   });
 
   it("garbage timestamps are ignored without breaking the line", () => {
     const entries: MyScanEntry[] = [{ host: "weird.ru", grade: "D", score: 50, ts: Number.NaN }];
-    assert.match(buildMyScansText(entries, "ru"), /weird\.ru - D 50/);
+    assert.match(buildMyScansText(entries, "ru"), /weird\.ru<\/code> - 🧡 D 50/);
     assert.doesNotMatch(buildMyScansText(entries, "ru"), /NaN/);
   });
 });

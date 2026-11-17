@@ -104,7 +104,7 @@ describe("bot /watch flow", () => {
     assert.equal(off.intent.action, "unwatch");
   });
   it("confirmation and limit texts carry the essentials", () => {
-    assert.match(botWatchDone("ru", "a.com", "A+"), /Следим за a\.com/);
+    assert.match(botWatchDone("ru", "a.com", "A+"), /Следим за <code>a\.com<\/code>/);
     assert.match(botWatchDone("en", "a.com"), /Not scanned yet/);
     assert.match(botWatchLimit("ru", 100), /100/);
   });
