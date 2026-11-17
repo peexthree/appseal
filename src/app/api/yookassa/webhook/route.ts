@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPayment } from "@/lib/yookassa";
 import { activatePass, ensurePackGranted, setChatPack } from "@/lib/passes";
+import { getClientIp, ipAllowed } from "@/lib/sec";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,11 +9,35 @@ export const dynamic = "force-dynamic";
 /**
  * YooKassa HTTP notification endpoint.
  *
- * The request body is NOT trusted (YooKassa does not sign webhooks): we
- * re-fetch the payment from the API and act only on that response. Unknown
- * events and failures still answer 200 so YooKassa stops retrying.
+ * Two trust layers before any provider API call:
+ * 1. the source IP must match YooKassa's published notification ranges
+ *    (https://yookassa.ru/developers/using-api/webhooks) - fakes bounce here
+ *    without ever reaching getPayment; YOOKASSA_WEBHOOK_IPS overrides the
+ *    built-in list ("*" = allow any source);
+ * 2. the body is NOT trusted (YooKassa does not sign webhooks): we re-fetch
+ *    the payment from the API and act only on that response.
+ * Unknown events and failures still answer 200 so YooKassa stops retrying.
  */
+const YOOKASSA_NOTIFICATION_IPS = [
+  "185.71.76.0/27",
+  "185.71.77.0/27",
+  "77.75.153.0/25",
+  "77.75.154.128/25",
+  "77.75.156.11",
+  "77.75.156.35",
+  "2a02:5180::/32",
+];
+
 export async function POST(req: NextRequest) {
+  const allowlist = (process.env.YOOKASSA_WEBHOOK_IPS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const list = allowlist.length ? allowlist : YOOKASSA_NOTIFICATION_IPS;
+  const ip = getClientIp(req.headers);
+  if (!ipAllowed(ip, list)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   try {
     const body = (await req.json()) as { event?: string; object?: { id?: string } };
     if (body.event !== "payment.succeeded" || !body.object?.id) {

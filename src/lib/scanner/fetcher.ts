@@ -311,6 +311,12 @@ export function bodiesEquivalent(a: string, b: string): boolean {
   const nb = normalizedBody(b);
   if (!na || !nb) return false;
   if (na === nb) return true;
+  // a real page behind the same template differs from the error page in the
+  // middle - its normalized length diverges. If the bodies diverge in size
+  // by more than 25% they are different pages even when header and footer
+  // (the first/last 300 chars) match, e.g. an SPA shell vs a dashboard.
+  const lenGap = Math.abs(na.length - nb.length) / Math.max(na.length, nb.length);
+  if (lenGap > 0.25) return false;
   // allow minor template noise: compare the first 300 chars both ways
   return na.slice(0, 300) === nb.slice(0, 300) || na.slice(-300) === nb.slice(-300);
 }

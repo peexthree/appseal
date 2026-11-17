@@ -1,20 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { activatePass, ensurePackGranted, getLavaInvoiceHost, setChatPack } from "@/lib/passes";
+import { secretsMatch } from "@/lib/sec";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
  * Lava.top webhook (configured in the dashboard: Integrations -> API ->
- * Add Webhook). Lava authenticates by echoing our API key in X-Api-Key.
- * payment.success activates the Launch Pass for the host bound at invoice
- * creation; every other event type is acknowledged - the docs require a 2xx
- * within 10 seconds for unknown events too.
+ * Add Webhook). Lava authenticates by echoing our API key in X-Api-Key;
+ * when LAVATOP_WEBHOOK_SECRET is set the dashboard can send it instead -
+ * the API key then never doubles as a webhook secret (least privilege).
+ * Both variants are accepted during the migration; comparisons are
+ * constant-time. payment.success activates the Launch Pass for the host
+ * bound at invoice creation; every other event type is acknowledged - the
+ * docs require a 2xx within 10 seconds for unknown events too.
  */
 export async function POST(req: NextRequest) {
   const key = (req.headers.get("x-api-key") ?? "").trim();
-  const expected = (process.env.LAVATOP_API ?? "").trim();
-  if (!expected || key !== expected) {
+  const webhookSecret = (process.env.LAVATOP_WEBHOOK_SECRET ?? "").trim();
+  const apiKey = (process.env.LAVATOP_API ?? "").trim();
+  if (
+    !secretsMatch(key, webhookSecret) &&
+    !secretsMatch(key, apiKey)
+  ) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   let body: Record<string, unknown> = {};

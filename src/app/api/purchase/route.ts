@@ -5,11 +5,13 @@ import {
   activatePass,
   ensurePackGranted,
   getLavaInvoiceHost,
+  getNonceFinal,
   getPackCredits,
   getPassByPayment,
   getPaymentIdByNonce,
   setChatPack,
   setLavaInvoiceHost,
+  setNonceFinal,
   setNonceMapping,
 } from "@/lib/passes";
 import type { Lang } from "@/lib/scanner/types";
@@ -120,11 +122,17 @@ export async function POST(req: NextRequest) {
 
 /** Poll from the return page: /?paid=<nonce> -> GET /api/purchase?nonce=.
  *  Nonce values are prefixed at creation: "yk:<paymentId>" (legacy values have
- *  no prefix and are YooKassa) or "lava:<invoiceId>". */
+ *  no prefix and are YooKassa) or "lava:<invoiceId>". A successfully resolved
+ *  nonce is cached under a 1-hour final key, so replays never re-run the
+ *  activation chain or re-fetch the provider API. */
 export async function GET(req: NextRequest) {
   const nonce = req.nextUrl.searchParams.get("nonce") ?? "";
   if (!/^[a-z0-9-]{8,64}$/i.test(nonce)) {
     return NextResponse.json({ error: "invalid nonce" }, { status: 400 });
+  }
+  const final = await getNonceFinal(nonce);
+  if (final) {
+    return NextResponse.json(final);
   }
   const raw = await getPaymentIdByNonce(nonce);
   if (!raw) {
@@ -152,14 +160,17 @@ export async function GET(req: NextRequest) {
         const chatId = host.slice(5);
         if (chatId) await setChatPack(chatId, invoiceId);
       }
-      return NextResponse.json({ status: "succeeded", pack: true, credits: await getPackCredits(invoiceId) });
+      const result = { status: "succeeded" as const, pack: true, credits: await getPackCredits(invoiceId) };
+      await setNonceFinal(nonce, result);
+      return NextResponse.json(result);
     }
     const existing = await getPassByPayment(invoiceId);
     const pass = existing ?? (await activatePass(invoiceId, host));
-    if (!pass.host) {
-      return NextResponse.json({ status: "succeeded", host: "", until: "" });
-    }
-    return NextResponse.json({ status: "succeeded", host: pass.host, until: pass.until });
+    const result = pass.host
+      ? { status: "succeeded" as const, host: pass.host, until: pass.until }
+      : { status: "succeeded" as const, host: "", until: "" };
+    await setNonceFinal(nonce, result);
+    return NextResponse.json(result);
   }
 
   const paymentId = raw.startsWith("yk:") ? raw.slice(3) : raw;
@@ -177,14 +188,17 @@ export async function GET(req: NextRequest) {
     if (granted && meta.chatId) {
       await setChatPack(meta.chatId, payment.id);
     }
-    return NextResponse.json({ status: "succeeded", pack: true, credits: await getPackCredits(payment.id) });
+    const result = { status: "succeeded" as const, pack: true, credits: await getPackCredits(payment.id) };
+    await setNonceFinal(nonce, result);
+    return NextResponse.json(result);
   }
   // idempotent: reuse the stored pass if the webhook already activated it.
   // The payer email stays with YooKassa (receipt); we store no personal data.
   const existing = await getPassByPayment(payment.id);
   const pass = existing ?? (await activatePass(payment.id, meta.host ?? ""));
-  if (!pass.host) {
-    return NextResponse.json({ status: "succeeded", host: "", until: "" });
-  }
-  return NextResponse.json({ status: "succeeded", host: pass.host, until: pass.until });
+  const result = pass.host
+    ? { status: "succeeded" as const, host: pass.host, until: pass.until }
+    : { status: "succeeded" as const, host: "", until: "" };
+  await setNonceFinal(nonce, result);
+  return NextResponse.json(result);
 }

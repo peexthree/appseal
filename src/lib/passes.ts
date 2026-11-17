@@ -7,7 +7,7 @@
  * passes" instead of failing the scan flow.
  */
 
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { WATCH_KEY } from "./watch.ts";
 
 const PASS_TTL_SECONDS = 8 * 24 * 3600; // 7-day pass + 1 day of grace
@@ -163,16 +163,31 @@ export async function getPackCredits(paymentId: string): Promise<number> {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Atomically consume one credit; DECR keeps concurrent redeems honest -
- *  a losing racer is refunded the count it drove below zero. */
+/** Atomically consume one credit. The check-and-decrement runs as a single
+ *  Lua script: a concurrent redeem can never drive the counter below zero
+ *  (two separate DECR/INCR round-trips would race and leak a credit).
+ *  Returns 1 = consumed, 0 = exhausted, -1 = no pack for this payment. */
+const CONSUME_CREDIT_LUA = `
+local v = redis.call('GET', KEYS[1])
+if not v then return -1 end
+if tonumber(v) < 1 then return 0 end
+redis.call('DECR', KEYS[1])
+return 1
+`;
+
 export async function consumePackCredit(paymentId: string): Promise<boolean> {
-  const left = await redisCommand<number>(["DECR", `lpack:credits:${paymentId}`]);
-  if (left === null) return false;
-  if (left < 0) {
-    await redisCommand(["INCR", `lpack:credits:${paymentId}`]);
-    return false;
+  const res = await redisCommand<number>(["EVAL", CONSUME_CREDIT_LUA, "1", `lpack:credits:${paymentId}`]);
+  if (res === null) {
+    // Upstash hiccup: fall back to the (racy but correct-on-success) DECR/INCR pair
+    const left = await redisCommand<number>(["DECR", `lpack:credits:${paymentId}`]);
+    if (left === null) return false;
+    if (left < 0) {
+      await redisCommand(["INCR", `lpack:credits:${paymentId}`]);
+      return false;
+    }
+    return true;
   }
-  return true;
+  return res === 1;
 }
 
 /** chat -> pack payment reference so /redeem works days after the payment */
@@ -230,8 +245,60 @@ export async function bumpDailyQuota(
 
 /** Salted one-way hash: an unsalted sha256 of an IPv4 address is reversible
  *  by brute force, which would make the quota key personal data under
- *  152-FZ. The salt makes deconvolution infeasible. */
+ *  152-FZ. The salt makes deconvolution infeasible. QUOTA_SALT is preferred;
+ *  without it the salt is derived from a runtime secret - never a publicly
+ *  known constant (a random per-process fallback only loses bucket
+ *  consistency across instances, it does not expose quota keys). */
 export function hashIp(ip: string): string {
-  const salt = process.env.QUOTA_SALT ?? "appseal-quota-v1";
+  let salt = process.env.QUOTA_SALT ?? "";
+  if (!salt) {
+    const src =
+      process.env.UPSTASH_REDIS_REST_TOKEN ??
+      process.env.TELEGRAM_WEBHOOK_SECRET ??
+      process.env.ADMIN_SCAN_KEY ??
+      randomUUID();
+    salt = createHash("sha256").update(`quota-salt:${src}`).digest("hex");
+  }
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex");
+}
+
+/* ------------------------------------------------------------------ */
+/* Final-result cache for the ?paid=<nonce> return flow                */
+/* ------------------------------------------------------------------ */
+
+/** After a payment resolves successfully the nonce mapping would keep
+ *  re-running activatePass/getPayment on every replay for the remaining
+ *  TTL. The first successful GET stores the final answer under a second
+ *  key with a 1-hour TTL: replays serve the cached result instantly and
+ *  the bot's status check keeps working for the same hour. */
+const NONCE_FINAL_TTL_SECONDS = 3600;
+
+interface NonceFinal {
+  status: "succeeded";
+  host?: string;
+  until?: string;
+  pack?: boolean;
+  credits?: number;
+}
+
+export async function setNonceFinal(nonce: string, result: NonceFinal): Promise<void> {
+  if (!/^[a-z0-9-]{8,64}$/i.test(nonce)) return;
+  await redisCommand([
+    "SET",
+    `lpass:nonce-final:${nonce}`,
+    JSON.stringify(result),
+    "EX",
+    String(NONCE_FINAL_TTL_SECONDS),
+  ]);
+}
+
+export async function getNonceFinal(nonce: string): Promise<NonceFinal | null> {
+  if (!/^[a-z0-9-]{8,64}$/i.test(nonce)) return null;
+  const raw = await redisCommand<string>(["GET", `lpass:nonce-final:${nonce}`]);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as NonceFinal;
+  } catch {
+    return null;
+  }
 }

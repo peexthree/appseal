@@ -73,7 +73,8 @@ export async function createPayment(opts: {
     metadata: opts.metadata,
   };
   if (opts.receiptEmail) {
-    // самозанятый: чек уходит в «Мой налог» автоматически
+    // 54-FZ receipt; vat_code 1 = "без НДС" (VAT not applied) per the
+    // YooKassa receipt docs
     payment.receipt = {
       customer: { email: opts.receiptEmail },
       items: [

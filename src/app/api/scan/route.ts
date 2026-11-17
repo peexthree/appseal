@@ -4,6 +4,7 @@ import { runScan, normalizeInputUrl } from "@/lib/scanner";
 import { newId, newReportKey, saveScan, serializeScan, pushRegistryEntry } from "@/lib/scanner/store";
 import { assertPublicTarget } from "@/lib/scanner/guard";
 import { bumpDailyQuota, hasActivePass, hashIp } from "@/lib/passes";
+import { getClientIp, secretsMatch } from "@/lib/sec";
 import type { Lang, ScanResult } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
@@ -41,13 +42,11 @@ export async function POST(req: NextRequest) {
     // free quota (demo target excluded - it is the marketing funnel);
     // a live Launch Pass on the target host removes the limit;
     // the owner's admin key removes it too (set ADMIN_SCAN_KEY in env)
-    const adminBypass =
-      Boolean(process.env.ADMIN_SCAN_KEY) && body.adminKey === process.env.ADMIN_SCAN_KEY;
+    const adminBypass = secretsMatch((body.adminKey ?? "").trim(), (process.env.ADMIN_SCAN_KEY ?? "").trim());
     if (!norm.isDemo && !adminBypass) {
-      const ip =
-        req.headers.get("cf-connecting-ip") ??
-        req.headers.get("x-forwarded-for")?.split(",")[0] ??
-        "unknown";
+      // getClientIp only returns platform-reported, well-formed addresses -
+      // a spoofed X-Forwarded-For entry falls through to "unknown"
+      const ip = getClientIp(req.headers);
       const targetHost = new URL(norm.url).hostname;
       const pass = await hasActivePass(targetHost);
       if (!pass) {

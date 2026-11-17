@@ -11,6 +11,7 @@ import {
 import { getLatestHostEntry } from "@/lib/scanner/store";
 import { FREE_WATCH_KEY_PREFIX, FREE_WATCH_MAX, FREE_WATCH_ZSET } from "@/lib/watch";
 import { sendTelegramMessage } from "@/lib/telegram";
+import { secretsMatch } from "@/lib/sec";
 import {
   botPayBtn,
   botPayFail,
@@ -45,6 +46,8 @@ export const dynamic = "force-dynamic";
  */
 
 const STATE_TTL_SECONDS = 3600;
+// literal on purpose: the purchase route exists only on our production
+// origin, and a literal URL keeps the outbound fetch SSRF-scannable
 const HOSTED_ORIGIN = "https://appseal.online";
 
 interface TgUser {
@@ -132,7 +135,7 @@ async function checkStatus(nonce: string): Promise<{ status?: string; host?: str
 export async function POST(req: NextRequest) {
   const secret = (process.env.TELEGRAM_WEBHOOK_SECRET ?? "").trim();
   const got = (req.headers.get("x-telegram-bot-api-secret-token") ?? "").trim();
-  if (!secret || got !== secret) {
+  if (!secretsMatch(got, secret)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   let update: TgMessage = {};
@@ -209,20 +212,22 @@ export async function POST(req: NextRequest) {
         await sendTelegramMessage(chatId, botRedeemNoPack(step.lang), scannerKeyboard());
         return NextResponse.json({ ok: true });
       }
-      const credits = await getPackCredits(packPaymentId);
-      if (credits <= 0 || !(await consumePackCredit(packPaymentId))) {
-        await sendTelegramMessage(chatId, botRedeemResultText(step.lang, "empty"), scannerKeyboard());
-        return NextResponse.json({ ok: true });
-      }
-      // pass already covering the host? refund the credit and say so
+      // pass check FIRST: a credit must never be spent on a host that is
+      // already covered (consuming before this check would eat the credit
+      // and there is no reliable refund path in the reply flow)
       if (await hasActivePass(host)) {
         await sendTelegramMessage(
           chatId,
           "ru" === step.lang
-            ? `У домена ${host} уже есть активный пропуск - кредит не списан. Пришли другой домен: /redeem myapp.com`
+            ? `У домена ${host} уже есть активный пропуск - кредит не списан. Пришли другой домен: /redeem site.ru`
             : `${host} already has an active pass - the credit was not spent. Send another domain: /redeem myapp.com`,
           scannerKeyboard(),
         );
+        return NextResponse.json({ ok: true });
+      }
+      const credits = await getPackCredits(packPaymentId);
+      if (credits <= 0 || !(await consumePackCredit(packPaymentId))) {
+        await sendTelegramMessage(chatId, botRedeemResultText(step.lang, "empty"), scannerKeyboard());
         return NextResponse.json({ ok: true });
       }
       const record = await redeemPackPass(packPaymentId, host);
