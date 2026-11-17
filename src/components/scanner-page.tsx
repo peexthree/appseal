@@ -548,7 +548,7 @@ export function ScannerPage({
             muted
             playsInline
             aria-hidden
-            className="pointer-events-none absolute left-1/2 -top-20 -z-10 h-[600px] w-screen max-w-none -translate-x-1/2 object-cover opacity-70 [mask-image:linear-gradient(to_bottom,black_30%,transparent_96%)]"
+            className="pointer-events-none absolute left-1/2 -top-20 -z-10 h-[600px] w-screen max-w-none -translate-x-1/2 object-cover opacity-50 [mask-image:linear-gradient(to_bottom,black_30%,transparent_96%)]"
           />
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-400">
