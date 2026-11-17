@@ -497,7 +497,7 @@ export function ScannerPage({
 
         {/* hero + scanner */}
         <section
-          className="appmot-grid relative isolate pb-14 pt-14 sm:pt-20"
+          className="appmot-grid relative z-10 isolate pb-14 pt-14 sm:pt-20"
           aria-label="Scanner"
         >
           {/* looping hero backdrop: radar sweep behind the headline; pulled up
