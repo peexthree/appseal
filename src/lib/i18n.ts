@@ -184,12 +184,17 @@ export const DICT = {
     ru: "1 полный скан в день|Оценка A+-E и полный отчёт|Fix-prompt для ИИ-агента",
     en: "1 full scan per day|A+-E grade and full report|Fix prompt for your AI agent",
   },
-  planPro: { ru: "Pro", en: "Pro" },
-  planProPrice: { ru: "$19/мес", en: "$19/mo" },
-  planProFeats: {
-    ru: "Безлимит сканов|Недельный мониторинг изменений|Автопроверка после каждого релиза|Бейдж со свежей датой|Приоритетные проверки",
-    en: "Unlimited scans|Weekly change monitoring|Post-release auto rescan|Badge with fresh date|Priority queue",
+  planPro: { ru: "Pro Pass", en: "Pro Pass" },
+  planProPrice: { ru: "1 490 ₽", en: "$19" },
+  planProSub: {
+    ru: "30 дней безлимита одного домена - разовая покупка, без автосписаний",
+    en: "30 days of unlimited scans for one domain - one-time purchase, no auto-renewal",
   },
+  planProFeats: {
+    ru: "30 дней безлимита одного домена|Приоритетная очередь сканов|Фоновый перескан каждые 6 ч и алерт при падении класса|PDF-отчёт и embed-бейдж доверия",
+    en: "30 days of unlimited scans for one domain|Priority scan queue|Background rescan every 6h with a grade-drop alert|PDF report and the embeddable trust badge",
+  },
+  planProCta: { ru: "Купить Pro в Telegram", en: "Buy Pro in Telegram" },
   planPlatform: { ru: "Platform", en: "Platform" },
   planPlatformPrice: { ru: "Индивидуально", en: "Custom" },
   planPlatformFeats: {

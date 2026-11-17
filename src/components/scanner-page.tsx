@@ -545,7 +545,7 @@ export function ScannerPage({
             muted
             playsInline
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 -top-20 -z-10 h-[600px] w-full object-cover opacity-40 [mask-image:linear-gradient(to_bottom,black_30%,transparent_96%)]"
+            className="pointer-events-none absolute inset-x-0 -top-20 -z-10 h-[600px] w-full object-cover opacity-70 [mask-image:linear-gradient(to_bottom,black_30%,transparent_96%)]"
           />
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-400">
@@ -1207,7 +1207,7 @@ export function ScannerPage({
             className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-40 [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]"
           />
           <SectionHead eyebrow={EYEBROWS.pricing[lang]} title={t(lang, "pricingTitle")} sub={t(lang, "pricingSub")} />
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {/* Free plan */}
             <Reveal className="h-full md:my-4">
               <div className="appseal-card appseal-glass flex h-full flex-col rounded-2xl p-6">
@@ -1247,7 +1247,7 @@ export function ScannerPage({
                   <div className="mt-3 flex items-center justify-center gap-1.5">
                     <span aria-hidden="true" className="appseal-wave font-display text-2xl font-bold text-emerald-400/30">(</span>
                     <span aria-hidden="true" className="appseal-wave appseal-wave-2 font-display text-2xl font-bold text-emerald-400/60">(</span>
-                    <span className="font-display text-5xl font-extrabold text-emerald-400 drop-shadow-[0_0_16px_rgba(52,211,153,0.35)]">{t(lang, "planLPPrice")}</span>
+                    <span className="font-display whitespace-nowrap text-4xl font-extrabold text-emerald-400 drop-shadow-[0_0_16px_rgba(52,211,153,0.35)] lg:text-5xl">{t(lang, "planLPPrice")}</span>
                     <span aria-hidden="true" className="appseal-wave appseal-wave-2 font-display text-2xl font-bold text-emerald-400/60">)</span>
                     <span aria-hidden="true" className="appseal-wave font-display text-2xl font-bold text-emerald-400/30">)</span>
                   </div>
@@ -1284,14 +1284,44 @@ export function ScannerPage({
               </div>
             </Reveal>
 
+            {/* Pro Pass: 30 days one-time, violet beat between LP and Agency */}
+            <Reveal delay={0.16} className="h-full">
+              <div className="appseal-glass-panel flex h-full flex-col rounded-2xl border border-violet-400/45 p-6 shadow-[0_0_28px_-10px_rgba(167,139,250,0.45)]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="rounded-full border border-violet-400/30 bg-violet-500/15 px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest text-violet-200">
+                    {t(lang, "planPro")}
+                  </span>
+                  <span className="font-display text-lg font-extrabold text-violet-300">{t(lang, "planProPrice")}</span>
+                </div>
+                <p className="mt-3 text-[11px] leading-snug text-slate-400">{t(lang, "planProSub")}</p>
+                <ul className="mt-4 flex-1 space-y-2.5">
+                  {list(lang, "planProFeats").map((f) => (
+                    <li key={f} className="flex items-start gap-2.5 text-[13px] leading-snug text-slate-300">
+                      <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full bg-violet-400">
+                        <Check className="h-2.5 w-2.5 text-[#090d16]" strokeWidth={3.5} />
+                      </span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-pro`}
+                  className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-400 to-purple-400 text-[13px] font-bold text-[#090d16] shadow-[0_10px_28px_-10px_rgba(167,139,250,0.7)] transition hover:from-violet-300 hover:to-purple-300"
+                >
+                  <Send className="h-4 w-4" />
+                  {t(lang, "planProCta")}
+                </a>
+              </div>
+            </Reveal>
+
             {/* Agency Pack: wholesale passes for studios, same one-time bot flow */}
-            <Reveal delay={0.16} className="h-full md:my-4">
+            <Reveal delay={0.24} className="h-full">
               <div className="appseal-card appseal-glass flex h-full flex-col rounded-2xl p-6">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full border border-slate-400/25 bg-slate-500/15 px-3.5 py-1 text-[11px] font-bold uppercase tracking-widest text-slate-200">
+                  <span className="rounded-full border border-slate-400/25 bg-slate-500/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-200">
                     {t(lang, "planAgencyTitle")}
                   </span>
-                  <span className="font-display text-lg font-extrabold text-slate-100">{t(lang, "planAgencyPrice")}</span>
+                  <span className="font-display whitespace-nowrap text-base font-extrabold text-slate-100">{t(lang, "planAgencyPrice")}</span>
                 </div>
                 <ul className="mt-5 flex-1 space-y-2.5">
                   {list(lang, "planAgencyFeats").map((f) => (

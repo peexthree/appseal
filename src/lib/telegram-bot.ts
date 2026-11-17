@@ -241,6 +241,23 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
             lang: deepLang,
           };
         }
+        const proLink = param.match(/^(ru|en)-pro$/i);
+        if (proLink) {
+          // Pro Pass deep link from the landing pricing card: straight into
+          // the dialog with the plan preset, the domain question follows
+          const deepLang: BotLang = proLink[1].toLowerCase() === "en" ? "en" : "ru";
+          return {
+            state: {
+              stage: "await_host",
+              provider: deepLang === "en" ? "lava" : "yk",
+              mode: "single",
+              plan: "pro",
+            },
+            intent: { action: "reply" },
+            reply: PACKS[deepLang].step1,
+            lang: deepLang,
+          };
+        }
         const m = param.match(/^(ru|en)-([a-z0-9_-]{3,60})$/i);
         if (m) {
           const deepLang: BotLang = m[1].toLowerCase() === "en" ? "en" : "ru";
