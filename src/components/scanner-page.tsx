@@ -487,15 +487,7 @@ export function ScannerPage({
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-clip text-slate-100">
-      {/* ambient layer: aurora + noise, purely decorative */}
-      <div className="appseal-ambient" aria-hidden>
-        <div className="appseal-aurora">
-          <span className="appseal-aurora-a" />
-          <span className="appseal-aurora-b" />
-          <span className="appseal-aurora-c" />
-        </div>
-        <div className="appseal-noise" />
-      </div>
+      {/* no ambient layer here: the body bg.webp stays clean like inner pages */}
 
       {/* header: the shared site header - transparent at rest, collapses into
           a small left logo-pill on scroll, quick-links mini-panel + RU/EN */}
@@ -528,10 +520,6 @@ export function ScannerPage({
         <section
           className="appmot-grid relative isolate pb-14 pt-14 sm:pt-20"
           aria-label="Scanner"
-          style={{
-            backgroundImage:
-              "radial-gradient(ellipse 60% 50% at 50% 0%, rgba(56,189,248,0.12), transparent 70%)",
-          }}
         >
           {/* looping hero backdrop: radar sweep behind the headline; pulled up
               under the transparent sticky header (-top-20 = header height) so
