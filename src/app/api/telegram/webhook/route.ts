@@ -4,6 +4,7 @@ import {
   addChatRedeemedHost,
   bindPassChat,
   consumePackCredit,
+  extendHostPass,
   getChatPack,
   getChatPassHosts,
   getChatRedeemedHosts,
@@ -39,6 +40,7 @@ import {
   botPayFail,
   botPayText,
   botPlanKeyboard,
+  botRenewalPrompt,
   botRedeemNoPack,
   botRedeemResultText,
   botScanText,
@@ -57,6 +59,8 @@ import {
   buildMyScansText,
   handleBotInput,
   MyScanEntry,
+  parseRenewCallback,
+  renewCarryDays,
 } from "@/lib/telegram-bot";
 
 export const runtime = "nodejs";
@@ -77,6 +81,13 @@ export const dynamic = "force-dynamic";
  * operations (payment creation, status poll, registry lookups) flip the
  * "typing…" indicator, dialogs carry a ✖️ cancel button, the invoice message
  * carries a ✅ check-payment button, and every bot message is Telegram HTML.
+ *
+ * One-click renewal: the monitor-tick expiry reminder carries a renew:<host>
+ * button. This route re-validates the host, parks the current pass's plan and
+ * its unspent days (renewRemainDays) in the dialog state and asks only for
+ * the email; the email step fires the usual one-time invoice, and the
+ * check_status branch stacks the parked days onto the fresh pass with
+ * extendHostPass (burnt from the state right after - never stacked twice).
  *
  * Review moderation: the site posts every queued review to the moderation
  * channel with rev:ok:<uuid> / rev:no:<uuid> / rev:feat:<uuid> buttons; this
@@ -261,6 +272,49 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.warn("[appseal-bot] review moderation failed:", e instanceof Error ? e.message : String(e));
       await answerCallbackQuery(cbId, "Ошибка, попробуй ещё раз");
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // one-click renewal: the "🔁 Продлить" button on the expiry reminder sent by
+  // monitor-tick. Runs before the generic toast below so the press is
+  // acknowledged with its own wording (a callback query can be answered
+  // once). The host rides the callback and is re-validated; the plan follows
+  // the CURRENT pass (Pro extends to Pro), the unspent remainder is parked in
+  // the state as renewRemainDays and stacked onto the fresh pass in the
+  // check_status branch after the payment - still a one-time invoice, never
+  // an auto-renewal.
+  if ((cbq?.data ?? "").toLowerCase().startsWith("renew:") && cbq?.id) {
+    const cbId = cbq.id;
+    try {
+      const host = parseRenewCallback(cbq.data ?? "");
+      if (!host) {
+        // forged/garbled callback_data: an honest refusal, the dialog stays
+        // untouched
+        await answerCallbackQuery(cbId, lang === "ru" ? "Не похоже на домен" : "Not a domain");
+        return NextResponse.json({ ok: true });
+      }
+      await answerCallbackQuery(cbId, lang === "ru" ? "Создаём продление…" : "Creating the renewal…");
+      typing(chatId);
+      const rec = await getPassRecord(host);
+      const days = rec?.days === 30 ? 30 : 7;
+      const carry = renewCarryDays(rec?.until);
+      await saveState(chatId, {
+        stage: "await_email",
+        provider: lang === "en" ? "lava" : "yk",
+        plan: days === 30 ? "pro" : "launch",
+        mode: "single",
+        host,
+        renewRemainDays: carry,
+      });
+      // the domain is already fixed - no await_host step: the usual email
+      // step below fires the one-time invoice through the same
+      // create_purchase intent as a regular purchase
+      await sendTelegramMessage(chatId, botRenewalPrompt(lang, host, days, carry), botCancelKeyboard(lang), "HTML");
+    } catch (e) {
+      // the toast is already answered - only the chat reply can fail here;
+      // swallow so Telegram never retries into a broken dialog
+      console.warn("[appseal-bot] renew callback failed:", e instanceof Error ? e.message : String(e));
     }
     return NextResponse.json({ ok: true });
   }
@@ -507,16 +561,29 @@ export async function POST(req: NextRequest) {
       // оплату" button and the /status command share this branch): personal
       // alerts, the weekly digest and the /token Pro lookup all key off it
       let reward: ReferralReward | null = null;
+      let renewCarry = 0;
       if (d.status === "succeeded" && d.host) {
         await bindPassChat(d.host, chatId);
         // referral payout: on an invited chat's FIRST purchase both sides get
         // +7 days - the newbie's fresh pass, the referrer's active pass (or
         // banked for later); no-op for everyone else
         reward = await rewardReferral(chatId, d.host);
+        // one-click renewal: stack the previous pass's unspent remainder onto
+        // the fresh one. extendHostPass needs an ACTIVE pass - the activation
+        // above (and the referral extension) have just re-pinned it, so this
+        // works. The carry is burnt right after a successful extension (the
+        // undefined value drops from the JSON): a repeated /status press must
+        // never stack the same days twice. A failed extension keeps the carry
+        // in the state, so the next /status can retry within the dialog TTL.
+        const carry = state.renewRemainDays ?? 0;
+        if (carry > 0 && (await extendHostPass(d.host, carry))) {
+          renewCarry = carry;
+          await saveState(chatId, { ...state, renewRemainDays: undefined });
+        }
       }
       const text =
         d.status === "succeeded"
-          ? botStatusText(step.lang, "done", d.host, d.until, undefined, reward?.newbieDays === true)
+          ? botStatusText(step.lang, "done", d.host, d.until, undefined, reward?.newbieDays === true, renewCarry)
           : d.status
             ? botStatusText(step.lang, "pending", undefined, undefined, d.status)
             : botStatusText(step.lang, "fail");

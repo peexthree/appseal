@@ -612,10 +612,16 @@ export function ScannerPage({
               it into the page background so text stays readable. Full-bleed:
               the section is trapped in the max-w-5xl main, so the video
               centers itself on 100vw and overflows the container; the root
-              overflow-x-clip eats the scrollbar-width overshoot */}
+              overflow-x-clip eats the scrollbar-width overshoot. preload=
+              "metadata" leaves autoplay untouched (autoplay fetches data on
+              its own once it starts) but keeps browsers from eagerly buffering
+              the whole mp4 while playback is deferred or blocked (data saver,
+              iOS low-power mode) - that was ~500KB competing with the LCP
+              window on a slow pipe; the poster frame covers the wait */}
           <video
             src="/video/Radar_pulse.mp4"
             poster="/img/hero-poster.jpg"
+            preload="metadata"
             autoPlay
             loop
             muted
@@ -802,10 +808,11 @@ export function ScannerPage({
           {phase === "scanning" && (
             <div className="appseal-card mx-auto mt-8 max-w-2xl overflow-hidden rounded-2xl p-6 sm:p-8">
               <img
-                src="/img/scan-field.png"
+                src="/img/scan-field.webp"
                 alt=""
                 aria-hidden
                 loading="lazy"
+                decoding="async"
                 className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30"
               />
               <div className="relative">
@@ -1052,10 +1059,11 @@ export function ScannerPage({
               onBlur={() => setFocusHold(false)}
             >
               <img
-                src="/img/scan-field.png"
+                src="/img/scan-field.webp"
                 alt=""
                 aria-hidden
                 loading="lazy"
+                decoding="async"
                 className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40"
               />
               <div className="relative">
@@ -1076,6 +1084,13 @@ export function ScannerPage({
                       alt={`AppSeal grade ${showGrade}`}
                       width={112}
                       height={112}
+                      // the trophy sits below the fold (grade showcase);
+                      // lazy drops the SSR preload link React emits for eager
+                      // imgs, so the file no longer races the hero for
+                      // bandwidth; decoding=async moves decode off the
+                      // main thread - the fade/scale animation is untouched
+                      loading="lazy"
+                      decoding="async"
                       initial={{ opacity: 0, scale: 0.92 }}
                       animate={{ opacity: 1, scale: 1, filter: `drop-shadow(0 0 22px ${GRADE_META[showGrade].color}66)` }}
                       transition={{ duration: 0.35 }}
@@ -1255,9 +1270,15 @@ export function ScannerPage({
                       floats in the glass, edges melt out via a radial mask */}
                   <div aria-hidden className="relative hidden h-60 w-60 shrink-0 sm:block md:h-72 md:w-72">
                     <img
-                      src="/img/seal.png"
+                      src="/img/seal.webp"
                       alt=""
                       loading="lazy"
+                      // intrinsic size + async decode: the ratio hint costs
+                      // nothing (h-full w-full still controls the box) and the
+                      // 1000x1000 png decodes off the main thread while scrolling
+                      width={1000}
+                      height={1000}
+                      decoding="async"
                       className="h-full w-full object-cover [mask-image:radial-gradient(circle,black_48%,transparent_72%)]"
                     />
                   </div>
@@ -1698,6 +1719,12 @@ export function ScannerPage({
                 alt="AppSeal Verified"
                 width={228}
                 height={44}
+                // footer badge below the fold: lazy removes the eager SSR
+                // preload/fetch that competed with the hero, async decode
+                // keeps it off the main thread; 228x44 attrs already pin
+                // the box, so there is no layout shift either way
+                loading="lazy"
+                decoding="async"
                 className="h-[44px] w-[228px] drop-shadow-[0_4px_16px_rgba(192,132,252,0.18)]"
               />
             </a>

@@ -7,6 +7,62 @@ import { NextRequest, NextResponse } from "next/server";
  * client views read document.cookie (useLang), so both get it. ?lang=ru|en
  * stays as a convenience entry: sets the cookie and strips the param.
  */
+
+/**
+ * Strict script CSP: on dynamically rendered routes script-src drops
+ * 'unsafe-inline' and becomes 'nonce-<random>' 'strict-dynamic'. The nonce is
+ * forwarded to the server render via the request CSP header - Next.js reads it
+ * back (getScriptNonceFromHeader) and stamps its own SSR bootstrap/flight
+ * scripts, so hydration works without 'unsafe-inline'. 'strict-dynamic' also
+ * lets client-injected scripts through (Vercel Analytics, the Metrica snippet
+ * inserted by next/script); the host allowlist stays for CSP2-only browsers,
+ * which ignore 'strict-dynamic'.
+ *
+ * Statically cached routes keep the legacy script-src: their prerendered HTML
+ * has no per-request nonce baked in, so a nonce-only CSP would block every
+ * inline bootstrap script there (documented Next.js limitation - a middleware
+ * nonce only applies to dynamically rendered routes). That list is the ISR/SSG
+ * pages below; everything else - including future pages - gets the strict CSP,
+ * which is safe as long as the route renders per request.
+ *
+ * style-src deliberately keeps 'unsafe-inline' (framer-motion/toaster write
+ * inline styles) - scripts are the only target here.
+ */
+
+const SCRIPT_SRC_LEGACY = `'self' 'unsafe-inline' https://mc.yandex.ru https://va.vercel-scripts.com`;
+const scriptSrcStrict = (nonce: string) =>
+  `'self' 'nonce-${nonce}' 'strict-dynamic' https://mc.yandex.ru https://va.vercel-scripts.com`;
+
+// prerendered (ISR/SSG) routes - served from cache, no nonce in their HTML
+const PRERENDERED_ROUTES = /^\/(ci|digest|fixes|registry|report|verified)(?:\/|$)/i;
+
+function contentSecurityPolicy(scriptSrc: string): string {
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    "style-src 'self' 'unsafe-inline' https://mc.yandex.ru",
+    "img-src 'self' data: blob: https://mc.yandex.ru",
+    "font-src 'self' data:",
+    "connect-src 'self' https://mc.yandex.ru",
+    "frame-src https://mc.yandex.ru",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "object-src 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
+/** 128-bit random nonce as base64 - the charset Next's nonce extraction regex
+ *  ([A-Za-z0-9+/_-]+=) accepts, generated per request in the edge runtime. */
+function randomNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary);
+}
+
 export function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
@@ -22,18 +78,37 @@ export function middleware(req: NextRequest) {
 
   // /en/... /ru/...: rewrite to the clean path with the language pinned
   const prefix = pathname.match(/^\/(en|ru)(?=\/|$)/i);
+  let lang: string | null = null;
+  let effectivePath = pathname;
   if (prefix) {
-    const lang = prefix[1].toLowerCase();
-    const rest = pathname.slice(prefix[1].length + 1) || "/";
-    const url = req.nextUrl.clone();
-    url.pathname = rest;
+    lang = prefix[1].toLowerCase();
+    effectivePath = pathname.slice(prefix[1].length + 1) || "/";
     req.cookies.set("appseal-lang", lang);
-    const res = NextResponse.rewrite(url, { request: { headers: req.headers } });
-    res.cookies.set("appseal-lang", lang, { path: "/", maxAge: 31536000, sameSite: "lax" });
-    return res;
   }
 
-  return NextResponse.next();
+  const nonce = randomNonce();
+  const strict = !PRERENDERED_ROUTES.test(effectivePath);
+  const policy = contentSecurityPolicy(strict ? scriptSrcStrict(nonce) : SCRIPT_SRC_LEGACY);
+
+  const requestHeaders = new Headers(req.headers);
+  if (strict) {
+    // the server render nonces its own scripts from the request CSP header and
+    // server components read the plain nonce for inline JSON-LD blocks
+    requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("Content-Security-Policy", policy);
+  }
+
+  let res: NextResponse;
+  if (lang) {
+    const url = req.nextUrl.clone();
+    url.pathname = effectivePath;
+    res = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+    res.cookies.set("appseal-lang", lang, { path: "/", maxAge: 31536000, sameSite: "lax" });
+  } else {
+    res = NextResponse.next({ request: { headers: requestHeaders } });
+  }
+  res.headers.set("Content-Security-Policy", policy);
+  return res;
 }
 
 export const config = {

@@ -149,13 +149,17 @@ const productLd = {
 export default async function Home() {
   const h = await headers();
   const lang = detectInitialLang(h);
+  // strict-dynamic CSP (middleware): inline <script> needs the per-request
+  // nonce even when it never executes - without it the browser strips the
+  // JSON-LD block and crawlers miss the structured data
+  const nonce = h.get("x-nonce") ?? undefined;
   // live monotonic counters from the same Redis source /stats renders from -
   // the landing stats card must never disagree with the stats page
   const [totals, chips] = await Promise.all([getLiveTotals(), getLiveChips()]);
   return (
     <>
-      <JsonLd />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd) }} />
+      <JsonLd nonce={nonce} />
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd) }} />
       <ScannerPage initialScan={null} initialLang={lang} initialTotals={totals} initialChips={chips} />
     </>
   );

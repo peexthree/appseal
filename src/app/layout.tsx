@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Manrope, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
@@ -19,6 +19,13 @@ const jet = JetBrains_Mono({
   subsets: ["latin", "cyrillic"],
 });
 
+// theme-color mirrors the body background (#090d16, globals.css): the mobile
+// browser chrome blends into the page instead of flashing a default bar
+// color - a meta hint only, nothing on the page itself changes
+export const viewport: Viewport = {
+  themeColor: "#090d16",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://appseal.online"),
   title: "AppSeal - техосмотр для приложений, собранных с ИИ",
@@ -30,7 +37,7 @@ export const metadata: Metadata = {
     icon: [
       { url: "/ico.svg", type: "image/svg+xml" },
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/ico.png", sizes: "512x512", type: "image/png" },
+      { url: "/ico.png", sizes: "256x256", type: "image/png" },
     ],
     shortcut: "/ico.svg",
     apple: [

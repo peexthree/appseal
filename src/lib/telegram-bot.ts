@@ -23,6 +23,16 @@
  * landing deep links sell Launch directly, and /plan_pro|/plan_launch typed
  * cold preset the plan so the menu is skipped.
  *
+ * One-click renewal (still a one-time invoice, no auto-renewals anywhere):
+ * the expiry reminder from monitor-tick carries a "🔁 Продлить" button
+ * (callback_data renew:<host>). The webhook re-validates the host
+ * (parseRenewCallback), parks the CURRENT pass's plan and its unspent days
+ * (renewRemainDays, renewCarryDays) in the dialog state and asks only for
+ * the email - the domain is already fixed. The usual email step fires the
+ * one-time invoice through the same create_purchase intent, and the
+ * check_status branch stacks the parked days onto the fresh pass with
+ * extendHostPass - the remainder is never lost and never counted twice.
+ *
  * Free conveniences on top of the sales flow: /scan <domain> (and a bare
  * domain typed into the chat) answers with the freshest registry grade and a
  * link to the full report; /watch keeps up to 3 domains per chat on the free
@@ -50,7 +60,8 @@
  * 24h web-cabinet link when the route could mint a token.
  *
  * 152-FZ note: the per-chat state stored in Redis holds stage/provider/mode/
- * plan/nonce/hosts only - hosts are the watched domains snapshotted for the
+ * plan/nonce/hosts and a renewal day-count (renewRemainDays) only - hosts are
+ * the watched domains snapshotted for the
  * /unwatch pick (no personal data), and the buyer email never lands there:
  * it transits to the payment provider inside the invoice call and is
  * forgotten.
@@ -85,6 +96,12 @@ export interface BotState {
   mode?: "single" | "pack";
   /** chosen tariff for single purchases; dialogs without it sell Launch */
   plan?: BotPlan;
+  /** one-click renewal: unspent days of the previous pass, parked at the
+   *  renew:<host> callback and stacked onto the fresh pass in the webhook's
+   *  check_status branch (burnt there after a successful extendHostPass, so
+   *  a repeated /status press can never stack it twice); a day count, not
+   *  personal data */
+  renewRemainDays?: number;
   /** domains snapshotted for the /unwatch numbered pick (2-3 hosts); the
    *  fresh Redis list stays the source of truth at execution time */
   hosts?: string[];
@@ -189,6 +206,10 @@ interface LangPack {
   /** "+7 from a friend's invite" line appended to the done status text when
    *  the referral payout extended the buyer's new pass */
   refBonusLine: string;
+  /** "♻️ N days carried over" line appended to the done status text when the
+   *  one-click renewal stacked the previous pass's remainder onto the fresh
+   *  one (check_status after a successful extendHostPass) */
+  renewCarryLine: (days: number) => string;
   /** signed web-cabinet link closing /myscans (absent when no token) */
   myscansWeb: (token: string) => string;
   myscansEmpty: string;
@@ -271,6 +292,7 @@ const RU: LangPack = {
   reviewCta: "💬 Понравилось? Оставьте отзыв: appseal.online/reviews",
   reviewCtaPass: "💬 Оставьте отзыв о AppSeal: appseal.online/reviews - он появится на витрине после короткой проверки",
   refBonusLine: "🎁 +7 дней по приглашению друга уже в вашем пассе",
+  renewCarryLine: (days) => `♻️ ${days} дн. с прошлого пасса сохранены`,
   myscansWeb: (token) => `🌐 Открыть в браузере: appseal.online/myscans?t=${token} (ссылка живёт 24 часа)`,
   myscansEmpty:
     "Пока нет доменов. Пришли /watch myapp.com - следить бесплатно, или запусти скан на appseal.online.",
@@ -361,6 +383,7 @@ const EN: LangPack = {
   reviewCta: "💬 Like it? Leave a review: appseal.online/reviews",
   reviewCtaPass: "💬 Leave a review: appseal.online/reviews - it goes live after a quick check",
   refBonusLine: "🎁 +7 days from a friend's invite are already in your pass",
+  renewCarryLine: (days) => `♻️ ${days} day${days === 1 ? "" : "s"} from the previous pass are kept`,
   myscansWeb: (token) => `🌐 Open in a browser: appseal.online/myscans?t=${token} (the link works for 24 hours)`,
   myscansEmpty:
     "No domains yet. Send /watch myapp.com to follow one for free - or run a scan at appseal.online.",
@@ -405,6 +428,30 @@ function normalizeHost(raw: string): string {
     .replace(/\/.*$/, "")
     .replace(/^www\./i, "")
     .toLowerCase();
+}
+
+/** "renew:<host>" callback data (the 🔁 button on the expiry reminder) ->
+ *  lowercased host, null for anything else. The domain shape is re-validated
+ *  with the same HOST_RE the purchase flow uses - callback data is client
+ *  input and must never reach Redis with a forged host. Uppercase is
+ *  tolerated and normalized the way parseRefParam tolerates it (Telegram
+ *  clients may shout links). Pure - tested in tests/renewal.test.ts. */
+export function parseRenewCallback(data: string): string | null {
+  const m = (data ?? "").trim().match(/^renew:([a-z0-9.-]+)$/i);
+  if (!m) return null;
+  const host = m[1].toLowerCase();
+  return HOST_RE.test(host) ? host : null;
+}
+
+/** Unspent days of the previous pass at renewal time: ceil of the remaining
+ *  time, 0 for an expired, missing or unparseable record - the stack must
+ *  never carry negative or invented days (the fresh pass would inherit days
+ *  the buyer did not pay for). Pure (injectable now) - tested in
+ *  tests/renewal.test.ts. */
+export function renewCarryDays(until?: string, now: number = Date.now()): number {
+  const t = until ? Date.parse(until) : NaN;
+  if (Number.isNaN(t)) return 0;
+  return Math.max(0, Math.ceil((t - now) / 86_400_000));
 }
 
 export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru"): BotStep {
@@ -766,6 +813,22 @@ export function botPlanPrompt(lang: BotLang, host: string, provider: BotProvider
   return PACKS[lang].planPrompt(host, provider === "lava" ? EN_PRICES : RU_PRICES);
 }
 
+/** One-click renewal prompt: shown right after the reminder button is
+ *  pressed. The domain rides the callback (already fixed), so only the email
+ *  is asked - the one-time invoice fires right after; the honest carry note
+ *  names the days that will ride the fresh pass. */
+export function botRenewalPrompt(lang: BotLang, host: string, days: number, carryDays = 0): string {
+  const carry =
+    carryDays > 0
+      ? lang === "en"
+        ? ` - ${carryDays} day${carryDays === 1 ? "" : "s"} left from the current pass will be kept`
+        : ` - ${carryDays} дн. остатка сохранятся`
+      : "";
+  return lang === "en"
+    ? `🔁 Renewing <code>${esc(host)}</code> for ${days} days${carry}. Send your email for the receipt - the invoice arrives right after.`
+    : `🔁 Продлеваем <code>${esc(host)}</code> на ${days} дн.${carry}. Пришлите email для чека - инвойс придёт сразу после.`;
+}
+
 /** Inline-button label for one of the two tariff buttons (Launch/Pro). */
 export function botPlanBtn(provider: BotProvider, plan: BotPlan): string {
   const pack = provider === "lava" ? EN : RU;
@@ -835,6 +898,19 @@ export function botInvoiceKeyboard(
     kind === "pack" ? botPackPayBtn(lang, provider) : botPayBtn(lang, provider, kind);
   return {
     inline_keyboard: [[{ text: payLabel, url }], [{ text: p.btnCheckPay, callback_data: "status" }]],
+  };
+}
+
+/** Expiry-reminder renewal button (monitor-tick attaches it to the personal
+ *  chat message only): the callback carries the host, the webhook
+ *  re-validates it with parseRenewCallback. The label names the CURRENT
+ *  pass's length (Pro extends to Pro) - button honesty, same rule as the
+ *  payment buttons. */
+export function botRenewKeyboard(host: string, days: number): object {
+  return {
+    inline_keyboard: [
+      [{ text: `🔁 Продлить ${host} на ${days} дн.`, callback_data: `renew:${host}` }],
+    ],
   };
 }
 
@@ -992,7 +1068,9 @@ function daysLeft(until?: string): { n: number; ok: boolean } {
 }
 
 /** Status-done closes with the review CTA (joy moment) and, when the route
- *  reports a referral payout (refBonus), the "+7 from a friend" line. */
+ *  reports a referral payout (refBonus), the "+7 from a friend" line - the
+ *  same pattern for renewCarry: the renewal's stacked days get their own
+ *  honest line once extendHostPass actually landed them. */
 export function botStatusText(
   lang: BotLang,
   kind: "done" | "pending" | "fail",
@@ -1000,6 +1078,7 @@ export function botStatusText(
   until?: string,
   status?: string,
   refBonus = false,
+  renewCarry = 0,
 ): string {
   if (kind === "done") {
     const d = daysLeft(until);
@@ -1009,10 +1088,11 @@ export function botStatusText(
         : `, осталось ${d.n} дн.`
       : "";
     const bonus = refBonus ? `\n${PACKS[lang].refBonusLine}` : "";
+    const carry = renewCarry > 0 ? `\n${PACKS[lang].renewCarryLine(renewCarry)}` : "";
     const base = lang === "en"
       ? `✅ Pass active for <code>${esc(host || "?")}</code> until ${until ? until.slice(0, 10) : "?"}${left}. Unlimited scans: https://appseal.online`
       : `✅ Пропуск активен для <code>${esc(host || "?")}</code> до ${until ? until.slice(0, 10) : "?"}${left}. Сканы без лимита: https://appseal.online`;
-    return `${base}${bonus}\n${PACKS[lang].reviewCtaPass}`;
+    return `${base}${bonus}${carry}\n${PACKS[lang].reviewCtaPass}`;
   }
   if (kind === "pending") {
     return lang === "en"

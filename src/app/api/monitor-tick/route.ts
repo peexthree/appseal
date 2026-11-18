@@ -21,6 +21,7 @@ import {
   type WatchSnapshot,
 } from "@/lib/watch";
 import { sendTelegramAlert, sendTelegramMessage } from "@/lib/telegram";
+import { botRenewKeyboard } from "@/lib/telegram-bot";
 import type { ScanResult } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
@@ -225,10 +226,14 @@ async function processFreeWatch(
 /**
  * Pass expiry reminders: every paid watchlist host with 1..3 days left gets
  * ONE warning - the bound chat hears it personally, a web-only purchase
- * falls back to the channel. The lpass:reminded:{host} marker is written
- * only after a successful send (a Telegram hiccup retries on the next tick)
- * with a TTL covering the remaining days plus an hour of grace. Swallows its
- * own errors - the monitor path below must never depend on this block.
+ * falls back to the channel. The personal message carries the one-click
+ * renewal button (callback renew:<host>, handled by the webhook route); the
+ * channel fallback stays plain - callback presses there have no dialog to
+ * land in. The button follows the CURRENT pass's length (Pro extends to
+ * Pro). The lpass:reminded:{host} marker is written only after a successful
+ * send (a Telegram hiccup retries on the next tick) with a TTL covering the
+ * remaining days plus an hour of grace. Swallows its own errors - the
+ * monitor path below must never depend on this block.
  */
 async function remindExpiringPasses(): Promise<number> {
   try {
@@ -240,8 +245,12 @@ async function remindExpiringPasses(): Promise<number> {
       const marker = REMIND_PREFIX + p.host;
       if (await redisCommand<string>(["GET", marker])) continue;
       const text = `⏳ Пасс на ${p.host} истекает через ${daysLeft} дн. Продлить: /plan_pro в боте или на appseal.online`;
+      // Bot API caps callback_data at 64 bytes (the host is strict ASCII, so
+      // bytes = chars) - a pathologically long host keeps the command-only
+      // fallback instead of a silently truncated callback
+      const kb = p.chatId && `renew:${p.host}`.length <= 64 ? botRenewKeyboard(p.host, p.days === 30 ? 30 : 7) : undefined;
       const ok = p.chatId
-        ? await sendTelegramMessage(p.chatId, text)
+        ? await sendTelegramMessage(p.chatId, text, kb)
         : await sendTelegramAlert(text);
       if (ok) {
         await redisCommand(["SET", marker, "1", "EX", String(daysLeft * 86_400 + 3600)]);

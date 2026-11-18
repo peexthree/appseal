@@ -72,10 +72,16 @@ const graph = {
   ],
 };
 
-export function JsonLd() {
+/** Structured data for crawlers. `nonce` is the per-request CSP nonce on
+ *  dynamically rendered routes (middleware x-nonce header) - inline <script>
+ *  is blocked under script-src 'strict-dynamic' without it. Undefined on
+ *  prerendered routes (e.g. /report/[id]), which run the legacy CSP with
+ *  'unsafe-inline' for scripts. */
+export function JsonLd({ nonce }: { nonce?: string }) {
   return (
     <script
       type="application/ld+json"
+      nonce={nonce}
       dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
     />
   );
