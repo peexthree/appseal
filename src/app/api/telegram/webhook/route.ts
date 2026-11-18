@@ -14,7 +14,9 @@ import {
   redisCommand,
 } from "@/lib/passes";
 import { issueApiToken } from "@/lib/api-tokens";
-import { deleteUserData, updateReviewStatus } from "@/lib/db/index";
+import { deleteUserData, setReviewFeatured, updateReviewStatus } from "@/lib/db/index";
+import { refCommandReply, recordRefJoin, rewardReferral, type ReferralReward } from "@/lib/referral";
+import { signChatToken } from "@/lib/myscans-token";
 import { getLatestHostEntry } from "@/lib/scanner/store";
 import {
   FREE_PER_CHAT_MAX,
@@ -77,8 +79,9 @@ export const dynamic = "force-dynamic";
  * carries a ✅ check-payment button, and every bot message is Telegram HTML.
  *
  * Review moderation: the site posts every queued review to the moderation
- * channel with rev:ok:<uuid> / rev:no:<uuid> buttons; this route answers the
- * verdict - only for callbacks arriving from TELEGRAM_CHAT_ID itself.
+ * channel with rev:ok:<uuid> / rev:no:<uuid> / rev:feat:<uuid> buttons; this
+ * route answers the verdict - only for callbacks arriving from
+ * TELEGRAM_CHAT_ID itself.
  */
 
 const STATE_TTL_SECONDS = 3600;
@@ -228,7 +231,7 @@ export async function POST(req: NextRequest) {
   // the verdict toast is the one the moderator sees (a callback query can be
   // answered once). Fully isolated - a broken DB never reaches other branches.
   const cbq = update.callback_query;
-  const revVerdict = cbq?.data?.match(/^rev:(ok|no):([0-9a-f-]{36})$/i);
+  const revVerdict = cbq?.data?.match(/^rev:(ok|no|feat):([0-9a-f-]{36})$/i);
   if (revVerdict && cbq?.id) {
     const cbId = cbq.id;
     try {
@@ -238,14 +241,23 @@ export async function POST(req: NextRequest) {
         await answerCallbackQuery(cbId, "Недостаточно прав");
         return NextResponse.json({ ok: true });
       }
-      const approved = revVerdict[1].toLowerCase() === "ok";
-      // updateReviewStatus re-validates the uuid shape and no-ops (false)
-      // without DATABASE_URL
-      const done = await updateReviewStatus(revVerdict[2], approved ? "approved" : "rejected");
-      await answerCallbackQuery(
-        cbId,
-        done ? (approved ? "✅ Опубликован" : "❌ Отклонён") : "Не найден или БД выключена",
-      );
+      const action = revVerdict[1].toLowerCase();
+      if (action === "feat") {
+        // the third "⭐ В витрину" button: pin the review to the top of the
+        // showcase. setReviewFeatured re-validates the uuid shape, only fires
+        // on approved reviews and is idempotent - re-pressing is a safe no-op
+        const pinned = await setReviewFeatured(revVerdict[2], true);
+        await answerCallbackQuery(cbId, pinned ? "⭐ Закреплено на витрине" : "Не найден или БД выключена");
+      } else {
+        const approved = action === "ok";
+        // updateReviewStatus re-validates the uuid shape and no-ops (false)
+        // without DATABASE_URL
+        const done = await updateReviewStatus(revVerdict[2], approved ? "approved" : "rejected");
+        await answerCallbackQuery(
+          cbId,
+          done ? (approved ? "✅ Опубликован" : "❌ Отклонён") : "Не найден или БД выключена",
+        );
+      }
     } catch (e) {
       console.warn("[appseal-bot] review moderation failed:", e instanceof Error ? e.message : String(e));
       await answerCallbackQuery(cbId, "Ошибка, попробуй ещё раз");
@@ -494,10 +506,17 @@ export async function POST(req: NextRequest) {
       // a confirmed payment binds the chat to the pass (the "✅ Проверить
       // оплату" button and the /status command share this branch): personal
       // alerts, the weekly digest and the /token Pro lookup all key off it
-      if (d.status === "succeeded" && d.host) await bindPassChat(d.host, chatId);
+      let reward: ReferralReward | null = null;
+      if (d.status === "succeeded" && d.host) {
+        await bindPassChat(d.host, chatId);
+        // referral payout: on an invited chat's FIRST purchase both sides get
+        // +7 days - the newbie's fresh pass, the referrer's active pass (or
+        // banked for later); no-op for everyone else
+        reward = await rewardReferral(chatId, d.host);
+      }
       const text =
         d.status === "succeeded"
-          ? botStatusText(step.lang, "done", d.host, d.until)
+          ? botStatusText(step.lang, "done", d.host, d.until, undefined, reward?.newbieDays === true)
           : d.status
             ? botStatusText(step.lang, "pending", undefined, undefined, d.status)
             : botStatusText(step.lang, "fail");
@@ -557,8 +576,32 @@ export async function POST(req: NextRequest) {
           entries.push({ host: h });
         }
       }
-      await sendTelegramMessage(chatId, buildMyScansText(entries, step.lang), botScannerKeyboard(step.lang), "HTML");
+      // web cabinet link: a signed 24h token opens /myscans?t=... in a
+      // browser (no web accounts - the link IS the session); absent secret ->
+      // the line is silently omitted
+      await sendTelegramMessage(
+        chatId,
+        buildMyScansText(entries, step.lang, signChatToken(chatId) ?? undefined),
+        botScannerKeyboard(step.lang),
+        "HTML",
+      );
       return NextResponse.json({ ok: true });
+    }
+
+    if (step.intent.action === "ref") {
+      typing(chatId);
+      // /ref: register this chat's invite code (so ref_<code> deep links
+      // resolve) and render the honest stats + rules card
+      const reply = await refCommandReply(chatId, step.lang);
+      await sendTelegramMessage(chatId, reply, undefined, "HTML");
+      return NextResponse.json({ ok: true });
+    }
+
+    if (step.intent.action === "ref_join") {
+      // /start ref_<code>: bind ref:invited for the newcomer (a self-invite,
+      // an unknown code or an already-invited chat is a no-op inside
+      // recordRefJoin). No return: the regular greeting below still goes out.
+      await recordRefJoin(chatId, step.intent.code).catch(() => null);
     }
 
     if (step.intent.action === "scan") {

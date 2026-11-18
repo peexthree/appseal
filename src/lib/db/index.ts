@@ -71,9 +71,13 @@ const DDL_STATEMENTS = [
      body text not null,
      lang text not null default 'ru',
      status text not null default 'pending',
+     featured boolean not null default false,
      created_at timestamptz not null default now()
    )`,
   `create index if not exists reviews_status_idx on reviews (status, created_at desc)`,
+  // fresh installs get the column from the create-table above; already
+  // provisioned tables (migration 0001) pick it up here - both idempotent
+  `alter table reviews add column if not exists featured boolean not null default false`,
   // RLS on every table: the Supabase anon key (REST API) gets deny-all -
   // this app only reads/writes through the direct server-side connection,
   // which runs as the table owner and bypasses RLS.
@@ -323,19 +327,20 @@ export interface PublicReview {
   host: string | null;
   body: string;
   lang: string;
+  featured: boolean;
   createdAt: string;
 }
 
-/** The showcase: approved reviews, newest first. */
+/** The showcase: pinned reviews first, then newest first. */
 export async function listApprovedReviews(limit = 12): Promise<PublicReview[]> {
   const sql = db();
   if (!sql) return [];
   try {
     await ensureSchema(sql);
     const rows = await sql`
-      select id, name, rating, host, body, lang, created_at
+      select id, name, rating, host, body, lang, featured, created_at
       from reviews where status = 'approved'
-      order by created_at desc limit ${Math.max(1, Math.min(50, limit))}
+      order by featured desc, created_at desc limit ${Math.max(1, Math.min(50, limit))}
     `;
     return rows.map((r) => ({
       id: String(r.id),
@@ -344,6 +349,7 @@ export async function listApprovedReviews(limit = 12): Promise<PublicReview[]> {
       host: r.host ? String(r.host) : null,
       body: String(r.body),
       lang: String(r.lang ?? "ru"),
+      featured: Boolean(r.featured),
       createdAt: new Date(r.created_at as string).toISOString(),
     }));
   } catch {
@@ -365,5 +371,40 @@ export async function updateReviewStatus(id: string, status: "approved" | "rejec
     return rows.count > 0;
   } catch {
     return false;
+  }
+}
+
+/** Moderator's showcase pin (the third ⭐ button on the Telegram alert):
+ *  featured reviews lead the showcase and the landing strip. */
+export async function setReviewFeatured(id: string, featured: boolean): Promise<boolean> {
+  const sql = db();
+  if (!sql) return false;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return false;
+  try {
+    await ensureSchema(sql);
+    const rows = await sql`
+      update reviews set featured = ${featured} where id = ${id} and status = 'approved'
+    `.execute();
+    return rows.count > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Housekeeping (pipeline-tick): drop rejected reviews after the retention
+ *  window stated in /legal (14 days). Returns the removed count. */
+export async function deleteRejectedReviews(olderThanDays = 14): Promise<number> {
+  const sql = db();
+  if (!sql) return 0;
+  try {
+    await ensureSchema(sql);
+    const rows = await sql`
+      delete from reviews
+      where status = 'rejected' and created_at < now() - (${olderThanDays} || ' days')::interval
+      returning id
+    `.execute();
+    return rows.length;
+  } catch {
+    return 0;
   }
 }

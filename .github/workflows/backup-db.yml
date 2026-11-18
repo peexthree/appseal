@@ -1,0 +1,74 @@
+name: backup db
+
+# Daily pg_dump of the Supabase Postgres database, uploaded as a GitHub
+# Actions artifact (appseal-db-backup-<date>, kept for 30 days).
+#
+# Setup (once): add the DATABASE_URL secret to the repo - Settings ->
+# Secrets and variables -> Actions -> New repository secret. Take the value
+# from Supabase -> Settings -> Database -> Connection string -> Session
+# pooler (port 5432), or paste the transaction pooler URL as is: the dump
+# step rewrites the port to 5432 on the fly, because pg_dump needs a single
+# session and the transaction pooler (6543) cannot serve it.
+# While the secret is missing, the job prints a warning and exits 0, so the
+# daily cron stays green until it is configured.
+#
+# Restore (the dump is pg_dump custom format, -Fc): download the .dump file
+# from the run's artifacts, then from the folder holding it:
+#   docker run --rm -v "$PWD:/dump" postgres:17-alpine \
+#     pg_restore -d "$DATABASE_URL" --no-owner /dump/appseal-<date>.dump
+# ($DATABASE_URL is the same session-pooler URL, port 5432. Add --clean to
+# replace the existing tables with the dump's data - careful: it drops the
+# current tables first.)
+
+on:
+  schedule:
+    - cron: "10 4 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: verify DATABASE_URL secret
+        id: check
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::warning::DATABASE_URL secret is not set - backup skipped."
+            echo "Add it: repo Settings -> Secrets and variables -> Actions -> New repository secret."
+            echo "Value: Supabase -> Settings -> Database -> Connection string -> Session pooler (port 5432),"
+            echo "or the transaction pooler URL (port 6543); the dump step rewrites the port itself."
+            # honest exit 0: keep the daily cron green until the secret is added
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: pg_dump (session pooler, port 5432)
+        id: dump
+        if: steps.check.outputs.skip != 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          # transaction pooler (:6543) cannot serve pg_dump (it multiplexes
+          # transactions across clients); rewrite the port to the session
+          # pooler :5432. No PGPASSWORD needed: credentials live in the URL.
+          DATABASE_URL_BACKUP="${DATABASE_URL/:6543/:5432}"
+          DATE="$(date +%F)"
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          docker run --rm -v "$PWD:/dump" postgres:17-alpine \
+            pg_dump "$DATABASE_URL_BACKUP" --no-owner --no-privileges -Fc \
+            -f "/dump/appseal-$DATE.dump"
+
+      - name: upload artifact
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: appseal-db-backup-${{ steps.dump.outputs.date }}
+          path: "*.dump"
+          if-no-files-found: error
+          retention-days: 30

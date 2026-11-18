@@ -162,6 +162,23 @@ export async function hasActivePass(host: string): Promise<boolean> {
   }
 }
 
+/** Extend an ACTIVE pass by N days (referral bonuses): the until timestamp
+ *  moves, the Redis TTL re-pins to the new term, the DB mirror refreshes.
+ *  Inactive/missing pass -> false, the caller falls back to a stored reward. */
+export async function extendHostPass(host: string, days: number): Promise<boolean> {
+  const rec = await getPassRecord(host);
+  if (!rec) return false;
+  const until = new Date(rec.until).getTime();
+  if (until <= Date.now()) return false;
+  const newUntil = new Date(until + days * 24 * 3600 * 1000).toISOString();
+  const newRecord: PassRecord = { ...rec, until: newUntil };
+  const ttl = Math.max(60, Math.ceil((until - Date.now()) / 1000) + days * 24 * 3600);
+  await redisCommand(["SET", `lpass:pay:${rec.paymentId}`, JSON.stringify(newRecord), "EX", String(ttl)]);
+  await redisCommand(["SET", passHostKey(host), JSON.stringify(newRecord), "EX", String(ttl)]);
+  void mirrorPass(newRecord);
+  return true;
+}
+
 /* ------------------------------------------------------------------ */
 /* Chat <-> pass binding: personal alerts, digests, expiry reminders   */
 /* ------------------------------------------------------------------ */

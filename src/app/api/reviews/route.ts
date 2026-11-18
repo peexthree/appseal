@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "reviews_unavailable" }, { status: 503 });
   }
 
-  // Moderation alert with approve/reject inline buttons. Plain text (no HTML
+  // Moderation alert with approve/reject/feature inline buttons. Plain text (no HTML
   // parse mode), so no escaping is needed; after() keeps the serverless
   // function alive until the Bot API call resolves without blocking the
   // response - a bare void promise can be frozen mid-flight.
@@ -120,6 +120,7 @@ export async function POST(req: NextRequest) {
             [
               { text: "✅ Опубликовать", callback_data: `rev:ok:${id}` },
               { text: "❌ Отклонить", callback_data: `rev:no:${id}` },
+              { text: "⭐ В витрину", callback_data: `rev:feat:${id}` },
             ],
           ],
         },

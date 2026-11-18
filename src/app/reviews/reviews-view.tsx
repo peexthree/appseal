@@ -13,6 +13,8 @@ export interface ReviewCard {
   rating: number;
   host: string | null;
   body: string;
+  /** moderator's showcase pin (the ⭐ button on the Telegram alert) */
+  featured: boolean;
   date: string;
 }
 
@@ -25,6 +27,9 @@ const D = {
     en: "Every review is left by an owner of a scanned app. Each one gets a short manual check before publishing - no invented quotes.",
   },
   aboutHost: { ru: "о домене", en: "about" },
+  // the reviewed domain has a live Launch/Pro Pass - the reviewer really owns it
+  verifiedBadge: { ru: "✅ владелец проверенного домена", en: "✅ verified domain owner" },
+  editorsPick: { ru: "От избранного редактора", en: "Editor's pick" },
   ratingAria: { ru: "Оценка {n} из 5", en: "Rated {n} out of 5" },
   emptyShowcase: {
     ru: "Отзывы пока собираются - ваш может быть первым.",
@@ -107,7 +112,16 @@ function Stars({ rating, lang }: { rating: number; lang: Lang }) {
   );
 }
 
-export function ReviewsView({ reviews, lang }: { reviews: ReviewCard[]; lang: Lang }) {
+export function ReviewsView({
+  reviews,
+  verified,
+  lang,
+}: {
+  reviews: ReviewCard[];
+  /** parallel to reviews: a live pass exists on the reviewed host (server-checked) */
+  verified: boolean[];
+  lang: Lang;
+}) {
   const t = (k: keyof typeof D) => D[k][lang];
 
   const [name, setName] = useState("");
@@ -198,10 +212,10 @@ export function ReviewsView({ reviews, lang }: { reviews: ReviewCard[]; lang: La
       </h1>
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">{t("intro")}</p>
 
-      {/* showcase: approved reviews only, newest first */}
+      {/* showcase: approved reviews only, page language first, featured pinned */}
       {reviews.length > 0 ? (
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {reviews.map((r) => (
+          {reviews.map((r, i) => (
             <figure key={r.id} className="appseal-glass-card flex flex-col rounded-2xl p-5">
               <div className="flex items-center justify-between gap-3">
                 <figcaption className="min-w-0 truncate text-sm font-bold text-slate-100">
@@ -209,6 +223,11 @@ export function ReviewsView({ reviews, lang }: { reviews: ReviewCard[]; lang: La
                 </figcaption>
                 <Stars rating={r.rating} lang={lang} />
               </div>
+              {r.featured && (
+                <p className="mt-1.5 text-[11px] font-semibold text-amber-400">
+                  <span aria-hidden>⭐</span> {t("editorsPick")}
+                </p>
+              )}
               {r.host && (
                 <Link
                   href={`/verified/${r.host}`}
@@ -216,6 +235,9 @@ export function ReviewsView({ reviews, lang }: { reviews: ReviewCard[]; lang: La
                 >
                   {t("aboutHost")} <span className="font-mono">{r.host}</span>
                 </Link>
+              )}
+              {r.host && verified[i] && (
+                <p className="mt-1 text-[11px] font-medium text-emerald-400">{t("verifiedBadge")}</p>
               )}
               <blockquote className="mt-3 flex-1 text-[13px] leading-relaxed text-slate-300">
                 {r.body}

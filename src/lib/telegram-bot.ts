@@ -42,12 +42,21 @@
  * its live grade from the scan store. Single pass purchases carry no chat
  * binding.
  *
+ * Referral (+7 days for both, logic in ./referral.ts): /start ref_<code> deep
+ * links parse into a ref_join intent (the route binds ref:invited via the
+ * ref:code lookup), /ref hands a ref intent to the route (Redis stats). The
+ * pass-activation moments (status done, redeem done) close with a review CTA
+ * - the joy moment is the moment to ask - and /myscans ends with a signed
+ * 24h web-cabinet link when the route could mint a token.
+ *
  * 152-FZ note: the per-chat state stored in Redis holds stage/provider/mode/
  * plan/nonce/hosts only - hosts are the watched domains snapshotted for the
  * /unwatch pick (no personal data), and the buyer email never lands there:
  * it transits to the payment provider inside the invoice call and is
  * forgotten.
  */
+
+import { parseRefParam } from "./referral.ts";
 
 const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -93,7 +102,11 @@ export type BotIntent =
   | { action: "check_status" }
   | { action: "my_scans" }
   | { action: "scan"; host: string }
-  | { action: "delete_data" };
+  | { action: "delete_data" }
+  /** /ref: the route registers ref:code and renders refCommandReply() */
+  | { action: "ref" }
+  /** /start ref_<code>: the route binds ref:invited via referral.recordRefJoin */
+  | { action: "ref_join"; code: string };
 
 export interface BotStep {
   state: BotState;
@@ -170,6 +183,14 @@ interface LangPack {
   deleteDone: (dbOk: boolean) => string;
   deleteCancelled: string;
   reviewCta: string;
+  /** joy-moment CTA after a pass activation (status/redeem done) - the fuller
+   *  sibling of reviewCta, mentioning the showcase moderation */
+  reviewCtaPass: string;
+  /** "+7 from a friend's invite" line appended to the done status text when
+   *  the referral payout extended the buyer's new pass */
+  refBonusLine: string;
+  /** signed web-cabinet link closing /myscans (absent when no token) */
+  myscansWeb: (token: string) => string;
   myscansEmpty: string;
   myscansHeader: string;
   myscansNoData: string;
@@ -215,7 +236,7 @@ const RU: LangPack = {
     "🔐 <b>Что делает AppSeal:</b> проверяет живое приложение на утечки секретов, открытые базы, дырявые админки и заголовки безопасности. Класс A+-E и бейдж доверия на сайт за минуту.\n\n" +
     "<b>Пропуск</b> = безлимитные сканы одного домена: Launch Pass - 7 дней, Pro Pass - 30 дней. Разовые платежи, без автосписаний.\n\n" +
     "Начать: /buy_ru (ЮKassa) или /buy_en (карта). Всё остальное - в <a href=\"https://appseal.online\">сканере</a>: /scan myapp.com покажет класс прямо в чате.\n\n" +
-    "Pro Pass (30 дней) включает /token - API-токен для встраивания: заголовок Authorization: Bearer к /api/scan снимает дневной лимит.\n\nУдаление своих данных из сервиса: /delete.",
+    "Pro Pass (30 дней) включает /token - API-токен для встраивания: заголовок Authorization: Bearer к /api/scan снимает дневной лимит.\n\nПриглашай друзей: /ref - друг покупает любой пасс, оба получаете +7 дней.\n\nУдаление своих данных из сервиса: /delete.",
   unknown: "Не понял сообщение. Команды: /start - меню, /scan myapp.com - проверка домена, /buy_ru - купить.",
   step1: "Шаг 1/2. Пришли домен, для которого нужен пропуск (например <code>myapp.vercel.app</code>).",
   step2: "Шаг 2/2. Пришли email для чека - он уходит напрямую в платёжную систему и у нас не хранится.",
@@ -248,6 +269,9 @@ const RU: LangPack = {
     (dbOk ? "" : "\n\nБаза сервиса была недоступна - пришли письмо на security@appseal.online, чтобы довершить удаление в базе."),
   deleteCancelled: "Удаление отменено. Диалог сброшен. /start - меню.",
   reviewCta: "💬 Понравилось? Оставьте отзыв: appseal.online/reviews",
+  reviewCtaPass: "💬 Оставьте отзыв о AppSeal: appseal.online/reviews - он появится на витрине после короткой проверки",
+  refBonusLine: "🎁 +7 дней по приглашению друга уже в вашем пассе",
+  myscansWeb: (token) => `🌐 Открыть в браузере: appseal.online/myscans?t=${token} (ссылка живёт 24 часа)`,
   myscansEmpty:
     "Пока нет доменов. Пришли /watch myapp.com - следить бесплатно, или запусти скан на appseal.online.",
   myscansHeader: "📄 <b>Твои домены</b> (свежие классы):",
@@ -302,7 +326,7 @@ const EN: LangPack = {
     "🔐 <b>What AppSeal does:</b> scans a live app for leaked secrets, open databases, exposed admin panels and security headers. An A+-E grade and a trust badge for your site in a minute.\n\n" +
     "<b>A pass</b> = unlimited scans of one domain: Launch Pass - 7 days, Pro Pass - 30 days. One-time payments, no auto-renewals.\n\n" +
     "Start: /buy_ru (YooKassa) or /buy_en (card). Everything else lives in the <a href=\"https://appseal.online\">scanner</a>: /scan myapp.com shows the grade right in the chat.\n\n" +
-    "The Pro Pass (30 days) unlocks /token - an API token for embedding: an Authorization: Bearer header on /api/scan lifts the daily limit.\n\nRemoving your data from the service: /delete.",
+    "The Pro Pass (30 days) unlocks /token - an API token for embedding: an Authorization: Bearer header on /api/scan lifts the daily limit.\n\nInvite friends: /ref - your friend buys any pass, you both get +7 days.\n\nRemoving your data from the service: /delete.",
   unknown: "Not sure what you mean. Commands: /start - menu, /scan myapp.com - check a domain, /buy_ru - buy a pass.",
   step1: "Step 1/2. Send the domain for the pass (e.g. <code>myapp.vercel.app</code>).",
   step2: "Step 2/2. Send your email for the receipt - it goes straight to the payment provider and is never stored on our side.",
@@ -335,6 +359,9 @@ const EN: LangPack = {
     (dbOk ? "" : "\n\nThe Service database was unreachable - email security@appseal.online to complete the deletion there."),
   deleteCancelled: "Deletion aborted. Dialog reset. /start for the menu.",
   reviewCta: "💬 Like it? Leave a review: appseal.online/reviews",
+  reviewCtaPass: "💬 Leave a review: appseal.online/reviews - it goes live after a quick check",
+  refBonusLine: "🎁 +7 days from a friend's invite are already in your pass",
+  myscansWeb: (token) => `🌐 Open in a browser: appseal.online/myscans?t=${token} (the link works for 24 hours)`,
   myscansEmpty:
     "No domains yet. Send /watch myapp.com to follow one for free - or run a scan at appseal.online.",
   myscansHeader: "📄 <b>Your domains</b> (live grades):",
@@ -392,6 +419,19 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
         // as underscores (start_param allows only latin/digits/_/-); the
         // prefix presets BOTH the provider and the language of the dialog
         const param = text.split(/\s+/)[1] ?? "";
+        // referral deep link (t.me/...?start=ref_<code>): the greeting stays
+        // the regular menu; the ref_join intent tells the route to bind
+        // ref:invited:{chatId} through the ref:code lookup (referral.ts) - the
+        // machine itself stays pure, and an unknown code costs nothing
+        const refJoin = parseRefParam(param);
+        if (refJoin) {
+          return {
+            state: { stage: "idle" },
+            intent: { action: "ref_join", code: refJoin },
+            reply: pack.greeting,
+            lang,
+          };
+        }
         const packLink = param.match(/^(ru|en)-pack(5)?$/i);
         if (packLink) {
           // pack deep link: straight to the email step (no domain involved)
@@ -497,6 +537,11 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
       }
       case "/myscans":
         return { state, intent: { action: "my_scans" }, reply: "", lang };
+      case "/ref":
+        // the code registration and the stats read live in Redis (referral.ts,
+        // refCommandReply) - the machine stays pure, like /myscans; the
+        // command never resets an open dialog
+        return { state, intent: { action: "ref" }, reply: "", lang };
       case "/token":
         // the Pro entitlement check and the minting run in the webhook route
         // (Redis lookups + crypto) - the machine stays pure and the command
@@ -817,17 +862,20 @@ function gradeLine(e: MyScanEntry, lang: BotLang): string {
 /** Compact /myscans answer: one line per domain with its live grade, e.g.
  *  "💜 A+ 97 · myapp.com (17 нояб.)" - the host links to the full report when
  *  the registry entry id is known. Pure - the route feeds it with the store
- *  lookups (or empty entries on failures), so tests need no Redis. */
-export function buildMyScansText(entries: MyScanEntry[], lang: BotLang): string {
+ *  lookups (or empty entries on failures), so tests need no Redis. webToken
+ *  (signChatToken(chatId)) closes the answer with the 24h web-cabinet link;
+ *  without a token (no signing secret) the line is silently absent. */
+export function buildMyScansText(entries: MyScanEntry[], lang: BotLang, webToken?: string): string {
   const pack = PACKS[lang];
-  if (entries.length === 0) return pack.myscansEmpty;
+  const web = webToken ? `\n${pack.myscansWeb(webToken)}` : "";
+  if (entries.length === 0) return `${pack.myscansEmpty}${web}`;
   const lines = entries.map((e) => {
     const host = e.id
       ? `<a href="${BOT_SITE_URL}/report/${e.id}">${esc(e.host)}</a>`
       : `<code>${esc(e.host)}</code>`;
     return `${host} - ${e.grade ? gradeLine(e, lang) : pack.myscansNoData}`;
   });
-  return `${pack.myscansHeader}\n${lines.join("\n")}`;
+  return `${pack.myscansHeader}\n${lines.join("\n")}${web}`;
 }
 
 /** /scan answer for one domain: the freshest registry grade with a link to
@@ -916,6 +964,8 @@ export function botPayFail(lang: BotLang, msg: string, retryCmd: string): string
   return PACKS[lang].payFail(msg, retryCmd);
 }
 
+/** Redeem confirmation closes with the review CTA - a fresh activation is a
+ *  joy moment, the same rule as the status-done text. */
 export function botRedeemResultText(
   lang: BotLang,
   kind: "done" | "empty",
@@ -923,9 +973,10 @@ export function botRedeemResultText(
   until?: string,
 ): string {
   if (kind === "done") {
-    return lang === "en"
+    const base = lang === "en"
       ? `✅ Pass activated for <code>${esc(host || "?")}</code> until ${until ? until.slice(0, 10) : "?"} (7 days). Next domain: /redeem myapp.com`
       : `✅ Пропуск активирован для <code>${esc(host || "?")}</code> до ${until ? until.slice(0, 10) : "?"} (7 дней). Следующий домен: /redeem myapp.com`;
+    return `${base}\n${PACKS[lang].reviewCtaPass}`;
   }
   return PACKS[lang].redeemEmpty;
 }
@@ -940,12 +991,15 @@ function daysLeft(until?: string): { n: number; ok: boolean } {
   return { n, ok: true };
 }
 
+/** Status-done closes with the review CTA (joy moment) and, when the route
+ *  reports a referral payout (refBonus), the "+7 from a friend" line. */
 export function botStatusText(
   lang: BotLang,
   kind: "done" | "pending" | "fail",
   host?: string,
   until?: string,
   status?: string,
+  refBonus = false,
 ): string {
   if (kind === "done") {
     const d = daysLeft(until);
@@ -954,9 +1008,11 @@ export function botStatusText(
         ? `, ${d.n} day${d.n === 1 ? "" : "s"} left`
         : `, осталось ${d.n} дн.`
       : "";
-    return lang === "en"
+    const bonus = refBonus ? `\n${PACKS[lang].refBonusLine}` : "";
+    const base = lang === "en"
       ? `✅ Pass active for <code>${esc(host || "?")}</code> until ${until ? until.slice(0, 10) : "?"}${left}. Unlimited scans: https://appseal.online`
       : `✅ Пропуск активен для <code>${esc(host || "?")}</code> до ${until ? until.slice(0, 10) : "?"}${left}. Сканы без лимита: https://appseal.online`;
+    return `${base}${bonus}\n${PACKS[lang].reviewCtaPass}`;
   }
   if (kind === "pending") {
     return lang === "en"

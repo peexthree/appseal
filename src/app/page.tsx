@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { ScannerPage } from "@/components/scanner-page";
 import { JsonLd } from "@/components/json-ld";
+import { DICT } from "@/lib/i18n";
 import { getLiveTotals, getLatestHostEntry } from "@/lib/scanner/store";
 import { canonicalHost } from "@/lib/registry";
 import type { Grade, Lang } from "@/lib/scanner/types";
@@ -98,6 +99,53 @@ async function getLiveChips(): Promise<{ target: string; grade: Grade; score: nu
   }
 }
 
+/**
+ * JSON-LD Product with the paid offers: RUB prices are parsed from the same
+ * i18n strings the pricing section renders - a single source of truth, the
+ * markup never drifts from the visible tariffs. Static dict data only, no
+ * user input ever reaches this JSON (safe for dangerouslySetInnerHTML).
+ */
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://appseal.online";
+
+/** "1 490 ₽" -> "1490": digits-only extraction from the i18n ru price string */
+function rubPrice(v: string): string {
+  return v.replace(/\D+/g, "") || "0";
+}
+
+const productLd = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: "AppSeal Security Check",
+  url: BASE_URL,
+  description: DICT.tagline.ru,
+  offers: [
+    {
+      "@type": "Offer",
+      name: DICT.planLP.ru,
+      price: rubPrice(DICT.planLPPrice.ru),
+      priceCurrency: "RUB",
+      availability: "https://schema.org/InStock",
+      url: `${BASE_URL}/#pricing`,
+    },
+    {
+      "@type": "Offer",
+      name: DICT.planPro.ru,
+      price: rubPrice(DICT.planProPrice.ru),
+      priceCurrency: "RUB",
+      availability: "https://schema.org/InStock",
+      url: `${BASE_URL}/#pricing`,
+    },
+    {
+      "@type": "Offer",
+      name: DICT.planAgencyTitle.ru,
+      price: rubPrice(DICT.planAgencyPrice.ru),
+      priceCurrency: "RUB",
+      availability: "https://schema.org/InStock",
+      url: `${BASE_URL}/#pricing`,
+    },
+  ],
+};
+
 export default async function Home() {
   const h = await headers();
   const lang = detectInitialLang(h);
@@ -107,6 +155,7 @@ export default async function Home() {
   return (
     <>
       <JsonLd />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd) }} />
       <ScannerPage initialScan={null} initialLang={lang} initialTotals={totals} initialChips={chips} />
     </>
   );

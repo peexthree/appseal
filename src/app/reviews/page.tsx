@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { pageLang } from "@/lib/lang-server";
 import { listApprovedReviews } from "@/lib/db/index";
+import { hasActivePass } from "@/lib/passes";
 import { ReviewsView, type ReviewCard } from "./reviews-view";
 
 // the page reads the appseal-lang cookie and the reviews table (new approvals
@@ -37,14 +38,28 @@ export default async function ReviewsPage() {
   const lang = await pageLang();
   const t = (k: keyof typeof D) => D[k][lang];
   const rows = await listApprovedReviews(50);
+  // the current page language leads the showcase: a two-group partition (not
+  // sort()) preserves the SQL order inside each group exactly - featured
+  // reviews still come first, newest first after them
+  const sameLang = rows.filter((r) => r.lang === lang);
+  const otherLang = rows.filter((r) => r.lang !== lang);
+  const ordered = [...sameLang, ...otherLang];
+  // "✅ verified domain owner": a live pass on the reviewed host, checked in
+  // parallel (at most one Redis GET per hosted review, capped by the 50-row
+  // limit; Redis unavailable -> hasActivePass answers false, the badge simply
+  // disappears - no unverifiable claims)
+  const verified = await Promise.all(
+    ordered.map((r) => (r.host ? hasActivePass(r.host) : Promise.resolve(false))),
+  );
   // dates are formatted on the server with the page locale: no hydration
   // mismatch (server vs client timezone) and no empty flash before hydration
-  const reviews: ReviewCard[] = rows.map((r) => ({
+  const reviews: ReviewCard[] = ordered.map((r) => ({
     id: r.id,
     name: r.name,
     rating: Math.max(1, Math.min(5, r.rating)),
     host: r.host,
     body: r.body,
+    featured: r.featured,
     date: new Date(r.createdAt).toLocaleString(lang === "en" ? "en-US" : "ru-RU", {
       day: "numeric",
       month: "long",
@@ -57,7 +72,7 @@ export default async function ReviewsPage() {
       <SiteHeader lang={lang} />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
-        <ReviewsView reviews={reviews} lang={lang} />
+        <ReviewsView reviews={reviews} verified={verified} lang={lang} />
       </main>
 
       <footer className="mt-auto border-t border-slate-800/70 bg-[#070b13]">

@@ -109,3 +109,35 @@ Upstash: Console → твоя база → Backups → включи ежедне
    пока на сервере тоже не задан `TICK_SECRET` (задай синхронно в обоих местах)
 
 CI: `.github/workflows/ci.yml` гоняет `npm test` на каждый push в `main` и на PR.
+
+## Бэкап Supabase (GitHub Actions)
+
+`​.github/workflows/backup-db.yml` ежедневно в 04:10 UTC делает `pg_dump` базы Supabase
+Postgres (custom-формат `-Fc`) и сохраняет дамп как артефакт GitHub Actions
+`appseal-db-backup-<дата>` с хранением 30 дней. Запуск вручную: Actions → backup db → Run workflow.
+
+Настройка (один раз):
+
+1. Добавь секрет `DATABASE_URL` в репозиторий GitHub (peexthree/appseal → Settings →
+   Secrets and variables → Actions → New repository secret). Значение - из Supabase:
+   Settings → Database → Connection string → Session pooler (порт 5432), либо тот же
+   transaction-URL (порт 6543) - workflow сам подменяет порт на 5432, потому что
+   `pg_dump` требует одиночную сессию, а transaction-пулер её не даёт.
+2. Пока секрет не задан, workflow пишет warning и завершается без ошибки -
+   ежедневный крон не краснеет.
+
+Восстановление: скачай dump-файл из артефакта, затем из папки с ним:
+
+```bash
+docker run --rm -v "$PWD:/dump" postgres:17-alpine \
+  pg_restore -d "$DATABASE_URL" --no-owner /dump/appseal-<дата>.dump
+```
+
+`$DATABASE_URL` - тот же session-пулер URL (порт 5432). Формат `-Fc` восстанавливается
+только через `pg_restore`. Чтобы заменить существующие таблицы данными из дампа, добавь
+`--clean` (осторожно: он сначала удаляет текущие таблицы).
+
+Retention: pipeline-tick (каждые 30 минут) удаляет rejected-отзывы из таблицы `reviews`
+через 14 дней (retention из /legal, раздел 7). Нюанс: дамп, сделанный до удаления,
+может содержать такие отзывы - после восстановления они будут удалены автоматически
+на ближайшем тике.

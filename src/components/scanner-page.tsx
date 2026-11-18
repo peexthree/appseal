@@ -200,7 +200,15 @@ interface LandingReview {
   rating: number;
   host: string | null;
   body: string;
+  /** moderator's showcase pin (the GET payload carries it) */
+  featured?: boolean;
 }
+
+/** featured-review caption for the landing strip (page-local label) */
+const REVIEW_FEATURED_LABEL: Record<Lang, string> = {
+  ru: "От избранного редактора",
+  en: "Editor's pick",
+};
 
 /** star row for the landing cards: plain characters, the meaning rides on
  *  aria-label (no images, no new dependencies) */
@@ -254,6 +262,11 @@ function LandingReviews({ lang }: { lang: Lang }) {
             </figcaption>
             <ReviewStars rating={r.rating} lang={lang} />
           </div>
+          {r.featured && (
+            <p className="mt-1.5 text-[11px] font-semibold text-amber-400">
+              <span aria-hidden>⭐</span> {REVIEW_FEATURED_LABEL[lang]}
+            </p>
+          )}
           {r.host && (
             <p className="mt-1.5 text-[11px] text-slate-500">
               {t(lang, "reviewsAboutHost")} <span className="font-mono text-slate-400">{r.host}</span>

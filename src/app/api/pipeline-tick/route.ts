@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { normalizeInputUrl } from "@/lib/scanner/url";
 import { assertPublicTarget } from "@/lib/scanner/guard";
 import { redisConfig, redis } from "@/lib/scanner/store";
+import { deleteRejectedReviews } from "@/lib/db";
 import { tickSecretOk } from "@/lib/sec";
 
 export const runtime = "nodejs";
@@ -25,7 +26,9 @@ export const maxDuration = 60;
  *     self-throttled), dedupe hosts against the known set, enqueue newcomers;
  *  3. pop one URL, submit it to /api/scan with the admin key (quota bypass);
  *     the scan route publishes the finished scan to the registry itself;
- *  4. bump the 24h counter shown on /registry.
+ *  4. bump the 24h counter shown on /registry;
+ *  5. housekeeping: purge rejected reviews older than 14 days (retention
+ *     per /legal section 7).
  *
  * Driven by a free scheduler hitting this URL every 30 minutes
  * (.github/workflows/pipeline-tick.yml).
@@ -212,6 +215,12 @@ export async function GET(req: NextRequest) {
 
   const origin = appOrigin(req);
   try {
+    // Housekeeping rides along with every real tick (retention per /legal
+    // section 7: rejected reviews are deleted after 14 days). Started in
+    // parallel with the main work and awaited only when the response is
+    // built - a DB outage can neither break the tick flow nor add latency
+    // to it (no-op when DATABASE_URL is unset; any error resolves to 0).
+    const purge = deleteRejectedReviews(14).catch(() => 0);
     let queueSize = Number(await redis(cfg, ["ZCARD", QUEUE]));
     let added = 0;
     if (!queueSize) {
@@ -219,7 +228,7 @@ export async function GET(req: NextRequest) {
       queueSize = Number(await redis(cfg, ["ZCARD", QUEUE]));
     }
     if (!queueSize) {
-      return NextResponse.json({ skipped: true, reason: "queue-empty", harvested: added });
+      return NextResponse.json({ skipped: true, reason: "queue-empty", harvested: added, rejectedPurged: await purge });
     }
 
     // newest targets first: score 0 on enqueue, popped one at a time. The
@@ -229,7 +238,7 @@ export async function GET(req: NextRequest) {
     const url = popped?.[0] ?? "";
     const score = popped?.[1] ?? "0";
     if (!url) {
-      return NextResponse.json({ skipped: true, reason: "queue-empty", harvested: added });
+      return NextResponse.json({ skipped: true, reason: "queue-empty", harvested: added, rejectedPurged: await purge });
     }
 
     // a target that can never pass the public-target guard is dropped for
@@ -245,6 +254,7 @@ export async function GET(req: NextRequest) {
         target: hostOf(url),
         detail: e instanceof Error ? e.message : String(e),
         harvested: added,
+        rejectedPurged: await purge,
       });
     }
 
@@ -267,6 +277,7 @@ export async function GET(req: NextRequest) {
       id: started.id,
       harvested: added,
       queue: Number(await redis(cfg, ["ZCARD", QUEUE])),
+      rejectedPurged: await purge,
     });
   } catch (e) {
     return NextResponse.json(
