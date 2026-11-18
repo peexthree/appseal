@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     host?: string;
     body?: string;
     lang?: string;
+    consent?: boolean;
     website?: string;
   };
   try {
@@ -47,6 +48,13 @@ export async function POST(req: NextRequest) {
   const website = typeof body.website === "string" ? body.website.trim() : "";
   if (website) {
     return NextResponse.json({ ok: true });
+  }
+
+  // 152-FZ publication consent: the nickname goes on a public page, so a
+  // review without an explicit consent flag is rejected before anything else
+  // runs (the web form validates this too - the API gate covers direct calls)
+  if (body.consent !== true) {
+    return NextResponse.json({ error: "consent_required" }, { status: 400 });
   }
 
   // validation: nickname only (no email by design, 152-FZ), rating 1-5,

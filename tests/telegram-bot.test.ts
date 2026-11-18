@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
   botCancelKeyboard,
+  botDeleteDone,
   botGradeBadge,
   botIdleKeyboard,
   botInvoiceKeyboard,
@@ -273,5 +274,48 @@ describe("bot live UX: /scan, /help, keyboards, badges", () => {
     const inTenDays = new Date(Date.now() + 10 * 86_400_000).toISOString();
     assert.match(botStatusText("ru", "done", "myapp.com", inTenDays), /осталось \d+ дн\./);
     assert.match(botStatusText("ru", "pending", undefined, undefined, "pending"), /статус/);
+  });
+});
+
+describe("/delete self-service data removal (152-FZ)", () => {
+  it("first /delete arms the confirmation, it never executes", () => {
+    const step = handleBotInput({ stage: "idle" }, "/delete");
+    assert.equal(step.state.stage, "await_delete_confirm");
+    assert.equal(step.intent.action, "reply");
+    assert.match(step.reply, /Удаление данных/);
+    assert.match(step.reply, /\/delete ещё раз/);
+  });
+
+  it("second /delete in the armed state returns the destructive intent", () => {
+    const step = handleBotInput({ stage: "await_delete_confirm" }, "/delete");
+    assert.equal(step.intent.action, "delete_data");
+    assert.equal(step.state.stage, "idle");
+    // the reply is built after execution by botDeleteDone - the machine itself
+    // carries no text for this step
+    assert.equal(step.reply, "");
+  });
+
+  it("other text or /cancel in the armed state aborts back to idle", () => {
+    const free = handleBotInput({ stage: "await_delete_confirm" }, "не хочу");
+    assert.equal(free.state.stage, "idle");
+    assert.equal(free.intent.action, "reply");
+    assert.match(free.reply, /Удаление отменено/i);
+    const cancelled = handleBotInput({ stage: "await_delete_confirm" }, "/cancel");
+    assert.equal(cancelled.state.stage, "idle");
+    assert.match(cancelled.reply, /сброшен/i);
+  });
+
+  it("the confirmation prompt warns about non-refundable pass/credit removal", () => {
+    const ru = handleBotInput({ "stage": "idle" }, "/delete").reply;
+    assert.match(ru, /Средства не возвращаются/);
+    const en = handleBotInput({ stage: "idle" }, "/delete", "en").reply;
+    assert.match(en, /No refunds/);
+  });
+
+  it("botDeleteDone reports a DB outage honestly instead of pretending", () => {
+    assert.match(botDeleteDone("ru", false), /security@appseal\.online/);
+    assert.match(botDeleteDone("ru", true), /Готово/);
+    assert.doesNotMatch(botDeleteDone("ru", true), /security@appseal\.online/);
+    assert.match(botDeleteDone("en", true), /Done:/);
   });
 });

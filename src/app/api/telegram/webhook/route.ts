@@ -14,7 +14,7 @@ import {
   redisCommand,
 } from "@/lib/passes";
 import { issueApiToken } from "@/lib/api-tokens";
-import { updateReviewStatus } from "@/lib/db/index";
+import { deleteUserData, updateReviewStatus } from "@/lib/db/index";
 import { getLatestHostEntry } from "@/lib/scanner/store";
 import {
   FREE_PER_CHAT_MAX,
@@ -30,6 +30,7 @@ import {
   BotPlan,
   BotState,
   botCancelKeyboard,
+  botDeleteDone,
   botIdleKeyboard,
   botInvoiceKeyboard,
   botPackPayText,
@@ -470,6 +471,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    if (step.intent.action === "delete_data") {
+      // the 152-FZ self-service deletion, confirmed by a second /delete in
+      // the state machine. PG first (durable truth: users row, ledger chat
+      // binding, tokens, passes), then every chat-keyed Redis record, then
+      // the dialog state itself. The honest reply reports a failed DB pass.
+      const dbOk = await deleteUserData(chatId);
+      await redisCommand(["DEL", FREE_WATCH_KEY_PREFIX + chatId]);
+      await redisCommand(["ZREM", FREE_WATCH_ZSET, chatId]);
+      await redisCommand(["DEL", `tg:pack:${chatId}`]);
+      await redisCommand(["DEL", `tg:redeem:${chatId}`]);
+      await redisCommand(["DEL", LASTSCAN_KEY_PREFIX + chatId]);
+      await redisCommand(["DEL", `tg:chatpass:${chatId}`]);
+      await redisCommand(["DEL", stateKey(chatId)]);
+      await sendTelegramMessage(chatId, botDeleteDone(step.lang, dbOk), botScannerKeyboard(step.lang), "HTML");
+      return NextResponse.json({ ok: true });
+    }
+
     if (step.intent.action === "check_status") {
       typing(chatId);
       const d = await checkStatus(state.nonce ?? "");
@@ -579,7 +597,7 @@ export async function POST(req: NextRequest) {
         ? botIdleKeyboard(step.lang)
         : step.state.stage === "await_plan"
           ? botPlanKeyboard(step.state.provider ?? "yk", step.lang)
-          : ["await_host", "await_email", "await_redeem_host", "await_watch_host", "await_scan_host", "await_unwatch_pick"].includes(
+            : ["await_host", "await_email", "await_redeem_host", "await_watch_host", "await_scan_host", "await_unwatch_pick", "await_delete_confirm"].includes(
                 step.state.stage,
               )
             ? botCancelKeyboard(step.lang)

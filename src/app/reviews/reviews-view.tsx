@@ -48,9 +48,17 @@ const D = {
     en: "What you scanned and how it went - in your own words",
   },
   bodyHint: { ru: "От 10 до 500 символов", en: "From 10 to 500 characters" },
+  consentLabel: {
+    ru: "Согласен на публикацию никнейма, оценки и текста на витрине",
+    en: "I agree to publish my nickname, rating and text on this page",
+  },
   hintName: { ru: "Укажите никнейм - от 2 символов", en: "Add a nickname - at least 2 characters" },
   hintRating: { ru: "Поставьте оценку звёздами", en: "Pick a star rating" },
   hintBody: { ru: "Расскажите чуть подробнее - минимум 10 символов", en: "Tell a bit more - at least 10 characters" },
+  hintConsent: {
+    ru: "Подтвердите согласие на публикацию - без него отзыв не отправляется",
+    en: "Please confirm the publication consent - the review is not sent without it",
+  },
   hintHost: { ru: "Домен в формате myapp.com - или оставьте поле пустым", en: "Use a domain like myapp.com - or leave the field empty" },
   okMsg: {
     ru: "Спасибо! Отзыв появится на витрине после короткой проверки.",
@@ -106,6 +114,9 @@ export function ReviewsView({ reviews, lang }: { reviews: ReviewCard[]; lang: La
   const [rating, setRating] = useState(0);
   const [host, setHost] = useState("");
   const [text, setText] = useState("");
+  // publication consent (152-FZ): the nickname goes public, so the send must
+  // be explicitly confirmed - unchecked submissions never reach the API
+  const [consent, setConsent] = useState(false);
   // honeypot: visually hidden input humans never see or fill
   const [website, setWebsite] = useState("");
   const [hint, setHint] = useState("");
@@ -135,6 +146,10 @@ export function ReviewsView({ reviews, lang }: { reviews: ReviewCard[]; lang: La
       setHint(t("hintHost"));
       return;
     }
+    if (!consent) {
+      setHint(t("hintConsent"));
+      return;
+    }
     setHint("");
     setStatus("sending");
     try {
@@ -147,6 +162,7 @@ export function ReviewsView({ reviews, lang }: { reviews: ReviewCard[]; lang: La
           host: cleanHost ?? "",
           body,
           lang,
+          consent,
           website,
         }),
       });
@@ -156,6 +172,7 @@ export function ReviewsView({ reviews, lang }: { reviews: ReviewCard[]; lang: La
         setRating(0);
         setHost("");
         setText("");
+        setConsent(false);
         setWebsite("");
         return;
       }
@@ -303,6 +320,21 @@ export function ReviewsView({ reviews, lang }: { reviews: ReviewCard[]; lang: La
             />
             <p className="mt-1 text-[11px] text-slate-500">{t("bodyHint")}</p>
           </div>
+          {/* publication consent: an honest checkbox, not a pre-ticked one -
+              the reviewer decides, matching the /legal reviews section */}
+          <label
+            htmlFor="rv-consent"
+            className="mt-4 flex cursor-pointer items-start gap-2.5 text-[13px] leading-relaxed text-slate-400"
+          >
+            <input
+              id="rv-consent"
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-sky-400"
+            />
+            <span>{t("consentLabel")}</span>
+          </label>
           {/* honeypot: hidden from humans and the tab order; bots autofilling
               every field reveal themselves here and the API drops the submit */}
           <div aria-hidden="true" className="sr-only">

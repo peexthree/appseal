@@ -67,7 +67,8 @@ export interface BotState {
     | "await_redeem_host"
     | "await_watch_host"
     | "await_scan_host"
-    | "await_unwatch_pick";
+    | "await_unwatch_pick"
+    | "await_delete_confirm";
   provider?: BotProvider;
   host?: string;
   nonce?: string;
@@ -91,7 +92,8 @@ export type BotIntent =
   | { action: "issue_token" }
   | { action: "check_status" }
   | { action: "my_scans" }
-  | { action: "scan"; host: string };
+  | { action: "scan"; host: string }
+  | { action: "delete_data" };
 
 export interface BotStep {
   state: BotState;
@@ -162,6 +164,11 @@ interface LangPack {
   unwatchPick: (hosts: string[]) => string;
   tokenNoPro: string;
   tokenFail: string;
+  deletePrompt: string;
+  /** dbOk=false -> the durable store was unreachable, the deletion there did
+   *  not run - the reply must say so instead of pretending success */
+  deleteDone: (dbOk: boolean) => string;
+  deleteCancelled: string;
   reviewCta: string;
   myscansEmpty: string;
   myscansHeader: string;
@@ -202,12 +209,13 @@ const RU: LangPack = {
     "/myscans - твои домены и их классы\n\n" +
     "/redeem - активировать домен из купленного пакета\n" +
     "/status - статус последней покупки\n" +
-    "/cancel - сброс диалога",
+    "/cancel - сброс диалога\n" +
+    "/delete - удалить данные этого чата",
   help:
     "🔐 <b>Что делает AppSeal:</b> проверяет живое приложение на утечки секретов, открытые базы, дырявые админки и заголовки безопасности. Класс A+-E и бейдж доверия на сайт за минуту.\n\n" +
     "<b>Пропуск</b> = безлимитные сканы одного домена: Launch Pass - 7 дней, Pro Pass - 30 дней. Разовые платежи, без автосписаний.\n\n" +
     "Начать: /buy_ru (ЮKassa) или /buy_en (карта). Всё остальное - в <a href=\"https://appseal.online\">сканере</a>: /scan myapp.com покажет класс прямо в чате.\n\n" +
-    "Pro Pass (30 дней) включает /token - API-токен для встраивания: заголовок Authorization: Bearer к /api/scan снимает дневной лимит.",
+    "Pro Pass (30 дней) включает /token - API-токен для встраивания: заголовок Authorization: Bearer к /api/scan снимает дневной лимит.\n\nУдаление своих данных из сервиса: /delete.",
   unknown: "Не понял сообщение. Команды: /start - меню, /scan myapp.com - проверка домена, /buy_ru - купить.",
   step1: "Шаг 1/2. Пришли домен, для которого нужен пропуск (например <code>myapp.vercel.app</code>).",
   step2: "Шаг 2/2. Пришли email для чека - он уходит напрямую в платёжную систему и у нас не хранится.",
@@ -233,6 +241,12 @@ const RU: LangPack = {
     `Какой домен снять с наблюдения?\n${hosts.map((h, i) => `${i + 1}. <code>${esc(h)}</code>`).join("\n")}\n\nПришли цифру.`,
   tokenNoPro: "API-токен входит в Pro Pass (30 дней). Купить: /plan_pro",
   tokenFail: "Не удалось создать токен - попробуй позже.",
+  deletePrompt:
+    "🗑 <b>Удаление данных</b>\n\nБудут стёрты все записи, привязанные к этому чату: наблюдения за доменами (/watch), кредиты Agency Pack, API-токены, история доменов и идентификатор диалога из базы сервиса. Активные пропуска продолжат действовать на своих доменах до конца срока (товар привязан к домену, а не к чату), но алерты и поддержка по ним больше не придут в этот чат. Средства не возвращаются.\n\nОтправь /delete ещё раз для подтверждения или /cancel для отмены.",
+  deleteDone: (dbOk) =>
+    "🗑 Готово: наблюдения, кредиты, токены и привязки этого чата стёрты, идентификатор диалога удалён из базы сервиса. Чеки прошлых платежей остаются у платёжного провайдера - по закону хранит их он, не мы. Вернуться: /start." +
+    (dbOk ? "" : "\n\nБаза сервиса была недоступна - пришли письмо на security@appseal.online, чтобы довершить удаление в базе."),
+  deleteCancelled: "Удаление отменено. Диалог сброшен. /start - меню.",
   reviewCta: "💬 Понравилось? Оставьте отзыв: appseal.online/reviews",
   myscansEmpty:
     "Пока нет доменов. Пришли /watch myapp.com - следить бесплатно, или запусти скан на appseal.online.",
@@ -282,12 +296,13 @@ const EN: LangPack = {
     "/myscans - your domains and their grades\n\n" +
     "/redeem - activate a domain from a purchased pack\n" +
     "/status - status of your last purchase\n" +
-    "/cancel - reset the dialog",
+    "/cancel - reset the dialog\n" +
+    "/delete - remove this chat's data",
   help:
     "🔐 <b>What AppSeal does:</b> scans a live app for leaked secrets, open databases, exposed admin panels and security headers. An A+-E grade and a trust badge for your site in a minute.\n\n" +
     "<b>A pass</b> = unlimited scans of one domain: Launch Pass - 7 days, Pro Pass - 30 days. One-time payments, no auto-renewals.\n\n" +
     "Start: /buy_ru (YooKassa) or /buy_en (card). Everything else lives in the <a href=\"https://appseal.online\">scanner</a>: /scan myapp.com shows the grade right in the chat.\n\n" +
-    "The Pro Pass (30 days) unlocks /token - an API token for embedding: an Authorization: Bearer header on /api/scan lifts the daily limit.",
+    "The Pro Pass (30 days) unlocks /token - an API token for embedding: an Authorization: Bearer header on /api/scan lifts the daily limit.\n\nRemoving your data from the service: /delete.",
   unknown: "Not sure what you mean. Commands: /start - menu, /scan myapp.com - check a domain, /buy_ru - buy a pass.",
   step1: "Step 1/2. Send the domain for the pass (e.g. <code>myapp.vercel.app</code>).",
   step2: "Step 2/2. Send your email for the receipt - it goes straight to the payment provider and is never stored on our side.",
@@ -313,6 +328,12 @@ const EN: LangPack = {
     `Which domain should I stop following?\n${hosts.map((h, i) => `${i + 1}. <code>${esc(h)}</code>`).join("\n")}\n\nSend the number.`,
   tokenNoPro: "The API token comes with the Pro Pass (30 days). Buy one: /plan_pro",
   tokenFail: "Could not issue the token - try again later.",
+  deletePrompt:
+    "🗑 <b>Data deletion</b>\n\nEvery record tied to this chat will be wiped: domain watches (/watch), Agency Pack credits, API tokens, the domain history and the chat id in the Service database. Active passes keep working on their domains until expiry (the product is tied to the domain, not the chat), but alerts and support for them will no longer reach this chat. No refunds.\n\nSend /delete again to confirm, or /cancel to abort.",
+  deleteDone: (dbOk) =>
+    "🗑 Done: watches, credits, tokens and this chat's bindings are wiped, and the chat id is removed from the Service database. Receipts of past payments stay with the payment provider - by law they keep those, not us. To come back: /start." +
+    (dbOk ? "" : "\n\nThe Service database was unreachable - email security@appseal.online to complete the deletion there."),
+  deleteCancelled: "Deletion aborted. Dialog reset. /start for the menu.",
   reviewCta: "💬 Like it? Leave a review: appseal.online/reviews",
   myscansEmpty:
     "No domains yet. Send /watch myapp.com to follow one for free - or run a scan at appseal.online.",
@@ -543,6 +564,19 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
         return { state, intent: { action: "reply" }, reply: pack.statusNone, lang };
       case "/cancel":
         return { state: { stage: "idle" }, intent: { action: "reply" }, reply: pack.cancelled, lang };
+      case "/delete":
+        // two-step confirmation: the first call only arms the dialog; a
+        // second /delete (state stage) hands the destructive intent to the
+        // webhook route, everything else cancels out of it
+        if (state.stage === "await_delete_confirm") {
+          return { state: { stage: "idle" }, intent: { action: "delete_data" }, reply: "", lang };
+        }
+        return {
+          state: { stage: "await_delete_confirm" },
+          intent: { action: "reply" },
+          reply: pack.deletePrompt,
+          lang,
+        };
       default:
         return { state, intent: { action: "reply" }, reply: pack.unknown, lang };
     }
@@ -627,6 +661,12 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
       return { state, intent: { action: "reply" }, reply: pack.unwatchPick(list), lang };
     }
     return { state: { stage: "idle" }, intent: { action: "unwatch_pick", host: list[n - 1] }, reply: "", lang };
+  }
+
+  if (state.stage === "await_delete_confirm") {
+    // in the armed state only a second /delete executes (handled above);
+    // any other input backs out instead of silently waiting
+    return { state: { stage: "idle" }, intent: { action: "reply" }, reply: pack.deleteCancelled, lang };
   }
 
   if (state.stage === "await_email") {
@@ -932,6 +972,10 @@ export function botStatusText(
 
 /** /token success: the raw token is shown exactly once (only its sha256 hash
  *  is stored), so this message is the single copy the buyer ever sees. */
+export function botDeleteDone(lang: BotLang, dbOk: boolean): string {
+  return PACKS[lang].deleteDone(dbOk);
+}
+
 export function botTokenText(lang: BotLang, token: string, expiresAt: string): string {
   const until = expiresAt.slice(0, 10);
   return lang === "en"

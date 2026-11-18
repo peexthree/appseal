@@ -78,8 +78,8 @@ const D = {
     en: "; none of it is stored on the Service side. The counter loads only after you consent to analytics in the cookie banner: without consent the Metrica script never starts, and the choice itself lives in your browser's localStorage (no other cookies are set by the Service). You can withdraw consent at any time - the block below resets the choice and the banner reappears.",
   },
   s2c: {
-    ru: "Исключение - покупка платного пропуска (Launch Pass, Pro Pass, Agency Pack): адрес электронной почты плательщика обрабатывается только транзитом и передаётся платёжному провайдеру (ЮKassa; для иностранных карт Lava.top) для формирования чека и идентификации платежа. Оператор электронную почту не хранит: у оператора остаются лишь неперсональные данные - идентификатор платежа, домен пропуска и срок его действия (в течение 8 дней). Оператор не публикует эти сведения и не передаёт их третьим лицам, кроме платёжных провайдеров и налоговых органов.",
-    en: "The exception is a paid pass purchase (Launch Pass, Pro Pass, Agency Pack): the payer's email address is processed in transit only and handed to the payment provider (YooKassa; Lava.top for foreign cards) for the receipt and payment identification. The operator does not store the email: only non-personal data stays with the operator - the payment id, the pass domain and its expiry (kept for 8 days). The operator does not publish this information and does not share it with third parties, except the payment providers and the tax authorities.",
+    ru: "Исключение - покупка платного пропуска (Launch Pass, Pro Pass, Agency Pack): адрес электронной почты плательщика обрабатывается только транзитом и передаётся платёжному провайдеру (ЮKassa; для иностранных карт Lava.top) для формирования чека и идентификации платежа. Оператор электронную почту не хранит. Запись о покупке содержит идентификатор платежа, сумму, домен пропуска, срок его действия и идентификатор диалога Telegram покупателя - только для поддержки, возвратов и проверки прав. Записи покупок хранятся 3 года - срок налоговой давности; идентификатор диалога удаляется по запросу через команду /delete в боте или письмо на контактный адрес. Оператор не публикует эти сведения и не передаёт их третьим лицам, кроме платёжных провайдеров и налоговых органов.",
+    en: "The exception is a paid pass purchase (Launch Pass, Pro Pass, Agency Pack): the payer's email address is processed in transit only and handed to the payment provider (YooKassa; Lava.top for foreign cards) for the receipt and payment identification. The operator does not store the email. A purchase record holds the payment id, the amount, the pass domain, its expiry and the buyer's Telegram chat id - solely for support, refunds and entitlement checks. Purchase records are kept for 3 years, the tax retention period; the chat id is deleted on request via the /delete command in the bot or an email to the contact address. The operator does not publish this information and does not share it with third parties, except the payment providers and the tax authorities.",
   },
   s2d: {
     ru: "В localStorage браузера хранится только выбранный язык интерфейса. Эти данные не покидают ваш браузер.",
@@ -103,6 +103,14 @@ const D = {
   },
   s2gLink: { ru: "политику сканера", en: "scanner policy" },
   s2gB: { ru: ")", en: ")" },
+  s2h: {
+    ru: "Сервис также работает в Telegram-боте @AppSeal_Monitor_Bot. Бот хранит идентификатор вашего диалога (chat id), выбранный язык интерфейса и историю покупок и активированных пропусков - только для оказания услуги: ответов на запросы, наблюдений за доменами, алертов и поддержки. ФИО, e-mail и телефон бот не запрашивает. Все данные, связанные с вашим диалогом, удаляются командой /delete в боте.",
+    en: "The Service also runs a Telegram bot, @AppSeal_Monitor_Bot. The bot stores your chat id, the chosen interface language and the history of your purchases and activated passes - solely to deliver the service: answering lookups, watching domains, alerts and support. It never asks for names, emails or phone numbers. All data tied to your chat is removed by the /delete command in the bot.",
+  },
+  s2i: {
+    ru: "Записи проверок и покупок хранятся в базе данных Сервиса, размещённой у провайдера Supabase (центр обработки данных в ЕС, Германия); горячий кеш проверок - у Upstash. IP-адрес на стороне Сервиса обрабатывается только в виде соль-хеша - исключительно для лимита частоты запросов и защиты от спама; восстановить исходный адрес из этого значения невозможно.",
+    en: "Scan and purchase records live in the Service database hosted by Supabase (a data center in the EU, Germany); the hot scan cache is kept at Upstash. On the Service side, IP addresses are processed only as salted hashes - solely for rate limits and spam protection; the original address cannot be recovered from the hash.",
+  },
   s3Title: { ru: "3. Публичный реестр и удаление записей", en: "3. Public registry and record removal" },
   s3aA: {
     ru: "Владелец ресурса вправе запросить исключение его записи из публичного реестра - направьте письмо на ",
@@ -200,6 +208,23 @@ const D = {
     ru: ", активируем вручную или вернём платёж в течение 3 рабочих дней.",
     en: " - we will activate it manually or refund within 3 business days.",
   },
+  s7Title: { ru: "7. Отзывы пользователей", en: "7. User reviews" },
+  s7a: {
+    ru: "На витрине отзывов (/reviews) любой посетитель может оставить отзыв: никнейм, оценку 1-5, текст и (необязательно) домен проверенного приложения. Отправляя отзыв, вы подтверждаете согласие на публикацию указанных никнейма, оценки и текста - без этого подтверждения отзыв не отправляется.",
+    en: "On the review page (/reviews) any visitor may leave a review: a nickname, a 1-5 rating, a text and (optionally) the domain of the scanned app. By submitting a review you confirm consent to publish the nickname, rating and text you entered - without that confirmation the review is not sent.",
+  },
+  s7b: {
+    ru: "Каждый отзыв проходит ручную премодерацию до публикации: реклама, ссылки и оскорбления не публикуются. Отзывы - это личные мнения их авторов, а не заявления Сервиса.",
+    en: "Every review passes manual pre-moderation before publication: ads, links and insults are not published. Reviews are the personal opinions of their authors, not statements made by the Service.",
+  },
+  s7cA: {
+    ru: "Публикуемый отзыв содержит только никнейм, оценку, текст и (по желанию автора) домен - никаких контактных данных. Отзыв можно удалить: напишите на ",
+    en: "A published review contains only the nickname, the rating, the text and (optionally) the domain - no contact details. A review can be removed: email ",
+  },
+  s7cB: {
+    ru: " с указанием никнейма и текста отзыва - обработаем в течение 3 рабочих дней.",
+    en: " with the nickname and the review text - it will be handled within 3 business days.",
+  },
   fHome: { ru: "главная", en: "home" },
   fRegistry: { ru: "реестр", en: "registry" },
   fBot: { ru: "робот", en: "bot" },
@@ -288,11 +313,13 @@ export default async function LegalPage() {
                 <CookiePrefs />
                 <li>{t("s2c")}</li>
                 <li>{t("s2d")}</li>
+                <li>{t("s2h")}</li>
                 <li>
                   {t("s2eA")}
                   <Link href="/registry" className="text-sky-400 hover:text-sky-300">/registry</Link>
                   {t("s2eB")}
                 </li>
+                <li>{t("s2i")}</li>
                 <li>{t("s2f")}</li>
                 <li>
                   {t("s2gA")}
@@ -402,6 +429,27 @@ export default async function LegalPage() {
               </ul>
             </section>
 
+            <section>
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <FileCheck2 className="h-4 w-4 text-sky-400" />
+                {t("s7Title")}
+              </h2>
+              <ul className="mt-3 list-inside list-disc space-y-2 pl-1">
+                <li>{t("s7a")}</li>
+                <li>{t("s7b")}</li>
+                <li>
+                  {t("s7cA")}
+                  <a
+                    href={`mailto:${CONTACT_EMAIL}`}
+                    className="font-mono text-sky-400 underline decoration-sky-400/40 hover:text-sky-300"
+                  >
+                    {CONTACT_EMAIL}
+                  </a>
+                  {t("s7cB")}
+                </li>
+              </ul>
+            </section>
+
             {lang === "ru" ? (
               <section className="rounded-xl border border-slate-800 bg-[#090d16] p-5">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400">
@@ -451,13 +499,22 @@ export default async function LegalPage() {
                     </a>
                     ; none of it is stored on our side (exception: the buyer&apos;s email
                     during a Launch Pass purchase is processed in transit and handed to the payment
-                    provider YooKassa for the receipt - the operator does not store it; only the
-                    payment id, pass domain and expiry stay on our side). The counter loads only
+                    provider YooKassa for the receipt - the operator does not store it; purchase
+                    records hold the payment id, the pass domain, its expiry and the buyer&apos;s
+                    Telegram chat id, kept for the 3-year tax retention period, chat id removable on
+                    request). The counter loads only
                     after you opt in via the cookie banner; your choice lives in your browser&apos;s
                     localStorage and can be reset in the cookie preferences block above. Only the
-                    chosen UI language is kept in your browser. Scan results (domain, date, grade) may be
+                    chosen UI language is kept in your browser. The Service also runs a Telegram bot:
+                    it stores the chat id, the chosen language and the purchase/pass history solely
+                    to deliver the service - the /delete command in the bot removes all chat-tied
+                    data. Durable records live in a Supabase database in the EU (Germany); on the
+                    Service side, IP addresses are processed only as salted hashes for rate limits.
+                    Scan results (domain, date, grade) may be
                     published in the public registry; domain owners may request removal by email
-                    (processed within 3 business days). Request logs are handled by infrastructure
+                    (processed within 3 business days). User reviews (nickname, rating, text) go
+                    public only after manual moderation - submitting one confirms consent to publish
+                    the nickname. Request logs are handled by infrastructure
                     providers Vercel and Cloudflare under their own policies.
                   </li>
                   <li>

@@ -263,6 +263,28 @@ export async function findApiTokenRow(
   }
 }
 
+/** Self-service deletion (the bot /delete command): wipe the chat from users,
+ *  sever the chat id from the purchase ledger (the payment_id/amount/currency
+ *  row stays for the 3-year tax retention, now non-personal), drop passes and
+ *  api tokens bound to the chat. Scan rows are domain-keyed (never personal)
+ *  and stay; domain owners can opt out via robots.txt / registry removal.
+ *  Returns true when every statement ran - the caller reports partial failure
+ *  honestly if the DB was unreachable. */
+export async function deleteUserData(chatId: string): Promise<boolean> {
+  const sql = db();
+  if (!sql) return false;
+  try {
+    await ensureSchema(sql);
+    await sql`delete from users where tg_chat_id = ${chatId}`.execute();
+    await sql`update purchases set tg_chat_id = null where tg_chat_id = ${chatId}`.execute();
+    await sql`delete from api_tokens where chat_id = ${chatId}`.execute();
+    await sql`delete from passes where chat_id = ${chatId}`.execute();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Reviews: visitor testimonials, moderated before they go public      */
 /* ------------------------------------------------------------------ */
