@@ -204,8 +204,8 @@ export const DICT = {
   },
   planProFeats: {
     // no "priority queue" claim: the engine has none, Pro = the Launch feature set for 30 days
-    ru: "Всё из Launch Pass - срок 30 дней вместо 7|Фоновый перескан каждые 6 ч и алерт при падении класса|PDF-отчёт и embed-бейдж доверия",
-    en: "Everything in Launch Pass - 30 days instead of 7|Background rescan every 6h with a grade-drop alert|PDF report and the embeddable trust badge",
+    ru: "Всё из Launch Pass - 30 дней вместо 7|Приватный скан: не попадает в публичный реестр|API-токен: /api/scan без дневного лимита + CI-гейт (команда /token в боте)|Еженедельный дайджест и напоминание о продлении|PDF, живой бейдж и страница доверия",
+    en: "Everything in Launch Pass - 30 days instead of 7|Private scan: stays out of the public registry|API token: /api/scan with no daily limit + a CI gate (the /token command in the bot)|Weekly digest and a renewal reminder|PDF, live badge and the trust page",
   },
   planProCta: { ru: "Купить Pro в Telegram", en: "Buy Pro in Telegram" },
   planPlatform: { ru: "Platform", en: "Platform" },
@@ -233,12 +233,20 @@ export const DICT = {
   },
   planAgencyCta: { ru: "Купить пакет", en: "Buy the pack" },
   planAgencyFeats: {
-    ru: "5 доменов по 7 дней безлимита|PDF и бейджи для клиентов|Активация каждого домена через /redeem в Telegram-боте|Кредиты живут 30 дней|Разовая покупка, без автосписаний",
-    en: "5 domains with 7 days of unlimited scans each|Client-ready PDFs and trust badges|Activate each domain via /redeem in the Telegram bot|Credits live 30 days|One-time payment, no auto-renewal",
+    ru: "5 доменов по 7 дней безлимита, активация через /redeem|PDF-отчёты с вашим логотипом для клиентов|Приватные сканы|Кредиты живут 30 дней|Разовая покупка, без автосписаний",
+    en: "5 domains, 7 days of unlimited scans each, activated via /redeem|Client-ready PDF reports with your logo|Private scans|Credits live 30 days|One-time purchase, no auto-renewal",
   },
   planLPFeats: {
-    ru: "Неделя безлимитных проверок одного домена|Повторный скан сразу после фикса|Фоновый перескан каждые 6 ч и алерт при падении класса|PDF-отчёт и embed-бейдж доверия",
-    en: "A week of unlimited checks of one domain|Re-scan right after each fix|Background rescan every 6h with a grade-drop alert|PDF report and the embeddable trust badge",
+    ru: "Перескан каждые 6 часов и алерт в Telegram при падении класса|Еженедельный личный дайджест по вашему домену|Повторный скан сразу после фикса|Неделя безлимитных проверок одного домена|PDF-отчёт и живой бейдж доверия|Публичная страница доверия с графиком динамики",
+    en: "Rescan every 6 hours + a Telegram alert the moment your grade drops|Weekly personal digest for your domain|Re-scan right after each fix|One domain, unlimited checks for 7 days|PDF report and a live trust badge|Public trust page with a score history chart",
+  },
+  planHeroLine: {
+    ru: "Бесплатно вы узнаёте оценку. Пасс следит, чтобы она не упала после релиза.",
+    en: "The free scan tells you the score. A Pass keeps it from slipping after launch.",
+  },
+  planRefundNote: {
+    ru: "Не почувствовали пользу за 3 дня - вернём деньги: просто напишите в бот.",
+    en: "Not useful within 3 days? Message the bot - we refund.",
   },
   planLPCta: { ru: "Купить в Telegram", en: "Buy in Telegram" },
   lpDomainPh: { ru: "ваш-домен.com", en: "your-app.com" },
@@ -419,6 +427,35 @@ export const DICT = {
     ru: "Ты ИИ-агент, дорабатывающий веб-приложение. Сайт: akulenok-tmz.ru.\nНезависимый сканер AppSeal поставил оценку A (86/100). Ниже - все найденные проблемы.\n\n## Проблемы (3)\n### 1. X-Frame-Options отсутствует [warn, medium]\n### 2. CORS «для всех» [warn, high]\n### 3. Пустой title [warn, low]",
     en: "You are an AI agent improving a web application. Site: akulenok-tmz.ru.\nThe independent AppSeal scanner graded it A (86/100). All findings follow.\n\n## Findings (3)\n### 1. X-Frame-Options missing [warn, medium]\n### 2. Wildcard CORS [warn, high]\n### 3. Empty title [warn, low]",
   },
+  // private scan checkbox in the hero form (Pass-only feature)
+  privateScanLabel: { ru: "Не публиковать в реестре", en: "Keep out of the public registry" },
+  privateScanNote: { ru: "доступно с пассом", en: "for Pass holders" },
+  privateHitTitle: { ru: "Приватный скан доступен с пассом", en: "Private scans come with a Pass" },
+  privateHitText: {
+    ru: "Скан с опцией «Не публиковать в реестре» выполняется только с активным пассом на домен. Обычный публичный скан остаётся бесплатным.",
+    en: "A scan with the keep-out-of-the-registry option needs an active Pass on the domain. The regular public scan stays free.",
+  },
+  // share block under the report's grade card
+  shareBlockTitle: { ru: "Поделиться результатом", en: "Share your result" },
+  // {host}/{grade}/{score}/{n} are replaced in report-view.tsx
+  shareResultText: {
+    ru: "{host}: {grade} {score}/100 в AppSeal - {n} проверок безопасности",
+    en: "{host}: {grade} {score}/100 on AppSeal - {n} security checks",
+  },
+  // landing reviews section: moderated testimonials from Supabase,
+  // the showcase lives on /reviews (form strings there are page-local)
+  reviewsTitle: { ru: "Отзывы пользователей", en: "User reviews" },
+  reviewsSubtitle: {
+    ru: "Каждый отзыв оставляет владелец проверенного приложения; перед публикацией отзывы проходят короткую ручную проверку.",
+    en: "Every review is left by an owner of a scanned app; each one gets a short manual check before publishing.",
+  },
+  reviewsEmpty: {
+    ru: "Отзывы пока собираются - ваш может быть первым.",
+    en: "Reviews are just starting to come in - yours could be the first.",
+  },
+  reviewsCta: { ru: "Все отзывы и свой отзыв", en: "See all reviews" },
+  reviewsAboutHost: { ru: "о домене", en: "about" },
+  reviewsCardRating: { ru: "Оценка {n} из 5", en: "Rated {n} out of 5" },
 } as const;
 
 export type DictKey = keyof typeof DICT;

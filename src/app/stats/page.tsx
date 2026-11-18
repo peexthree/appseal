@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { ShieldCheck } from "@/components/icons/appseal-icons";
 import statsData from "@/data/stats-harvest.json";
 import { getRegistryEntries, redisConfig, redisPipeline, STATS_HOUR_PREFIX, STATS_DAY_PREFIX } from "@/lib/scanner/store";
-import { dedupeRegistry, isReferenceSite, platformOf, PLATFORM_LABELS, type PlatformKey } from "@/lib/registry";
+import { canonicalHost, dedupeRegistry, isReferenceSite, platformOf, PLATFORM_LABELS, type PlatformKey, type RegistryEntry } from "@/lib/registry";
 import { pageLang } from "@/lib/lang-server";
 import { PulseChart } from "./pulse-chart";
 import {
@@ -51,6 +51,16 @@ const GRADE_STYLES: Record<string, string> = {
   C: "bg-[#FBBF24]",
   D: "bg-[#FB923C]",
   E: "bg-[#F87171]",
+};
+
+/** grade chip for the weekly leaderboard, same translucent style as the registry */
+const GRADE_CHIP: Record<string, string> = {
+  "A+": "bg-[#C084FC]/15 text-[#C084FC] border-[#C084FC]/40",
+  A: "bg-[#34D399]/15 text-[#34D399] border-[#34D399]/40",
+  B: "bg-[#38BDF8]/15 text-[#38BDF8] border-[#38BDF8]/40",
+  C: "bg-[#FBBF24]/15 text-[#FBBF24] border-[#FBBF24]/40",
+  D: "bg-[#FB923C]/15 text-[#FB923C] border-[#FB923C]/40",
+  E: "bg-[#F87171]/15 text-[#F87171] border-[#F87171]/40",
 };
 
 const SOURCE_LABELS: Record<string, { ru: string; en: string }> = {
@@ -136,6 +146,21 @@ const D = {
   thPlatform: { ru: "Платформа", en: "Platform" },
   thDomains: { ru: "Домены", en: "Domains" },
   thAvg: { ru: "Средний балл", en: "Avg score" },
+  weekTopTitle: { ru: "Топ недели", en: "Top of the week" },
+  weekTopNote: {
+    ru: "Лучший результат каждого домена за последние 7 дней - топ-10 живого реестра.",
+    en: "Each domain's best result over the last 7 days - the top 10 of the live registry.",
+  },
+  thPlace: { ru: "Место", en: "Rank" },
+  thHost: { ru: "Домен", en: "Host" },
+  thGrade: { ru: "Класс", en: "Grade" },
+  benchTitle: { ru: "Бенчмарк", en: "Benchmark" },
+  benchNote: {
+    ru: "Средний балл по всем доменам реестра и доля классов A/A+ - точка отсчёта, с которой можно сравнить свой результат.",
+    en: "The average score across all registry domains and the share of A/A+ grades - the baseline to compare your own result against.",
+  },
+  benchAvgLabel: { ru: "средний балл реестра", en: "registry average score" },
+  benchAAShare: { ru: "доменов с классом A/A+", en: "domains graded A/A+" },
   registryOnlyA: { ru: "Открыть реестр: только ", en: "Open the registry: " },
   registryOnlyB: { ru: "", en: " only" },
   dynTitle: { ru: "Динамика повторных проверок", en: "Rescan dynamics" },
@@ -321,6 +346,35 @@ export default async function StatsPage() {
         .join(" · "),
     }))
     .sort((a, b) => b.avg - a.avg);
+
+  // weekly leaderboard: each host's best score over the last 7 days, top 10.
+  // Raw entries (not deduped) so a re-scan with a higher score counts;
+  // reference mega-sites never render, same rule as every other section.
+  const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  const weekCutoff = Date.now() - WEEK_MS;
+  const weekBest = new Map<string, RegistryEntry>();
+  for (const e of allEntries) {
+    if (isReferenceSite(e.host) || e.ts < weekCutoff) continue;
+    const key = canonicalHost(e.host);
+    const cur = weekBest.get(key);
+    if (!cur || e.score > cur.score) weekBest.set(key, e);
+  }
+  const topWeek = [...weekBest.values()].sort((a, b) => b.score - a.score).slice(0, 10);
+
+  // benchmark: registry-wide baseline from the same deduped, reference-free
+  // hosts the platform battle renders - no invented numbers, empty registry
+  // skips the block entirely
+  const benchAvg =
+    registryHosts.length > 0
+      ? Math.round(registryHosts.reduce((acc, e) => acc + e.score, 0) / registryHosts.length)
+      : 0;
+  const benchAA =
+    registryHosts.length > 0
+      ? Math.round(
+          (registryHosts.filter((e) => e.grade === "A" || e.grade === "A+").length * 100) /
+            registryHosts.length,
+        )
+      : 0;
 
   // fact cards - only meaningful on live counters; the miss share counts
   // fails AND warns (a warn-only check like COOP would show a false 0%)
@@ -653,6 +707,72 @@ export default async function StatsPage() {
                 ))}
               </div>
             </section>
+
+            {/* weekly leaderboard + benchmark: straight from the live registry,
+                both blocks skipped while the registry has nothing to show */}
+            {topWeek.length > 0 || registryHosts.length > 0 ? (
+              <section className="mt-10">
+                {topWeek.length > 0 ? (
+                  <>
+                    <h2 className="font-display text-xl font-extrabold">{t("weekTopTitle")}</h2>
+                    <p className="mt-1 text-sm text-slate-500">{t("weekTopNote")}</p>
+                    <div className="mt-4 overflow-hidden rounded-2xl appseal-glass-card">
+                      <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        <span className="w-10 shrink-0">{t("thPlace")}</span>
+                        <span className="flex-1">{t("thHost")}</span>
+                        <span className="w-24 text-right">{t("thGrade")}</span>
+                      </div>
+                      {topWeek.map((e, i) => (
+                        <div
+                          key={`${e.host}-${e.id}`}
+                          className={`flex items-center gap-3 px-5 py-3 ${i < topWeek.length - 1 ? "border-b border-slate-800/60" : ""}`}
+                        >
+                          <span
+                            className={`w-10 shrink-0 font-mono text-xs ${i === 0 ? "text-amber-400" : "text-slate-600"}`}
+                          >
+                            {i + 1}.
+                          </span>
+                          <Link
+                            href={`/verified/${e.host}`}
+                            className="min-w-0 flex-1 truncate font-mono text-sm font-semibold text-slate-200 transition hover:text-sky-400"
+                          >
+                            {e.host}
+                          </Link>
+                          <span className="w-24 shrink-0 text-right">
+                            <span
+                              className={`inline-flex h-7 min-w-8 items-center justify-center rounded-md border px-2 font-display text-sm font-extrabold ${
+                                GRADE_CHIP[e.grade] ?? "bg-slate-800 text-slate-300 border-slate-700"
+                              }`}
+                            >
+                              {e.grade}
+                            </span>
+                            <span className="ml-2.5 font-mono text-xs text-slate-400">{e.score}/100</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+                {registryHosts.length > 0 ? (
+                  <>
+                    <h2 className={`font-display text-xl font-extrabold ${topWeek.length > 0 ? "mt-10" : ""}`}>
+                      {t("benchTitle")}
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-500">{t("benchNote")}</p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-2xl appseal-glass-card p-5">
+                        <div className="font-display text-3xl font-extrabold text-slate-100">{benchAvg}/100</div>
+                        <div className="mt-1 text-xs leading-snug text-slate-500">{t("benchAvgLabel")}</div>
+                      </div>
+                      <div className="rounded-2xl appseal-glass-card p-5">
+                        <div className="font-display text-3xl font-extrabold text-sky-400">{benchAA}%</div>
+                        <div className="mt-1 text-xs leading-snug text-slate-500">{t("benchAAShare")}</div>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+              </section>
+            ) : null}
 
             {v.isLive ? (
               <section className="mt-10">

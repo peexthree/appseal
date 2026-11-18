@@ -20,6 +20,7 @@ import {
   setNonceMapping,
 } from "@/lib/passes";
 import { getClientIp } from "@/lib/sec";
+import { ledgerPurchase } from "@/lib/db/index";
 import { sendTelegramAlert } from "@/lib/telegram";
 import type { Lang } from "@/lib/scanner/types";
 
@@ -83,6 +84,9 @@ export async function POST(req: NextRequest) {
     // ru buyers pay in RUB via YooKassa; the EN storefront pays $6 in USD via
     // Lava.top (foreign Visa/MC) - provider is chosen by the client locale
     const provider = body.provider === "lava" ? "lava" : "yk";
+    // purchase ledger chat binding: only a well-formed bot chat id is stored
+    // (the bot flow passes chatId; web-only purchases carry none)
+    const ledgerChatId = CHAT_RE.test(chatId) ? chatId : null;
 
     // Agency Pack: no target domain yet - the 5 credits are redeemed later
     const host = kind === "lpack"
@@ -136,6 +140,16 @@ export async function POST(req: NextRequest) {
         // the pack marker rides in the invoice->host map: the webhook and the
         // return page branch on it exactly like on the YooKassa metadata kind
         await setLavaInvoiceHost(invoice.invoiceId, chatId ? `pack:${chatId}` : "pack");
+        // purchase ledger: "pending" first, the webhook sets the final status
+        void ledgerPurchase({
+          paymentId: invoice.invoiceId,
+          provider: "lava",
+          plan: "lpack",
+          amount: null,
+          currency: "USD",
+          chatId: ledgerChatId,
+          status: "pending",
+        });
         return NextResponse.json({ confirmationUrl: invoice.url });
       }
       if (kind === "lpro") {
@@ -147,6 +161,15 @@ export async function POST(req: NextRequest) {
         // the Pro marker rides in the invoice->host map like the pack one:
         // both activation paths branch on it and add 30 days
         await setLavaInvoiceHost(invoice.invoiceId, `pro:${host}`);
+        void ledgerPurchase({
+          paymentId: invoice.invoiceId,
+          provider: "lava",
+          plan: "lpro",
+          amount: null,
+          currency: "USD",
+          chatId: ledgerChatId,
+          status: "pending",
+        });
         return NextResponse.json({ confirmationUrl: invoice.url });
       }
       const invoice = await createLavaInvoice(lava, { email, nonce });
@@ -154,6 +177,15 @@ export async function POST(req: NextRequest) {
       // feeds both the webhook and the return-page activation
       await setNonceMapping(nonce, `lava:${invoice.invoiceId}`);
       await setLavaInvoiceHost(invoice.invoiceId, host);
+      void ledgerPurchase({
+        paymentId: invoice.invoiceId,
+        provider: "lava",
+        plan: "lpass",
+        amount: null,
+        currency: "USD",
+        chatId: ledgerChatId,
+        status: "pending",
+      });
       return NextResponse.json({ confirmationUrl: invoice.url });
     }
 
@@ -161,8 +193,9 @@ export async function POST(req: NextRequest) {
     if (!cfg) {
       return NextResponse.json({ error: "payments unavailable" }, { status: 503 });
     }
+    const amountRub = kind === "lpack" ? PACK_PRICE_RUB : kind === "lpro" ? PRO_PRICE_RUB : PASS_PRICE_RUB;
     const payment = await createPayment({
-      amountRub: kind === "lpack" ? PACK_PRICE_RUB : kind === "lpro" ? PRO_PRICE_RUB : PASS_PRICE_RUB,
+      amountRub,
       description:
         kind === "lpack"
           ? "AppSeal Agency Pack - 5 пропусков по 7 дней"
@@ -179,6 +212,16 @@ export async function POST(req: NextRequest) {
     }
     // the nonce is the only browser-held reference to this payment
     await setNonceMapping(nonce, `yk:${payment.id}`);
+    // purchase ledger: "pending" first, the webhook sets the final status
+    void ledgerPurchase({
+      paymentId: payment.id,
+      provider: "yookassa",
+      plan: kind,
+      amount: Number(amountRub),
+      currency: "RUB",
+      chatId: ledgerChatId,
+      status: "pending",
+    });
     return NextResponse.json({ confirmationUrl: url });
   } catch (e) {
     return NextResponse.json(

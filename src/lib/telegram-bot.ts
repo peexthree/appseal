@@ -25,8 +25,11 @@
  *
  * Free conveniences on top of the sales flow: /scan <domain> (and a bare
  * domain typed into the chat) answers with the freshest registry grade and a
- * link to the full report; /watch, /myscans and /redeem as before; /help is
- * a short explainer that never resets an open dialog.
+ * link to the full report; /watch keeps up to 3 domains per chat on the free
+ * daily rescan (tg:watch:{chatId} = JSON {"hosts":[...]}, /unwatch asks a
+ * digit when several are listed); /token mints the Pro Pass API token;
+ * /myscans and /redeem as before; /help is a short explainer that never
+ * resets an open dialog.
  *
  * Agency Pack (5 pass-credits bought at once): /buy5 collects the email and
  * creates the pack payment; after the webhook grants the credits, /redeem
@@ -34,13 +37,16 @@
  * The chat->pack binding lives in Redis (tg:pack:{chatId}), not in the
  * dialog state, so /redeem works days later with no live dialog.
  *
- * /myscans lists the chat's own domains: the free watch host plus every host
- * a pack credit was redeemed onto (tg:redeem:{chatId}), each with its live
- * grade from the scan store. Single pass purchases carry no chat binding.
+ * /myscans lists the chat's own domains: the free watch hosts (up to 3) plus
+ * every host a pack credit was redeemed onto (tg:redeem:{chatId}), each with
+ * its live grade from the scan store. Single pass purchases carry no chat
+ * binding.
  *
  * 152-FZ note: the per-chat state stored in Redis holds stage/provider/mode/
- * plan/nonce only - the buyer email never lands there, it transits to the
- * payment provider inside the invoice call and is forgotten.
+ * plan/nonce/hosts only - hosts are the watched domains snapshotted for the
+ * /unwatch pick (no personal data), and the buyer email never lands there:
+ * it transits to the payment provider inside the invoice call and is
+ * forgotten.
  */
 
 const HOST_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
@@ -52,7 +58,16 @@ export type BotLang = "ru" | "en";
 export type BotPlan = "launch" | "pro";
 
 export interface BotState {
-  stage: "idle" | "await_host" | "await_email" | "await_plan" | "paid_pending" | "await_redeem_host" | "await_watch_host" | "await_scan_host";
+  stage:
+    | "idle"
+    | "await_host"
+    | "await_email"
+    | "await_plan"
+    | "paid_pending"
+    | "await_redeem_host"
+    | "await_watch_host"
+    | "await_scan_host"
+    | "await_unwatch_pick";
   provider?: BotProvider;
   host?: string;
   nonce?: string;
@@ -60,6 +75,9 @@ export interface BotState {
   mode?: "single" | "pack";
   /** chosen tariff for single purchases; dialogs without it sell Launch */
   plan?: BotPlan;
+  /** domains snapshotted for the /unwatch numbered pick (2-3 hosts); the
+   *  fresh Redis list stays the source of truth at execution time */
+  hosts?: string[];
 }
 
 export type BotIntent =
@@ -69,6 +87,8 @@ export type BotIntent =
   | { action: "redeem"; host: string }
   | { action: "watch"; host: string }
   | { action: "unwatch" }
+  | { action: "unwatch_pick"; host: string }
+  | { action: "issue_token" }
   | { action: "check_status" }
   | { action: "my_scans" }
   | { action: "scan"; host: string };
@@ -139,6 +159,10 @@ interface LangPack {
   watchPrompt: string;
   watchRemoved: string;
   watchNone: string;
+  unwatchPick: (hosts: string[]) => string;
+  tokenNoPro: string;
+  tokenFail: string;
+  reviewCta: string;
   myscansEmpty: string;
   myscansHeader: string;
   myscansNoData: string;
@@ -182,7 +206,8 @@ const RU: LangPack = {
   help:
     "🔐 <b>Что делает AppSeal:</b> проверяет живое приложение на утечки секретов, открытые базы, дырявые админки и заголовки безопасности. Класс A+-E и бейдж доверия на сайт за минуту.\n\n" +
     "<b>Пропуск</b> = безлимитные сканы одного домена: Launch Pass - 7 дней, Pro Pass - 30 дней. Разовые платежи, без автосписаний.\n\n" +
-    "Начать: /buy_ru (ЮKassa) или /buy_en (карта). Всё остальное - в <a href=\"https://appseal.online\">сканере</a>: /scan myapp.com покажет класс прямо в чате.",
+    "Начать: /buy_ru (ЮKassa) или /buy_en (карта). Всё остальное - в <a href=\"https://appseal.online\">сканере</a>: /scan myapp.com покажет класс прямо в чате.\n\n" +
+    "Pro Pass (30 дней) включает /token - API-токен для встраивания: заголовок Authorization: Bearer к /api/scan снимает дневной лимит.",
   unknown: "Не понял сообщение. Команды: /start - меню, /scan myapp.com - проверка домена, /buy_ru - купить.",
   step1: "Шаг 1/2. Пришли домен, для которого нужен пропуск (например <code>myapp.vercel.app</code>).",
   step2: "Шаг 2/2. Пришли email для чека - он уходит напрямую в платёжную систему и у нас не хранится.",
@@ -201,9 +226,14 @@ const RU: LangPack = {
   emailInIdle: "Это похоже на email - он понадобится на шаге 2 покупки. Начни с домена: пришли адрес сайта или /buy_ru.",
   statusNone: "Активной покупки нет. /buy_ru, /buy_en или /buy5 - начать.",
   cancelled: "Диалог сброшен. /start - меню.",
-  watchPrompt: "Пришли домен для бесплатного наблюдения (например <code>myapp.vercel.app</code>). Один домен на чат: напишу, когда класс изменится после проверки. Перепроверка - раз в сутки.",
+  watchPrompt: "Пришли домен для бесплатного наблюдения (например <code>myapp.vercel.app</code>). До 3 доменов на чат: напишу, когда класс изменится после проверки. Перепроверка - раз в сутки.",
   watchRemoved: "Наблюдение снято. Вернуть: /watch myapp.com",
   watchNone: "Я и так ничего не наблюдаю в этом чате. Добавить: /watch myapp.com",
+  unwatchPick: (hosts) =>
+    `Какой домен снять с наблюдения?\n${hosts.map((h, i) => `${i + 1}. <code>${esc(h)}</code>`).join("\n")}\n\nПришли цифру.`,
+  tokenNoPro: "API-токен входит в Pro Pass (30 дней). Купить: /plan_pro",
+  tokenFail: "Не удалось создать токен - попробуй позже.",
+  reviewCta: "💬 Понравилось? Оставьте отзыв: appseal.online/reviews",
   myscansEmpty:
     "Пока нет доменов. Пришли /watch myapp.com - следить бесплатно, или запусти скан на appseal.online.",
   myscansHeader: "📄 <b>Твои домены</b> (свежие классы):",
@@ -256,7 +286,8 @@ const EN: LangPack = {
   help:
     "🔐 <b>What AppSeal does:</b> scans a live app for leaked secrets, open databases, exposed admin panels and security headers. An A+-E grade and a trust badge for your site in a minute.\n\n" +
     "<b>A pass</b> = unlimited scans of one domain: Launch Pass - 7 days, Pro Pass - 30 days. One-time payments, no auto-renewals.\n\n" +
-    "Start: /buy_ru (YooKassa) or /buy_en (card). Everything else lives in the <a href=\"https://appseal.online\">scanner</a>: /scan myapp.com shows the grade right in the chat.",
+    "Start: /buy_ru (YooKassa) or /buy_en (card). Everything else lives in the <a href=\"https://appseal.online\">scanner</a>: /scan myapp.com shows the grade right in the chat.\n\n" +
+    "The Pro Pass (30 days) unlocks /token - an API token for embedding: an Authorization: Bearer header on /api/scan lifts the daily limit.",
   unknown: "Not sure what you mean. Commands: /start - menu, /scan myapp.com - check a domain, /buy_ru - buy a pass.",
   step1: "Step 1/2. Send the domain for the pass (e.g. <code>myapp.vercel.app</code>).",
   step2: "Step 2/2. Send your email for the receipt - it goes straight to the payment provider and is never stored on our side.",
@@ -275,9 +306,14 @@ const EN: LangPack = {
   emailInIdle: "That looks like an email - it is needed at purchase step 2. Start with a domain: send a site address or /buy_ru.",
   statusNone: "No active purchase. /buy_ru, /buy_en or /buy5 to start one.",
   cancelled: "Dialog reset. /start for the menu.",
-  watchPrompt: "Send the domain to follow for free (e.g. <code>myapp.vercel.app</code>). One domain per chat: I will message you whenever its grade changes after a check. Free re-scan cadence - once a day.",
+  watchPrompt: "Send the domain to follow for free (e.g. <code>myapp.vercel.app</code>). Up to 3 domains per chat: I will message you whenever a grade changes after a check. Free re-scan cadence - once a day.",
   watchRemoved: "Unfollowed. Follow again with /watch myapp.com",
   watchNone: "Nothing is followed in this chat yet. Add one: /watch myapp.com",
+  unwatchPick: (hosts) =>
+    `Which domain should I stop following?\n${hosts.map((h, i) => `${i + 1}. <code>${esc(h)}</code>`).join("\n")}\n\nSend the number.`,
+  tokenNoPro: "The API token comes with the Pro Pass (30 days). Buy one: /plan_pro",
+  tokenFail: "Could not issue the token - try again later.",
+  reviewCta: "💬 Like it? Leave a review: appseal.online/reviews",
   myscansEmpty:
     "No domains yet. Send /watch myapp.com to follow one for free - or run a scan at appseal.online.",
   myscansHeader: "📄 <b>Your domains</b> (live grades):",
@@ -440,6 +476,11 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
       }
       case "/myscans":
         return { state, intent: { action: "my_scans" }, reply: "", lang };
+      case "/token":
+        // the Pro entitlement check and the minting run in the webhook route
+        // (Redis lookups + crypto) - the machine stays pure and the command
+        // never resets an open dialog
+        return { state, intent: { action: "issue_token" }, reply: "", lang };
       case "/buy5":
         // pack provider follows the language: RU -> YooKassa, EN -> Lava offer
         return {
@@ -575,6 +616,17 @@ export function handleBotInput(state: BotState, raw: string, lang: BotLang = "ru
       return { state, intent: { action: "reply" }, reply: pack.hostBad, lang };
     }
     return { state: { stage: "idle" }, intent: { action: "watch", host }, reply: "", lang };
+  }
+
+  if (state.stage === "await_unwatch_pick") {
+    // the numbered /unwatch pick: a digit selects one of the hosts
+    // snapshotted into the state when the list was shown
+    const list = state.hosts ?? [];
+    const n = /^\d{1,2}$/.test(text) ? Number(text) : 0;
+    if (n < 1 || n > list.length) {
+      return { state, intent: { action: "reply" }, reply: pack.unwatchPick(list), lang };
+    }
+    return { state: { stage: "idle" }, intent: { action: "unwatch_pick", host: list[n - 1] }, reply: "", lang };
   }
 
   if (state.stage === "await_email") {
@@ -739,7 +791,9 @@ export function buildMyScansText(entries: MyScanEntry[], lang: BotLang): string 
 }
 
 /** /scan answer for one domain: the freshest registry grade with a link to
- *  the report, or an honest "not scanned yet" pointing at the free scan. */
+ *  the report, or an honest "not scanned yet" pointing at the free scan.
+ *  A successful (graded) answer ends with the review nudge - the moment of
+ *  delight is the moment to ask. */
 export function botScanText(lang: BotLang, entry: MyScanEntry | null): string {
   const pack = PACKS[lang];
   const host = entry?.host ?? "";
@@ -751,7 +805,7 @@ export function botScanText(lang: BotLang, entry: MyScanEntry | null): string {
   const reportLink = entry.id
     ? `<a href="${BOT_SITE_URL}/report/${entry.id}">${pack.btnReport}</a>`
     : `<a href="${BOT_SITE_URL}">${pack.btnScanner}</a>`;
-  return `${head}${desc}\n\n${reportLink} · ${pack.scanCta}`;
+  return `${head}${desc}\n\n${reportLink} · ${pack.scanCta}\n${pack.reviewCta}`;
 }
 
 export function botPackPayText(lang: BotLang): string {
@@ -762,8 +816,9 @@ export function botRedeemNoPack(lang: BotLang): string {
   return PACKS[lang].redeemNoPack;
 }
 
-/** Confirmation after the webhook stored the watch; current grade optional. */
-export function botWatchDone(lang: BotLang, host: string, currentGrade?: string): string {
+/** Confirmation after the webhook stored the watch; current grade optional.
+ *  slots ("2/3") appends the free-list occupancy when the route knows it. */
+export function botWatchDone(lang: BotLang, host: string, currentGrade?: string, slots?: string): string {
   const known = currentGrade
     ? lang === "en"
       ? `Current standing: grade ${currentGrade} ${botGradeBadge(currentGrade)}.`
@@ -771,9 +826,32 @@ export function botWatchDone(lang: BotLang, host: string, currentGrade?: string)
     : lang === "en"
       ? "Not scanned yet - the first check will set the baseline."
       : "Пока не проверен - первая проверка станет стартовой точкой.";
+  const slot = slots ? (lang === "en" ? ` (slot ${esc(slots)})` : ` (слот ${esc(slots)})`) : "";
   return lang === "en"
-    ? `Now following <code>${esc(host)}</code>. ${known}\nI will message you when its grade changes (free re-scan: once a day). Move it: /watch other.com - stop: /unwatch`
-    : `Следим за <code>${esc(host)}</code>. ${known}\nНапишу, когда класс изменится (бесплатная перепроверка - раз в сутки). Сменить домен: /watch other.com - отменить: /unwatch`;
+    ? `Now following <code>${esc(host)}</code>${slot}. ${known}\nI will message you when its grade changes (free re-scan: once a day). Add another (up to 3): /watch other.com - stop: /unwatch`
+    : `Следим за <code>${esc(host)}</code>${slot}. ${known}\nНапишу, когда класс изменится (бесплатная перепроверка - раз в сутки). Добавить ещё (до 3): /watch other.com - убрать: /unwatch`;
+}
+
+/** Per-chat free watch cap: the list is full (3/3), something must go first. */
+export function botWatchChatFull(lang: BotLang, max: number): string {
+  return lang === "en"
+    ? `Free watch is capped at ${max} domains per chat - remove one with /unwatch first.`
+    : `Максимум ${max} домена на чат - удалите один через /unwatch`;
+}
+
+/** Numbered /unwatch pick (2-3 hosts): the chat replies with a digit and the
+ *  machine resolves it via the await_unwatch_pick stage. */
+export function botUnwatchPickText(lang: BotLang, hosts: string[]): string {
+  return PACKS[lang].unwatchPick(hosts);
+}
+
+/** Confirmation after one host was removed from a multi-host watchlist -
+ *  the remaining ones keep being followed. */
+export function botUnwatchPicked(lang: BotLang, host: string, remaining: string[]): string {
+  const rest = remaining.map((h) => `<code>${esc(h)}</code>`).join(", ");
+  return lang === "en"
+    ? `Stopped following <code>${esc(host)}</code>.${rest ? ` Still following: ${rest}.` : ""} Add more: /watch myapp.com`
+    : `Убрал <code>${esc(host)}</code> из наблюдения.${rest ? ` Ещё наблюдаю: ${rest}.` : ""} Добавить: /watch myapp.com`;
 }
 
 export function botWatchLimit(lang: BotLang, max: number): string {
@@ -848,4 +926,25 @@ export function botStatusText(
   return lang === "en"
     ? "Could not check the status - try again later."
     : "Не удалось проверить статус - попробуй позже.";
+}
+
+/* ------------------------------ /token texts --------------------------- */
+
+/** /token success: the raw token is shown exactly once (only its sha256 hash
+ *  is stored), so this message is the single copy the buyer ever sees. */
+export function botTokenText(lang: BotLang, token: string, expiresAt: string): string {
+  const until = expiresAt.slice(0, 10);
+  return lang === "en"
+    ? `🔑 API token created:\n<code>${esc(token)}</code>\nValid until ${until}. Shown once - only its hash is stored.\nEmbedding: appseal.online/api - an Authorization: Bearer header lifts the daily limit of /api/scan.`
+    : `🔑 API-токен создан:\n<code>${esc(token)}</code>\nДействует до ${until}. Показан один раз - хранится только хеш.\nВстраивание: appseal.online/api - заголовок Authorization: Bearer снимает дневной лимит /api/scan.`;
+}
+
+/** /token without an active 30-day pass: honest pointing at the Pro tariff. */
+export function botTokenNoPro(lang: BotLang): string {
+  return PACKS[lang].tokenNoPro;
+}
+
+/** Minting failed (Redis + the durable mirror both unavailable). */
+export function botTokenFail(lang: BotLang): string {
+  return PACKS[lang].tokenFail;
 }

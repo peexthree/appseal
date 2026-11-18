@@ -11,6 +11,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import { WATCH_KEY } from "./watch.ts";
+import { mirrorPass } from "./db/index.ts";
 
 const DEFAULT_PASS_DAYS = 7;
 export const PRO_PASS_DAYS = 30;
@@ -109,6 +110,8 @@ export async function activatePass(paymentId: string, host: string, days: number
   await redisCommand(["SET", passHostKey(record.host), JSON.stringify(record), "EX", String(ttl)]);
   // paid hosts join the background watchlist; score 0 = rescan ASAP
   await redisCommand(["ZADD", WATCH_KEY, "0", record.host]);
+  // durable mirror (no-op without DATABASE_URL); never blocks activation
+  void mirrorPass(record);
   return record;
 }
 
@@ -157,6 +160,71 @@ export async function hasActivePass(host: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Chat <-> pass binding: personal alerts, digests, expiry reminders   */
+/* ------------------------------------------------------------------ */
+
+/** The bot binds the chat right after a payment check succeeds (webhook
+ *  activations have no chat context). Two directions are written:
+ *  host -> chat (alerts/digest/reminders) and chat -> hosts (Pro lookup,
+ *  e.g. /token). TTL covers the longest pass + ample grace. */
+const BIND_TTL_SECONDS = 45 * 24 * 3600;
+const CHAT_ID_RE = /^-?\d{3,20}$/;
+
+export async function bindPassChat(host: string, chatId: string): Promise<void> {
+  const clean = host.replace(/^www\./i, "").toLowerCase();
+  if (!CHAT_ID_RE.test(chatId.trim())) return;
+  const id = chatId.trim();
+  await redisCommand(["SET", `tg:passchat:${passHostKey(clean).slice("lpass:host:".length)}`, id, "EX", String(BIND_TTL_SECONDS)]);
+  await redisCommand(["SADD", `tg:chatpass:${id}`, clean]);
+  await redisCommand(["EXPIRE", `tg:chatpass:${id}`, String(BIND_TTL_SECONDS)]);
+}
+
+/** chat bound to this host's pass (null for web-only purchases). */
+export async function getPassChat(host: string): Promise<string | null> {
+  const raw = await redisCommand<string>(["GET", `tg:passchat:${passHostKey(host).slice("lpass:host:".length)}`]);
+  return raw ?? null;
+}
+
+/** Hosts the chat has ever bound (pack redemptions + bot purchases). */
+export async function getChatPassHosts(chatId: string): Promise<string[]> {
+  if (!CHAT_ID_RE.test(chatId.trim())) return [];
+  const raw = await redisCommand<string[]>(["SMEMBERS", `tg:chatpass:${chatId.trim()}`]);
+  return Array.isArray(raw) ? raw.filter((h) => typeof h === "string" && h.length > 0) : [];
+}
+
+/** Full pass record for a host (kind/days live here, not just the boolean). */
+export async function getPassRecord(host: string): Promise<PassRecord | null> {
+  const raw = await redisCommand<string>(["GET", passHostKey(host)]);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as PassRecord;
+  } catch {
+    return null;
+  }
+}
+
+export interface PaidPassSummary {
+  host: string;
+  chatId: string | null;
+  until: string;
+  days?: number;
+}
+
+/** Every currently watched paid host with its bound chat (personal digest,
+ *  expiry reminders). Cheap enough at real watchlist sizes (< 100 hosts). */
+export async function listPaidPasses(): Promise<PaidPassSummary[]> {
+  const hosts = await redisCommand<string[]>(["ZRANGE", WATCH_KEY, "0", "-1"]);
+  if (!Array.isArray(hosts) || hosts.length === 0) return [];
+  const out: PaidPassSummary[] = [];
+  for (const host of hosts) {
+    if (typeof host !== "string" || !host) continue;
+    const [rec, chatId] = await Promise.all([getPassRecord(host), getPassChat(host)]);
+    if (rec) out.push({ host, chatId, until: rec.until, days: rec.days });
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ */

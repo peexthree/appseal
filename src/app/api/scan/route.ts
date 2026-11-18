@@ -3,7 +3,9 @@ import { after } from "next/server";
 import { runScan, normalizeInputUrl } from "@/lib/scanner";
 import { newId, newReportKey, saveScan, serializeScan, pushRegistryEntry, redisConfig, redis, sweepExpiredScans } from "@/lib/scanner/store";
 import { assertPublicTarget } from "@/lib/scanner/guard";
-import { bumpDailyQuota, hasActivePass, hashIp } from "@/lib/passes";
+import { bumpDailyQuota, hasActivePass, hasPassAccess, hashIp } from "@/lib/passes";
+import { lookupApiToken, tokenFromHeaders } from "@/lib/api-tokens";
+import { archiveScan } from "@/lib/db/index";
 import { getClientIp, secretsMatch } from "@/lib/sec";
 import { sendTelegramAlert } from "@/lib/telegram";
 import type { Lang, ScanResult } from "@/lib/scanner/types";
@@ -19,7 +21,7 @@ const FREE_DAILY_LIMIT = 1;
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as { url?: string; lang?: Lang; adminKey?: string };
+    const body = (await req.json()) as { url?: string; lang?: Lang; adminKey?: string; private?: boolean };
     const raw = (body.url ?? "").trim();
     if (!raw) {
       return NextResponse.json({ error: "url required" }, { status: 400 });
@@ -50,8 +52,29 @@ export async function POST(req: NextRequest) {
     // a live Launch Pass on the target host removes the limit;
     // the owner's admin key removes it too (set ADMIN_SCAN_KEY in env)
     const adminBypass = secretsMatch((body.adminKey ?? "").trim(), (process.env.ADMIN_SCAN_KEY ?? "").trim());
+    // Pro Pass API token (Bearer as_... / x-api-token) lifts the daily quota
+    // exactly like the admin key; the scanlock concurrency limit below stays
+    // for everyone - it protects the engine, not the funnel
+    const token = tokenFromHeaders(req.headers);
+    const apiTok = token ? await lookupApiToken(token) : null;
     const ip = getClientIp(req.headers);
-    if (!norm.isDemo && !adminBypass) {
+
+    // private scan: stays out of the public registry/catalog entirely, but
+    // needs a reason to exist - admin key, API token, or a live pass on the
+    // scanned host (demo targets can never be private)
+    const isPrivate = body.private === true && !norm.isDemo;
+    if (isPrivate) {
+      const targetHost = new URL(norm.url).hostname;
+      const allowed = adminBypass || Boolean(apiTok) || (await hasPassAccess(targetHost));
+      if (!allowed) {
+        return NextResponse.json(
+          { error: "private_requires_pass", upsell: "launch-pass" },
+          { status: 402 },
+        );
+      }
+    }
+
+    if (!norm.isDemo && !adminBypass && !apiTok) {
       // getClientIp only returns platform-reported, well-formed addresses -
       // a spoofed X-Forwarded-For entry falls through to "unknown"
       const targetHost = new URL(norm.url).hostname;
@@ -142,11 +165,12 @@ export async function POST(req: NextRequest) {
         );
 
         // runScan never throws: the final record lands in the store; its return
-        // value feeds the public registry. Demo scans excluded. Every finished
-        // scan is listed - the catalog shows all grades; descriptions of hosts
-        // below A are blurred in the registry UI, findings stay rkey-private.
+        // value feeds the public registry. Demo scans excluded, private scans
+        // too - a private scan never reaches the registry/catalog/stats (all
+        // of them live inside pushRegistryEntry), while PDF/badge gating is
+        // unchanged: the report key still unlocks the full PDF as usual.
         const fin = await runScan(scan);
-        if (fin && !scan.isDemo) {
+        if (fin && !scan.isDemo && !isPrivate) {
           await pushRegistryEntry({
             host: fin.host,
             grade: fin.grade,
@@ -155,6 +179,16 @@ export async function POST(req: NextRequest) {
             id: scan.id,
             desc: fin.pageDesc ?? fin.pageTitle,
           });
+        }
+        // durable archive for every finished scan (private ones stored with
+        // is_public=false); best-effort void - an archive hiccup never breaks
+        // the scan response. runScan returns only the final verdict fields, so
+        // the archive record is the in-flight scan (id/inputs) + fin overlay.
+        if (fin) {
+          void archiveScan(
+            { ...scan, ...fin, status: "done", finishedAt: new Date().toISOString() },
+            !isPrivate,
+          );
         }
         // TTL sweep rides along the scan pipeline, throttled inside
         void sweepExpiredScans();

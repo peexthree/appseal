@@ -24,6 +24,11 @@ if (res.ok) {
   console.log(\`\${host}: \${grade} (\${score}/100) - \${profile}\`);
 }`;
 
+const TOKEN_CURL = `curl -X POST https://appseal.online/api/scan \\
+  -H 'content-type: application/json' \\
+  -H 'authorization: Bearer as_YOUR_TOKEN' \\
+  -d '{"url":"https://your-domain.com"}'`;
+
 const BADGE_IMG = `<a href="https://appseal.online/verified/your-domain.com">
   <img src="https://appseal.online/api/badge?host=your-domain.com" width="228" height="44" alt="AppSeal Security Verified">
 </a>`;
@@ -60,6 +65,16 @@ const D = {
   },
   jsTitle: { ru: "Пример на JS", en: "A JS example" },
   copyCode: { ru: "Скопировать код", en: "Copy code" },
+  tokenTitle: { ru: "Bearer-токен (Pro)", en: "Bearer token (Pro)" },
+  tokenIntro: {
+    ru: "API-токен снимает дневной лимит POST /api/scan - удобно для CI и регулярных проверок. Выдаётся командой /token в Telegram-боте и входит в Pro Pass. Передавайте его заголовком authorization: Bearer as_... или x-api-token.",
+    en: "An API token lifts the daily limit of POST /api/scan - handy for CI and recurring checks. Issued by the /token command in the Telegram bot and included in the Pro Pass. Send it as the authorization: Bearer as_... header or x-api-token.",
+  },
+  tokenScanTitle: { ru: "POST /api/scan с токеном", en: "POST /api/scan with the token" },
+  tokenNote: {
+    ru: "Без токена /api/scan работает в рамках дневного лимита - токен только снимает его.",
+    en: "Without a token, /api/scan works within the daily limit - the token only removes it.",
+  },
   badgeTitle: { ru: "GET /api/badge - бейдж для сайта и README", en: "GET /api/badge - a badge for your site and README" },
   badgeIntro: {
     ru: "SVG-картинка, привязанная к домену: класс на ней обновляется сам после каждого скана. В HTML:",
@@ -164,6 +179,25 @@ export function ApiView() {
             {FETCH_JS}
           </pre>
         </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="font-display text-xl font-extrabold">{t("tokenTitle")}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-400">
+          {t("tokenIntro")}
+        </p>
+        <div className="mt-3 rounded-2xl appseal-glass-card p-5">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-mono text-xs font-bold text-slate-400">{t("tokenScanTitle")}</span>
+            <CopyCode code={TOKEN_CURL} label={t("copyCurl")} />
+          </div>
+          <pre className="mt-3 overflow-x-auto rounded-xl border border-slate-800 bg-[#090d16] p-4 font-mono text-[11px] leading-relaxed text-slate-300">
+            {TOKEN_CURL}
+          </pre>
+        </div>
+        <p className="mt-3 text-xs leading-relaxed text-slate-500">
+          {t("tokenNote")}
+        </p>
       </section>
 
       <section className="mt-10">

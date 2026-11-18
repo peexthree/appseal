@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPayment } from "@/lib/yookassa";
 import { activatePass, daysForKind, ensurePackGranted, setChatPack } from "@/lib/passes";
+import { ledgerPurchase } from "@/lib/db/index";
 import { getConnIp, ipAllowed } from "@/lib/sec";
 
 export const runtime = "nodejs";
@@ -42,19 +43,55 @@ export async function POST(req: NextRequest) {
   }
   try {
     const body = (await req.json()) as { event?: string; object?: { id?: string } };
-    if (body.event !== "payment.succeeded" || !body.object?.id) {
+    const paymentId = body.object?.id ?? "";
+    const succeededEvt = body.event === "payment.succeeded";
+    const canceledEvt = body.event === "payment.canceled";
+    if ((!succeededEvt && !canceledEvt) || !paymentId) {
       return NextResponse.json({ ok: true });
     }
-    const payment = await getPayment(body.object.id);
-    if (!payment || payment.status !== "succeeded") {
+    // the body is never trusted: re-fetch from the API and act on that only
+    const payment = await getPayment(paymentId);
+    if (!payment) {
       return NextResponse.json({ ok: true });
     }
     const meta = payment.metadata ?? {};
+    const plan = meta.kind === "lpack" ? "lpack" : meta.kind === "lpro" ? "lpro" : "lpass";
+    const amt = Number(payment.amount?.value);
+    const amount = Number.isFinite(amt) && amt > 0 ? amt : null;
+    const currency = typeof payment.amount?.currency === "string" ? payment.amount.currency : null;
+
+    // canceled/failed payment: ledger only, no activation
+    if (canceledEvt) {
+      if (payment.status === "canceled") {
+        void ledgerPurchase({
+          paymentId: payment.id,
+          provider: "yookassa",
+          plan,
+          amount,
+          currency,
+          chatId: null,
+          status: "canceled",
+        });
+      }
+      return NextResponse.json({ ok: true });
+    }
+    if (payment.status !== "succeeded") {
+      return NextResponse.json({ ok: true });
+    }
     if (meta.kind === "lpack") {
       // Agency Pack: grant 5 redeemable credits, bind the chat for /redeem
       if (await ensurePackGranted(payment.id)) {
         if (meta.chatId) await setChatPack(meta.chatId, payment.id);
       }
+      void ledgerPurchase({
+        paymentId: payment.id,
+        provider: "yookassa",
+        plan,
+        amount,
+        currency,
+        chatId: null,
+        status: "succeeded",
+      });
       return NextResponse.json({ ok: true });
     }
     // "lpro" is the 30-day Pro Pass; the metadata contract is unchanged
@@ -63,6 +100,15 @@ export async function POST(req: NextRequest) {
     }
     // no personal data is stored: the payer email lives in YooKassa only
     await activatePass(payment.id, meta.host ?? "", daysForKind(meta.kind));
+    void ledgerPurchase({
+      paymentId: payment.id,
+      provider: "yookassa",
+      plan,
+      amount,
+      currency,
+      chatId: null,
+      status: "succeeded",
+    });
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: true });

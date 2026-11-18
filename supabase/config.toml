@@ -1,0 +1,3 @@
+# Minimal Supabase project config for the GitHub integration: migrations in
+# supabase/migrations are applied to the linked project (eu-central-1).
+project_id = "appseal"

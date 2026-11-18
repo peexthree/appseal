@@ -2,16 +2,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import {
   addChatRedeemedHost,
+  bindPassChat,
   consumePackCredit,
   getChatPack,
+  getChatPassHosts,
   getChatRedeemedHosts,
   getPackCredits,
+  getPassRecord,
   hasActivePass,
   redeemPackPass,
   redisCommand,
 } from "@/lib/passes";
+import { issueApiToken } from "@/lib/api-tokens";
+import { updateReviewStatus } from "@/lib/db/index";
 import { getLatestHostEntry } from "@/lib/scanner/store";
-import { FREE_WATCH_KEY_PREFIX, FREE_WATCH_MAX, FREE_WATCH_ZSET } from "@/lib/watch";
+import {
+  FREE_PER_CHAT_MAX,
+  FREE_WATCH_KEY_PREFIX,
+  FREE_WATCH_MAX,
+  FREE_WATCH_ZSET,
+  parseWatchHosts,
+} from "@/lib/watch";
 import { answerCallbackQuery, sendChatAction, sendTelegramMessage } from "@/lib/telegram";
 import { secretsMatch } from "@/lib/sec";
 import {
@@ -30,6 +41,12 @@ import {
   botScanText,
   botScannerKeyboard,
   botStatusText,
+  botTokenFail,
+  botTokenNoPro,
+  botTokenText,
+  botUnwatchPickText,
+  botUnwatchPicked,
+  botWatchChatFull,
   botWatchDone,
   botWatchLimit,
   botWatchNone,
@@ -57,6 +74,10 @@ export const dynamic = "force-dynamic";
  * operations (payment creation, status poll, registry lookups) flip the
  * "typing…" indicator, dialogs carry a ✖️ cancel button, the invoice message
  * carries a ✅ check-payment button, and every bot message is Telegram HTML.
+ *
+ * Review moderation: the site posts every queued review to the moderation
+ * channel with rev:ok:<uuid> / rev:no:<uuid> buttons; this route answers the
+ * verdict - only for callbacks arriving from TELEGRAM_CHAT_ID itself.
  */
 
 const STATE_TTL_SECONDS = 3600;
@@ -65,6 +86,10 @@ const STATE_TTL_SECONDS = 3600;
 const HOSTED_ORIGIN = "https://appseal.online";
 // one /myscans grade lookup must not stall the whole reply on a dead store
 const MYSCANS_LOOKUP_TIMEOUT_MS = 5000;
+// free re-scan nudge record (the monitor tick nudges 48h later and flips
+// nudged:true; 10 days covers the window with slack)
+const LASTSCAN_KEY_PREFIX = "tg:lastscan:";
+const LASTSCAN_TTL_SECONDS = 864000;
 
 /** Resolve with null when the promise outlives the budget (unref'd timer - the
  *  timeout never keeps the process alive on its own). */
@@ -198,6 +223,35 @@ export async function POST(req: NextRequest) {
   const callbackData = update.callback_query?.data?.replace(/^\//, "") ?? "";
   const raw = callbackData ? `/${callbackData}` : (update.message?.text ?? "");
 
+  // review moderation first: it must run before the generic toast below so
+  // the verdict toast is the one the moderator sees (a callback query can be
+  // answered once). Fully isolated - a broken DB never reaches other branches.
+  const cbq = update.callback_query;
+  const revVerdict = cbq?.data?.match(/^rev:(ok|no):([0-9a-f-]{36})$/i);
+  if (revVerdict && cbq?.id) {
+    const cbId = cbq.id;
+    try {
+      // the buttons exist only in the moderation channel post - a forwarded
+      // copy pressed from any other chat (or a non-moderator) is rejected
+      if (chatId.trim() !== (process.env.TELEGRAM_CHAT_ID ?? "").trim()) {
+        await answerCallbackQuery(cbId, "Недостаточно прав");
+        return NextResponse.json({ ok: true });
+      }
+      const approved = revVerdict[1].toLowerCase() === "ok";
+      // updateReviewStatus re-validates the uuid shape and no-ops (false)
+      // without DATABASE_URL
+      const done = await updateReviewStatus(revVerdict[2], approved ? "approved" : "rejected");
+      await answerCallbackQuery(
+        cbId,
+        done ? (approved ? "✅ Опубликован" : "❌ Отклонён") : "Не найден или БД выключена",
+      );
+    } catch (e) {
+      console.warn("[appseal-bot] review moderation failed:", e instanceof Error ? e.message : String(e));
+      await answerCallbackQuery(cbId, "Ошибка, попробуй ещё раз");
+    }
+    return NextResponse.json({ ok: true });
+  }
+
   // acknowledge the button press right away with a meaningful toast: Telegram
   // keeps the button in loading state until answerCallbackQuery arrives
   if (update.callback_query?.id) {
@@ -294,6 +348,9 @@ export async function POST(req: NextRequest) {
       // remember the host for /myscans (single purchases have no chat binding,
       // but a pack redemption always happens inside this chat)
       await addChatRedeemedHost(chatId, record.host);
+      // bind the chat for the pass too: personal alerts, the weekly digest
+      // and the /token Pro lookup all key off this mapping
+      await bindPassChat(record.host, chatId);
       await sendTelegramMessage(
         chatId,
         botRedeemResultText(step.lang, "done", record.host, record.until),
@@ -306,24 +363,50 @@ export async function POST(req: NextRequest) {
     if (step.intent.action === "watch") {
       typing(chatId);
       const host = step.intent.host;
-      // free watch capacity guard: one domain per chat, bounded total slots
-      const existing = await redisCommand<string>(["GET", FREE_WATCH_KEY_PREFIX + chatId]);
-      const count = await redisCommand<number>(["ZCARD", FREE_WATCH_ZSET]);
-      if (!existing && (count ?? 0) >= FREE_WATCH_MAX) {
-        await sendTelegramMessage(chatId, botWatchLimit(step.lang, FREE_WATCH_MAX), botScannerKeyboard(step.lang), "HTML");
+      // free watch capacity guards: up to FREE_PER_CHAT_MAX domains per chat
+      // (tg:watch:{chatId} = JSON {"hosts":[...]}; a legacy bare string parses
+      // as one host) plus the global cap on chats joining the shared rescan
+      // rotation
+      const current = parseWatchHosts(
+        ((await redisCommand<string>(["GET", FREE_WATCH_KEY_PREFIX + chatId])) ?? "") as string,
+      );
+      if (current.includes(host)) {
+        // re-watch of a listed host: keep the list, refresh the rescan clock
+        // to "as soon as possible"
+        await redisCommand(["ZADD", FREE_WATCH_ZSET, "0", chatId]);
+        const entry = await getLatestHostEntry(host);
+        await sendTelegramMessage(
+          chatId,
+          botWatchDone(step.lang, host, entry?.grade, `${current.length}/${FREE_PER_CHAT_MAX}`),
+          botScannerKeyboard(step.lang),
+          "HTML",
+        );
         return NextResponse.json({ ok: true });
       }
-      await redisCommand([
-        "SET",
-        FREE_WATCH_KEY_PREFIX + chatId,
-        host,
-      ]);
-      // re-watch or fresh watch both set the rescan clock to "as soon as possible"
+      if (current.length >= FREE_PER_CHAT_MAX) {
+        await sendTelegramMessage(
+          chatId,
+          botWatchChatFull(step.lang, FREE_PER_CHAT_MAX),
+          botScannerKeyboard(step.lang),
+          "HTML",
+        );
+        return NextResponse.json({ ok: true });
+      }
+      if (current.length === 0) {
+        const count = await redisCommand<number>(["ZCARD", FREE_WATCH_ZSET]);
+        if ((count ?? 0) >= FREE_WATCH_MAX) {
+          await sendTelegramMessage(chatId, botWatchLimit(step.lang, FREE_WATCH_MAX), botScannerKeyboard(step.lang), "HTML");
+          return NextResponse.json({ ok: true });
+        }
+      }
+      // add without duplicates and write the JSON shape the tick reads
+      const next = [...current, host];
+      await redisCommand(["SET", FREE_WATCH_KEY_PREFIX + chatId, JSON.stringify({ hosts: next })]);
       await redisCommand(["ZADD", FREE_WATCH_ZSET, "0", chatId]);
       const entry = await getLatestHostEntry(host);
       await sendTelegramMessage(
         chatId,
-        botWatchDone(step.lang, host, entry?.grade),
+        botWatchDone(step.lang, host, entry?.grade, `${next.length}/${FREE_PER_CHAT_MAX}`),
         botScannerKeyboard(step.lang),
         "HTML",
       );
@@ -331,11 +414,56 @@ export async function POST(req: NextRequest) {
     }
 
     if (step.intent.action === "unwatch") {
-      const removed = await redisCommand<number>(["DEL", FREE_WATCH_KEY_PREFIX + chatId]);
-      await redisCommand(["ZREM", FREE_WATCH_ZSET, chatId]);
+      const hosts = parseWatchHosts(
+        ((await redisCommand<string>(["GET", FREE_WATCH_KEY_PREFIX + chatId])) ?? "") as string,
+      );
+      if (hosts.length <= 1) {
+        // zero or one host: the old one-step removal, no pick dialog needed
+        const removed = await redisCommand<number>(["DEL", FREE_WATCH_KEY_PREFIX + chatId]);
+        await redisCommand(["ZREM", FREE_WATCH_ZSET, chatId]);
+        await sendTelegramMessage(
+          chatId,
+          removed ? botWatchRemoved(step.lang) : botWatchNone(step.lang),
+          botScannerKeyboard(step.lang),
+          "HTML",
+        );
+        return NextResponse.json({ ok: true });
+      }
+      // 2-3 hosts: a numbered pick dialog keeps the other watches alive
+      await saveState(chatId, { stage: "await_unwatch_pick", hosts });
+      await sendTelegramMessage(chatId, botUnwatchPickText(step.lang, hosts), botCancelKeyboard(step.lang), "HTML");
+      return NextResponse.json({ ok: true });
+    }
+
+    if (step.intent.action === "unwatch_pick") {
+      const host = step.intent.host;
+      // the state snapshot may be stale (dialog TTL, a concurrent edit) - the
+      // fresh Redis list is the source of truth
+      const hosts = parseWatchHosts(
+        ((await redisCommand<string>(["GET", FREE_WATCH_KEY_PREFIX + chatId])) ?? "") as string,
+      );
+      if (!hosts.includes(host)) {
+        // the chosen host is already gone: re-show the live list, or honestly
+        // report that nothing is followed anymore
+        if (hosts.length >= 2) {
+          await saveState(chatId, { stage: "await_unwatch_pick", hosts });
+          await sendTelegramMessage(chatId, botUnwatchPickText(step.lang, hosts), botCancelKeyboard(step.lang), "HTML");
+        } else {
+          await sendTelegramMessage(chatId, botWatchNone(step.lang), botScannerKeyboard(step.lang), "HTML");
+        }
+        return NextResponse.json({ ok: true });
+      }
+      const next = hosts.filter((h) => h !== host);
+      if (next.length === 0) {
+        // the last host left the watchlist - the chat leaves the rotation too
+        await redisCommand(["DEL", FREE_WATCH_KEY_PREFIX + chatId]);
+        await redisCommand(["ZREM", FREE_WATCH_ZSET, chatId]);
+      } else {
+        await redisCommand(["SET", FREE_WATCH_KEY_PREFIX + chatId, JSON.stringify({ hosts: next })]);
+      }
       await sendTelegramMessage(
         chatId,
-        removed ? botWatchRemoved(step.lang) : botWatchNone(step.lang),
+        botUnwatchPicked(step.lang, host, next),
         botScannerKeyboard(step.lang),
         "HTML",
       );
@@ -345,6 +473,10 @@ export async function POST(req: NextRequest) {
     if (step.intent.action === "check_status") {
       typing(chatId);
       const d = await checkStatus(state.nonce ?? "");
+      // a confirmed payment binds the chat to the pass (the "✅ Проверить
+      // оплату" button and the /status command share this branch): personal
+      // alerts, the weekly digest and the /token Pro lookup all key off it
+      if (d.status === "succeeded" && d.host) await bindPassChat(d.host, chatId);
       const text =
         d.status === "succeeded"
           ? botStatusText(step.lang, "done", d.host, d.until)
@@ -355,14 +487,48 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    if (step.intent.action === "issue_token") {
+      typing(chatId);
+      // Pro entitlement: any bound host whose ACTIVE pass is the 30-day one
+      // (legacy records without days never qualify); expired passes fail the
+      // until check honestly
+      const boundHosts = await getChatPassHosts(chatId);
+      let pro = false;
+      for (const h of boundHosts) {
+        const rec = await getPassRecord(h);
+        if (rec && rec.days === 30 && new Date(rec.until).getTime() > Date.now()) {
+          pro = true;
+          break;
+        }
+      }
+      if (!pro) {
+        await sendTelegramMessage(chatId, botTokenNoPro(step.lang), botScannerKeyboard(step.lang), "HTML");
+        return NextResponse.json({ ok: true });
+      }
+      const tok = await issueApiToken(chatId);
+      // null = both Redis and the durable mirror were down - no honest way to
+      // hand over a token, so say so instead of pretending success
+      await sendTelegramMessage(
+        chatId,
+        tok ? botTokenText(step.lang, tok.token, tok.expiresAt) : botTokenFail(step.lang),
+        botScannerKeyboard(step.lang),
+        "HTML",
+      );
+      return NextResponse.json({ ok: true });
+    }
+
     if (step.intent.action === "my_scans") {
       typing(chatId);
-      // domains the chat owns: the free watch (one per chat) plus every host a
-      // pack credit was redeemed onto here. Lookups are best-effort - a slow
-      // or broken store lookup must not kill the whole answer.
-      const watchHost = await redisCommand<string>(["GET", FREE_WATCH_KEY_PREFIX + chatId]);
+      // domains the chat owns: every free-watched host (up to 3 per chat;
+      // tg:watch:{chatId} = JSON {"hosts":[...]}, a legacy bare string parses
+      // as one) plus every host a pack credit was redeemed onto here. Lookups
+      // are best-effort - a slow or broken store lookup must not kill the
+      // whole answer.
+      const watchHosts = parseWatchHosts(
+        ((await redisCommand<string>(["GET", FREE_WATCH_KEY_PREFIX + chatId])) ?? "") as string,
+      );
       const redeemedHosts = await getChatRedeemedHosts(chatId);
-      const hosts = [...new Set([watchHost ?? "", ...redeemedHosts].filter((h) => h.length > 0))];
+      const hosts = [...new Set([...watchHosts, ...redeemedHosts])];
       const entries: MyScanEntry[] = [];
       for (const h of hosts) {
         try {
@@ -385,6 +551,18 @@ export async function POST(req: NextRequest) {
       } catch (e) {
         console.warn("[appseal-bot] scan lookup failed:", e instanceof Error ? e.message : String(e));
       }
+      // a successful (graded) result arms the free re-scan nudge: the monitor
+      // tick reads this record 48h+ later, sends one "did you fix it?" nudge
+      // and flips nudged:true; 10-day TTL then expires the key
+      if (entry?.grade) {
+        await redisCommand([
+          "SET",
+          LASTSCAN_KEY_PREFIX + chatId,
+          JSON.stringify({ host: step.intent.host, ts: Date.now(), nudged: false }),
+          "EX",
+          String(LASTSCAN_TTL_SECONDS),
+        ]);
+      }
       const text = botScanText(
         step.lang,
         entry
@@ -401,7 +579,7 @@ export async function POST(req: NextRequest) {
         ? botIdleKeyboard(step.lang)
         : step.state.stage === "await_plan"
           ? botPlanKeyboard(step.state.provider ?? "yk", step.lang)
-          : ["await_host", "await_email", "await_redeem_host", "await_watch_host", "await_scan_host"].includes(
+          : ["await_host", "await_email", "await_redeem_host", "await_watch_host", "await_scan_host", "await_unwatch_pick"].includes(
                 step.state.stage,
               )
             ? botCancelKeyboard(step.lang)

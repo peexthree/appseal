@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -128,7 +128,60 @@ function newPage(pdf: PDFDocument, fonts: { reg: PDFFont; bold: PDFFont; mono: P
   return page;
 }
 
-export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
+/* ------------------------- White-label branding ------------------------- */
+
+export type BrandParams =
+  | { ok: true; logoUrl: string; title: string }
+  | { ok: false; reason: string };
+
+/** Pure validation of the white-label report params (logo URL + title).
+ *  logo: https-only absolute URL whose hostname is plain letters/digits/
+ *  dots/hyphens (new URL punycodes IDN automatically; userinfo, IPv6
+ *  brackets, single-label or junk hostnames are rejected - the download
+ *  step additionally runs the SSRF guard). title: trimmed, control
+ *  characters stripped, capped at 60 chars. ok:false carries a reason -
+ *  callers then just build the PDF without branding, never a 500. */
+export function validateBrandParams(
+  logo?: string | null,
+  title?: string | null,
+): BrandParams {
+  let logoUrl = "";
+  if (logo != null) {
+    if (typeof logo !== "string") return { ok: false, reason: "logo must be a string" };
+    const raw = logo.trim();
+    if (raw) {
+      let u: URL;
+      try {
+        u = new URL(raw);
+      } catch {
+        return { ok: false, reason: "invalid logo url" };
+      }
+      if (
+        u.protocol !== "https:" ||
+        !u.hostname.includes(".") ||
+        !/^[a-z0-9.-]+$/i.test(u.hostname) ||
+        u.username !== "" ||
+        u.password !== ""
+      ) {
+        return { ok: false, reason: "logo must be an https url with a plain public hostname" };
+      }
+      logoUrl = u.toString();
+    }
+  }
+  let cleanTitle = "";
+  if (title != null) {
+    if (typeof title !== "string") return { ok: false, reason: "title must be a string" };
+    cleanTitle = title.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 60);
+    if (!cleanTitle) return { ok: false, reason: "title is empty" };
+  }
+  return { ok: true, logoUrl, title: cleanTitle };
+}
+
+export async function buildReportPdf(
+  scan: ScanResult,
+  brandLogo?: Uint8Array | null,
+  brandTitle?: string | null,
+): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   // turbopackIgnore: font lookup is runtime-probed; the files are bundled via
@@ -143,6 +196,21 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
 
   const gm = GRADE_META[scan.grade] ?? GRADE_META["E"];
   const accent = gm.color;
+
+  // white-label logo: ready-made bytes (downloaded by the report route),
+  // format detected by magic bytes; any embed failure just skips the logo -
+  // the PDF is always built, branding is strictly additive
+  let brandImg: PDFImage | null = null;
+  if (brandLogo && brandLogo.byteLength > 3) {
+    try {
+      const isPng =
+        brandLogo[0] === 0x89 && brandLogo[1] === 0x50 && brandLogo[2] === 0x4e && brandLogo[3] === 0x47;
+      const isJpg = brandLogo[0] === 0xff && brandLogo[1] === 0xd8 && brandLogo[2] === 0xff;
+      brandImg = isPng ? await pdf.embedPng(brandLogo) : isJpg ? await pdf.embedJpg(brandLogo) : null;
+    } catch {
+      brandImg = null;
+    }
+  }
 
   let pageNo = 1;
   let page = newPage(pdf, { reg, bold, mono }, lang, pageNo, accent);
@@ -176,6 +244,17 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   page.drawRectangle({ x: M, y: heroY, width: CW, height: heroH, color: rgb(1, 1, 1), borderColor: C.line, borderWidth: 0.8 });
   // left accent spine in the grade color
   page.drawRectangle({ x: M, y: heroY, width: 5, height: heroH, color: hex2rgb(accent) });
+
+  // brand logo, top-right corner of page 1 (30pt margins, ~90pt wide, aspect
+  // preserved, height capped so a tall logo cannot break the layout). Drawn
+  // before the hero text content: on a collision the report text wins, the
+  // logo simply sits behind it - existing layout is never shifted.
+  if (brandImg) {
+    const scale = Math.min(90 / brandImg.width, 110 / brandImg.height);
+    const lw = brandImg.width * scale;
+    const lh = brandImg.height * scale;
+    page.drawImage(brandImg, { x: A4[0] - 30 - lw, y: A4[1] - 30 - lh, width: lw, height: lh });
+  }
 
   // trophy
   let trophyDrawn = false;
@@ -234,6 +313,13 @@ export async function buildReportPdf(scan: ScanResult): Promise<Uint8Array> {
   }
 
   y = heroY - 20;
+
+  // white-label caption: a small grey "Prepared by {title}" line right under
+  // the report header (hero) block; shifts everything below it, breaks nothing
+  if (brandTitle) {
+    page.drawText(`Prepared by ${brandTitle}`, { x: M, y: y - 9, size: 8, font: reg, color: C.mut });
+    y -= 16;
+  }
 
   /* ---------------- 5 category summary cards ---------------- */
   const gap = 8;

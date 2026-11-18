@@ -171,6 +171,7 @@ const EYEBROWS = {
   engine: { ru: "Движок", en: "Engine" },
   eco: { ru: "Экосистема", en: "Ecosystem" },
   pricing: { ru: "Тарифы", en: "Pricing" },
+  reviews: { ru: "Отзывы", en: "Reviews" },
   faq: { ru: "FAQ", en: "FAQ" },
 };
 
@@ -191,6 +192,81 @@ const STATS: { value: number; suffix: string; decimals: number; label: "stat1" |
   { value: HARVEST_BELOW_A, suffix: "%", decimals: 0, label: "stat2" },
   { value: HARVEST_CSP_MISS, suffix: "%", decimals: 0, label: "stat3" },
 ];
+
+/** one approved review for the landing strip (client fetch at mount) */
+interface LandingReview {
+  id: string;
+  name: string;
+  rating: number;
+  host: string | null;
+  body: string;
+}
+
+/** star row for the landing cards: plain characters, the meaning rides on
+ *  aria-label (no images, no new dependencies) */
+function ReviewStars({ rating, lang }: { rating: number; lang: Lang }) {
+  const n = Math.max(1, Math.min(5, rating));
+  return (
+    <span
+      role="img"
+      aria-label={t(lang, "reviewsCardRating").replace("{n}", String(n))}
+      className="shrink-0 text-xs tracking-widest text-amber-400"
+    >
+      <span aria-hidden>{"★".repeat(n)}</span>
+      <span aria-hidden className="text-slate-600">
+        {"☆".repeat(5 - n)}
+      </span>
+    </span>
+  );
+}
+
+/** landing reviews strip: up to 3 latest approved reviews fetched at mount.
+ *  Empty feed renders one honest invitation line - no invented quotes; the
+ *  full showcase and the submit form live on /reviews. */
+function LandingReviews({ lang }: { lang: Lang }) {
+  const [reviews, setReviews] = useState<LandingReview[] | null>(null);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch("/api/reviews?limit=3", { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((j: { reviews?: LandingReview[] }) =>
+        setReviews(Array.isArray(j.reviews) ? j.reviews.slice(0, 3) : []),
+      )
+      .catch(() => setReviews([]));
+    return () => ctrl.abort();
+  }, []);
+  // quiet while loading - a skeleton would promise content that may never come
+  if (reviews === null) return null;
+  if (reviews.length === 0) {
+    return (
+      <p className="mx-auto mt-8 max-w-2xl text-center text-sm leading-relaxed text-slate-500">
+        {t(lang, "reviewsEmpty")}
+      </p>
+    );
+  }
+  return (
+    <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      {reviews.map((r) => (
+        <figure key={r.id} className="appseal-card flex flex-col rounded-2xl p-5">
+          <div className="flex items-center justify-between gap-3">
+            <figcaption className="min-w-0 truncate text-sm font-bold text-slate-100">
+              {r.name}
+            </figcaption>
+            <ReviewStars rating={r.rating} lang={lang} />
+          </div>
+          {r.host && (
+            <p className="mt-1.5 text-[11px] text-slate-500">
+              {t(lang, "reviewsAboutHost")} <span className="font-mono text-slate-400">{r.host}</span>
+            </p>
+          )}
+          <blockquote className="mt-3 flex-1 text-[13px] leading-relaxed text-slate-300 line-clamp-4">
+            {r.body}
+          </blockquote>
+        </figure>
+      ))}
+    </div>
+  );
+}
 
 export function ScannerPage({
   initialScan,
@@ -248,11 +324,15 @@ export function ScannerPage({
   const [caseCopied, setCaseCopied] = useState(false);
   const [url, setUrl] = useState("");
   const [consent, setConsent] = useState(true);
+  // private scan: keep the result out of the public registry (Pass-only,
+  // the API answers 402 private_requires_pass without an active pass)
+  const [privateScan, setPrivateScan] = useState(false);
   const [scanId, setScanId] = useState<string | null>(null);
   const [rkey, setRkey] = useState<string | null>(initialReportKey ?? null);
   const [scan, setScan] = useState<ScanResult | null>(initialScan);
   const [error, setError] = useState("");
   const [quotaHit, setQuotaHit] = useState(false);
+  const [privateHit, setPrivateHit] = useState(false);
   const [passInfo, setPassInfo] = useState<{ host: string; until: string } | null>(null);
   const [paidPending, setPaidPending] = useState(false);
   // one-click demo chips: server-resolved live grades when available
@@ -361,6 +441,7 @@ export function ScannerPage({
   const startScan = useCallback(async (target: string) => {
     setError("");
     setQuotaHit(false);
+    setPrivateHit(false);
     setScan(null);
     setScanId(null);
     setPhase("scanning");
@@ -373,10 +454,22 @@ export function ScannerPage({
       const res = await fetch("/api/scan", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url: target, lang, adminKey }),
+        body: JSON.stringify({
+          url: target,
+          lang,
+          adminKey,
+          // Pass-only option: keep this scan out of the public registry
+          ...(privateScan ? { private: true } : {}),
+        }),
       });
       if (res.status === 429) {
         setQuotaHit(true);
+        setPhase("error");
+        return;
+      }
+      if (res.status === 402) {
+        // the API rejects private scans without an active pass on the domain
+        setPrivateHit(true);
         setPhase("error");
         return;
       }
@@ -391,7 +484,7 @@ export function ScannerPage({
       setError(e instanceof Error ? e.message : String(e));
       setPhase("error");
     }
-  }, [lang, adminKey]);
+  }, [lang, adminKey, privateScan]);
 
   // returning from YooKassa: /?paid=<nonce> -> resolve the payment, show the pass
   useEffect(() => {
@@ -675,6 +768,21 @@ export function ScannerPage({
                     : "By starting the scan, you confirm that you are the owner/developer of the resource or have authorization. The scan runs in passive mode reading public HTTP responses."}
                 </span>
               </label>
+
+              {/* private scan opt-out: Pass-only, mirrors the Pro card feature list */}
+              <label className="mt-2 flex items-start gap-2.5 text-left cursor-pointer select-none px-1">
+                <input
+                  type="checkbox"
+                  aria-label={t(lang, "privateScanLabel")}
+                  checked={privateScan}
+                  onChange={(e) => setPrivateScan(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-[#111827] text-sky-400 accent-sky-400 focus:ring-sky-400"
+                />
+                <span className="text-[12px] leading-relaxed text-slate-400">
+                  {t(lang, "privateScanLabel")}{" "}
+                  <span className="text-[11px] text-slate-500">({t(lang, "privateScanNote")})</span>
+                </span>
+              </label>
             </div>
           )}
 
@@ -754,6 +862,27 @@ export function ScannerPage({
               <Zap className="mx-auto h-8 w-8 text-amber-400" />
               <p className="mt-3 font-semibold text-amber-300">{t(lang, "quotaTitle")}</p>
               <p className="mt-1 text-sm text-slate-400">{t(lang, "quotaText")}</p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  className="bg-indigo-500 text-white hover:bg-indigo-400"
+                  onClick={() => {
+                    setPhase("form");
+                    document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                >
+                  <Zap className="h-4 w-4" />
+                  {t(lang, "quotaCta")}
+                </Button>
+                <Button variant="outline" onClick={reset} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+                  {t(lang, "rescan")}
+                </Button>
+              </div>
+            </div>
+          ) : phase === "error" && privateHit ? (
+            <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-amber-900/60 bg-amber-500/5 p-6 text-center">
+              <Lock className="mx-auto h-8 w-8 text-amber-400" />
+              <p className="mt-3 font-semibold text-amber-300">{t(lang, "privateHitTitle")}</p>
+              <p className="mt-1 text-sm text-slate-400">{t(lang, "privateHitText")}</p>
               <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
                 <Button
                   className="bg-indigo-500 text-white hover:bg-indigo-400"
@@ -1240,6 +1369,9 @@ export function ScannerPage({
             className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-40 [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]"
           />
           <SectionHead eyebrow={EYEBROWS.pricing[lang]} title={t(lang, "pricingTitle")} sub={t(lang, "pricingSub")} />
+          <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-relaxed text-slate-300">
+            {t(lang, "planHeroLine")}
+          </p>
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {/* Free plan */}
             <Reveal className="h-full">
@@ -1393,6 +1525,10 @@ export function ScannerPage({
               </SpotlightCard>
             </Reveal>
           </div>
+          {/* quiet refund promise: one calm line, no badge */}
+          <p className="mt-6 text-center text-xs leading-relaxed text-slate-500">
+            {t(lang, "planRefundNote")}
+          </p>
           {/* platform: wide contact bar under the plans */}
           <Reveal className="mt-5">
             <div className="appseal-card appseal-glass rounded-2xl p-5 sm:p-6">
@@ -1414,6 +1550,26 @@ export function ScannerPage({
                 </a>
               </div>
             </div>
+          </Reveal>
+        </section>
+
+        {/* reviews: moderated user testimonials straight from Supabase -
+            social proof stays honest, nothing shows until a moderator clicks */}
+        <section className="appseal-sect relative py-14" aria-label={t(lang, "reviewsTitle")}>
+          <SectionHead
+            eyebrow={EYEBROWS.reviews[lang]}
+            title={t(lang, "reviewsTitle")}
+            sub={t(lang, "reviewsSubtitle")}
+          />
+          <LandingReviews lang={lang} />
+          <Reveal className="mt-8 text-center">
+            <a
+              href="/reviews"
+              className="inline-flex items-center gap-1.5 rounded-[10px] border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-sky-500/50 hover:text-sky-400"
+            >
+              {t(lang, "reviewsCta")}
+              <ArrowRight className="h-4 w-4" />
+            </a>
           </Reveal>
         </section>
 

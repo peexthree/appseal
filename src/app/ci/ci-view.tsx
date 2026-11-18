@@ -1,9 +1,50 @@
 "use client";
 
 import Link from "next/link";
-import { CI_YAML } from "@/lib/ci-yaml";
 import { CopyCode } from "../fixes/copy-code";
 import { useLang } from "@/lib/use-lang";
+
+/**
+ * CI workflow with the Pro API token: POST /api/scan under a Bearer token,
+ * poll /api/scan/{id}, then the grade gate fails the build below class B.
+ * Kept local to this page - /lib/ci-yaml.ts stays the legacy admin-key
+ * variant shown in the report tab.
+ */
+const CI_YAML = `name: AppSeal scan
+
+on: [push, workflow_dispatch]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: AppSeal scan
+        id: appseal
+        env:
+          APPSEAL_TOKEN: \${{ secrets.APPSEAL_TOKEN }} # Pro Pass: issued by the /token bot command
+        run: |
+          ID=$(curl -fsS -X POST https://appseal.online/api/scan \\
+            -H 'content-type: application/json' \\
+            -H "authorization: Bearer $APPSEAL_TOKEN" \\
+            -d '{"url":"\${{ secrets.APPSEAL_TARGET_URL }}"}' | jq -r '.id')
+          sleep 45
+          R=$(curl -fsS https://appseal.online/api/scan/$ID)
+          STATUS=$(echo "$R" | jq -r '.status')
+          [ "$STATUS" = "done" ] || { echo "scan did not finish: $STATUS"; exit 1; }
+          echo "grade=$(echo "$R" | jq -r '.grade')" >> "$GITHUB_OUTPUT"
+          echo "score=$(echo "$R" | jq -r '.score')" >> "$GITHUB_OUTPUT"
+
+      - name: Grade gate (fail below B)
+        env:
+          GRADE: \${{ steps.appseal.outputs.grade }}
+          SCORE: \${{ steps.appseal.outputs.score }}
+        run: |
+          echo "AppSeal grade: $GRADE ($SCORE/100)"
+          case "$GRADE" in
+            A*|B) echo "OK" ;;
+            *) echo "grade below B - failing the build"; exit 1 ;;
+          esac
+`;
 
 const D = {
   eyebrow: { ru: "AppSeal для CI", en: "AppSeal for CI" },
@@ -18,8 +59,12 @@ const D = {
     en: "required - the deploy URL to scan, e.g. https://myapp.vercel.app",
   },
   s1b: {
-    ru: "опционально - снимает дневной лимит бесплатных сканов (кнопка выдаётся в отчёте владельцу)",
-    en: "optional - lifts the daily free-scan limit (the button is shown to the owner in the report)",
+    ru: "токен: команда /token в Telegram-боте (входит в Pro Pass) - снимает дневной лимит /api/scan",
+    en: "token: the /token command in the Telegram bot (included in Pro Pass) - lifts the /api/scan daily limit",
+  },
+  s1c: {
+    ru: "опционально, вместо APPSEAL_TOKEN - администраторский ключ, снимает дневной лимит бесплатных сканов",
+    en: "optional, instead of APPSEAL_TOKEN - the admin key, lifts the daily free-scan limit",
   },
   step2: { ru: "Шаг 2. Workflow", en: "Step 2. Workflow" },
   s2a: {
@@ -65,9 +110,13 @@ export function CiView() {
             <span className="w-56 shrink-0 font-mono text-xs font-bold text-sky-400">APPSEAL_TARGET_URL</span>
             <span className="flex-1 text-xs text-slate-400">{t("s1a")}</span>
           </div>
+          <div className="flex items-center gap-4 border-b border-slate-800/60 px-5 py-3 text-sm">
+            <span className="w-56 shrink-0 font-mono text-xs font-bold text-sky-400">APPSEAL_TOKEN</span>
+            <span className="flex-1 text-xs text-slate-400">{t("s1b")}</span>
+          </div>
           <div className="flex items-center gap-4 px-5 py-3 text-sm">
             <span className="w-56 shrink-0 font-mono text-xs font-bold text-sky-400">APPSEAL_ADMIN_KEY</span>
-            <span className="flex-1 text-xs text-slate-400">{t("s1b")}</span>
+            <span className="flex-1 text-xs text-slate-400">{t("s1c")}</span>
           </div>
         </div>
       </section>

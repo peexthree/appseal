@@ -7,6 +7,7 @@ import {
   proHostFromLavaMarker,
   setChatPack,
 } from "@/lib/passes";
+import { ledgerPurchase } from "@/lib/db/index";
 import { secretsMatch } from "@/lib/sec";
 
 export const runtime = "nodejs";
@@ -52,6 +53,11 @@ export async function POST(req: NextRequest) {
   if (!invoiceId) {
     return NextResponse.json({ ok: true });
   }
+  // ledger amount is optional: parse defensively, any odd shape stays null
+  // (the invoice-creation path already recorded currency USD + "pending")
+  const rawAmount = body.amount ?? body.sum;
+  const parsedAmount = typeof rawAmount === "string" || typeof rawAmount === "number" ? Number(rawAmount) : NaN;
+  const amount = Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null;
   const host = (await getLavaInvoiceHost(invoiceId)) ?? "";
   // Agency Pack invoices carry the "pack:<chatId>" marker in the host field
   if (host.startsWith("pack")) {
@@ -59,6 +65,15 @@ export async function POST(req: NextRequest) {
       const chatId = host.slice(5);
       if (chatId) await setChatPack(chatId, invoiceId);
     }
+    void ledgerPurchase({
+      paymentId: invoiceId,
+      provider: "lava",
+      plan: "lpack",
+      amount,
+      currency: "USD",
+      chatId: null,
+      status: "succeeded",
+    });
     return NextResponse.json({ ok: true });
   }
   // idempotent by design: activatePass overwrites the pass record;
@@ -70,6 +85,15 @@ export async function POST(req: NextRequest) {
     } else {
       await activatePass(invoiceId, host);
     }
+    void ledgerPurchase({
+      paymentId: invoiceId,
+      provider: "lava",
+      plan: proHost ? "lpro" : "lpass",
+      amount,
+      currency: "USD",
+      chatId: null,
+      status: "succeeded",
+    });
   }
   return NextResponse.json({ ok: true });
 }

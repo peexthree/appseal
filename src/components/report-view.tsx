@@ -225,7 +225,7 @@ export function ReportView({
   const [genCopied, setGenCopied] = useState(false);
 
   // Share & Link state
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [resultCopied, setResultCopied] = useState(false);
   const [prevScan, setPrevScan] = useState<{ score: number; grade: Grade; id: string } | null>(null);
   const [passActive, setPassActive] = useState<boolean | null>(null);
 
@@ -337,18 +337,36 @@ export function ReportView({
     } catch {}
   };
 
-  const shareUrl = `${origin}/report/${scan.id}`;
-  const shareText =
-    lang === "ru"
-      ? `🛡️ Мой проект ${scan.host} прошёл аудит безопасности на AppSeal: Класс ${scan.grade} (${scan.score}/100 баллов)!`
-      : `🛡️ My project ${scan.host} verified on AppSeal: Grade ${scan.grade} (${scan.score}/100)!`;
+  // share block: public verified profile is the shareable link - the full
+  // report stays rkey-private, so /verified/{host} is the honest share target
+  const checksTotal = scan.results.length > 0 ? scan.results.length : 125;
+  const verifiedUrl = `${origin}/verified/${scan.host}`;
+  const shareResultText = t(lang, "shareResultText")
+    .replace("{host}", scan.host)
+    .replace("{grade}", scan.grade)
+    .replace("{score}", String(scan.score))
+    .replace("{n}", String(checksTotal));
 
-  const copyShareLink = async () => {
+  const copyResultShare = async () => {
+    const payload = `${shareResultText} ${verifiedUrl}`;
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    } catch {}
+      await navigator.clipboard.writeText(payload);
+    } catch {
+      // clipboard API denied or missing (non-secure context): execCommand fallback
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = payload;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {}
+    }
+    setResultCopied(true);
+    setTimeout(() => setResultCopied(false), 2000);
   };
 
   const copyPrompt = async () => {
@@ -504,7 +522,7 @@ export function ReportView({
         </div>
 
         {/* Action Buttons Bar */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800/80 pt-5">
+        <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-800/80 pt-5">
           <div className="flex flex-wrap items-center gap-2.5">
             {passActive === false ? (
               <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold shadow-lg shadow-sky-500/20">
@@ -527,50 +545,54 @@ export function ReportView({
               {t(lang, "rescan")}
             </Button>
           </div>
+        </div>
+      </div>
 
-          {/* Social Share Buttons */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 mr-1 hidden sm:inline">
-              {lang === "ru" ? "Поделиться:" : "Share:"}
-            </span>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="h-8 border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 text-xs font-bold"
+      {/* Share your result: public verified profile, plain links + clipboard
+          only (strict CSP - no external share scripts) */}
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-[#0a0f1d]/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-bold text-slate-200">{t(lang, "shareBlockTitle")}</p>
+          <p className="mt-0.5 truncate font-mono text-xs text-slate-500">{verifiedUrl}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-8 border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 text-xs font-bold"
+          >
+            <a
+              href={`https://t.me/share/url?url=${encodeURIComponent(verifiedUrl)}&text=${encodeURIComponent(shareResultText)}`}
+              target="_blank"
+              rel="noopener"
             >
-              <a
-                href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`}
-                target="_blank"
-                rel="noopener"
-              >
-                <span className="mr-1">✈️</span> Telegram
-              </a>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="h-8 border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white text-xs font-bold"
+              <span className="mr-1">✈️</span> Telegram
+            </a>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+            className="h-8 border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white text-xs font-bold"
+          >
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareResultText)}&url=${encodeURIComponent(verifiedUrl)}`}
+              target="_blank"
+              rel="noopener"
             >
-              <a
-                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
-                target="_blank"
-                rel="noopener"
-              >
-                <span className="mr-1">𝕏</span> Twitter
-              </a>
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={copyShareLink}
-              className="h-8 border-slate-700 bg-slate-900 text-xs text-slate-300 hover:bg-slate-800 hover:text-white font-semibold"
-            >
-              {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-400 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
-              {linkCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Ссылка" : "Link")}
-            </Button>
-          </div>
+              <span className="mr-1">𝕏</span> X
+            </a>
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={copyResultShare}
+            className="h-8 border-slate-700 bg-slate-900 text-xs text-slate-300 hover:bg-slate-800 hover:text-white font-semibold"
+          >
+            {resultCopied ? <Check className="h-3.5 w-3.5 text-emerald-400 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+            {resultCopied ? t(lang, "copied") : t(lang, "copyBtn")}
+          </Button>
         </div>
       </div>
 
