@@ -20,6 +20,7 @@ import {
   setNonceMapping,
 } from "@/lib/passes";
 import { getClientIp } from "@/lib/sec";
+import { sendTelegramAlert } from "@/lib/telegram";
 import type { Lang } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
@@ -101,6 +102,21 @@ export async function POST(req: NextRequest) {
     if (!/^[a-z0-9-]{8,64}$/i.test(nonce)) {
       return NextResponse.json({ error: "invalid nonce" }, { status: 400 });
     }
+
+    // 🔔 Notify owner: someone started a purchase
+    const kindLabel =
+      kind === "lpack" ? "Agency Pack (5 кредитов)" :
+      kind === "lpro"  ? `Pro Pass 30д — ${host}` :
+                         `Launch Pass 7д — ${host}`;
+    const providerLabel = provider === "lava" ? "Lava (USD)" : "ЮКасса (RUB)";
+    void sendTelegramAlert(
+      `💳 Попытка покупки!\n` +
+      `📦 Тариф: ${kindLabel}\n` +
+      `💰 Провайдер: ${providerLabel}\n` +
+      `📧 Email: ${email}\n` +
+      `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
+      (ip !== "unknown" ? `📡 IP: ${ip}` : "")
+    );
 
     if (provider === "lava") {
       const lava = lavaConfig();

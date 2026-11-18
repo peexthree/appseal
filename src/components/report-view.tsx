@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { CheckResult, ScanResult, CategoryId, Lang, Grade } from "@/lib/scanner/types";
 import { CATEGORY_META, SEVERITY_ORDER } from "@/lib/scanner/types";
 import { getTrophyPath, GRADE_META, SEVERITY_META, STATUS_LABEL } from "@/lib/scanner/grade";
-import { buildFixPrompt } from "@/lib/fix-prompt";
+import { buildFixPrompt, type AiTarget } from "@/lib/fix-prompt";
 import { buildLlmsTxt, buildSecurityTxt } from "@/lib/generators";
 import { buildHostingPatch } from "@/lib/config-patch";
 import { CI_YAML as CI_YAML_TEMPLATE } from "@/lib/ci-yaml";
@@ -31,7 +31,6 @@ const CAT_ICONS: Record<CategoryId, React.ReactNode> = {
   trust: <Sparkles className="h-4 w-4" />,
 };
 
-/** GitHub Actions grade gate: scan after every push, fail the build below B. */
 const CI_YAML = CI_YAML_TEMPLATE;
 
 function StatusIcon({ s }: { s: CheckResult["status"] }) {
@@ -48,7 +47,7 @@ function TrophyHero({ grade, score }: { grade: Grade; score: number }) {
   const trophyPath = getTrophyPath(grade);
 
   return (
-    <div className="relative flex h-32 w-32 shrink-0 items-center justify-center" aria-label={`grade ${grade} score ${score}`}>
+    <div className="relative flex h-28 w-28 shrink-0 items-center justify-center sm:h-32 sm:w-32" aria-label={`grade ${grade} score ${score}`}>
       {/* Ambient glow matching grade */}
       <div
         className="absolute inset-1 rounded-full blur-2xl opacity-40 transition-all duration-300"
@@ -60,7 +59,7 @@ function TrophyHero({ grade, score }: { grade: Grade; score: number }) {
         alt={`AppSeal ${grade}`}
         width={128}
         height={128}
-        className="relative z-10 h-28 w-28 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.7)] transition-transform duration-300 hover:scale-105"
+        className="relative z-10 h-24 w-24 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.7)] transition-transform duration-300 hover:scale-105 sm:h-28 sm:w-28"
       />
       {/* Floating score badge */}
       <div
@@ -77,16 +76,43 @@ function TrophyHero({ grade, score }: { grade: Grade; score: number }) {
   );
 }
 
-function CheckRow({ r, lang }: { r: CheckResult; lang: Lang }) {
-  const [open, setOpen] = useState(false);
+function CheckRow({
+  r,
+  lang,
+  isOpen,
+  onToggle,
+}: {
+  r: CheckResult;
+  lang: Lang;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const [evidenceCopied, setEvidenceCopied] = useState(false);
   const sev = SEVERITY_META[r.severity];
   const showFinding = r.finding && (r.status === "fail" || r.status === "warn" || r.status === "info");
+
+  const copyEvidence = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!r.finding?.evidence.length) return;
+    try {
+      await navigator.clipboard.writeText(r.finding.evidence.join("\n"));
+      setEvidenceCopied(true);
+      setTimeout(() => setEvidenceCopied(false), 2000);
+    } catch {}
+  };
+
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="rounded-lg appseal-glass-card">
+    <Collapsible open={isOpen} onOpenChange={onToggle}>
+      <div className={`rounded-xl border transition-all duration-200 ${
+        r.status === "fail"
+          ? "border-red-500/30 bg-red-950/10 hover:border-red-500/50"
+          : r.status === "warn"
+          ? "border-amber-500/30 bg-amber-950/10 hover:border-amber-500/50"
+          : "border-slate-800/80 bg-[#0c121e]/60 hover:border-slate-700"
+      }`}>
         <CollapsibleTrigger
-          className="flex w-full items-center gap-3 px-4 py-3 text-left"
-          aria-expanded={open}
+          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors"
+          aria-expanded={isOpen}
         >
           <StatusIcon s={r.status} />
           <span className="flex-1 text-sm font-medium text-slate-100">
@@ -96,7 +122,7 @@ function CheckRow({ r, lang }: { r: CheckResult; lang: Lang }) {
             <>
               {r.penalty > 0 && (
                 <span
-                  className="hidden rounded border border-sky-800/60 bg-sky-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-sky-300 sm:inline"
+                  className="rounded border border-emerald-800/60 bg-emerald-500/10 px-2 py-0.5 font-mono text-[11px] font-bold text-emerald-300"
                   title={lang === "ru" ? "Сколько баллов вернёт исправление" : "Points this fix returns"}
                 >
                   +{r.penalty} {lang === "ru" ? "б." : "pts"}
@@ -116,20 +142,30 @@ function CheckRow({ r, lang }: { r: CheckResult; lang: Lang }) {
               {STATUS_LABEL[r.status][lang]}
             </span>
           )}
-          <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
         </CollapsibleTrigger>
         {showFinding && (
           <CollapsibleContent>
-            <div className="border-t border-slate-800 px-4 py-3">
+            <div className="border-t border-slate-800/80 px-4 py-3 bg-[#090d16]/50 rounded-b-xl">
               <p className="text-[13px] leading-relaxed text-slate-300">
                 {r.finding!.detail[lang]}
               </p>
               {r.finding!.evidence.length > 0 && (
                 <div className="mt-3">
-                  <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                    {t(lang, "evidence")}
-                  </p>
-                  <pre className="appseal-scroll max-h-40 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-300">
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {t(lang, "evidence")}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={copyEvidence}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-200"
+                    >
+                      {evidenceCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+                      <span>{evidenceCopied ? (lang === "ru" ? "Скопировано" : "Copied") : (lang === "ru" ? "Копировать лог" : "Copy log")}</span>
+                    </button>
+                  </div>
+                  <pre className="appseal-scroll max-h-40 overflow-auto rounded-md border border-slate-800/70 bg-[#060911] p-3 font-mono text-[11px] leading-relaxed text-slate-300">
                     {r.finding!.evidence.join("\n")}
                   </pre>
                 </div>
@@ -151,30 +187,51 @@ export function ReportView({
   scan: ScanResult;
   lang: Lang;
   onReset: () => void;
-  /** report key held by the scan initiator; unlocks the PDF download */
   reportKey?: string;
 }) {
-  const [copied, setCopied] = useState(false);
+  // Main view tab: checks | ai-fix | badge | dev-tools
+  const fails = scan.results.filter((r) => r.status === "fail").length;
+  const warns = scan.results.filter((r) => r.status === "warn").length;
+  const passes = scan.results.filter((r) => r.status === "pass").length;
+  const criticals = scan.results.filter(
+    (r) => (r.status === "fail" || r.status === "warn") && r.severity === "critical",
+  ).length;
+
+  const [activeTab, setActiveTab] = useState<"checks" | "ai-fix" | "badge" | "dev-tools">(
+    fails + warns > 0 ? "checks" : "badge",
+  );
+
+  // Filters inside Checks tab
+  const [statusFilter, setStatusFilter] = useState<"issues" | "critical" | "all" | "passes">(
+    fails + warns > 0 ? "issues" : "all",
+  );
+  const [categoryFilter, setCategoryFilter] = useState<CategoryId | "all">("all");
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // AI-fix target selector (Generic, Cursor, Claude, v0)
+  const [aiTarget, setAiTarget] = useState<AiTarget>("cursor");
   const [promptCopied, setPromptCopied] = useState(false);
-  const [promptOpen, setPromptOpen] = useState(false);
+
+  // Badge state
   const [badgeFormat, setBadgeFormat] = useState<"trophy" | "shield">("trophy");
   const [syntax, setSyntax] = useState<"html" | "markdown">("html");
-  const [linkCopied, setLinkCopied] = useState(false);
-  const [ciCopied, setCiCopied] = useState(false);
-  // trust-file generators (llms.txt / security.txt) and the hosting config patch
-  const [genTab, setGenTab] = useState<"llms" | "sec" | null>(null);
-  const [genCopied, setGenCopied] = useState(false);
-  const [patchOpen, setPatchOpen] = useState(false);
+  const [badgeCopied, setBadgeCopied] = useState(false);
+
+  // Dev tools sub-tabs
+  const [devToolTab, setDevToolTab] = useState<"patch" | "ci" | "trustfiles">("patch");
   const [patchCopied, setPatchCopied] = useState(false);
-  // rescan nudge after copying the fix prompt (C/D/E - the badge is the goal)
-  const [fixToast, setFixToast] = useState(false);
+  const [ciCopied, setCiCopied] = useState(false);
+  const [genFile, setGenFile] = useState<"llms" | "sec">("llms");
+  const [genCopied, setGenCopied] = useState(false);
+
+  // Share & Link state
+  const [linkCopied, setLinkCopied] = useState(false);
   const [prevScan, setPrevScan] = useState<{ score: number; grade: Grade; id: string } | null>(null);
-  // Launch Pass benefits (PDF + badge) for the scanned host; null = unknown
-  // (render optimistically, /api/pass-status resolves it in a beat)
   const [passActive, setPassActive] = useState<boolean | null>(null);
 
+  const gm = GRADE_META[scan.grade] ?? GRADE_META["E"];
+
   useEffect(() => {
-    // reportKey is constant per mount; when absent the optimistic null stays
     if (!reportKey) return;
     let alive = true;
     fetch(`/api/pass-status?id=${encodeURIComponent(scan.id)}&key=${encodeURIComponent(reportKey)}`)
@@ -190,14 +247,6 @@ export function ReportView({
     };
   }, [scan.id, scan.host, reportKey]);
 
-  const fails = scan.results.filter((r) => r.status === "fail").length;
-  const warns = scan.results.filter((r) => r.status === "warn").length;
-  const passes = scan.results.filter((r) => r.status === "pass").length;
-  const gm = GRADE_META[scan.grade] ?? GRADE_META["E"];
-
-  // localStorage access must stay out of the hydration pass: deferred to a
-  // macrotask so the sync setState lands outside the effect body (no
-  // cascading renders, no SSR/CSR mismatch)
   useEffect(() => {
     const id = window.setTimeout(() => {
       try {
@@ -215,25 +264,44 @@ export function ReportView({
     return () => window.clearTimeout(id);
   }, [scan.host, scan.id, scan.score, scan.grade]);
 
-  const byCategory = useMemo(() => {
-    const order: CategoryId[] = ["secrets", "headers", "admin", "liveness", "trust"];
-    return order.map((cat) => ({
-      cat,
-      items: scan.results
-        .filter((r) => r.category === cat)
-        .sort((a, b) => {
-          const rank = (r: CheckResult) =>
-            r.status === "fail" ? 0 : r.status === "warn" ? 1 : r.status === "info" ? 3 : 2;
-          return (
-            rank(a) - rank(b) ||
-            SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] ||
-            b.penalty - a.penalty
-          );
-        }),
-    }));
-  }, [scan.results]);
+  // Filtered check list
+  const filteredResults = useMemo(() => {
+    return scan.results.filter((r) => {
+      // Category filter
+      if (categoryFilter !== "all" && r.category !== categoryFilter) return false;
+      // Status filter
+      if (statusFilter === "issues") return r.status === "fail" || r.status === "warn";
+      if (statusFilter === "critical") return (r.status === "fail" || r.status === "warn") && r.severity === "critical";
+      if (statusFilter === "passes") return r.status === "pass";
+      return true;
+    }).sort((a, b) => {
+      const rank = (r: CheckResult) =>
+        r.status === "fail" ? 0 : r.status === "warn" ? 1 : r.status === "info" ? 3 : 2;
+      return (
+        rank(a) - rank(b) ||
+        SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] ||
+        b.penalty - a.penalty
+      );
+    });
+  }, [scan.results, statusFilter, categoryFilter]);
 
-  // absolute URLs: the embed lives on foreign sites, relative paths break there
+  const toggleExpandAll = () => {
+    if (expandedIds.size > 0) {
+      setExpandedIds(new Set());
+    } else {
+      setExpandedIds(new Set(filteredResults.map((r) => r.id)));
+    }
+  };
+
+  const toggleRow = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   const badgeW = useMemo(() => {
@@ -243,8 +311,6 @@ export function ReportView({
   }, [scan.host]);
 
   const embedCode = useMemo(() => {
-    // host-bound badge: the embedded rank follows the domain's newest scan
-    // (live), and the click-through opens the public profile with the history
     const hostParam = encodeURIComponent(scan.host);
     const profile = `${origin}/verified/${hostParam}`;
     if (syntax === "markdown") {
@@ -259,20 +325,16 @@ export function ReportView({
     return `<a href="${profile}" target="_blank" rel="noopener" title="AppSeal Security Verified - live security grade"><img src="${origin}/api/badge?host=${hostParam}" alt="AppSeal Verified: ${scan.host}" width="${badgeW}" height="44"></a>`;
   }, [badgeFormat, syntax, origin, scan.host, badgeW]);
 
-  const fixPrompt = useMemo(() => buildFixPrompt(scan, lang), [scan, lang]);
-
-  // score simulator: what the real grader would give after the fixes
+  const fixPrompt = useMemo(() => buildFixPrompt(scan, lang, aiTarget), [scan, lang, aiTarget]);
   const sim = useMemo(() => simulateFix(scan.results), [scan.results]);
   const hostingPatch = useMemo(() => buildHostingPatch(scan), [scan]);
 
-  const copy = async () => {
+  const copyBadge = async () => {
     try {
       await navigator.clipboard.writeText(embedCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable */
-    }
+      setBadgeCopied(true);
+      setTimeout(() => setBadgeCopied(false), 2000);
+    } catch {}
   };
 
   const shareUrl = `${origin}/report/${scan.id}`;
@@ -294,14 +356,15 @@ export function ReportView({
       await navigator.clipboard.writeText(fixPrompt);
       setPromptCopied(true);
       setTimeout(() => setPromptCopied(false), 2000);
-      // low grades get the rescan nudge: fixed it in the IDE? prove it
-      if (["C", "D", "E"].includes(scan.grade)) {
-        setFixToast(true);
-        setTimeout(() => setFixToast(false), 15000);
-      }
-    } catch {
-      /* clipboard unavailable */
-    }
+    } catch {}
+  };
+
+  const copyPatch = async () => {
+    try {
+      await navigator.clipboard.writeText(hostingPatch.code);
+      setPatchCopied(true);
+      setTimeout(() => setPatchCopied(false), 2000);
+    } catch {}
   };
 
   const copyCi = async () => {
@@ -309,14 +372,19 @@ export function ReportView({
       await navigator.clipboard.writeText(CI_YAML);
       setCiCopied(true);
       setTimeout(() => setCiCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable */
-    }
+    } catch {}
   };
 
-  // Public verification view: anyone holding the bare report id (badge
-  // clicks, shared links) sees only the seal data - the findings stay with
-  // the initiator who has the secret report key.
+  const copyGenFile = async () => {
+    const fileObj = genFile === "llms" ? buildLlmsTxt(scan) : buildSecurityTxt(scan);
+    try {
+      await navigator.clipboard.writeText(fileObj.content);
+      setGenCopied(true);
+      setTimeout(() => setGenCopied(false), 2000);
+    } catch {}
+  };
+
+  // Public verification view
   if (scan.publicOnly) {
     const fmtDate = new Date(scan.finishedAt || scan.startedAt).toLocaleDateString(
       lang === "ru" ? "ru-RU" : "en-US",
@@ -366,77 +434,149 @@ export function ReportView({
   }
 
   return (
-    <div className="w-full">
-      {/* header card with 3D trophy */}
-      <div className="flex flex-col items-start gap-6 rounded-2xl appseal-glass-card p-6 sm:flex-row sm:items-center sm:p-8">
-        <TrophyHero grade={scan.grade} score={scan.score} />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-              {t(lang, "gradeTitle")}
-            </p>
-            <span
-              className="inline-flex items-center rounded px-2 py-0.5 font-display text-xs font-extrabold"
-              style={{ color: gm.color, backgroundColor: `${gm.color}1a` }}
-            >
-              Класс {scan.grade}
-            </span>
-          </div>
-          <h2 className="font-display mt-1 truncate text-2xl font-bold text-slate-50">
-            {scan.host}
-          </h2>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-sm font-bold" style={{ color: gm.color }}>
-              {gm.label[lang]}
-            </span>
-            {scan.platform && (
-              <Badge variant="secondary" className="bg-slate-800 text-slate-300">
-                {t(lang, "platform")}: {scan.platform}
-              </Badge>
-            )}
-            {scan.isDemo && (
-              <Badge className="bg-amber-500/15 text-amber-400" variant="secondary">
-                DEMO
-              </Badge>
-            )}
-          </div>
-          <p className="mt-2 text-xs leading-relaxed text-slate-400 max-w-xl">
-            {gm.description[lang]}
-          </p>
-          <p className="mt-3 text-[13px] text-slate-400">
-            {t(lang, "summaryChecks")} {scan.results.length} ·{" "}
-            <span className="text-red-400">{fails} {t(lang, "summaryFailed")}</span> ·{" "}
-            <span className="text-amber-400">{warns} {t(lang, "summaryWarns")}</span> ·{" "}
-            <span className="text-emerald-400">{passes} {t(lang, "summaryPassed")}</span>
-          </p>
-          {scan.techPassport && (
-            <div className="mt-3 flex flex-wrap items-center gap-2 pt-2.5 border-t border-slate-800/80">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mr-1">
-                {lang === "ru" ? "Паспорт цели:" : "Target passport:"}
+    <div className="w-full space-y-6">
+      {/* 1. Header Card (Результат сканирования) */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-[#0a0f1d]/90 p-6 sm:p-8 backdrop-blur-xl shadow-2xl">
+        <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+          <TrophyHero grade={scan.grade} score={scan.score} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span
+                className="inline-flex items-center rounded-md px-2.5 py-0.5 font-display text-xs font-extrabold tracking-wide uppercase"
+                style={{ color: gm.color, backgroundColor: `${gm.color}1f`, border: `1px solid ${gm.color}40` }}
+              >
+                Класс {scan.grade}
               </span>
-              <span className="inline-flex items-center gap-1 rounded bg-slate-900/90 px-2 py-0.5 text-[11px] font-mono text-slate-300 border border-slate-800">
-                <span className="text-sky-400">⚡</span> {scan.techPassport.stack}
+              <span className="text-sm font-bold" style={{ color: gm.color }}>
+                {gm.label[lang]}
               </span>
-              <span className="inline-flex items-center gap-1 rounded bg-slate-900/90 px-2 py-0.5 text-[11px] font-mono text-slate-300 border border-slate-800">
-                <span className="text-emerald-400">🛡️</span> {scan.techPassport.cdnWaf}
-              </span>
-              <span className="inline-flex items-center gap-1 rounded bg-slate-900/90 px-2 py-0.5 text-[11px] font-mono text-slate-300 border border-slate-800">
-                <span className="text-amber-400">📦</span> {scan.techPassport.pageSizeKb} {lang === "ru" ? "КБ" : "KB"}
-              </span>
-              <span className="inline-flex items-center gap-1 rounded bg-slate-900/90 px-2 py-0.5 text-[11px] font-mono text-slate-300 border border-slate-800">
-                <span className="text-violet-400">⏱️</span> {scan.techPassport.ttfbMs} {lang === "ru" ? "мс (TTFB)" : "ms (TTFB)"}
-              </span>
+              {scan.platform && (
+                <Badge variant="secondary" className="bg-slate-800/90 text-slate-300 border border-slate-700">
+                  {scan.platform}
+                </Badge>
+              )}
+              {scan.isDemo && (
+                <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/40" variant="secondary">
+                  DEMO
+                </Badge>
+              )}
             </div>
-          )}
-          {scan.isDemo && (
-            <p className="mt-2 text-xs text-amber-400/80">{t(lang, "demoNote")}</p>
-          )}
+
+            <h2 className="font-display mt-2 truncate text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              {scan.host}
+            </h2>
+
+            <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-slate-300 max-w-2xl">
+              {gm.description[lang]}
+            </p>
+
+            {/* Quick Metrics & Passport */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-bold text-red-400">
+                <span className="h-2 w-2 rounded-full bg-red-400 animate-pulse" />
+                {fails} {lang === "ru" ? "критичных проблем" : "failures"}
+              </div>
+              <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-400">
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                {warns} {lang === "ru" ? "предупреждений" : "warnings"}
+              </div>
+              <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                {passes} {lang === "ru" ? "пройдено" : "passed"}
+              </div>
+
+              {scan.techPassport && (
+                <>
+                  <span className="hidden sm:inline-block h-4 w-px bg-slate-800 mx-1" />
+                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-900/90 px-2 py-1 text-[11px] font-mono text-slate-300 border border-slate-800">
+                    <span className="text-sky-400">⚡</span> {scan.techPassport.stack}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-900/90 px-2 py-1 text-[11px] font-mono text-slate-300 border border-slate-800">
+                    <span className="text-emerald-400">🛡️</span> {scan.techPassport.cdnWaf}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-slate-900/90 px-2 py-1 text-[11px] font-mono text-slate-300 border border-slate-800">
+                    <span className="text-violet-400">⏱️</span> {scan.techPassport.ttfbMs} ms
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons Bar */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800/80 pt-5">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {passActive === false ? (
+              <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold shadow-lg shadow-sky-500/20">
+                <a href="/#pricing">
+                  <Download className="h-4 w-4 mr-1.5" />
+                  {t(lang, "passGatePdf")}
+                </a>
+              </Button>
+            ) : (
+              <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold shadow-lg shadow-sky-500/20">
+                <a href={`/api/report?id=${scan.id}${reportKey ? `&key=${reportKey}` : ""}`} download>
+                  <Download className="h-4 w-4 mr-1.5" />
+                  {t(lang, "downloadPdf")}
+                </a>
+              </Button>
+            )}
+
+            <Button variant="outline" onClick={onReset} className="border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white">
+              <RotateCcw className="h-4 w-4 mr-1.5" />
+              {t(lang, "rescan")}
+            </Button>
+          </div>
+
+          {/* Social Share Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-500 mr-1 hidden sm:inline">
+              {lang === "ru" ? "Поделиться:" : "Share:"}
+            </span>
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-8 border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 text-xs font-bold"
+            >
+              <a
+                href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`}
+                target="_blank"
+                rel="noopener"
+              >
+                <span className="mr-1">✈️</span> Telegram
+              </a>
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-8 border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white text-xs font-bold"
+            >
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
+                target="_blank"
+                rel="noopener"
+              >
+                <span className="mr-1">𝕏</span> Twitter
+              </a>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={copyShareLink}
+              className="h-8 border-slate-700 bg-slate-900 text-xs text-slate-300 hover:bg-slate-800 hover:text-white font-semibold"
+            >
+              {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-400 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+              {linkCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Ссылка" : "Link")}
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Before / After Re-scan Diff Banner */}
       {prevScan && scan.score > prevScan.score && (
-        <div className="mt-6 flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-emerald-300 shadow-lg shadow-emerald-500/5">
+        <div className="flex items-center justify-between rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-emerald-300 shadow-lg shadow-emerald-500/5">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🎉</span>
             <div>
@@ -453,522 +593,616 @@ export function ReportView({
         </div>
       )}
 
-      {fails === 0 && warns === 0 && (
-        <div className="mt-6 rounded-xl border border-emerald-900/50 bg-emerald-400/5 p-5 text-sm leading-relaxed text-emerald-300">
-          {t(lang, "allGood")}
+      {/* 2. Main Navigation Tabs */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab("checks")}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-all ${
+            activeTab === "checks"
+              ? "bg-sky-500 text-[#090d16] shadow-lg shadow-sky-500/20"
+              : "bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+          }`}
+        >
+          <span>📋</span>
+          <span>{lang === "ru" ? "Проверки и проблемы" : "Findings & Checks"}</span>
+          {fails + warns > 0 ? (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+              activeTab === "checks" ? "bg-[#090d16] text-sky-400" : "bg-red-500/20 text-red-400 border border-red-500/40"
+            }`}>
+              {fails + warns}
+            </span>
+          ) : (
+            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
+              activeTab === "checks" ? "bg-[#090d16] text-emerald-400" : "bg-emerald-500/20 text-emerald-400"
+            }`}>
+              ✓
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("ai-fix")}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-all ${
+            activeTab === "ai-fix"
+              ? "bg-sky-500 text-[#090d16] shadow-lg shadow-sky-500/20"
+              : "bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+          }`}
+        >
+          <span>🤖</span>
+          <span>{lang === "ru" ? "Исправить с AI" : "Fix with AI"}</span>
+          <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded ${
+            activeTab === "ai-fix" ? "bg-[#090d16]/30 text-[#090d16]" : "bg-sky-500/15 text-sky-400"
+          }`}>
+            Cursor / Claude
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("badge")}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-all ${
+            activeTab === "badge"
+              ? "bg-sky-500 text-[#090d16] shadow-lg shadow-sky-500/20"
+              : "bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+          }`}
+        >
+          <span>🏷️</span>
+          <span>{lang === "ru" ? "Бейдж на сайт" : "Trust Badge"}</span>
+          <span className={`text-[10px] font-mono font-bold ${
+            activeTab === "badge" ? "text-[#090d16]" : "text-emerald-400"
+          }`}>
+            {scan.grade}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("dev-tools")}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition-all ${
+            activeTab === "dev-tools"
+              ? "bg-sky-500 text-[#090d16] shadow-lg shadow-sky-500/20"
+              : "bg-slate-900/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+          }`}
+        >
+          <span>🛠️</span>
+          <span>{lang === "ru" ? "Инструменты разработчика" : "Dev Tools"}</span>
+          <span className="text-[10px] text-slate-500">CI/CD, конфиги</span>
+        </button>
+      </div>
+
+      {/* 3. TAB CONTENT: CHECKS & FINDINGS */}
+      {activeTab === "checks" && (
+        <div className="space-y-6">
+          {/* Simulator Banner */}
+          {sim.items.length > 0 && (
+            <div className="rounded-xl border border-sky-500/30 bg-sky-950/20 p-4 sm:p-5 shadow-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎯</span>
+                    <h4 className="text-sm font-bold text-sky-200">
+                      {lang === "ru" ? "Симулятор быстрого исправления" : "Fast Fix Simulator"}
+                    </h4>
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                    {lang === "ru" ? (
+                      <>
+                        Исправьте всего <strong className="text-sky-300 font-bold">{sim.stepCount} пункта</strong> — и сайт получит оценку{" "}
+                        <span className="inline-flex items-center font-bold text-sky-300">Класс {sim.stepGrade} ({sim.stepScore}/100)</span>.
+                        Максимум при закрытии всех пунктов:{" "}
+                        <span className="font-bold text-emerald-300">Класс {sim.potentialGrade} ({sim.potentialScore}/100)</span>.
+                      </>
+                    ) : (
+                      <>
+                        Fix just <strong className="text-sky-300 font-bold">{sim.stepCount} items</strong> to reach{" "}
+                        <span className="font-bold text-sky-300">Grade {sim.stepGrade} ({sim.stepScore}/100)</span>.
+                        Potential with all resolved:{" "}
+                        <span className="font-bold text-emerald-300">Grade {sim.potentialGrade} ({sim.potentialScore}/100)</span>.
+                      </>
+                    )}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setActiveTab("ai-fix")}
+                  className="bg-sky-400 hover:bg-sky-300 text-[#090d16] font-bold text-xs shrink-0"
+                >
+                  <span>🤖</span> {lang === "ru" ? "Сгенерировать промпт" : "Generate AI prompt"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Filter Bar */}
+          <div className="flex flex-col gap-4 rounded-xl border border-slate-800 bg-[#0a0f1d]/60 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              {/* Status Filters */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("issues")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    statusFilter === "issues"
+                      ? "bg-red-500/20 text-red-300 border border-red-500/50"
+                      : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                  }`}
+                >
+                  ⚠️ {lang === "ru" ? "Требуют внимания" : "Action Needed"} ({fails + warns})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("critical")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    statusFilter === "critical"
+                      ? "bg-red-600 text-white shadow"
+                      : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                  }`}
+                >
+                  🔴 {lang === "ru" ? "Критичные" : "Critical"} ({criticals})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("passes")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    statusFilter === "passes"
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50"
+                      : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                  }`}
+                >
+                  🟢 {lang === "ru" ? "Пройденные" : "Passed"} ({passes})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatusFilter("all")}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                    statusFilter === "all"
+                      ? "bg-slate-800 text-sky-400 border border-slate-700"
+                      : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                  }`}
+                >
+                  📑 {lang === "ru" ? "Все проверки" : "All checks"} ({scan.results.length})
+                </button>
+              </div>
+
+              {/* Expand / Collapse All */}
+              <button
+                type="button"
+                onClick={toggleExpandAll}
+                className="text-xs font-semibold text-slate-400 hover:text-sky-300 transition"
+              >
+                {expandedIds.size > 0
+                  ? (lang === "ru" ? "Свернуть все" : "Collapse all")
+                  : (lang === "ru" ? "Развернуть все" : "Expand all")}
+              </button>
+            </div>
+
+            {/* Category Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-800/80 pt-3">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mr-1">
+                {lang === "ru" ? "Категория:" : "Category:"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCategoryFilter("all")}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                  categoryFilter === "all"
+                    ? "bg-sky-500/20 text-sky-300 border border-sky-500/40"
+                    : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                }`}
+              >
+                {lang === "ru" ? "Все категории" : "All"}
+              </button>
+              {(Object.keys(CATEGORY_META) as CategoryId[]).map((cat) => {
+                const count = scan.results.filter((r) => r.category === cat).length;
+                const catIssues = scan.results.filter(
+                  (r) => r.category === cat && (r.status === "fail" || r.status === "warn"),
+                ).length;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setCategoryFilter(cat)}
+                    className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                      categoryFilter === cat
+                        ? "bg-sky-500/20 text-sky-300 border border-sky-500/40"
+                        : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                    }`}
+                  >
+                    <span>{CAT_ICONS[cat]}</span>
+                    <span>{CATEGORY_META[cat].title[lang]}</span>
+                    {catIssues > 0 ? (
+                      <span className="rounded-full bg-red-500/20 px-1.5 text-[10px] font-bold text-red-400">
+                        {catIssues}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-600">({count})</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Results List */}
+          <div className="space-y-2.5">
+            {filteredResults.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-[#090d16] p-8 text-center text-slate-400">
+                <span className="text-3xl">🎉</span>
+                <p className="mt-2 text-sm font-semibold text-slate-200">
+                  {lang === "ru" ? "В этой выборке нет проверок" : "No checks match this filter"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {lang === "ru"
+                    ? "Все проверки в этой категории пройдены успешно!"
+                    : "All checks in this view are in a clean state!"}
+                </p>
+              </div>
+            ) : (
+              filteredResults.map((r) => (
+                <CheckRow
+                  key={r.id}
+                  r={r}
+                  lang={lang}
+                  isOpen={expandedIds.has(r.id)}
+                  onToggle={() => toggleRow(r.id)}
+                />
+              ))
+            )}
+          </div>
         </div>
       )}
 
-      {/* score simulator: the honest "fix N items -> grade Y" nudge */}
-      {sim.items.length > 0 && (
-        <div className="mt-6 rounded-xl border border-sky-900/60 bg-sky-500/[0.06] p-5">
-          <p className="text-sm font-bold text-sky-300">
-            {lang === "ru" ? "Симулятор исправлений" : "Fix simulator"}
-          </p>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-slate-300">
-            {lang === "ru" ? (
-              <>
-                Исправьте всего{" "}
-                <strong className="text-sky-300">{sim.stepCount} пункт(ов)</strong> - и тот же
-                движок даст <strong className="text-sky-300">{sim.stepScore}/100 ({sim.stepGrade})</strong>.
-                Все {sim.items.length} пунктов закрыть:{" "}
-                <strong className="text-sky-300">{sim.potentialScore}/100 ({sim.potentialGrade})</strong>
-                {sim.potentialGrade === "A+" || sim.potentialGrade === "A" ? (
-                  <> - плюс бесплатная dofollow-ссылка в реестре!</>
-                ) : null}
-              </>
-            ) : (
-              <>
-                Fix just <strong className="text-sky-300">{sim.stepCount} item(s)</strong> - the same
-                engine would give <strong className="text-sky-300">{sim.stepScore}/100 ({sim.stepGrade})</strong>.
-                Fix all {sim.items.length}:{" "}
-                <strong className="text-sky-300">{sim.potentialScore}/100 ({sim.potentialGrade})</strong>
-                {sim.potentialGrade === "A+" || sim.potentialGrade === "A" ? (
-                  <> - plus a free dofollow link in the registry!</>
-                ) : null}
-              </>
-            )}
-          </p>
-          {sim.items.length > 0 && sim.items[0].penalty >= 8 && (
-            <p className="mt-2 text-xs text-slate-500">
-              {lang === "ru"
-                ? `Самый крупный приз: ${sim.items[0].penalty} баллов за первый пункт в списке ниже.`
-                : `The biggest single win: ${sim.items[0].penalty} pts for the first item below.`}
-            </p>
+      {/* 4. TAB CONTENT: FIX WITH AI */}
+      {activeTab === "ai-fix" && (
+        <div className="rounded-2xl border border-slate-800 bg-[#0a0f1d]/90 p-6 sm:p-8 backdrop-blur shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🤖</span>
+                <h3 className="text-lg font-bold text-white">
+                  {lang === "ru" ? "Генератор промптов для AI-разработки" : "AI Agent Fix Prompts"}
+                </h3>
+              </div>
+              <p className="mt-1 text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xl">
+                {lang === "ru"
+                  ? "Скопируйте готовый промпт в ваш AI-редактор. ИИ автоматически найдет нужные файлы, вставит заголовки безопасности и исправит все уязвимости."
+                  : "Copy this ready-made prompt into your AI coding tool. The AI will locate config files, add missing headers and resolve all security findings."}
+              </p>
+            </div>
+
+            <Button
+              onClick={copyPrompt}
+              className="bg-sky-400 hover:bg-sky-300 text-[#090d16] font-bold text-sm shrink-0 shadow-lg shadow-sky-500/20"
+            >
+              {promptCopied ? <Check className="h-4 w-4 mr-1.5 text-emerald-950" /> : <Copy className="h-4 w-4 mr-1.5" />}
+              {promptCopied ? (lang === "ru" ? "Скопировано в буфер!" : "Copied!") : (lang === "ru" ? "Скопировать промпт" : "Copy prompt")}
+            </Button>
+          </div>
+
+          {/* AI IDE Target Selector */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800">
+            <span className="text-xs font-semibold text-slate-400 mr-1">
+              {lang === "ru" ? "Целевой агент:" : "Target Agent:"}
+            </span>
+            {(
+              [
+                { id: "cursor", label: "Cursor (Composer)", icon: "🎯" },
+                { id: "claude", label: "Claude Code CLI", icon: "⚡" },
+                { id: "v0", label: "v0 / Lovable / Bolt", icon: "🎨" },
+                { id: "generic", label: "Универсальный промпт", icon: "📋" },
+              ] as const
+            ).map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setAiTarget(t.id)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  aiTarget === t.id
+                    ? "bg-sky-500 text-[#090d16] shadow-sm"
+                    : "bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                <span>{t.icon}</span>
+                <span>{t.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Prompt Preview */}
+          <div className="relative">
+            <pre className="appseal-scroll max-h-[480px] overflow-auto rounded-xl border border-slate-800 bg-[#060911] p-4 font-mono text-[11px] leading-relaxed text-slate-300 select-all">
+              {fixPrompt}
+            </pre>
+          </div>
+        </div>
+      )}
+
+      {/* 5. TAB CONTENT: TRUST BADGE */}
+      {activeTab === "badge" && (
+        <div className="rounded-2xl border border-slate-800 bg-[#0a0f1d]/90 p-6 sm:p-8 backdrop-blur shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🏷️</span>
+                <h3 className="text-lg font-bold text-white">
+                  {lang === "ru" ? "Интерактивный бейдж доверия AppSeal" : "AppSeal Trust Badge"}
+                </h3>
+              </div>
+              <p className="mt-1 text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xl">
+                {lang === "ru"
+                  ? "Разместите бейдж в футере сайта или в README репозитория. Бейдж динамически обновляется при повторных проверках и подтверждает безопасность проекта."
+                  : "Embed this badge in your footer or GitHub README. It updates dynamically with your latest scan score and proves your app hygiene."}
+              </p>
+            </div>
+
+            <Button
+              onClick={copyBadge}
+              className="bg-sky-400 hover:bg-sky-300 text-[#090d16] font-bold text-sm shrink-0 shadow-lg shadow-sky-500/20"
+            >
+              {badgeCopied ? <Check className="h-4 w-4 mr-1.5 text-emerald-950" /> : <Copy className="h-4 w-4 mr-1.5" />}
+              {badgeCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Скопировать код" : "Copy code")}
+            </Button>
+          </div>
+
+          {/* Badge Format & Syntax Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-400">
+                {lang === "ru" ? "Стиль бейджа:" : "Badge Style:"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setBadgeFormat("trophy")}
+                className={`rounded-md px-3 py-1 text-xs font-bold transition ${
+                  badgeFormat === "trophy"
+                    ? "bg-slate-800 text-sky-400 border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                🏆 3D Trophy
+              </button>
+              <button
+                type="button"
+                onClick={() => setBadgeFormat("shield")}
+                className={`rounded-md px-3 py-1 text-xs font-bold transition ${
+                  badgeFormat === "shield"
+                    ? "bg-slate-800 text-sky-400 border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                🛡️ Компактный щит
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-400">
+                {lang === "ru" ? "Формат кода:" : "Code Format:"}
+              </span>
+              <div className="flex rounded-md border border-slate-800 bg-[#090d16] p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSyntax("html")}
+                  className={`rounded px-2.5 py-1 font-bold transition ${
+                    syntax === "html" ? "bg-slate-800 text-sky-400" : "text-slate-500 hover:text-slate-300"
+                  }`}
+                >
+                  HTML
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSyntax("markdown")}
+                  className={`rounded px-2.5 py-1 font-bold transition ${
+                    syntax === "markdown" ? "bg-slate-800 text-sky-400" : "text-slate-500 hover:text-slate-300"
+                  }`}
+                >
+                  Markdown
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Badge Preview and Code Block */}
+          <div className="flex flex-col items-center gap-6 rounded-xl border border-slate-800/80 bg-[#060911] p-6 sm:flex-row">
+            <div className="flex shrink-0 items-center justify-center p-3">
+              {badgeFormat === "trophy" ? (
+                <div className="group relative flex items-center justify-center">
+                  <div
+                    className="absolute inset-0 rounded-full blur-xl opacity-40 transition-opacity group-hover:opacity-70"
+                    style={{ backgroundColor: gm.color }}
+                  />
+                  <img
+                    src={gm.trophy}
+                    alt={`AppSeal ${scan.grade}`}
+                    width={96}
+                    height={96}
+                    className="relative z-10 h-24 w-24 object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
+                  />
+                </div>
+              ) : (
+                <img
+                  src={`/api/badge?host=${encodeURIComponent(scan.host)}`}
+                  alt={`AppSeal ${scan.grade}`}
+                  width={badgeW}
+                  height={44}
+                  className="rounded-lg shadow-md max-w-none"
+                />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1 w-full">
+              <pre className="appseal-scroll select-all overflow-x-auto rounded-lg border border-slate-800/80 bg-[#090d16] p-3.5 font-mono text-[11px] leading-relaxed text-slate-300">
+                {embedCode}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. TAB CONTENT: DEV TOOLS */}
+      {activeTab === "dev-tools" && (
+        <div className="rounded-2xl border border-slate-800 bg-[#0a0f1d]/90 p-6 sm:p-8 backdrop-blur shadow-xl space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🛠️</span>
+              <h3 className="text-lg font-bold text-white">
+                {lang === "ru" ? "Инструменты разработчика и хостинга" : "Developer & Hosting Tools"}
+              </h3>
+            </div>
+
+            {/* Sub-tabs selector */}
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setDevToolTab("patch")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  devToolTab === "patch"
+                    ? "bg-slate-800 text-sky-400 border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                ⚡ {lang === "ru" ? "Конфиг хостинга" : "Hosting Patch"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDevToolTab("ci")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  devToolTab === "ci"
+                    ? "bg-slate-800 text-sky-400 border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                ⚙️ GitHub Actions CI
+              </button>
+              <button
+                type="button"
+                onClick={() => setDevToolTab("trustfiles")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  devToolTab === "trustfiles"
+                    ? "bg-slate-800 text-sky-400 border border-slate-700"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                📄 {lang === "ru" ? "Файлы доверия" : "Trust Files"}
+              </button>
+            </div>
+          </div>
+
+          {/* Sub-tab 1: Hosting Config Patch */}
+          {devToolTab === "patch" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {lang === "ru"
+                    ? `Готовый патч заголовков безопасности для ${hostingPatch.label} (${hostingPatch.file}): положите в репозиторий и сделайте деплой.`
+                    : `Ready security headers configuration for ${hostingPatch.label} (${hostingPatch.file}): add to repo and deploy.`}
+                </p>
+                <Button
+                  size="sm"
+                  onClick={copyPatch}
+                  className="bg-sky-400 hover:bg-sky-300 text-[#090d16] font-bold text-xs shrink-0"
+                >
+                  {patchCopied ? <Check className="h-3.5 w-3.5 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+                  {patchCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Копировать конфиг" : "Copy config")}
+                </Button>
+              </div>
+              <pre className="appseal-scroll max-h-[380px] overflow-auto rounded-xl border border-slate-800 bg-[#060911] p-4 font-mono text-[11px] leading-relaxed text-slate-300 select-all">
+                {hostingPatch.code}
+              </pre>
+            </div>
+          )}
+
+          {/* Sub-tab 2: CI/CD Pipeline */}
+          {devToolTab === "ci" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {lang === "ru"
+                    ? "GitHub Actions workflow (.github/workflows/appseal.yml): блокирует мердж в продакшен, если качество безопасности ниже класса B."
+                    : "GitHub Actions workflow: automatically fails PR checks if the deployment security grade drops below B."}
+                </p>
+                <Button
+                  size="sm"
+                  onClick={copyCi}
+                  className="bg-sky-400 hover:bg-sky-300 text-[#090d16] font-bold text-xs shrink-0"
+                >
+                  {ciCopied ? <Check className="h-3.5 w-3.5 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+                  {ciCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Копировать YAML" : "Copy YAML")}
+                </Button>
+              </div>
+              <pre className="appseal-scroll max-h-[380px] overflow-auto rounded-xl border border-slate-800 bg-[#060911] p-4 font-mono text-[11px] leading-relaxed text-slate-300 select-all">
+                {CI_YAML}
+              </pre>
+            </div>
+          )}
+
+          {/* Sub-tab 3: Trust Files (llms.txt / security.txt) */}
+          {devToolTab === "trustfiles" && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-400">
+                    {lang === "ru" ? "Выберите файл:" : "Select file:"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGenFile("llms")}
+                    className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                      genFile === "llms"
+                        ? "bg-slate-800 text-sky-400 border border-slate-700"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    llms.txt (для AI-агентов)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGenFile("sec")}
+                    className={`rounded-md px-2.5 py-1 text-xs font-bold transition ${
+                      genFile === "sec"
+                        ? "bg-slate-800 text-sky-400 border border-slate-700"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    security.txt (RFC 9116)
+                  </button>
+                </div>
+
+                <Button
+                  size="sm"
+                  onClick={copyGenFile}
+                  className="bg-sky-400 hover:bg-sky-300 text-[#090d16] font-bold text-xs shrink-0"
+                >
+                  {genCopied ? <Check className="h-3.5 w-3.5 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+                  {genCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Копировать файл" : "Copy file")}
+                </Button>
+              </div>
+              <pre className="appseal-scroll max-h-[380px] overflow-auto rounded-xl border border-slate-800 bg-[#060911] p-4 font-mono text-[11px] leading-relaxed text-slate-300 select-all">
+                {genFile === "llms" ? buildLlmsTxt(scan).content : buildSecurityTxt(scan).content}
+              </pre>
+            </div>
           )}
         </div>
       )}
 
-      {/* actions & 1-click viral sharing */}
-      <div className="mt-6 flex flex-wrap items-center gap-3">
-        {passActive === false ? (
-          <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
-            <a href="/#pricing">
-              <Download className="h-4 w-4" />
-              {t(lang, "passGatePdf")}
-            </a>
-          </Button>
-        ) : (
-          <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
-            <a href={`/api/report?id=${scan.id}${reportKey ? `&key=${reportKey}` : ""}`} download>
-              <Download className="h-4 w-4" />
-              {t(lang, "downloadPdf")}
-            </a>
-          </Button>
-        )}
-        <Button variant="outline" onClick={onReset} className="border-slate-700 text-slate-300 hover:bg-slate-800">
-          <RotateCcw className="h-4 w-4" />
-          {t(lang, "rescan")}
-        </Button>
-
-        {/* Viral Share Buttons */}
-        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-          <span className="text-xs font-semibold text-slate-500 hidden sm:inline mr-1">
-            {lang === "ru" ? "Поделиться:" : "Share:"}
-          </span>
-          <Button
-            asChild
-            size="sm"
-            variant="outline"
-            className="h-9 border-sky-500/40 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 text-xs font-bold"
-          >
-            <a
-              href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`}
-              target="_blank"
-              rel="noopener"
-            >
-              <span className="mr-1.5">✈️</span> Telegram
-            </a>
-          </Button>
-          <Button
-            asChild
-            size="sm"
-            variant="outline"
-            className="h-9 border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white text-xs font-bold"
-          >
-            <a
-              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`}
-              target="_blank"
-              rel="noopener"
-            >
-              <span className="mr-1.5">𝕏</span> Twitter
-            </a>
-          </Button>
-          <Button
-            asChild
-            size="sm"
-            variant="outline"
-            className="h-9 border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white text-xs font-bold"
-          >
-            <a
-              href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-              target="_blank"
-              rel="noopener"
-            >
-              <span className="mr-1.5">in</span> LinkedIn
-            </a>
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={copyShareLink}
-            className="h-9 border-slate-700 text-xs text-slate-300 hover:bg-slate-800 font-semibold"
-          >
-            {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-            {linkCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Ссылка" : "Copy link")}
-          </Button>
-        </div>
-      </div>
-
-      {/* next steps: no dead ends - fix guides for the findings, versus for the rivalry */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-        {fails + warns > 0 && (
-          <a
-            href="/fixes"
-            className="inline-flex items-center gap-1.5 font-semibold text-sky-400 transition hover:text-sky-300"
-          >
+      {/* Footer navigation links */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 pt-2">
+        <div className="flex items-center gap-4">
+          <a href="/fixes" className="inline-flex items-center gap-1 font-semibold text-sky-400 hover:text-sky-300">
             <FileCheck2 className="h-3.5 w-3.5" />
             {t(lang, "repFixesCta")} →
           </a>
-        )}
-        <a
-          href={`/versus?a=${encodeURIComponent(scan.host)}`}
-          className="inline-flex items-center gap-1.5 font-semibold text-slate-400 transition hover:text-slate-200"
-        >
-          <Scale className="h-3.5 w-3.5" />
-          {t(lang, "repVersusCta")} →
-        </a>
-      </div>
-
-      {/* AI-fix prompt */}
-      {fails + warns > 0 && (
-        <Collapsible open={promptOpen} onOpenChange={setPromptOpen}>
-          <div className="mt-6 rounded-xl border border-sky-900/50 bg-sky-500/5 p-5">
-            <div className="flex items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-sky-300">{t(lang, "fixPromptTitle")}</p>
-                <p className="mt-1 text-xs leading-relaxed text-slate-500">{t(lang, "fixPromptCopy")}</p>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={copyPrompt}
-                className="shrink-0 border-sky-800 text-sky-300 hover:bg-sky-900/30"
-              >
-                {promptCopied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-                {promptCopied ? t(lang, "copied") : t(lang, "fixPromptBtn")}
-              </Button>
-            </div>
-            <CollapsibleContent>
-              <pre className="appseal-scroll mt-3 max-h-96 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-400">
-                {fixPrompt}
-              </pre>
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
-      )}
-
-      {fixToast && (
-        <div className="mt-3 rounded-xl border border-emerald-900/60 bg-emerald-400/[0.06] p-4">
-          <p className="text-sm leading-relaxed text-emerald-200">{t(lang, "fixToastTitle")}</p>
-          <Button asChild size="sm" className="mt-2 bg-emerald-400 font-bold text-[#090d16] hover:bg-emerald-300">
-            <a href="/">{t(lang, "fixToastCta")}</a>
-          </Button>
+          <a href={`/versus?a=${encodeURIComponent(scan.host)}`} className="inline-flex items-center gap-1 font-semibold text-slate-400 hover:text-slate-200">
+            <Scale className="h-3.5 w-3.5" />
+            {t(lang, "repVersusCta")} →
+          </a>
         </div>
-      )}
-
-      {/* CI/CD grade gate: turns every report owner into a pipeline user */}
-      {reportKey && (
-        <div className="mt-6 rounded-xl appseal-glass-card p-5">
-          <div className="flex items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-sky-300">{t(lang, "ciTitle")}</p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500">{t(lang, "ciCopy")}</p>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={copyCi}
-              className="shrink-0 border-sky-800 text-sky-300 hover:bg-sky-900/30"
-            >
-              {ciCopied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
-              {ciCopied ? t(lang, "copied") : t(lang, "ciBtn")}
-            </Button>
-          </div>
-          <pre className="appseal-scroll mt-3 max-h-96 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-400">
-            {CI_YAML}
-          </pre>
+        <div>
+          <a href="/legal" className="underline decoration-slate-700 hover:text-slate-300">
+            {lang === "ru" ? "Правила и дисклеймер" : "Terms & Disclaimer"}
+          </a>
         </div>
-      )}
-
-      {/* trust-file generators: llms.txt / security.txt from parsed site data */}
-      <div className="mt-6 rounded-xl appseal-glass-card p-5">
-        <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-sky-300">
-              {lang === "ru" ? "Генератор файлов доверия" : "Trust-file generator"}
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500">
-              {lang === "ru"
-                ? "Движок уже прочитал сайт - готовые llms.txt и security.txt за один клик. Замените строки [TODO] своими данными и положите файлы в корень сайта."
-                : "The engine already parsed the site - ready llms.txt and security.txt in one click. Replace the [TODO] lines and drop the files into the site root."}
-            </p>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {(
-            [
-              { key: "llms" as const, label: "llms.txt" },
-              { key: "sec" as const, label: "security.txt" },
-            ]
-          ).map((tab) => {
-            const active = genTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => {
-                  setGenTab(tab.key);
-                  setGenCopied(false);
-                }}
-                aria-pressed={active}
-                className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
-                  active
-                    ? "border-sky-400/60 bg-sky-400/15 text-sky-300"
-                    : "border-slate-700 bg-[#090d16] text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-        {genTab && (
-          <div className="mt-3">
-            {(() => {
-              const file = genTab === "llms" ? buildLlmsTxt(scan) : buildSecurityTxt(scan);
-              return (
-                <>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-mono text-[11px] text-slate-400">{file.path}</p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(file.content);
-                          setGenCopied(true);
-                          setTimeout(() => setGenCopied(false), 2000);
-                        } catch {}
-                      }}
-                      className="h-7 border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
-                    >
-                      {genCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                      {genCopied ? t(lang, "copied") : t(lang, "copyBtn")}
-                    </Button>
-                  </div>
-                  <pre className="appseal-scroll mt-2 max-h-80 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-300">
-                    {file.content}
-                  </pre>
-                  {file.todo.length > 0 && (
-                    <p className="mt-2 text-[11px] leading-relaxed text-amber-400/80">
-                      {lang === "ru" ? "Заполнить руками: " : "Fill in by hand: "}
-                      {file.todo.join(" · ")}
-                    </p>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        )}
-      </div>
-
-      {/* hosting-specific header config: copy-paste fix for the detected platform */}
-      <Collapsible open={patchOpen} onOpenChange={setPatchOpen}>
-        <div className="mt-6 rounded-xl appseal-glass-card p-5">
-          <div className="flex items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-sky-300">
-                {lang === "ru"
-                  ? `Готовый конфиг заголовков (${hostingPatch.label})`
-                  : `Ready-made headers config (${hostingPatch.label})`}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                {lang === "ru"
-                  ? `Платформа опознана по ответу сервера. Скопируйте блок в ${hostingPatch.file} - значения те же, на которых AppSeal сам держит класс A+.`
-                  : `Platform detected from the server response. Copy the block into ${hostingPatch.file} - the same values AppSeal runs on its own A+ site.`}
-              </p>
-            </div>
-            <div className="flex shrink-0 flex-col gap-2">
-              <CollapsibleTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-sky-800 text-sky-300 hover:bg-sky-900/30"
-                >
-                  <ChevronDown className={`h-4 w-4 transition-transform ${patchOpen ? "rotate-180" : ""}`} />
-                  {patchOpen
-                    ? lang === "ru" ? "Свернуть" : "Collapse"
-                    : lang === "ru" ? "Показать конфиг" : "Show config"}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-          </div>
-          <CollapsibleContent>
-            <div className="mt-3 flex justify-end">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(hostingPatch.code);
-                    setPatchCopied(true);
-                    setTimeout(() => setPatchCopied(false), 2000);
-                  } catch {}
-                }}
-                className="h-7 border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
-              >
-                {patchCopied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                {patchCopied ? t(lang, "copied") : t(lang, "copyBtn")}
-              </Button>
-            </div>
-            <pre className="appseal-scroll mt-2 max-h-96 overflow-auto rounded-md bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-400">
-              {hostingPatch.code}
-            </pre>
-            <p className="mt-2 text-[11px] leading-relaxed text-amber-400/80">{hostingPatch.note[lang]}</p>
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-
-      {/* badge embed (Launch Pass gated) */}
-      {passActive === false ? (
-        <div className="appseal-glass-card mt-6 rounded-xl border-sky-900/60 p-5">
-          <p className="text-sm font-semibold text-slate-200">{t(lang, "passGateTitle")}</p>
-          <p className="mt-1 text-xs leading-relaxed text-slate-500">
-            {t(lang, "passGateText").replace("{host}", scan.host)}
-          </p>
-          {/* honest preview: the real badge, rendered from THIS scan's data */}
-          <p className="mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            {t(lang, "passPreviewLabel")}
-          </p>
-          <svg width="228" height="44" viewBox="0 0 228 44" role="img" className="mt-1.5">
-            <rect x="0.5" y="0.5" width="227" height="43" rx="9" fill="#0b101c" stroke={gm.color} />
-            <path d="M0.5 9 Q0.5 0.5 9 0.5 H219 Q227.5 0.5 227.5 9 V16 H0.5 Z" fill="#0e1420" />
-            <text x="14" y="12" fontFamily="sans-serif" fontSize="7" fontWeight="700" letterSpacing="0.8" fill="#7C8BA1">
-              APPSEAL VERIFIED
-            </text>
-            <text x="14" y="30" fontFamily="sans-serif" fontSize="12" fontWeight="700" fill="#F8FAFC">
-              {scan.host.replace(/^www\./i, "").slice(0, 24)}
-            </text>
-            <text x="196" y="27" textAnchor="middle" fontFamily="sans-serif" fontSize="15" fontWeight="900" fill={gm.color}>
-              {scan.grade}
-            </text>
-            <text x="196" y="36" textAnchor="middle" fontFamily="monospace" fontSize="8" fontWeight="700" fill="#94A3B8">
-              {scan.score}/100
-            </text>
-          </svg>
-          <Button asChild className="mt-3 bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold">
-            <a href="/#pricing">{t(lang, "passGateCta")}</a>
-          </Button>
-        </div>
-      ) : (
-      <div className="mt-6 rounded-xl appseal-glass-card p-5">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-slate-200">{t(lang, "badgeTitle")}</p>
-            <p className="text-xs text-slate-500">{t(lang, "badgeCopy")}</p>
-          </div>
-          {/* Format switcher tabs */}
-          <div className="flex rounded-lg border border-slate-800 bg-[#090d16] p-0.5 self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setBadgeFormat("trophy")}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                badgeFormat === "trophy"
-                  ? "bg-sky-400 text-[#090d16] shadow"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              <span>🏆</span>
-              <span>{t(lang, "badgeTrophyTab")}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setBadgeFormat("shield")}
-              className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                badgeFormat === "shield"
-                  ? "bg-sky-400 text-[#090d16] shadow"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              <span>🛡</span>
-              <span>{t(lang, "badgeShieldTab")}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Live Badge Preview and Copy Area */}
-        <div className="mt-4 flex flex-col items-center gap-5 rounded-lg border border-slate-800/80 bg-[#090d16]/70 p-4 sm:flex-row">
-          <div className="flex shrink-0 items-center justify-center p-2">
-            {badgeFormat === "trophy" ? (
-              <div className="group relative flex items-center justify-center">
-                <div
-                  className="absolute inset-0 rounded-full blur-xl opacity-30 transition-opacity group-hover:opacity-60"
-                  style={{ backgroundColor: gm.color }}
-                />
-                <img
-                  src={gm.trophy}
-                  alt={`AppSeal ${scan.grade}`}
-                  width={80}
-                  height={80}
-                  className="relative z-10 h-20 w-20 object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.6)]"
-                />
-              </div>
-            ) : (
-              <img
-                src={`/api/badge?host=${encodeURIComponent(scan.host)}`}
-                alt={`AppSeal ${scan.grade}`}
-                width={badgeW}
-                height={44}
-                className="rounded-lg shadow-md max-w-none"
-              />
-            )}
-          </div>
-
-          <div className="min-w-0 flex-1 w-full">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-medium text-slate-400">
-                  {syntax === "markdown"
-                    ? "Markdown (GitHub README):"
-                    : badgeFormat === "trophy"
-                    ? "HTML (для сайта):"
-                    : "HTML (для сайта):"}
-                </span>
-                <div className="flex rounded border border-slate-800 bg-[#090d16] p-0.5 text-[10px]">
-                  <button
-                    type="button"
-                    onClick={() => setSyntax("html")}
-                    className={`rounded px-2 py-0.5 font-bold uppercase transition ${
-                      syntax === "html" ? "bg-slate-800 text-sky-400" : "text-slate-500 hover:text-slate-300"
-                    }`}
-                  >
-                    HTML
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSyntax("markdown")}
-                    className={`rounded px-2 py-0.5 font-bold uppercase transition ${
-                      syntax === "markdown" ? "bg-slate-800 text-sky-400" : "text-slate-500 hover:text-slate-300"
-                    }`}
-                  >
-                    Markdown
-                  </button>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={copy}
-                className="h-7 border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
-              >
-                {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? t(lang, "copied") : t(lang, "copyBtn")}
-              </Button>
-            </div>
-            <pre className="appseal-scroll select-all overflow-x-auto rounded-md border border-slate-800/70 bg-[#090d16] p-3 font-mono text-[11px] leading-relaxed text-slate-300">
-              {embedCode}
-            </pre>
-          </div>
-        </div>
-      </div>
-      )}
-
-      {/* findings by category */}
-      <h3 className="font-display mt-8 text-lg font-bold text-slate-100">
-        {t(lang, "findingsTitle")}
-      </h3>
-      <div className="mt-4 space-y-8">
-        {byCategory.map(({ cat, items }) => (
-          <section key={cat} aria-label={CATEGORY_META[cat].title[lang]}>
-            <div className="mb-3 flex items-center gap-2 text-slate-300">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-800">
-                {CAT_ICONS[cat]}
-              </span>
-              <h4 className="text-sm font-bold uppercase tracking-wider">
-                {CATEGORY_META[cat].title[lang]}
-              </h4>
-              <span className="text-xs text-slate-600">
-                {items.filter((i) => i.status === "pass").length}/{items.length}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {items.map((r) => (
-                <CheckRow key={r.id} r={r} lang={lang} />
-              ))}
-            </div>
-          </section>
-        ))}
       </div>
     </div>
   );

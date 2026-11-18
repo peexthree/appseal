@@ -751,6 +751,36 @@ async function probeAiRoute(origin: string, basePath: string, path: string): Pro
   if (acao) ev.push(`access-control-allow-origin: ${acao}`);
   if (body) ev.push(truncate(body.replace(/\s+/g, " "), 120));
 
+  // 405 Method Not Allowed means the endpoint exists and is POST-only (typical for /api/chat).
+  // A safe dry-run probe with invalid payload verifies if the endpoint has an auth wall
+  // BEFORE reaching the LLM handler, without spending any LLM balance.
+  if (r.status === 405) {
+    const postRes = await safeFetch(url, {
+      method: "POST",
+      timeoutMs: 4000,
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ dryRun: true }),
+      maxBody: 8 * 1024,
+    });
+    if (postRes.status !== 0) {
+      const pBody = (postRes.body ?? "").slice(0, 400);
+      const postEv = [`POST ${path} -> ${postRes.status}`];
+      if (pBody) postEv.push(truncate(pBody.replace(/\s+/g, " "), 120));
+      if ([401, 402, 403].includes(postRes.status) || AUTH_ERROR_RE.test(pBody)) {
+        return { path, state: "protected", evidence: postEv };
+      }
+      if (
+        postRes.status === 400 &&
+        /(?:messages|prompt|input|model|stream|body|json|zod|validation|invalid|required)/i.test(pBody)
+      ) {
+        return { path, state: "open", evidence: postEv };
+      }
+      if (postRes.status === 200 && !isHealthCheckJson(postRes.body)) {
+        return { path, state: "open", evidence: postEv };
+      }
+    }
+  }
+
   // protected or absent: any explicit auth wall, method rejection, rate limit
   if ([401, 402, 403, 405, 429].includes(r.status)) return { path, state: "protected", evidence: ev };
   if ([404, 410].includes(r.status)) return { path, state: "absent", evidence: ev };

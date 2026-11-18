@@ -220,21 +220,67 @@ function fixFor(r: CheckResult, lang: "ru" | "en"): Fix | null {
   }
 }
 
-export function buildFixPrompt(scan: ScanResult, lang: "ru" | "en"): string {
+export type AiTarget = "generic" | "cursor" | "claude" | "v0";
+
+export function buildFixPrompt(
+  scan: ScanResult,
+  lang: "ru" | "en",
+  target: AiTarget = "generic",
+): string {
   const ru = lang === "ru";
   const bad = scan.results.filter((r) => r.status === "fail" || r.status === "warn");
   const L: string[] = [];
 
-  if (ru) {
-    L.push(`Ты ИИ-агент, дорабатывающий веб-приложение. Сайт: ${scan.host}${scan.platform ? ` (платформа: ${scan.platform})` : ""}.`);
-    L.push(`Независимый сканер AppSeal поставил оценку ${scan.grade} (${scan.score}/100). Ниже - все найденные проблемы.`);
-    L.push(`Исправь их по списку. Если правишь конфиги хостинга - используй готовые сниппеты. Отвечай патчами/диффами и краткими пояснениями.`);
-    L.push("", `## Проблемы (${bad.length})`);
+  if (target === "cursor") {
+    if (ru) {
+      L.push(`# Задача для Cursor Composer / Agent`);
+      L.push(`Проект: ${scan.host}${scan.platform ? ` (${scan.platform})` : ""}`);
+      L.push(`Текущий рейтинг AppSeal: Класс ${scan.grade} (${scan.score}/100). Цель: поднять рейтинг до A/A+.`);
+      L.push(`Инструкция: Проанализируй проект, найди файлы конфигураций (next.config.*, vercel.json, middleware.*, .env) и примени исправления ниже напрямую в репозитории.`);
+      L.push("", `## Список проблем (${bad.length})`);
+    } else {
+      L.push(`# Cursor Composer / Agent Security Task`);
+      L.push(`Target: ${scan.host}${scan.platform ? ` (${scan.platform})` : ""}`);
+      L.push(`Current AppSeal Grade: ${scan.grade} (${scan.score}/100). Target: reach Grade A/A+.`);
+      L.push(`Instructions: Inspect the repo, locate configs (next.config.*, vercel.json, middleware.*, .env) and apply the security fixes directly.`);
+      L.push("", `## Security Findings (${bad.length})`);
+    }
+  } else if (target === "claude") {
+    if (ru) {
+      L.push(`# Задача для Claude Code CLI`);
+      L.push(`Репозиторий проекта ${scan.host}. Аудит безопасности AppSeal выявил ${bad.length} проблем (Класс ${scan.grade}, ${scan.score}/100).`);
+      L.push(`Пройдись по каждому пункту, найди соответствующие файлы и внеси безопасные исправления.`);
+      L.push("", `## Находки аудита (${bad.length})`);
+    } else {
+      L.push(`# Claude Code CLI Security Hardening`);
+      L.push(`Repository: ${scan.host}. AppSeal security audit detected ${bad.length} issues (Grade ${scan.grade}, ${scan.score}/100).`);
+      L.push(`Go through each item, locate affected files, and apply secure hardening fixes.`);
+      L.push("", `## Audit Findings (${bad.length})`);
+    }
+  } else if (target === "v0") {
+    if (ru) {
+      L.push(`# Промпт для v0 / Lovable / Bolt`);
+      L.push(`Пожалуйста, исправь следующие уязвимости безопасности в коде нашего приложения (${scan.host}):`);
+      L.push(`Добавь недостающие security headers, закрой публичные эндпоинты авторизацией и проверь конфигурацию хостинга.`);
+      L.push("", `## Уязвимости к исправлению (${bad.length})`);
+    } else {
+      L.push(`# Prompt for v0 / Lovable / Bolt`);
+      L.push(`Please fix the following security vulnerabilities in our application (${scan.host}):`);
+      L.push(`Add missing security headers, secure open endpoints with auth, and harden hosting configurations.`);
+      L.push("", `## Vulnerabilities to resolve (${bad.length})`);
+    }
   } else {
-    L.push(`You are an AI agent improving a web application. Site: ${scan.host}${scan.platform ? ` (platform: ${scan.platform})` : ""}.`);
-    L.push(`The independent AppSeal scanner graded it ${scan.grade} (${scan.score}/100). All findings follow.`);
-    L.push(`Fix them one by one. When editing hosting configs, use the ready snippets. Reply with patches/diffs and short explanations.`);
-    L.push("", `## Findings (${bad.length})`);
+    if (ru) {
+      L.push(`Ты ИИ-агент, дорабатывающий веб-приложение. Сайт: ${scan.host}${scan.platform ? ` (платформа: ${scan.platform})` : ""}.`);
+      L.push(`Независимый сканер AppSeal поставил оценку ${scan.grade} (${scan.score}/100). Ниже - все найденные проблемы.`);
+      L.push(`Исправь их по списку. Если правишь конфиги хостинга - используй готовые сниппеты. Отвечай патчами/диффами и краткими пояснениями.`);
+      L.push("", `## Проблемы (${bad.length})`);
+    } else {
+      L.push(`You are an AI agent improving a web application. Site: ${scan.host}${scan.platform ? ` (platform: ${scan.platform})` : ""}.`);
+      L.push(`The independent AppSeal scanner graded it ${scan.grade} (${scan.score}/100). All findings follow.`);
+      L.push(`Fix them one by one. When editing hosting configs, use the ready snippets. Reply with patches/diffs and short explanations.`);
+      L.push("", `## Findings (${bad.length})`);
+    }
   }
 
   bad.forEach((r, i) => {

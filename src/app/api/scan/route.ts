@@ -5,6 +5,7 @@ import { newId, newReportKey, saveScan, serializeScan, pushRegistryEntry, redisC
 import { assertPublicTarget } from "@/lib/scanner/guard";
 import { bumpDailyQuota, hasActivePass, hashIp } from "@/lib/passes";
 import { getClientIp, secretsMatch } from "@/lib/sec";
+import { sendTelegramAlert } from "@/lib/telegram";
 import type { Lang, ScanResult } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
@@ -125,6 +126,15 @@ export async function POST(req: NextRequest) {
       };
 
       await saveScan(id, serializeScan(scan));
+
+      // 🔔 Notify owner: someone started a scan
+      void sendTelegramAlert(
+        `🔍 Новая проверка сайта\n` +
+        `🌐 URL: ${norm.isDemo ? "demo" : norm.url}\n` +
+        `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
+        (ip !== "unknown" ? `📡 IP: ${ip}` : "")
+      );
+
       // run the scan after the response is sent; on Vercel this keeps the
       // function alive (waitUntil) within maxDuration, locally it just works
       after(async () => {

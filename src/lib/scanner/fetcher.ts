@@ -114,7 +114,8 @@ async function readResponse(
 export async function safeFetch(
   url: string,
   opts: {
-    method?: "GET" | "HEAD" | "OPTIONS";
+    method?: "GET" | "HEAD" | "OPTIONS" | "POST";
+    body?: string;
     timeoutMs?: number;
     headers?: Record<string, string>;
     maxBody?: number;
@@ -143,6 +144,7 @@ export async function safeFetch(
       }
       res = await fetch(current, {
         method,
+        body: method === "POST" ? opts.body : undefined,
         redirect: "manual",
         signal: ctrl.signal,
         headers: baseHeaders,
