@@ -697,6 +697,14 @@ const AI_ENDPOINT_GROUPS: { id: string; paths: string[] }[] = [
 const AUTH_ERROR_RE =
   /unauthorized|forbidden|api[ _-]?key|authentication|not[ _-]?(?:logged|authorized)|missing authorization|invalid[ _-]?token|auth required|access denied/i;
 
+// A 200 to the dry-run POST only proves the route is open when the body looks
+// like an actual LLM answer (OpenAI-style chat completion fields). A lenient
+// handler echoing 200 for garbage input must not be flagged open - and more
+// importantly, the probe payload is designed to be rejected before any LLM
+// billing happens on the scanned target.
+const LLM_RESPONSE_RE =
+  /"choices"|"content"|"usage"|"total_tokens"|"prompt_tokens"|"completion_tokens"|"id"\s*:\s*"chatcmpl|"role"\s*:\s*"assistant|"candidates"|"message_id"/i;
+
 function aiEndpointResult(
   groupId: string,
   status: CheckResult["status"],
@@ -775,7 +783,10 @@ async function probeAiRoute(origin: string, basePath: string, path: string): Pro
       ) {
         return { path, state: "open", evidence: postEv };
       }
-      if (postRes.status === 200 && !isHealthCheckJson(postRes.body)) {
+      // a bare 200 is not proof of an open route: a lenient handler can echo
+      // 200 for garbage input, so only an LLM-shaped answer counts (an
+      // inconclusive POST falls through to the GET-based classification below)
+      if (postRes.status === 200 && LLM_RESPONSE_RE.test(postRes.body ?? "")) {
         return { path, state: "open", evidence: postEv };
       }
     }

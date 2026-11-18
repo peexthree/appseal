@@ -73,12 +73,14 @@ export function computeScore(results: CheckResult[]): { score: number; grade: Gr
   return { score, grade };
 }
 
+// UI trophies ship as webp (~20KB vs ~260KB PNG); the /api/badge and /api/og
+// routes keep reading the original PNGs from public/ (satori cannot embed webp)
 export function getTrophyPath(grade: string): string {
-  if (grade === "A+") return "/Aplus.png";
+  if (grade === "A+") return "/Aplus.webp";
   if (grade === "A" || grade === "B" || grade === "C" || grade === "D" || grade === "E") {
-    return `/${grade}.png`;
+    return `/${grade}.webp`;
   }
-  return "/E.png";
+  return "/E.webp";
 }
 
 export const GRADE_META: Record<Grade, GradeMetaItem> = {
@@ -87,7 +89,7 @@ export const GRADE_META: Record<Grade, GradeMetaItem> = {
     secondaryColor: "#9333EA",
     minScore: 96,
     maxScore: 100,
-    trophy: "/Aplus.png",
+    trophy: "/Aplus.webp",
     label: { ru: "Эталон", en: "Benchmark" },
     description: {
       ru: "Королевский аметист. Высший ранг для приложений без единого провала и с настроенными защитными заголовками.",
@@ -99,7 +101,7 @@ export const GRADE_META: Record<Grade, GradeMetaItem> = {
     secondaryColor: "#059669",
     minScore: 85,
     maxScore: 95,
-    trophy: "/A.png",
+    trophy: "/A.webp",
     label: { ru: "Отлично", en: "Excellent" },
     description: {
       ru: "Изумрудный неон. Основной рабочий знак безопасности для продакшен-приложений с мелкими недочётами.",
@@ -111,7 +113,7 @@ export const GRADE_META: Record<Grade, GradeMetaItem> = {
     secondaryColor: "#0284C7",
     minScore: 70,
     maxScore: 84,
-    trophy: "/B.png",
+    trophy: "/B.webp",
     label: { ru: "Хорошо", en: "Good" },
     description: {
       ru: "Электрик-голубой. Безопасно по критическим контурам секретов и БД, требует доводки конфигурации кук или CORS.",
@@ -123,7 +125,7 @@ export const GRADE_META: Record<Grade, GradeMetaItem> = {
     secondaryColor: "#D97706",
     minScore: 50,
     maxScore: 69,
-    trophy: "/C.png",
+    trophy: "/C.webp",
     label: { ru: "Требует доработки", en: "Needs work" },
     description: {
       ru: "Янтарное золото. Пограничное состояние (типичный dev-инстанс до настройки прокси и продакшен-сборки).",
@@ -135,7 +137,7 @@ export const GRADE_META: Record<Grade, GradeMetaItem> = {
     secondaryColor: "#EA580C",
     minScore: 25,
     maxScore: 49,
-    trophy: "/D.png",
+    trophy: "/D.webp",
     label: { ru: "Уязвимо", en: "Vulnerable" },
     description: {
       ru: "Раскалённая медь. Наличие серьёзных пробоев конфигурации либо сработавший потолок при одной критической находке.",
@@ -147,7 +149,7 @@ export const GRADE_META: Record<Grade, GradeMetaItem> = {
     secondaryColor: "#DC2626",
     minScore: 0,
     maxScore: 24,
-    trophy: "/E.png",
+    trophy: "/E.webp",
     label: { ru: "Опасно", en: "Dangerous" },
     description: {
       ru: "Рубиновый красный. Полный провал гигиены безопасности: слитые ключи API, открытый .env или дамп базы по прямой ссылке.",

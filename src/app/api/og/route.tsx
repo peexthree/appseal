@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
  *  for the Satori/JSX render below. */
 const OG_TEXT = {
   ru: {
-    badge: "ТЕХОСМОТР БЕЗОПАСНОСТИ • 24 ПРОВЕРКИ",
+    badge: "ТЕХОСМОТР БЕЗОПАСНОСТИ • 125 ПРОВЕРОК",
     grade: "Класс",
     pointForms: ["балл", "балла", "баллов"],
     checked: "проверено",
@@ -27,7 +27,7 @@ const OG_TEXT = {
     footerCta: "Проверить свой сайт → appseal.online",
   },
   en: {
-    badge: "SECURITY CHECKUP • 24 CHECKS",
+    badge: "SECURITY CHECKUP • 125 CHECKS",
     grade: "Grade",
     pointForms: ["point", "points", "points"],
     checked: "checked",
@@ -97,7 +97,8 @@ export async function GET(req: NextRequest) {
 
   const fails = scan ? scan.results.filter((r) => r.status === "fail").length : 0;
   const warns = scan ? scan.results.filter((r) => r.status === "warn").length : 0;
-  const passes = scan ? scan.results.filter((r) => r.status === "pass" || r.status === "info").length : 24;
+  // fallback card (no scan id/host) advertises the real engine size: 125 checks
+  const passes = scan ? scan.results.filter((r) => r.status === "pass" || r.status === "info").length : 125;
   const hostMode = Boolean(entry);
   const checkedDate = entry
     ? new Intl.DateTimeFormat(lang === "en" ? "en-US" : "ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(entry.ts))
@@ -339,7 +340,7 @@ export async function GET(req: NextRequest) {
                 )}
                 {fails === 0 && warns === 0 && (
                   <span style={{ display: "flex", alignItems: "center", gap: "6px", color: "#34D399" }}>
-                    ★ {T.allClear}
+                    ✔ {T.allClear}
                   </span>
                 )}
               </div>

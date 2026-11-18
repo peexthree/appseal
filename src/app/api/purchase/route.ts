@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { createPayment, getPayment, ykConfig, type YkPayment } from "@/lib/yookassa";
 import { createLavaInvoice, getLavaInvoice, lavaConfig } from "@/lib/lava";
 import {
@@ -103,19 +103,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid nonce" }, { status: 400 });
     }
 
-    // 🔔 Notify owner: someone started a purchase
+    // 🔔 Notify owner: someone started a purchase. after() keeps the serverless
+    // function alive until the Bot API call resolves - a bare void promise can
+    // be frozen mid-flight when the response returns first.
     const kindLabel =
       kind === "lpack" ? "Agency Pack (5 кредитов)" :
       kind === "lpro"  ? `Pro Pass 30д — ${host}` :
                          `Launch Pass 7д — ${host}`;
     const providerLabel = provider === "lava" ? "Lava (USD)" : "ЮКасса (RUB)";
-    void sendTelegramAlert(
-      `💳 Попытка покупки!\n` +
-      `📦 Тариф: ${kindLabel}\n` +
-      `💰 Провайдер: ${providerLabel}\n` +
-      `📧 Email: ${email}\n` +
-      `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
-      (ip !== "unknown" ? `📡 IP: ${ip}` : "")
+    after(() =>
+      sendTelegramAlert(
+        `💳 Попытка покупки!\n` +
+        `📦 Тариф: ${kindLabel}\n` +
+        `💰 Провайдер: ${providerLabel}\n` +
+        `📧 Email: ${email}\n` +
+        `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
+        (ip !== "unknown" ? `📡 IP: ${ip}` : "")
+      ),
     );
 
     if (provider === "lava") {

@@ -108,7 +108,8 @@ describe("computeScore (6-tier scale A+ to E)", () => {
       const meta = GRADE_META[g];
       assert.ok(meta.color.startsWith("#"), `${g} color`);
       assert.ok(meta.secondaryColor.startsWith("#"), `${g} secondaryColor`);
-      assert.ok(meta.trophy.endsWith(".png"), `${g} trophy`);
+      // UI trophies ship as webp; the badge/og routes read the PNG twins
+      assert.ok(meta.trophy.endsWith(".webp"), `${g} trophy`);
       assert.equal(getTrophyPath(g), meta.trophy);
     }
   });

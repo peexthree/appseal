@@ -127,17 +127,19 @@ export async function POST(req: NextRequest) {
 
       await saveScan(id, serializeScan(scan));
 
-      // 🔔 Notify owner: someone started a scan
-      void sendTelegramAlert(
-        `🔍 Новая проверка сайта\n` +
-        `🌐 URL: ${norm.isDemo ? "demo" : norm.url}\n` +
-        `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
-        (ip !== "unknown" ? `📡 IP: ${ip}` : "")
-      );
-
       // run the scan after the response is sent; on Vercel this keeps the
       // function alive (waitUntil) within maxDuration, locally it just works
       after(async () => {
+        // 🔔 Notify owner: someone started a scan. First inside after() so the
+        // Bot API call resolves within the guaranteed-alive window instead of
+        // racing the lambda freeze as a bare void promise.
+        await sendTelegramAlert(
+          `🔍 Новая проверка сайта\n` +
+          `🌐 URL: ${norm.isDemo ? "demo" : norm.url}\n` +
+          `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
+          (ip !== "unknown" ? `📡 IP: ${ip}` : "")
+        );
+
         // runScan never throws: the final record lands in the store; its return
         // value feeds the public registry. Demo scans excluded. Every finished
         // scan is listed - the catalog shows all grades; descriptions of hosts
