@@ -130,10 +130,11 @@ export async function POST(req: NextRequest) {
       // run the scan after the response is sent; on Vercel this keeps the
       // function alive (waitUntil) within maxDuration, locally it just works
       after(async () => {
-        // 🔔 Notify owner: someone started a scan. First inside after() so the
-        // Bot API call resolves within the guaranteed-alive window instead of
-        // racing the lambda freeze as a bare void promise.
-        await sendTelegramAlert(
+        // 🔔 Notify owner: someone started a scan. Fired (not awaited) inside
+        // after(): the callback keeps the function alive, and the Bot API call
+        // always settles within its own 10s socket timeout - far shorter than
+        // the scan itself - without delaying runScan's 60s maxDuration budget.
+        void sendTelegramAlert(
           `🔍 Новая проверка сайта\n` +
           `🌐 URL: ${norm.isDemo ? "demo" : norm.url}\n` +
           `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
