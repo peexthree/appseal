@@ -467,7 +467,7 @@ export default async function StatsPage() {
               {t("liveBadge")}
             </span>
           ) : null}
-          {!v.isLive && s.panel.missing > 0 ? (
+          {s.panel.missing > 0 ? (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-400">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
               {t("runNewBadge")}
@@ -492,11 +492,11 @@ export default async function StatsPage() {
             </>
           )}
         </p>
-        {!v.isLive && s.panel.missing > 0 ? (
+        {s.panel.missing > 0 ? (
           <p className="mt-2 max-w-2xl text-sm font-medium text-amber-300/90">
             {t("runNewNote")
-              .replace("{done}", numFmt.format(v.doneCount))
-              .replace("{total}", numFmt.format(v.heroCount))}
+              .replace("{done}", numFmt.format(s.panel.done))
+              .replace("{total}", numFmt.format(s.panel.total))}
           </p>
         ) : null}
 
