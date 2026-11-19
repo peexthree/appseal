@@ -78,3 +78,8 @@ db/custom.db
 # local file-backend store (scans carry rkeys)
 /db/
 scripts/__pycache__/
+
+# raw per-scan results stay local only: 30k targets x ~40KB would bloat
+# the repo and the Vercel deploy; aggregates live in src/data/stats-harvest.json
+scripts/benchmark_data/*
+!scripts/benchmark_data/harvest_meta.json

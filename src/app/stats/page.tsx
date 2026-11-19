@@ -100,6 +100,11 @@ const D = {
     ru: "Первый массовый прогон ещё идёт - цифры появятся здесь сразу после его завершения.",
     en: "The first mass run is still in progress - the numbers will appear here right after it completes.",
   },
+  runNewBadge: { ru: "Новый прогон идёт", en: "New run in progress" },
+  runNewNote: {
+    ru: "Новый расширенный прогон от 19.11 идёт: обработано {done} из {total} сайтов. Цифры на этой странице обновляются по мере сканирования.",
+    en: "The new expanded run of Nov 19 is in progress: {done} of {total} sites scanned so far. Numbers on this page update as the scan continues.",
+  },
   tickLead: { ru: "За 24 часа авто-проверок: ", en: "Auto-checks in the last 24 hours: " },
   stat1: { ru: "сканов посчитано", en: "scans counted" },
   stat2: { ru: "средний балл из 100", en: "average score out of 100" },
@@ -178,12 +183,12 @@ const D = {
   },
   tldAvg: { ru: "средний балл ", en: "avg score " },
   srcTitle: { ru: "Откуда приложения", en: "Where the apps come from" },
-  srcNote: { ru: "Разбивка исторического массового прогона от ", en: "Breakdown of the historical mass run from " },
+  srcNote: { ru: "Разбивка нового массового прогона от ", en: "Breakdown of the new mass run from " },
   srcAvg: { ru: "средний балл ", en: "avg score " },
   srcNoAvg: { ru: "мало данных для среднего", en: "not enough data for an average" },
   footLiveA: {
-    ru: "База включает исторический массовый прогон от ",
-    en: "The database includes the historical mass run from ",
+    ru: "База включает новый массовый прогон от ",
+    en: "The database includes the new mass run from ",
   },
   footScanner: {
     ru: ". Сканер ходит с пометкой AppSeal-Scanner, делает ~140 вежливых GET-запросов на сайт и ничего не эксплуатирует; правила для ботов - на странице ",
@@ -462,6 +467,12 @@ export default async function StatsPage() {
               {t("liveBadge")}
             </span>
           ) : null}
+          {!v.isLive && s.panel.missing > 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-400">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+              {t("runNewBadge")}
+            </span>
+          ) : null}
         </div>
         <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
           {t("h1a")} {numFmt.format(v.heroCount)} {t("h1b")}
@@ -481,6 +492,13 @@ export default async function StatsPage() {
             </>
           )}
         </p>
+        {!v.isLive && s.panel.missing > 0 ? (
+          <p className="mt-2 max-w-2xl text-sm font-medium text-amber-300/90">
+            {t("runNewNote")
+              .replace("{done}", numFmt.format(v.doneCount))
+              .replace("{total}", numFmt.format(v.heroCount))}
+          </p>
+        ) : null}
 
         {useLive && live && live.topFails.length > 0 ? (
           <div className="mt-8 rounded-2xl border border-[#F87171]/30 bg-[#1a0f14] p-6">
