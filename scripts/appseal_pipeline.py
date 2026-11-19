@@ -54,9 +54,12 @@ def start_dev() -> bool:
         return True
     print("starting dev server...", flush=True)
     log = open(SCRIPTS / "pipeline-dev.log", "ab")
+    # CREATE_NO_WINDOW: no visible console (all output goes to the log file)
+    no_window = getattr(subprocess, "CREATE_NO_WINDOW", 0)
     subprocess.Popen(  # survives this run; logs to pipeline-dev.log
         ["node", "node_modules/next/dist/bin/next", "dev", "-p", "3000"],
         cwd=str(ROOT), stdout=log, stderr=subprocess.STDOUT,
+        creationflags=no_window,
     )
     log.close()
     for _ in range(40):
