@@ -20,10 +20,39 @@ import http.client
 import json
 import pathlib
 import re
+import subprocess
 
 BENCH_DIR = pathlib.Path(__file__).parent / "benchmark_data"
 ENV_FILE = pathlib.Path("D:/BIR/.env")
 STOP_HOSTS = pathlib.Path(__file__).parent / "stop_hosts.txt"
+SCRIPTS_DIR = pathlib.Path(__file__).parent
+
+
+def load_hostlatest() -> dict:
+    """host -> {ts, grade, score} of everything ever pushed.
+
+    Local mirror (benchmark_data/hostlatest.json), seeded once from Redis
+    HSCAN and updated after every successful push - no runtime Redis calls.
+    """
+    dump = BENCH_DIR / "hostlatest.json"
+    try:
+        return json.loads(dump.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        print("  ! hostlatest.json missing -> full push this run")
+        return {}
+
+
+def save_hostlatest(entries) -> None:
+    """Merge pushed entries into the local mirror after a successful push."""
+    dump = BENCH_DIR / "hostlatest.json"
+    try:
+        state = json.loads(dump.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        state = {}
+    for e in entries:
+        state[e["host"]] = {"ts": e["ts"], "grade": e["grade"], "score": e["score"]}
+    dump.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+    print(f"hostlatest mirror updated: {len(state)} hosts")
 
 
 def load_stop_hosts() -> set[str]:
@@ -141,14 +170,26 @@ def push(entries: list[dict], key: str) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--push", action="store_true", help="POST to production (default: dry run)")
+    ap.add_argument("--full", action="store_true",
+                    help="push ALL collected entries (default: incremental - only "
+                         "hosts missing from the registry or re-scanned newer)")
     args = ap.parse_args()
 
     entries = collect()
     print(f"hosts ready for the registry (all grades): {len(entries)}")
-    for e in entries:
-        print(f"  {e['grade']:2} {e['score']:3}  {e['host']}")
+    if not args.full:
+        latest = load_hostlatest()
+        if latest:
+            delta = [e for e in entries
+                     if e["host"] not in latest or e["ts"] > latest[e["host"]].get("ts", 0)]
+            print(f"incremental: {len(delta)} new/updated of {len(entries)} "
+                  f"(registry has {len(latest)})")
+            entries = delta
+        for e in entries:
+            print(f"  {e['grade']:2} {e['score']:3}  {e['host']}")
     if args.push and entries:
         push(entries, read_key())
+        save_hostlatest(entries)
     elif not args.push:
         print("(dry run - pass --push to publish)")
 
