@@ -38,6 +38,16 @@ const scriptSrcStrict = (nonce: string) =>
 // 16k+-host catalog), so it moved to the strict nonce policy
 const PRERENDERED_ROUTES = /^\/(ci|digest|fixes|report|verified)(?:\/|$)/i;
 
+// routes that render per request and therefore can consume the middleware
+// nonce. Everything OUTSIDE this list - including every unmatched path,
+// which serves the cached static not-found page - must get the legacy
+// policy: the cached 404 HTML has no per-request nonce baked in, so a
+// nonce-only script-src would block its inline bootstrap scripts and kill
+// hydration there (the interactive 404 easter egg lives on that page).
+// Inverting the default is safe: over-assigning legacy only weakens CSP on
+// a forgotten future route, over-assigning strict hard-breaks its render.
+const DYNAMIC_ROUTES = /^\/($|stats|registry|legal|bot|versus|reviews|myscans)(?:\/|$)/i;
+
 function contentSecurityPolicy(scriptSrc: string): string {
   return [
     "default-src 'self'",
@@ -88,7 +98,7 @@ export function middleware(req: NextRequest) {
   }
 
   const nonce = randomNonce();
-  const strict = !PRERENDERED_ROUTES.test(effectivePath);
+  const strict = !PRERENDERED_ROUTES.test(effectivePath) && DYNAMIC_ROUTES.test(effectivePath);
   if (lang && strict) {
     // pinned language for the dynamic render; prerendered routes render
     // statically (their SSR language stays RU, the client view re-reads the

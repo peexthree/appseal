@@ -601,8 +601,10 @@ export function ScannerPage({
           </div>
         )}
 
-        {/* hero + scanner */}
+        {/* hero + scanner (id="scan": the 404 page's "Проверить сайт" CTA
+            lands here, at the top of the landing) */}
         <section
+          id="scan"
           className="appmot-grid relative z-10 isolate pb-14 pt-14 sm:pt-20"
           aria-label="Scanner"
         >
