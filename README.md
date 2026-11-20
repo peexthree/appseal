@@ -24,7 +24,7 @@
 
 ---
 
-![AppSeal - live scan page](assets/readme/hero.png)
+![AppSeal - live scan page](assets/readme/hero.jpg)
 
 ## What it does
 
@@ -67,7 +67,7 @@ with an indexable link back to the app. Aggregate data from **30 000+ harvested
 AI-built hosts** - grade distribution, most common failures, dead-site share - lives
 on [/stats](https://appseal.online/stats).
 
-![Stats dashboard](assets/readme/stats.png)
+![Stats dashboard](assets/readme/stats.jpg)
 
 ## Pricing
 
