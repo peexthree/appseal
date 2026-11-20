@@ -1,110 +1,115 @@
 {
-  "generatedAt": "2026-11-19T21:40:46+0500",
+  "generatedAt": "2026-11-20T11:19:17+0500",
   "panel": {
     "total": 30176,
-    "done": 1447,
-    "dead": 608,
+    "done": 14132,
+    "dead": 7296,
     "apiError": 26,
-    "missing": 28087
+    "missing": 8711
   },
   "grades": {
-    "A+": 5,
-    "A": 66,
-    "B": 294,
-    "C": 654,
-    "D": 405,
-    "E": 23
+    "A+": 33,
+    "A": 549,
+    "B": 2555,
+    "C": 7988,
+    "D": 2857,
+    "E": 150
   },
-  "avgScore": 58,
-  "medianScore": 59,
-  "gradeACount": 71,
+  "avgScore": 59,
+  "medianScore": 60,
+  "gradeACount": 582,
   "sources": {
-    "github": 807,
-    "hn": 475,
-    "github-text": 115,
-    "github-recent": 29,
-    "npm": 17,
-    "unknown": 4
+    "hn": 8291,
+    "github": 3392,
+    "npm": 1563,
+    "github-text": 713,
+    "github-recent": 156,
+    "hn-launch": 7,
+    "unknown": 6,
+    "lobsters": 3,
+    "dir": 1
   },
   "avgScoreBySource": {
-    "github": 57,
-    "hn": 61,
-    "github-recent": 57,
+    "github": 58,
+    "hn": 59,
+    "npm": 64,
+    "github-recent": 63,
     "github-text": 60,
-    "npm": 51
+    "hn-launch": 66,
+    "unknown": 59
   },
   "topFails": [
     {
       "id": "hdr_coop",
       "title": "Заголовок COOP не установлен",
       "failPct": 0,
-      "warnPct": 97
+      "warnPct": 96
     },
     {
       "id": "hdr_permissions",
       "title": "Заголовок Permissions-Policy не установлен",
       "failPct": 0,
-      "warnPct": 92
+      "warnPct": 89
     },
     {
       "id": "hdr_csp",
       "title": "Заголовок CSP не установлен",
       "failPct": 0,
-      "warnPct": 88
+      "warnPct": 87
     },
     {
       "id": "hdr_xfo",
       "title": "Заголовок X-Frame-Options не установлен",
       "failPct": 0,
-      "warnPct": 85
-    },
-    {
-      "id": "trust_terms_link",
-      "title": "Ссылка на условия использования найдена",
-      "failPct": 0,
-      "warnPct": 81
-    },
-    {
-      "id": "trust_privacy_link",
-      "title": "Ссылка на политику приватности найдена",
-      "failPct": 0,
-      "warnPct": 79
+      "warnPct": 82
     },
     {
       "id": "hdr_referrer",
       "title": "Заголовок Referrer-Policy не установлен",
       "failPct": 0,
-      "warnPct": 76
+      "warnPct": 75
     },
     {
-      "id": "seo_sitemap",
-      "title": "sitemap.xml не найден",
+      "id": "trust_terms_link",
+      "title": "Ссылка на условия использования найдена",
       "failPct": 0,
-      "warnPct": 75
+      "warnPct": 73
     },
     {
       "id": "hdr_xcto",
       "title": "Заголовок X-Content-Type-Options не установлен",
       "failPct": 0,
-      "warnPct": 72
+      "warnPct": 70
+    },
+    {
+      "id": "trust_privacy_link",
+      "title": "Ссылка на политику приватности найдена",
+      "failPct": 0,
+      "warnPct": 70
     },
     {
       "id": "trust_contact_link",
       "title": "Канал связи указан (почта/Telegram/страница контактов)",
       "failPct": 0,
-      "warnPct": 71
+      "warnPct": 70
+    },
+    {
+      "id": "seo_sitemap",
+      "title": "sitemap.xml не найден",
+      "failPct": 0,
+      "warnPct": 67
     },
     {
       "id": "a11y_landmarks",
       "title": "Семантические блоки на месте (nav/main/footer)",
       "failPct": 0,
-      "warnPct": 69
+      "warnPct": 65
     },
     {
       "id": "og_image",
       "title": "og:image отсутствует",
       "failPct": 0,
-      "warnPct": 51
+      "warnPct": 49
     }
   ]
 }
