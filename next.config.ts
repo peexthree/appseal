@@ -7,29 +7,28 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-  // 'unsafe-inline' in script/style: Next.js ships inline bootstrap scripts and
-  // framer-motion/toaster write inline styles; mc.yandex.ru hosts the Metrica
-  // counter (script/pixel/XHR/frames); va.vercel-scripts.com serves the Vercel
-  // Analytics client (its ingest endpoint /_vercel/insights/* is same-origin,
-  // covered by connect-src 'self'); everything else is locked to self
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://mc.yandex.ru https://va.vercel-scripts.com",
-      "style-src 'self' 'unsafe-inline' https://mc.yandex.ru",
-      "img-src 'self' data: blob: https://mc.yandex.ru",
-      "font-src 'self' data:",
-      "connect-src 'self' https://mc.yandex.ru",
-      "frame-src https://mc.yandex.ru",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "object-src 'none'",
-      "upgrade-insecure-requests",
-    ].join("; "),
-  },
 ];
+
+// Pages get their CSP from src/middleware.ts: dynamically rendered routes use
+// a per-request nonce + 'strict-dynamic' for script-src (no 'unsafe-inline'),
+// prerendered ISR/SSG routes keep the legacy script-src. The middleware
+// matcher skips /api, so the API routes keep the static policy below -
+// 'unsafe-inline' there is irrelevant (JSON/SVG responses, no documents), but
+// it preserves the exact headers /api/badge and /api/og have always had.
+const API_CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://mc.yandex.ru https://va.vercel-scripts.com",
+  "style-src 'self' 'unsafe-inline' https://mc.yandex.ru",
+  "img-src 'self' data: blob: https://mc.yandex.ru",
+  "font-src 'self' data:",
+  "connect-src 'self' https://mc.yandex.ru",
+  "frame-src https://mc.yandex.ru",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+  "upgrade-insecure-requests",
+].join("; ");
 
 // public/ assets are served with max-age=0 by default: every hero-video loop
 // or trophy hit revalidates at the origin (Fast Origin Transfer). Grade art
@@ -68,6 +67,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      { source: "/api/:path*", headers: [{ key: "Content-Security-Policy", value: API_CSP }] },
       { source: "/video/:path*", headers: cacheHeaders(CACHE_IMMUTABLE) },
       { source: "/img/:path*", headers: cacheHeaders(CACHE_IMMUTABLE) },
       ...immutableFiles.map((file) => ({
