@@ -69,8 +69,8 @@ const D = {
     en: "There is no registration and no personal-data forms. The Service does not collect names, email addresses or phone numbers.",
   },
   s2bA: {
-    ru: "Веб-аналитика - счётчик Яндекс.Метрики № 114248324 (ООО «ЯНДЕКС»): в целях статистики посещаемости и улучшения интерфейса обрабатываются обезличенные данные посещений - cookie-файлы, IP-адрес, параметры визита. Обработка ведётся Яндексом по ",
-    en: "Web analytics - the Yandex.Metrica counter #114248324 (Yandex): for traffic statistics and interface improvements, anonymized visit data is processed - cookies, IP address, visit parameters. Yandex processes it under ",
+    ru: "Веб-аналитика - счётчик Яндекс.Метрики № 114397545 (ООО «ЯНДЕКС»): в целях статистики посещаемости и улучшения интерфейса обрабатываются обезличенные данные посещений - cookie-файлы, IP-адрес, параметры визита. Обработка ведётся Яндексом по ",
+    en: "Web analytics - the Yandex.Metrica counter #114397545 (Yandex): for traffic statistics and interface improvements, anonymized visit data is processed - cookies, IP address, visit parameters. Yandex processes it under ",
   },
   s2bLink: { ru: "его политике", en: "its own policy" },
   s2bB: {
@@ -486,7 +486,7 @@ export default async function LegalPage() {
                     refund rule above applies to every paid pass.
                   </li>
                   <li>
-                    No accounts, no forms. Web analytics: the Yandex.Metrica counter #114248324
+                    No accounts, no forms. Web analytics: the Yandex.Metrica counter #114397545
                     (Yandex) processes anonymized visit data (cookies, IP address, visit
                     parameters) for traffic statistics under{" "}
                     <a

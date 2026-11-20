@@ -43,8 +43,8 @@ export function useCookieConsent(): CookieConsentValue | null {
 const COPY = {
   title: { ru: "Cookie и аналитика", en: "Cookies & analytics" },
   bodyA: {
-    ru: "Для статистики посещаемости сайт подключает Яндекс.Метрику (счётчик № 114248324): она ставит cookie-файлы и обрабатывает обезличенные данные визита - IP-адрес, источник перехода, поведение на странице. Пока вы не согласитесь, счётчик не загружается. Подробности - в ",
-    en: "For traffic statistics the site connects Yandex.Metrica (counter no. 114248324): it sets cookies and processes de-identified visit data - your IP address, traffic source and on-page behaviour. Until you agree, the counter is not loaded. Details - in the ",
+    ru: "Для статистики посещаемости сайт подключает Яндекс.Метрику (счётчик № 114397545): она ставит cookie-файлы и обрабатывает обезличенные данные визита - IP-адрес, источник перехода, поведение на странице. Пока вы не согласитесь, счётчик не загружается. Подробности - в ",
+    en: "For traffic statistics the site connects Yandex.Metrica (counter no. 114397545): it sets cookies and processes de-identified visit data - your IP address, traffic source and on-page behaviour. Until you agree, the counter is not loaded. Details - in the ",
   },
   bodyLink: { ru: "правилах сервиса", en: "service terms" },
   accept: { ru: "Принять - включить Метрику", en: "Accept - enable Metrica" },
