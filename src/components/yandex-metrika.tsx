@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useCookieConsent } from "@/components/cookie-consent";
 
-const METRIKA_ID = 114248324;
+// Counter 114397545 (switched from 114248324 on 2026-11-20 for Webmaster's
+// "обход по счетчикам" binding; the old counter keeps its history in its own
+// dashboard but no longer receives hits).
+const METRIKA_ID = 114397545;
 
 type YmFn = (id: number, action: string, ...rest: unknown[]) => void;
 
