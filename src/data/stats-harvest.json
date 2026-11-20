@@ -1,41 +1,41 @@
 {
-  "generatedAt": "2026-11-20T11:19:17+0500",
+  "generatedAt": "2026-11-20T23:20:53+0500",
   "panel": {
     "total": 30176,
-    "done": 14132,
-    "dead": 7296,
+    "done": 17212,
+    "dead": 8720,
     "apiError": 26,
-    "missing": 8711
+    "missing": 4207
   },
   "grades": {
-    "A+": 33,
-    "A": 549,
-    "B": 2555,
-    "C": 7988,
-    "D": 2857,
-    "E": 150
+    "A+": 40,
+    "A": 651,
+    "B": 3147,
+    "C": 9867,
+    "D": 3324,
+    "E": 183
   },
-  "avgScore": 59,
+  "avgScore": 60,
   "medianScore": 60,
-  "gradeACount": 582,
+  "gradeACount": 691,
   "sources": {
-    "hn": 8291,
-    "github": 3392,
-    "npm": 1563,
-    "github-text": 713,
-    "github-recent": 156,
-    "hn-launch": 7,
-    "unknown": 6,
+    "hn": 10426,
+    "github": 3934,
+    "npm": 1803,
+    "github-text": 846,
+    "github-recent": 179,
+    "hn-launch": 11,
+    "unknown": 8,
     "lobsters": 3,
-    "dir": 1
+    "dir": 2
   },
   "avgScoreBySource": {
     "github": 58,
     "hn": 59,
     "npm": 64,
-    "github-recent": 63,
-    "github-text": 60,
-    "hn-launch": 66,
+    "github-recent": 62,
+    "github-text": 61,
+    "hn-launch": 68,
     "unknown": 59
   },
   "topFails": [
@@ -55,13 +55,13 @@
       "id": "hdr_csp",
       "title": "Заголовок CSP не установлен",
       "failPct": 0,
-      "warnPct": 87
+      "warnPct": 86
     },
     {
       "id": "hdr_xfo",
       "title": "Заголовок X-Frame-Options не установлен",
       "failPct": 0,
-      "warnPct": 82
+      "warnPct": 81
     },
     {
       "id": "hdr_referrer",
@@ -73,7 +73,7 @@
       "id": "trust_terms_link",
       "title": "Ссылка на условия использования найдена",
       "failPct": 0,
-      "warnPct": 73
+      "warnPct": 72
     },
     {
       "id": "hdr_xcto",
@@ -82,16 +82,16 @@
       "warnPct": 70
     },
     {
-      "id": "trust_privacy_link",
-      "title": "Ссылка на политику приватности найдена",
-      "failPct": 0,
-      "warnPct": 70
-    },
-    {
       "id": "trust_contact_link",
       "title": "Канал связи указан (почта/Telegram/страница контактов)",
       "failPct": 0,
-      "warnPct": 70
+      "warnPct": 69
+    },
+    {
+      "id": "trust_privacy_link",
+      "title": "Ссылка на политику приватности найдена",
+      "failPct": 0,
+      "warnPct": 68
     },
     {
       "id": "seo_sitemap",
@@ -109,7 +109,7 @@
       "id": "og_image",
       "title": "og:image отсутствует",
       "failPct": 0,
-      "warnPct": 49
+      "warnPct": 47
     }
   ]
 }
