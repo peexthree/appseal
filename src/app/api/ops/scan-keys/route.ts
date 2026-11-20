@@ -84,7 +84,11 @@ export async function GET(req: NextRequest) {
           skipped++;
           continue;
         }
-        const ok = await archiveScan(d, !d.rkey);
+        const ok = await archiveScan(d, true);
+        // is_public=true across the board: the request-time "private" flag is
+        // not persisted in the stored JSON (rkey is generated for every scan,
+        // so its presence means nothing), and private scans did not exist as
+        // a feature before Nov 19 - the era these records come from
         if (ok) archived++;
         else skipped++;
       } catch {
