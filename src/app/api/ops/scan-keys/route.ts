@@ -1,21 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { redis, redisConfig } from "@/lib/scanner/store";
+import { archiveScan } from "@/lib/db";
 import { secretsMatch } from "@/lib/sec";
+import type { ScanResult } from "@/lib/scanner/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /**
  * One-off ops utility for the PG history backfill: paginates the ephemeral
- * scan records (appmot:scan:*, TTL 7 days) server-side, where the Upstash
- * round-trip is reliable, and hands the raw JSONs to the authenticated
- * operator. The local network path to Upstash resets on anything above ~10KB,
- * which made running the same SCAN/MGET loop from the office machine
- * impossible. Read-only, secret-gated, fixed pattern, digit-only cursor.
+ * scan records (appmot:scan:*, TTL 7 days) server-side, where both the
+ * Upstash round-trip and the Supabase connection are reliable, and either
+ * hands the raw JSONs to the operator (mode=read) or archives them straight
+ * into the scans table via archiveScan (mode=archive). The office network
+ * resets on anything above ~10KB, which made running the same loop locally
+ * impossible. Read-only on Redis, secret-gated, fixed pattern, digit-only
+ * cursor.
  */
 const SCAN_PATTERN = "appmot:scan:*";
 const SCAN_COUNT = 200;
 const CURSOR_RE = /^\d{1,20}$/;
+const ID_RE = /^[a-z0-9-]{6,40}$/i;
+const HOST_RE = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+const GRADE_RE = /^[A-E]\+?$/;
 
 export async function GET(req: NextRequest) {
   const key = (process.env.ADMIN_SCAN_KEY ?? "").trim();
@@ -30,6 +38,7 @@ export async function GET(req: NextRequest) {
   if (!CURSOR_RE.test(cursorParam)) {
     return NextResponse.json({ error: "bad cursor" }, { status: 400 });
   }
+  const mode = req.nextUrl.searchParams.get("mode") === "archive" ? "archive" : "read";
 
   const cfg = redisConfig();
   if (!cfg) {
@@ -50,8 +59,41 @@ export async function GET(req: NextRequest) {
     const items = keys
       .map((k, i) => ({ k, v: values[i] }))
       .filter((it): it is { k: string; v: string } => typeof it.v === "string");
-    return NextResponse.json({ cursor, items });
+
+    if (mode === "read") {
+      return NextResponse.json({ cursor, items });
+    }
+
+    // archive mode: durable-ize every finished, non-demo record (same
+    // validation and upsert shape as the scan pipeline's own archiveScan)
+    let archived = 0;
+    let skipped = 0;
+    for (const it of items) {
+      try {
+        const d = JSON.parse(it.v) as ScanResult & { finishedAt?: string };
+        if (d.isDemo || d.status !== "done") {
+          skipped++;
+          continue;
+        }
+        if (
+          !ID_RE.test(String(d.id ?? "")) ||
+          !HOST_RE.test(String(d.host ?? "")) ||
+          !GRADE_RE.test(String(d.grade ?? "")) ||
+          !Number.isFinite(Number(d.score))
+        ) {
+          skipped++;
+          continue;
+        }
+        const ok = await archiveScan(d, !d.rkey);
+        if (ok) archived++;
+        else skipped++;
+      } catch {
+        skipped++;
+      }
+    }
+    return NextResponse.json({ cursor, mode, archived, skipped, count: items.length });
   } catch {
     return NextResponse.json({ error: "redis failure" }, { status: 502 });
   }
 }
+
