@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import cspStyleHashes from "./generated/csp-style-hashes.json";
 
 /**
  * Path-based language variants: /en/... and /ru/... serve the same page with
@@ -25,13 +26,31 @@ import { NextRequest, NextResponse } from "next/server";
  * pages below; everything else - including future pages - gets the strict CSP,
  * which is safe as long as the route renders per request.
  *
- * style-src deliberately keeps 'unsafe-inline' (framer-motion/toaster write
- * inline styles) - scripts are the only target here.
+ * style-src has two tiers:
+ *  - the landing (the page our own scanner grades) is fully strict: its
+ *    inline styles are deterministic per build (next/font fallback blocks and
+ *    framer-motion initial attribute strings), so 'unsafe-hashes' + sha256
+ *    hashes of every value replace 'unsafe-inline' completely. The hash list
+ *    lives in src/generated/csp-style-hashes.json - regenerate with
+ *    scripts/csp-style-sync.mjs after landing style changes and verify with
+ *    its --check mode (a drifted list silently blocks the landing styles).
+ *  - every other page keeps 'unsafe-inline': their styles carry per-request
+ *    data (the /stats bars render scan counts into style attributes), which
+ *    cannot be enumerated into a hash list.
  */
 
 const SCRIPT_SRC_LEGACY = `'self' 'unsafe-inline' https://mc.yandex.ru https://va.vercel-scripts.com`;
 const scriptSrcStrict = (nonce: string) =>
   `'self' 'nonce-${nonce}' 'strict-dynamic' https://mc.yandex.ru https://va.vercel-scripts.com`;
+
+// landing style-src: 'unsafe-hashes' unlocks hashed style ATTRIBUTES (the
+// framer-motion initial strings), plain hashes cover the <style> elements
+// (next/font fallback blocks). No 'unsafe-inline' left anywhere on this page.
+const STYLE_SRC_LANDING = `'self' 'unsafe-hashes' ${[
+  ...cspStyleHashes.styleHashes,
+  ...cspStyleHashes.attrHashes,
+].join(" ")} https://mc.yandex.ru`;
+const STYLE_SRC_DEFAULT = `'self' 'unsafe-inline' https://mc.yandex.ru`;
 
 // prerendered (ISR/SSG) routes - served from cache, no nonce in their HTML.
 // /registry used to be ISR but is dynamic now (URL-driven facets over the
@@ -48,11 +67,11 @@ const PRERENDERED_ROUTES = /^\/(ci|digest|fixes|report|verified)(?:\/|$)/i;
 // a forgotten future route, over-assigning strict hard-breaks its render.
 const DYNAMIC_ROUTES = /^\/($|stats|registry|legal|bot|versus|reviews|myscans)(?:\/|$)/i;
 
-function contentSecurityPolicy(scriptSrc: string): string {
+function contentSecurityPolicy(scriptSrc: string, styleSrc: string): string {
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
-    "style-src 'self' 'unsafe-inline' https://mc.yandex.ru",
+    `style-src ${styleSrc}`,
     "img-src 'self' data: blob: https://mc.yandex.ru",
     "font-src 'self' data:",
     "connect-src 'self' https://mc.yandex.ru",
@@ -99,13 +118,20 @@ export function middleware(req: NextRequest) {
 
   const nonce = randomNonce();
   const strict = !PRERENDERED_ROUTES.test(effectivePath) && DYNAMIC_ROUTES.test(effectivePath);
+  // the landing is the page our own scanner grades - its CSP must be free of
+  // 'unsafe-inline' in EVERY directive, style-src included (hash-based, see
+  // STYLE_SRC_LANDING)
+  const isLanding = effectivePath === "/";
   if (lang && strict) {
     // pinned language for the dynamic render; prerendered routes render
     // statically (their SSR language stays RU, the client view re-reads the
     // cookie) and must not see a modified request at all - see below
     req.cookies.set("appseal-lang", lang);
   }
-  const policy = contentSecurityPolicy(strict ? scriptSrcStrict(nonce) : SCRIPT_SRC_LEGACY);
+  const policy = contentSecurityPolicy(
+    strict ? scriptSrcStrict(nonce) : SCRIPT_SRC_LEGACY,
+    isLanding ? STYLE_SRC_LANDING : STYLE_SRC_DEFAULT,
+  );
 
   // Request headers are forwarded to the render ONLY for dynamically rendered
   // routes. Forwarding modified request headers to an ISR/prerendered route
