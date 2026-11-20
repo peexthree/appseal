@@ -1,15 +1,16 @@
-import { headers } from "next/headers";
 import Link from "next/link";
 
 /**
- * Custom 404: the default prerendered not-found page renders without a
- * per-request nonce, so the strict script-src CSP would block its hydration.
- * Calling headers() makes this page dynamic - it renders per request, picks
- * up the middleware nonce (x-nonce) and hydrates like every other strict-CSP
- * route. Kept deliberately small: no client components, no data fetching.
+ * Custom 404. Kept fully static: calling headers() here made Next 16 pull
+ * the not-found boundary into every ISR runtime (re)generation - regenerating
+ * any prerendered route then hard-failed with "Page changed from static to
+ * dynamic, reason: headers". That was the /verified/[host] 500 (the only
+ * route with no cached copy, so the only one erroring out loud; every other
+ * ISR page just silently kept serving stale cache since 19.11). The ld+json
+ * block below is data-only (never executed), so it stays valid without a
+ * nonce even under the strict script-src CSP.
  */
-export default async function NotFound() {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+export default function NotFound() {
   return (
     <main className="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center px-4 text-center">
       <p className="text-6xl font-bold tracking-tight text-white/90">404</p>
@@ -33,10 +34,9 @@ export default async function NotFound() {
           Telegram-бот
         </a>
       </div>
-      {/* static, non-executing: nonce keeps it valid under strict CSP */}
+      {/* data-only script: browsers never execute application/ld+json */}
       <script
         type="application/ld+json"
-        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
