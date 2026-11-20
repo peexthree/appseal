@@ -71,7 +71,31 @@ interface Progress {
   progress: number;
 }
 
+/** Progress writes go over Upstash REST as a GET+SET pair per update; the
+ *  engine produces one update per finished check (~44 macro-checks across 4
+ *  parallel workers), so a single scan used to burn ~90 HTTP round trips
+ *  just to move a progress bar. Coalesce: write when 2.5s passed since the
+ *  previous write OR the bar moved by 10+ points; the first write always
+ *  lands, the last (>=95%) one too. The bar now moves in 2-3s steps over a
+ *  15-40s scan - imperceptible. */
+const PROGRESS_MIN_INTERVAL_MS = 2500;
+const PROGRESS_MIN_STEP = 10;
+const lastProgressWrite = new Map<string, { at: number; progress: number }>();
+
 async function setProgress(id: string, p: Progress) {
+  const now = Date.now();
+  const last = lastProgressWrite.get(id);
+  const isFinal = p.progress >= 95;
+  if (
+    last &&
+    !isFinal &&
+    now - last.at < PROGRESS_MIN_INTERVAL_MS &&
+    p.progress - last.progress < PROGRESS_MIN_STEP
+  ) {
+    return;
+  }
+  if (isFinal) lastProgressWrite.delete(id);
+  else lastProgressWrite.set(id, { at: now, progress: p.progress });
   await updateScan(id, { progress: p.progress, stage: p.stage });
 }
 

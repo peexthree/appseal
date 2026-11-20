@@ -74,27 +74,38 @@ export function isForbiddenIp(ip: string): boolean {
   return false;
 }
 
+export interface ResolvedRecord {
+  address: string;
+  family: 4 | 6;
+}
+
 /**
  * Resolves the hostname and verifies all resolved addresses are public.
  * Literal IPs are checked directly. Throws when the target is forbidden.
+ * Returns the validated records so the transport layer can connect to the
+ * SAME address that was checked - the single-resolution pattern that closes
+ * the DNS-rebinding window (guard check and connection share one lookup).
  */
-export async function assertPublicTarget(hostname: string): Promise<void> {
+export async function resolvePublicTarget(hostname: string): Promise<ResolvedRecord[]> {
+  // IPv6 literals arrive bracketed ("[::1]"); unbracket before checks
+  const bare = hostname.replace(/^\[|\]$/g, "");
+
   // literal IP fast-path
-  const literal = v4ToNum(hostname);
+  const literal = v4ToNum(bare);
   if (literal !== null) {
-    if (isForbiddenIp(hostname)) {
+    if (isForbiddenIp(bare)) {
       throw new Error("target is not a public address");
     }
-    return;
+    return [{ address: bare, family: 4 }];
   }
 
-  if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".internal") || hostname.endsWith(".local")) {
+  if (bare === "localhost" || bare.endsWith(".localhost") || bare.endsWith(".internal") || bare.endsWith(".local")) {
     throw new Error("target is not a public host");
   }
 
   let records;
   try {
-    records = await dns.lookup(hostname, { all: true, verbatim: true });
+    records = await dns.lookup(bare, { all: true, verbatim: true });
   } catch {
     throw new Error("cannot resolve target host");
   }
@@ -105,6 +116,12 @@ export async function assertPublicTarget(hostname: string): Promise<void> {
       throw new Error("target resolves to a non-public address");
     }
   }
+  return records.map((r) => ({ address: r.address, family: (r.family === 6 ? 6 : 4) as 4 | 6 }));
+}
+
+/** Guard-only wrapper for call sites that do not need the records. */
+export async function assertPublicTarget(hostname: string): Promise<void> {
+  await resolvePublicTarget(hostname);
 }
 
 /**
@@ -112,7 +129,10 @@ export async function assertPublicTarget(hostname: string): Promise<void> {
  * request. Literal IPs are checked directly; hostnames are resolved and every
  * resolved record must be public. safeFetch re-runs this per redirect hop, so
  * a public site cannot bounce a probe to a private address (DNS rebinding /
- * redirect-to-localhost attacks).
+ * redirect-to-localhost attacks). Userinfo (@-authority tricks like
+ * http://127.0.0.1:3210@169.254.169.254/) is rejected outright - URL.hostname
+ * already strips it, but the explicit check keeps the allowlist semantics
+ * impossible to blur from the caller side.
  */
 export async function assertPublicFetchTarget(url: string): Promise<void> {
   let u: URL;
@@ -124,5 +144,8 @@ export async function assertPublicFetchTarget(url: string): Promise<void> {
   if (u.protocol !== "http:" && u.protocol !== "https:") {
     throw new Error("only http/https targets are allowed");
   }
-  await assertPublicTarget(u.hostname);
+  if (u.username || u.password) {
+    throw new Error("userinfo in the target URL is not allowed");
+  }
+  await resolvePublicTarget(u.hostname);
 }

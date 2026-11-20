@@ -32,7 +32,9 @@ const LOCK = "lpass:monitor:lock";
 const MIN_INTERVAL_S = 1500; // tick throttle; the scheduler fires every 30 min
 const SNAP_TTL_S = 11 * 24 * 3600; // outlives the 8-day pass TTL
 const POLL_DEADLINE_MS = 48_000; // leave headroom under maxDuration
-const POLL_INTERVAL_MS = 2500;
+// a scan takes 15-40s; 4s steps keep the poll budget inside the 48s window
+// with ~12 round trips instead of ~19
+const POLL_INTERVAL_MS = 4000;
 const SUBMIT_TIMEOUT_MS = 30_000; // a hung scan-route submit must not eat the poll budget
 
 /* --- expiry reminders: warn the bound chat 3..1 days before a pass dies --- */

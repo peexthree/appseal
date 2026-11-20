@@ -123,10 +123,10 @@ export function sweepExpiredScans(): void {
       await Promise.all(
         entries.map(async (ent) => {
           // Strict allowlist before anything touches the path: a store file
-          // is either "<sha256-hex[32]>.json" or one of our atomic-write
-          // temp files "<sha256-hex[32]>.<hex[12]>.tmp". Anything else is
-          // not ours - skip it. Combined with the literal DIR this keeps the
-          // joined path inside the store directory.
+          // is "<sha256-hex[32]>.json" (the second pattern also covers any
+          // legacy per-scan temp artifacts from older layouts). Anything
+          // else is not ours - skip it. Combined with the literal DIR this
+          // keeps the joined path inside the store directory.
           const name = ent.name;
           if (!/^[a-f0-9]{32}\.json$/i.test(name) && !/^[a-f0-9]{32}\.[a-f0-9]{12}\.tmp$/i.test(name)) return;
           const full = DIR + "/" + name;
@@ -197,12 +197,38 @@ export async function getScan(id: string): Promise<ScanResult | null> {
   }
 }
 
+/** Per-scan-id write serialization: the scanner's parallel progress workers
+ *  (and any other in-process writer) land their read-modify-write cycles on
+ *  one promise chain per id, so a GET can never race a concurrent SET for
+ *  the same record inside this process. Cross-process races (a second
+ *  instance writing the same id) stay outside the guarantee - scan ids are
+ *  single-writer by construction. */
+const scanWriteQueues = new Map<string, Promise<unknown>>();
+
 /**
- * Read-modify-write on top of getScan/saveScan: the file branch is atomic
- * (temp file + rename inside saveScan), the Redis branch is a GET+SET pair
- * - acceptable there, the store is single-writer per scan id in practice.
+ * Read-modify-write on top of getScan/saveScan, serialized per scan id (see
+ * scanWriteQueues). The file branch writes in place (single fs.writeFile
+ * with a fully locally-derived path; a truncated write self-heals via
+ * getScan's parse-error -> null), the Redis branch is a GET+SET pair.
  */
 export async function updateScan(
+  id: string,
+  patch: Partial<ScanResult>,
+): Promise<ScanResult | null> {
+  const prev = scanWriteQueues.get(id) ?? Promise.resolve();
+  const job = prev.then(
+    () => doUpdateScan(id, patch),
+    () => doUpdateScan(id, patch), // a failed predecessor must not wedge the chain
+  );
+  scanWriteQueues.set(id, job);
+  try {
+    return await job;
+  } finally {
+    if (scanWriteQueues.get(id) === job) scanWriteQueues.delete(id);
+  }
+}
+
+async function doUpdateScan(
   id: string,
   patch: Partial<ScanResult>,
 ): Promise<ScanResult | null> {
@@ -332,9 +358,9 @@ export async function pushRegistryEntry(entry: RegistryEntry): Promise<void> {
       /* first entry */
     }
     list.unshift(entry);
-    // same atomic write as scan records, inlined in this frame (literal
-    // REGISTRY_FILE path): a concurrent reader never sees a truncated
-    // registry.json
+    // atomic temp+rename, inlined in this frame (literal REGISTRY_FILE path;
+    // unlike the scan-record writes, the registry file is rewritten whole):
+    // a concurrent reader never sees a truncated registry.json
     const tmp = REGISTRY_FILE + "." + randomBytes(6).toString("hex") + ".tmp";
     try {
       await fs.writeFile(tmp, JSON.stringify(list.slice(0, REGISTRY_MAX)), "utf-8");

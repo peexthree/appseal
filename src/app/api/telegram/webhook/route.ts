@@ -97,7 +97,8 @@ export const dynamic = "force-dynamic";
 
 const STATE_TTL_SECONDS = 3600;
 // literal on purpose: the purchase route exists only on our production
-// origin, and a literal URL keeps the outbound fetch SSRF-scannable
+// origin, and a literal URL keeps the outbound fetch SSRF-scannable (an
+// env-derived origin would also trip the security gate here)
 const HOSTED_ORIGIN = "https://appseal.online";
 // one /myscans grade lookup must not stall the whole reply on a dead store
 const MYSCANS_LOOKUP_TIMEOUT_MS = 5000;

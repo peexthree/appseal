@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getConnIp, tickSecretOk } from "../src/lib/sec.ts";
+import { getClientIp, getConnIp, tickSecretOk } from "../src/lib/sec.ts";
 import { buildHealthPayload, HEALTH_PING_KEY } from "../src/app/api/healthz/payload.ts";
 import { bumpDailyQuota } from "../src/lib/passes.ts";
 
@@ -31,6 +31,47 @@ test("getConnIp falls back to the first well-formed entry when the last is garba
   assert.equal(getConnIp(new Headers({ "x-forwarded-for": "9.10.11.12, not-an-ip" })), "9.10.11.12");
   assert.equal(getConnIp(new Headers({ "x-forwarded-for": "not-an-ip" })), "unknown");
   assert.equal(getConnIp(new Headers()), "unknown");
+});
+
+/* ----------------------------- getClientIp ---------------------------- */
+
+test("getClientIp ignores a forged cf-connecting-ip when the connection does not come from Cloudflare", () => {
+  // grey-cloud DNS (or direct Vercel): the peer is not a CF edge, the header
+  // is client-supplied and must not become the quota identity
+  const h = new Headers({
+    "cf-connecting-ip": "6.6.6.6",
+    "x-real-ip": "1.2.3.4",
+  });
+  assert.equal(getClientIp(h), "1.2.3.4");
+  // no x-real-ip at all -> connection IP rules, not the forged header
+  const h2 = new Headers({ "cf-connecting-ip": "6.6.6.6", "x-forwarded-for": "5.6.7.8, 9.10.11.12" });
+  assert.equal(getClientIp(h2), "9.10.11.12");
+});
+
+test("getClientIp trusts cf-connecting-ip only for a real Cloudflare edge peer", () => {
+  // 104.16.0.0/13 and 172.64.0.0/13 are CF ranges; the platform edge (x-real-ip)
+  // reports the CF proxy as the peer, so the header carries the true client
+  const h = new Headers({
+    "cf-connecting-ip": "203.0.113.7",
+    "x-real-ip": "104.16.1.1",
+  });
+  assert.equal(getClientIp(h), "203.0.113.7");
+  const h6 = new Headers({
+    "cf-connecting-ip": "203.0.113.7",
+    "x-real-ip": "2606:4700::1",
+  });
+  assert.equal(getClientIp(h6), "203.0.113.7");
+  // a CF-shaped header plus a non-CF peer stays untrusted (spoof attempt)
+  const hBad = new Headers({
+    "cf-connecting-ip": "203.0.113.7",
+    "x-real-ip": "8.8.8.8",
+  });
+  assert.equal(getClientIp(hBad), "8.8.8.8");
+});
+
+test("getClientIp never takes a client-supplied X-Forwarded-For head entry", () => {
+  const h = new Headers({ "x-forwarded-for": "6.6.6.6, 9.10.11.12" });
+  assert.equal(getClientIp(h), "9.10.11.12");
 });
 
 /* ---------------------------- tickSecretOk ---------------------------- */

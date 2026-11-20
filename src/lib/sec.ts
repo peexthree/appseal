@@ -91,39 +91,52 @@ export function ipInCidr(ip: string, cidr: string): boolean {
   return ipV >> shift === netV >> shift;
 }
 
-/** The requester IP as the platform edge reported it: CF header first
- *  (present when Cloudflare proxies), then Vercel's x-real-ip, then the
- *  first well-formed entry of x-forwarded-for. A client-supplied chain is
- *  never trusted - only entries that parse as real IPs are considered, and
- *  garbage falls back to "unknown" instead of an attacker-chosen string. */
-export function getClientIp(headers: Headers): string {
-  const cf = headers.get("cf-connecting-ip");
-  if (cf && ipToBigInt(cf) !== null) return cf.trim();
-  const real = headers.get("x-real-ip");
-  if (real && ipToBigInt(real) !== null) return real.trim();
-  const xff = headers.get("x-forwarded-for");
-  if (xff) {
-    for (const part of xff.split(",")) {
-      if (ipToBigInt(part) !== null) return part.trim();
-    }
-  }
-  return "unknown";
+/** Cloudflare edge networks (https://www.cloudflare.com/ips/). */
+const CF_RANGES = [
+  // IPv4
+  "173.245.48.0/20",
+  "103.21.244.0/22",
+  "103.22.200.0/22",
+  "103.31.4.0/22",
+  "141.101.64.0/18",
+  "108.162.192.0/18",
+  "190.93.240.0/20",
+  "188.114.96.0/20",
+  "197.234.240.0/22",
+  "198.41.128.0/17",
+  "162.158.0.0/15",
+  "104.16.0.0/13",
+  "104.24.0.0/14",
+  "172.64.0.0/13",
+  "131.0.72.0/22",
+  // IPv6
+  "2400:cb00::/32",
+  "2606:4700::/32",
+  "2803:f800::/32",
+  "2405:b500::/32",
+  "2405:8100::/32",
+  "2a06:98c0::/29",
+  "2c0f:f248::/32",
+];
+
+/** True when the platform-reported connecting peer (x-real-ip) is a
+ *  Cloudflare edge IP. cf-connecting-ip means anything only when the
+ *  connection demonstrably arrived through Cloudflare: with DNS-only
+ *  (grey-cloud) DNS the header is client-supplied and MUST be ignored,
+ *  otherwise a forged header forges the caller's quota identity. */
+function behindCloudflare(headers: Headers): boolean {
+  const peer = headers.get("x-real-ip");
+  if (!peer) return false;
+  return CF_RANGES.some((cidr) => ipInCidr(peer.trim(), cidr));
 }
 
-/** IP allowlist check; "*" or an empty list disables the filter. */
-export function ipAllowed(ip: string, allowlist: string[]): boolean {
-  if (!allowlist.length || allowlist.includes("*")) return true;
-  return allowlist.some((entry) => ipInCidr(ip, entry));
-}
-
-/** Connection IP for our own edge topology (no Cloudflare in front): prefers
- *  x-real-ip (set by the nearest trusted proxy), then the LAST well-formed
- *  entry of x-forwarded-for - the one appended by the closest proxy, which a
- *  spoofing client cannot overwrite - then falls back to the first well-formed
- *  entry (the original getClientIp rule). Garbage falls back to "unknown"
- *  exactly like getClientIp; getClientIp itself stays untouched because its
- *  Cloudflare-first order is correct where CF is present. */
-export function getConnIp(headers: Headers): string {
+/** Connection IP as the nearest trusted proxy reported it: x-real-ip first
+ *  (set by the platform edge, a client cannot keep a spoofed value there),
+ *  then the LAST well-formed entry of x-forwarded-for - the one appended by
+ *  the closest proxy, which a spoofing client cannot overwrite - then the
+ *  first well-formed entry. Garbage falls back to "unknown" instead of an
+ *  attacker-chosen string. */
+function connIp(headers: Headers): string {
   const real = headers.get("x-real-ip");
   if (real && ipToBigInt(real) !== null) return real.trim();
   const xff = headers.get("x-forwarded-for");
@@ -136,6 +149,28 @@ export function getConnIp(headers: Headers): string {
     }
   }
   return "unknown";
+}
+
+/** The requester IP for quotas and locks: cf-connecting-ip is honored only
+ *  when the request demonstrably arrived from a Cloudflare edge (peer in
+ *  the CF ranges); everything else defers to the platform-reported
+ *  connection IP. */
+export function getClientIp(headers: Headers): string {
+  const cf = headers.get("cf-connecting-ip");
+  if (cf && ipToBigInt(cf) !== null && behindCloudflare(headers)) return cf.trim();
+  return connIp(headers);
+}
+
+/** IP allowlist check; "*" or an empty list disables the filter. */
+export function ipAllowed(ip: string, allowlist: string[]): boolean {
+  if (!allowlist.length || allowlist.includes("*")) return true;
+  return allowlist.some((entry) => ipInCidr(ip, entry));
+}
+
+/** Connection IP for our own edge topology (no Cloudflare in front): same
+ *  rule as getClientIp minus the CF header branch. */
+export function getConnIp(headers: Headers): string {
+  return connIp(headers);
 }
 
 /** Cron-tick gate: when a TICK_SECRET is configured, every call must present

@@ -75,8 +75,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!norm.isDemo && !adminBypass && !apiTok) {
-      // getClientIp only returns platform-reported, well-formed addresses -
-      // a spoofed X-Forwarded-For entry falls through to "unknown"
+      // getClientIp trusts cf-connecting-ip only when the connection actually
+      // arrives from a Cloudflare edge, and never takes a client-supplied
+      // X-Forwarded-For entry (last proxy-appended hop only) - a forged
+      // header cannot forge the quota identity
       const targetHost = new URL(norm.url).hostname;
       const pass = await hasActivePass(targetHost);
       if (!pass) {
@@ -90,11 +92,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // per-IP concurrency limit: at most one in-flight scan submission per IP.
-    // A Redis SET NX with a 5-minute TTL is the lock (the TTL bounds a
-    // crashed request's lock; the DEL below releases it when this response
-    // is sent). No Redis configured or an Upstash hiccup -> the limit is
-    // skipped, same degrade-as-the-store rule.
+    // per-IP concurrency limit: at most one in-flight scan per IP. A Redis
+    // SET NX with a 5-minute TTL is the lock (the TTL bounds a crashed
+    // function's lock); the DEL runs when the background scan FINISHES -
+    // inside after() - so the lock really covers the 15-40s engine run, not
+    // just the submission. No Redis configured or an Upstash hiccup -> the
+    // limit is skipped, same degrade-as-the-store rule.
     let releaseScanLock: (() => void) | null = null;
     if (!norm.isDemo && !adminBypass) {
       const lockCfg = redisConfig();
@@ -153,52 +156,60 @@ export async function POST(req: NextRequest) {
       // run the scan after the response is sent; on Vercel this keeps the
       // function alive (waitUntil) within maxDuration, locally it just works
       after(async () => {
-        // 🔔 Notify owner: someone started a scan. Fired (not awaited) inside
-        // after(): the callback keeps the function alive, and the Bot API call
-        // always settles within its own 10s socket timeout - far shorter than
-        // the scan itself - without delaying runScan's 60s maxDuration budget.
-        void sendTelegramAlert(
-          `🔍 Новая проверка сайта\n` +
-          `🌐 URL: ${norm.isDemo ? "demo" : norm.url}\n` +
-          `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
-          (ip !== "unknown" ? `📡 IP: ${ip}` : "")
-        );
-
-        // runScan never throws: the final record lands in the store; its return
-        // value feeds the public registry. Demo scans excluded, private scans
-        // too - a private scan never reaches the registry/catalog/stats (all
-        // of them live inside pushRegistryEntry), while PDF/badge gating is
-        // unchanged: the report key still unlocks the full PDF as usual.
-        const fin = await runScan(scan);
-        if (fin && !scan.isDemo && !isPrivate) {
-          await pushRegistryEntry({
-            host: fin.host,
-            grade: fin.grade,
-            score: fin.score,
-            ts: Date.now(),
-            id: scan.id,
-            desc: fin.pageDesc ?? fin.pageTitle,
-            platform: fin.platform,
-          });
-        }
-        // durable archive for every finished scan (private ones stored with
-        // is_public=false); best-effort void - an archive hiccup never breaks
-        // the scan response. runScan returns only the final verdict fields, so
-        // the archive record is the in-flight scan (id/inputs) + fin overlay.
-        if (fin) {
-          void archiveScan(
-            { ...scan, ...fin, status: "done", finishedAt: new Date().toISOString() },
-            !isPrivate,
+        try {
+          // 🔔 Notify owner: someone started a scan. Fired (not awaited) inside
+          // after(): the callback keeps the function alive, and the Bot API call
+          // always settles within its own 10s socket timeout - far shorter than
+          // the scan itself - without delaying runScan's 60s maxDuration budget.
+          void sendTelegramAlert(
+            `🔍 Новая проверка сайта\n` +
+            `🌐 URL: ${norm.isDemo ? "demo" : norm.url}\n` +
+            `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
+            (ip !== "unknown" ? `📡 IP: ${ip}` : "")
           );
+
+          // runScan never throws: the final record lands in the store; its return
+          // value feeds the public registry. Demo scans excluded, private scans
+          // too - a private scan never reaches the registry/catalog/stats (all
+          // of them live inside pushRegistryEntry), while PDF/badge gating is
+          // unchanged: the report key still unlocks the full PDF as usual.
+          const fin = await runScan(scan);
+          if (fin && !scan.isDemo && !isPrivate) {
+            await pushRegistryEntry({
+              host: fin.host,
+              grade: fin.grade,
+              score: fin.score,
+              ts: Date.now(),
+              id: scan.id,
+              desc: fin.pageDesc ?? fin.pageTitle,
+              platform: fin.platform,
+            });
+          }
+          // durable archive for every finished scan (private ones stored with
+          // is_public=false); best-effort void - an archive hiccup never breaks
+          // the scan response. runScan returns only the final verdict fields, so
+          // the archive record is the in-flight scan (id/inputs) + fin overlay.
+          if (fin) {
+            void archiveScan(
+              { ...scan, ...fin, status: "done", finishedAt: new Date().toISOString() },
+              !isPrivate,
+            );
+          }
+          // TTL sweep rides along the scan pipeline, throttled inside
+          void sweepExpiredScans();
+        } finally {
+          // the scan is done (or the function died): release the per-IP
+          // in-flight lock here, not at response time
+          releaseScanLock?.();
         }
-        // TTL sweep rides along the scan pipeline, throttled inside
-        void sweepExpiredScans();
       });
       // rkey goes only to the initiator: bare id grants the public view, the
       // key unlocks the full report (results, PDF) for this browser session
       return NextResponse.json({ id, rkey });
-    } finally {
+    } catch (e) {
+      // the submission itself failed - nothing is in flight, free the IP now
       releaseScanLock?.();
+      throw e;
     }
   } catch (e) {
     return NextResponse.json(

@@ -78,16 +78,19 @@ const DDL_STATEMENTS = [
   // fresh installs get the column from the create-table above; already
   // provisioned tables (migration 0001) pick it up here - both idempotent
   `alter table reviews add column if not exists featured boolean not null default false`,
-  // RLS on every table: the Supabase anon key (REST API) gets deny-all -
-  // this app only reads/writes through the direct server-side connection,
-  // which runs as the table owner and bypasses RLS.
-  `alter table users enable row level security`,
-  `alter table scans enable row level security`,
-  `alter table purchases enable row level security`,
-  `alter table passes enable row level security`,
-  `alter table api_tokens enable row level security`,
-  `alter table reviews enable row level security`,
 ];
+
+// tables that carry RLS (see below) - the pre-check in ensureSchema reads
+// pg_class instead of re-issuing these ALTERs on every cold start
+const RLS_TABLES = ["users", "scans", "purchases", "passes", "api_tokens", "reviews"];
+
+// RLS on every table: the Supabase anon key (REST API) gets deny-all -
+// this app only reads/writes through the direct server-side connection,
+// which runs as the table owner and bypasses RLS. Kept separate from the
+// base DDL because these are the statements the cold-start pre-check skips.
+const RLS_DDL = RLS_TABLES.map(
+  (t) => `alter table ${t} enable row level security`,
+);
 
 let client: postgres.Sql | null = null;
 let schemaReady = false;
@@ -116,11 +119,32 @@ function db(): postgres.Sql | null {
   return client;
 }
 
+// RLS statements run on every cold start unless pre-checked away: each
+// `alter table ... enable row level security` takes an AccessExclusiveLock,
+// and a burst of cold lambda instances would queue behind each other's
+// ALTERs (the "DDL storm"). The pre-check below reads relrowsecurity (no
+// locks, one round trip) and only ALTERs tables that still need it.
 async function ensureSchema(sql: postgres.Sql): Promise<void> {
   if (schemaReady) return;
   if (!schemaPromise) {
     schemaPromise = (async () => {
-      for (const stmt of DDL_STATEMENTS) {
+      // which RLS ALTERs are still needed? (relnamespace pinned to public -
+      // Supabase keeps its own auth.users with RLS already on; relkind 'r'
+      // excludes views). Steady state: zero ALTERs, no exclusive locks.
+      let needRls: Set<string>;
+      try {
+        const on = (await sql`
+          select relname from pg_class
+          where relrowsecurity and relkind = 'r'
+            and relnamespace = 'public'::regnamespace
+            and relname in ${sql(RLS_TABLES)}
+        `) as Array<{ relname: string }>;
+        needRls = new Set(RLS_TABLES.filter((t) => !on.some((row) => row.relname === t)));
+      } catch {
+        needRls = new Set(RLS_TABLES); // pre-check failed: run the full set
+      }
+      const stmts = [...DDL_STATEMENTS, ...RLS_DDL.filter((_, i) => needRls.has(RLS_TABLES[i]))];
+      for (const stmt of stmts) {
         await sql.unsafe(stmt);
       }
     })()

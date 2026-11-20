@@ -3,15 +3,171 @@
  * - hard timeouts per request
  * - body size limit
  * - never throws (returns error object instead)
- * - SSRF: every hop (entry URL + each redirect target) is resolved and
- *   range-checked immediately before its own request
+ * - SSRF: every hop (entry URL + each redirect target) is resolved,
+ *   range-checked and PINNED: the connection is made to the exact IP the
+ *   guard validated (node:http/https transport, SNI + Host carry the real
+ *   hostname). A second, independent DNS resolution inside the HTTP client -
+ *   the DNS-rebinding window of native fetch - no longer exists.
  */
-import { assertPublicFetchTarget } from "./guard.ts";
+import { assertPublicFetchTarget, resolvePublicTarget, type ResolvedRecord } from "./guard.ts";
 import { DEMO_HOST } from "./url.ts";
+import { Readable } from "node:stream";
+import { createBrotliDecompress, createGunzip, createInflate } from "node:zlib";
 
 const MAX_BODY = 600 * 1024; // 600 KB per response
 const DEFAULT_TIMEOUT = 7000;
 const MAX_REDIRECTS = 5;
+
+/* ------------------------------------------------------------------ */
+/* IP-pinned transport (anti DNS-rebinding)                            */
+/* ------------------------------------------------------------------ */
+
+/** Minimal Response-like shape readResponse and the redirect loop need -
+ *  native Response and the pinned transport both satisfy it. */
+interface FetchLike {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  headers: { get(k: string): string | null; forEach(cb: (value: string, key: string) => void): void };
+  url: string;
+  body: ReadableStream<Uint8Array> | null;
+}
+
+/** Case-insensitive header view over node raw headers; repeated set-cookie
+ *  lines are joined with \n exactly like the old undici handling in
+ *  readResponse expected. */
+class HeaderView {
+  private map = new Map<string, string>();
+  add(k: string, v: string): void {
+    const key = k.toLowerCase();
+    if (key === "set-cookie") {
+      const prev = this.map.get(key);
+      this.map.set(key, prev ? prev + "\n" + v : v);
+    } else {
+      this.map.set(key, v);
+    }
+  }
+  get(k: string): string | null {
+    return this.map.get(k.toLowerCase()) ?? null;
+  }
+  forEach(cb: (value: string, key: string) => void): void {
+    for (const [k, v] of this.map) cb(v, k);
+  }
+}
+
+/** The demo fixture is first-party; comparing origins (never string prefixes)
+ *  keeps userinfo tricks like http://127.0.0.1:3210@evil/ from matching. */
+function isDemoTarget(url: string): boolean {
+  try {
+    return new URL(url).origin === DEMO_HOST;
+  } catch {
+    return false;
+  }
+}
+
+/** Prefer IPv4 (Vercel/worker egress always has it); fall back to the first
+ *  record for IPv6-only targets. */
+function pickAddress(records: ResolvedRecord[]): ResolvedRecord {
+  return records.find((r) => r.family === 4) ?? records[0];
+}
+
+interface PinnedInit {
+  method: string;
+  body?: string;
+  headers: Record<string, string>;
+  signal: AbortSignal;
+  /** remaining whole-chain budget for the socket timeout */
+  budgetMs: number;
+}
+
+interface PinnedResponse extends FetchLike {
+  statusText: string;
+}
+
+/** Native fetch decoded content-encoding transparently; node:http does not.
+ *  The body readers get plaintext like before, while the content-encoding
+ *  header stays intact in the view (the compression probe judges by it). */
+function decodedBody(
+  res: import("node:http").IncomingMessage,
+  view: HeaderView,
+): ReadableStream<Uint8Array> {
+  const enc = (view.get("content-encoding") ?? "").toLowerCase().trim();
+  let target: import("node:stream").Readable = res;
+  try {
+    if (enc === "gzip" || enc === "x-gzip") target = res.pipe(createGunzip());
+    else if (enc === "deflate") target = res.pipe(createInflate());
+    else if (enc === "br") target = res.pipe(createBrotliDecompress());
+  } catch {
+    target = res; // decompressor setup failed - fall back to raw bytes
+  }
+  return Readable.toWeb(target) as unknown as ReadableStream<Uint8Array>;
+}
+
+/**
+ * One HTTP request over node:http/https, connected to a guard-validated IP.
+ * - resolvePublicTarget does the ONLY DNS lookup: the address the guard
+ *   checked is the address the socket opens (no re-resolution anywhere).
+ * - servername keeps TLS SNI and certificate identity on the real hostname
+ *   while the TCP/TLS connection itself goes to the pinned IP.
+ * - agent:false disables socket pooling: a pooled socket is bound to the
+ *   SNI of its first request and shared-hosting/CDN IPs would mismatch.
+ * - userinfo is stripped; Host is rewritten to the original authority so
+ *   name-based virtual hosting keeps working.
+ */
+async function pinnedRequest(target: URL, init: PinnedInit): Promise<PinnedResponse> {
+  const records = await resolvePublicTarget(target.hostname);
+  const addr = pickAddress(records);
+  const isHttps = target.protocol === "https:";
+  const mod = (isHttps ? await import("node:https") : await import("node:http")) as typeof import("node:http");
+
+  const headers: Record<string, string> = { ...init.headers };
+  headers.host = target.host; // original authority (hostname[:port])
+  const payload = init.method === "POST" && init.body !== undefined ? Buffer.from(init.body, "utf-8") : undefined;
+  if (payload) headers["content-length"] = String(payload.byteLength);
+
+  const options = {
+    host: addr.address,
+    family: addr.family,
+    port: target.port ? Number(target.port) : isHttps ? 443 : 80,
+    path: `${target.pathname}${target.search}`,
+    method: init.method,
+    headers,
+    agent: false,
+    servername: isHttps ? target.hostname : undefined,
+  } as import("node:http").RequestOptions;
+
+  return await new Promise<PinnedResponse>((resolve, reject) => {
+    const req = mod.request(options, (res) => {
+      const view = new HeaderView();
+      const rh = res.rawHeaders;
+      for (let i = 0; i + 1 < rh.length; i += 2) view.add(rh[i], rh[i + 1]);
+      resolve({
+        ok: (res.statusCode ?? 500) >= 200 && (res.statusCode ?? 500) < 300,
+        status: res.statusCode ?? 0,
+        statusText: res.statusMessage ?? "",
+        headers: view,
+        url: target.toString(),
+        body: decodedBody(res, view),
+      });
+    });
+    const abort = () => {
+      const err = new Error("This operation was aborted");
+      err.name = "AbortError";
+      req.destroy(err);
+    };
+    const onAbort = () => abort();
+    if (init.signal.aborted) {
+      onAbort();
+    } else {
+      init.signal.addEventListener("abort", onAbort, { once: true });
+      req.on("close", () => init.signal.removeEventListener("abort", onAbort));
+    }
+    req.setTimeout(Math.max(1000, init.budgetMs), onAbort);
+    req.on("error", reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
 
 /** Read at most maxBytes from the response, aborting the stream afterwards */
 async function readCapped(
@@ -65,7 +221,7 @@ export interface FetchOutcome {
 
 /** Read the final response of a safeFetch chain into the outcome object */
 async function readResponse(
-  res: Response,
+  res: FetchLike,
   finalUrl: string,
   startedAt: number,
   skipBody: boolean,
@@ -136,19 +292,31 @@ export async function safeFetch(
     // guard; a public site must not bounce probes to private addresses
     let current = url;
     let method = opts.method ?? "GET";
-    let res: Response;
+    let res: FetchLike;
     for (let hop = 0; ; hop += 1) {
-      // the demo fixture is first-party and pinned to DEMO_HOST
-      if (!current.startsWith(DEMO_HOST)) {
+      if (isDemoTarget(current)) {
+        // the demo fixture is first-party: native fetch, no guard
+        res = await fetch(current, {
+          method,
+          body: method === "POST" ? opts.body : undefined,
+          redirect: "manual",
+          signal: ctrl.signal,
+          headers: baseHeaders,
+        });
+      } else {
+        // public targets: guard + connect share ONE DNS resolution (the
+        // records validatePublicTarget returns feed the socket), so the
+        // rebinding window between "check" and "fetch" is gone; the target
+        // URL never carries userinfo (assertPublicFetchTarget rejects it)
         await assertPublicFetchTarget(current);
+        res = await pinnedRequest(new URL(current), {
+          method,
+          body: opts.body,
+          headers: baseHeaders,
+          signal: ctrl.signal,
+          budgetMs: timeoutMs - (Date.now() - t0),
+        });
       }
-      res = await fetch(current, {
-        method,
-        body: method === "POST" ? opts.body : undefined,
-        redirect: "manual",
-        signal: ctrl.signal,
-        headers: baseHeaders,
-      });
       if (res.status < 300 || res.status >= 400) break;
       const loc = res.headers.get("location");
       try {

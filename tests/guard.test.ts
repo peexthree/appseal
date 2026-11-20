@@ -53,4 +53,25 @@ describe("guard: assertPublicFetchTarget (offline cases, no DNS)", () => {
     await assert.doesNotReject(() => assertPublicFetchTarget("http://1.2.3.4/x"));
     await assert.doesNotReject(() => assertPublicFetchTarget("https://93.184.216.34/"));
   });
+
+  it("rejects userinfo (@-authority) targets outright", async () => {
+    // the prefix-bypass shape: userinfo that impersonates the demo host while
+    // the real destination is a forbidden literal - URL.hostname strips the
+    // userinfo, the explicit check keeps it from ever reaching a connection
+    await assert.rejects(
+      () => assertPublicFetchTarget("http://127.0.0.1:3210@169.254.169.254/"),
+      /userinfo/,
+    );
+    await assert.rejects(
+      () => assertPublicFetchTarget("http://user:pass@1.2.3.4/x"),
+      /userinfo/,
+    );
+  });
+
+  it("blocks bracketed IPv6 literals and bare private addresses", async () => {
+    // [::1] goes through dns.lookup (getaddrinfo resolves the literal) and
+    // fails on the resolved-record check; dotted literals hit the fast-path
+    await assert.rejects(() => assertPublicFetchTarget("http://[::1]:8080/"), /public/);
+    await assert.rejects(() => assertPublicFetchTarget("http://169.254.169.254/latest/meta-data/"), /not a public/);
+  });
 });
