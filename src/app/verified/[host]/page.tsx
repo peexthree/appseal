@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
-import { getRegistryEntries } from "@/lib/scanner/store";
-import { canonicalHost, dedupeRegistry, isDofollow, type RegistryEntry } from "@/lib/registry";
+import { getLatestHostEntry } from "@/lib/scanner/store";
+import { canonicalHost, isDofollow, type RegistryEntry } from "@/lib/registry";
+import { hostScanHistory } from "@/lib/db";
 import { GRADE_META } from "@/lib/scanner/grade";
 import { HostView } from "./host-view";
 
@@ -34,10 +35,25 @@ function ruPlural(n: number, one: string, few: string, many: string): string {
 async function loadHostHistory(rawHost: string): Promise<RegistryEntry[]> {
   if (!HOST_RE.test(rawHost) || rawHost.length > 100) return [];
   const host = canonicalHost(rawHost);
-  const all = await getRegistryEntries();
-  return all
-    .filter((e) => canonicalHost(e.host) === host)
-    .sort((a, b) => a.ts - b.ts);
+  // durable archive first: the full per-host history, including scans that
+  // already fell out of the registry window; one O(1) hostlatest lookup
+  // covers the live edge (a fresh scan not yet mirrored to PG)
+  const dbRows = await hostScanHistory(host);
+  if (dbRows !== null) {
+    const rows: RegistryEntry[] = dbRows.map((r) => ({
+      host,
+      grade: r.grade,
+      score: r.score,
+      ts: r.ts,
+      id: r.id,
+    }));
+    const live = await getLatestHostEntry(host);
+    if (live && !rows.some((r) => r.id === live.id)) rows.push(live);
+    return rows.sort((a, b) => a.ts - b.ts);
+  }
+  // no database: the live-rank mirror still resolves the latest scan
+  const latest = await getLatestHostEntry(host);
+  return latest ? [latest] : [];
 }
 
 export async function generateMetadata({

@@ -26,6 +26,7 @@ interface IngestEntry {
   ts?: unknown;
   id?: unknown;
   desc?: unknown;
+  platform?: unknown;
 }
 
 export async function POST(req: NextRequest) {
@@ -66,6 +67,12 @@ export async function POST(req: NextRequest) {
       typeof e.desc === "string"
         ? e.desc.replace(/\s+/g, " ").replace(/[<>"]/g, "").trim().slice(0, 160)
         : "";
+    // optional builder platform label from the engine (detectPlatform):
+    // letters/digits/space and a few separators, short enough for a row label
+    const platform =
+      typeof e.platform === "string" && /^[A-Za-z0-9][A-Za-z0-9 ./+_-]{0,23}$/.test(e.platform)
+        ? e.platform.trim()
+        : undefined;
 
     // one entry per host per batch; window covers a long run, blocks garbage
     const ok =
@@ -84,7 +91,7 @@ export async function POST(req: NextRequest) {
       continue;
     }
     seenHosts.add(host);
-    await pushRegistryEntry({ host, grade, score, ts, id, desc: desc || undefined });
+    await pushRegistryEntry({ host, grade, score, ts, id, desc: desc || undefined, platform });
     accepted += 1;
   }
 

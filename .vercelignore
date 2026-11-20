@@ -1,0 +1,15 @@
+# The CLI upload walks the working tree and the raw mass-run artifacts blow
+# past the 15000-file API limit (25k benchmark scans + 26k dev scan records);
+# none of these are read by the deployed app (Redis backend + Supabase).
+.git
+.vercel
+db/
+scripts/benchmark_data/
+scripts/__pycache__/
+lighthouse-results/
+docs/
+tests/
+*.log
+*.pid
+*.png
+!public/**/*.png

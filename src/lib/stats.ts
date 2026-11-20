@@ -4,7 +4,7 @@
  * it is unit-testable without a Redis connection.
  */
 
-import { platformOf } from "./registry.ts";
+import { platformBucketOf } from "./registry.ts";
 
 export interface TopFail {
   id: string;
@@ -215,9 +215,11 @@ export function tldRows(
 }
 
 /**
- * Class movement across repeated scans of the same host (the registry keeps
- * every scan): did hosts improve, drop or stay put between their oldest and
- * newest retained scan. Entries arrive newest-first (registry LRANGE order).
+ * Class movement across repeated scans of the same host: did hosts improve,
+ * drop or stay put between their oldest and newest saved scan. Timestamp
+ * driven, so the input order does not matter (the registry list is
+ * newest-first, the PG archive query feeds any order - same result). Entries
+ * without ts keep the list-position heuristic: first sighting is the newest.
  */
 export function gradeDynamics(
   entries: { host: string; grade: string; ts?: number }[],
@@ -226,15 +228,30 @@ export function gradeDynamics(
   dropped: number;
   stable: number;
 } {
-  const byHost = new Map<string, { newest: string; oldest: string; count: number }>();
+  interface Move {
+    newest: string;
+    oldest: string;
+    newestTs: number;
+    oldestTs: number;
+    count: number;
+  }
+  const byHost = new Map<string, Move>();
   for (const e of entries) {
     const host = e.host.toLowerCase().replace(/^www\./, "");
+    const ts = typeof e.ts === "number" && Number.isFinite(e.ts) ? e.ts : 0;
     const cur = byHost.get(host);
     if (!cur) {
-      byHost.set(host, { newest: e.grade, oldest: e.grade, count: 1 });
-    } else {
-      cur.count += 1;
-      cur.oldest = e.grade; // later items in a newest-first list are older
+      byHost.set(host, { newest: e.grade, oldest: e.grade, newestTs: ts, oldestTs: ts, count: 1 });
+      continue;
+    }
+    cur.count += 1;
+    if (ts >= cur.newestTs) {
+      cur.newest = e.grade;
+      cur.newestTs = ts;
+    }
+    if (ts <= cur.oldestTs) {
+      cur.oldest = e.grade;
+      cur.oldestTs = ts;
     }
   }
   let improved = 0;
@@ -252,14 +269,38 @@ export function gradeDynamics(
 
 /** Grade mix inside each hosting platform (leaderboard companion). */
 export function platformGradeCounts(
-  entries: { host: string; grade: string }[],
+  entries: { host: string; grade: string; platform?: string }[],
 ): Map<string, Map<string, number>> {
   const out = new Map<string, Map<string, number>>();
   for (const e of entries) {
-    const p = platformOf(e.host);
+    const p = platformBucketOf(e);
     const g = out.get(p) ?? new Map<string, number>();
     g.set(e.grade, (g.get(e.grade) ?? 0) + 1);
     out.set(p, g);
   }
   return out;
+}
+
+/**
+ * Bar width of one row as a share of the widest row (percent of the track,
+ * 0-100): small absolute shares (3% of scans) still render a readable bar,
+ * while the numeric labels stay absolute. Zero rows get zero width; a
+ * non-zero value keeps a 2% sliver so the bar is visible at all.
+ */
+export function barShare(value: number, max: number): number {
+  if (max <= 0 || value <= 0) return 0;
+  return Math.max((value * 100) / max, 2);
+}
+
+/**
+ * Average penalty label, one decimal always (the old Math.round turned
+ * anything below 0.5 into a meaningless "-0 б."). RU locale renders the
+ * comma decimal separator ("-0,4"), EN the dot ("-0.4").
+ */
+export function formatPenaltyAvg(lossPerScan: number, lang: "ru" | "en"): string {
+  const v = Math.max(0, Number.isFinite(lossPerScan) ? lossPerScan : 0);
+  return "-" + v.toLocaleString(lang === "en" ? "en-US" : "ru-RU", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
 }

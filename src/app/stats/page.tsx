@@ -3,15 +3,18 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { ShieldCheck } from "@/components/icons/appseal-icons";
 import statsData from "@/data/stats-harvest.json";
-import { getRegistryEntries, redisConfig, redisPipeline, STATS_HOUR_PREFIX, STATS_DAY_PREFIX } from "@/lib/scanner/store";
-import { canonicalHost, dedupeRegistry, isReferenceSite, platformOf, PLATFORM_LABELS, type PlatformKey, type RegistryEntry } from "@/lib/registry";
+import { getRegistryEntriesCached, redisConfig, redisPipeline, STATS_HOUR_PREFIX, STATS_DAY_PREFIX } from "@/lib/scanner/store";
+import { canonicalHost, dedupeRegistry, isReferenceSite, platformBucketOf, PLATFORM_LABELS, type PlatformKey, type RegistryEntry } from "@/lib/registry";
+import { gradeMovementRows } from "@/lib/db";
 import { pageLang } from "@/lib/lang-server";
 import { PulseChart } from "./pulse-chart";
 import {
   avgMedianFromHistogram,
+  barShare,
   bucketHistogram,
   buildTopFails,
   countsFromFlat,
+  formatPenaltyAvg,
   gradeDynamics,
   gradeRowsFromCounts,
   mapFromFlat,
@@ -105,10 +108,11 @@ const D = {
     ru: "Новый расширенный прогон от 19.11 идёт: обработано {done} из {total} сайтов. Цифры на этой странице обновляются по мере сканирования.",
     en: "The new expanded run of Nov 19 is in progress: {done} of {total} sites scanned so far. Numbers on this page update as the scan continues.",
   },
-  tickLead: { ru: "За 24 часа авто-проверок: ", en: "Auto-checks in the last 24 hours: " },
-  stat1: { ru: "сканов посчитано", en: "scans counted" },
-  stat2: { ru: "средний балл из 100", en: "average score out of 100" },
-  stat3: { ru: "медианный балл", en: "median score" },
+  tickLead: { ru: "За 24 часа проверок: ", en: "Checks in the last 24 hours: " },
+  stat1: { ru: "приложений прошло техосмотр", en: "apps inspected" },
+  stat2: { ru: "проверок выполнено", en: "checks completed" },
+  stat3: { ru: "средний балл из 100", en: "average score out of 100" },
+  statMedian: { ru: "медианный балл", en: "median score" },
   stat4: { ru: "получили класс A/A+", en: "earned grade A/A+" },
   fact1: { ru: "сайтов не ставят заголовок COOP (защита окон браузера)", en: "of sites skip the COOP header (browser window protection)" },
   fact2: { ru: "проходят весь чек-лист на класс A/A+", en: "pass the full checklist for grade A/A+" },
@@ -238,10 +242,11 @@ interface LiveStats {
   avg: number;
   median: number;
   topFails: TopFail[];
-  tick24h: number;
+  checks24h: number;
   hist: { from: number; to: number; count: number }[];
   hours: number[];
   days: number[];
+  days30: number[];
   catRows: { cat: string; fail: number; warn: number; loss: number }[];
   failPairs: Map<string, number>;
   warnPairs: Map<string, number>;
@@ -253,7 +258,8 @@ async function readLiveStats(): Promise<LiveStats | null> {
   if (!cfg) return null;
   try {
     const hourKeys = statsHourKeys(STATS_HOUR_PREFIX, new Date(), 24);
-    const dayKeys = statsDayKeys(STATS_DAY_PREFIX, new Date(), 7);
+    // one read for both pulse windows: the 7-day view is the tail of the 30
+    const dayKeys = statsDayKeys(STATS_DAY_PREFIX, new Date(), 30);
     const responses = await redisPipeline(cfg, [
       ["GET", "appmot:stats:scans"],
       ["SCARD", "appmot:stats:hosts"],
@@ -262,14 +268,13 @@ async function readLiveStats(): Promise<LiveStats | null> {
       ["ZREVRANGE", "appmot:stats:checkfails", "0", "-1", "WITHSCORES"],
       ["ZREVRANGE", "appmot:stats:checkwarns", "0", "-1", "WITHSCORES"],
       ["HGETALL", "appmot:stats:titles"],
-      ["GET", "appmot:pipeline:scans24h"],
       ["HGETALL", "appmot:stats:catfails"],
       ["HGETALL", "appmot:stats:catwarns"],
       ["HGETALL", "appmot:stats:catloss"],
       ...hourKeys.map((k) => ["GET", k] as unknown[]),
       ...dayKeys.map((k) => ["GET", k] as unknown[]),
     ]);
-    const [scans, sites, gradesFlat, histFlat, failFlat, warnFlat, titlesFlat, tick, catFailFlat, catWarnFlat, catLossFlat] = responses;
+    const [scans, sites, gradesFlat, histFlat, failFlat, warnFlat, titlesFlat, catFailFlat, catWarnFlat, catLossFlat] = responses;
     const scanCount = Number(scans) || 0;
     if (scanCount <= 0) return null;
     const gradeCounts = countsFromFlat(gradesFlat);
@@ -287,6 +292,9 @@ async function readLiveStats(): Promise<LiveStats | null> {
         loss: catLoss.get(cat) ?? 0,
       }))
       .sort((a, b) => b.fail + b.warn - (a.fail + a.warn));
+    const offset = 10;
+    const hours = hourKeys.map((k, i) => Number(responses[offset + i]) || 0);
+    const days30 = dayKeys.map((k, i) => Number(responses[offset + hourKeys.length + i]) || 0);
     return {
       scans: scanCount,
       sites: Number(sites) || 0,
@@ -295,10 +303,11 @@ async function readLiveStats(): Promise<LiveStats | null> {
       avg,
       median,
       topFails: buildTopFails(failPairs, warnPairs, mapFromFlat(titlesFlat), scanCount, 10),
-      tick24h: Number(tick) || 0,
+      checks24h: hours.reduce((acc, n) => acc + n, 0),
       hist: bucketHistogram(histFlat),
-      hours: hourKeys.map((k, i) => Number(responses[11 + i]) || 0),
-      days: dayKeys.map((k, i) => Number(responses[11 + hourKeys.length + i]) || 0),
+      hours,
+      days: days30.slice(-7),
+      days30,
       catRows,
       failPairs,
       warnPairs,
@@ -323,13 +332,13 @@ export default async function StatsPage() {
 
   // platform leaderboard: live registry hosts bucketed by hosting platform.
   // Reference mega-sites (never rendered anywhere) are excluded here too.
-  const allEntries = await getRegistryEntries();
+  const allEntries = await getRegistryEntriesCached();
   const registryHosts = dedupeRegistry(allEntries).filter(
     (e) => !isReferenceSite(e.host),
   );
   const buckets = new Map<PlatformKey, { count: number; total: number }>();
   for (const e of registryHosts) {
-    const key = platformOf(e.host);
+    const key = platformBucketOf(e);
     const b = buckets.get(key) ?? { count: 0, total: 0 };
     b.count += 1;
     b.total += e.score;
@@ -337,11 +346,22 @@ export default async function StatsPage() {
   }
 
   // registry-derived extras (live sections)
-  const dynamics = gradeDynamics(allEntries.filter((e) => !isReferenceSite(e.host)));
   const tlds = tldRows(registryHosts).slice(0, 8);
   const platformGrades = platformGradeCounts(registryHosts);
 
+  // rescan dynamics: the durable scans archive holds the full per-host history
+  // (the registry list keeps only a bounded window, where rescans of the same
+  // host are usually evicted by newer mass-run pushes); without a database the
+  // registry-window computation stays the fallback
+  const dbMoves = await gradeMovementRows();
+  const dynamics =
+    dbMoves !== null
+      ? gradeDynamics(dbMoves.filter((e) => !isReferenceSite(e.host)))
+      : gradeDynamics(allEntries.filter((e) => !isReferenceSite(e.host)));
+
+  // platform battle: rows with at least one domain, biggest fleet first
   const leaderboard = [...buckets.entries()]
+    .filter(([, b]) => b.count > 0)
     .map(([key, b]) => ({
       key,
       count: b.count,
@@ -350,7 +370,7 @@ export default async function StatsPage() {
         .map((g) => `${g.grade} ${g.count}`)
         .join(" · "),
     }))
-    .sort((a, b) => b.avg - a.avg);
+    .sort((a, b) => b.count - a.count || b.avg - a.avg);
 
   // weekly leaderboard: each host's best score over the last 7 days, top 10.
   // Raw entries (not deduped) so a re-scan with a higher score counts;
@@ -414,7 +434,9 @@ export default async function StatsPage() {
         })()
       : [];
 
-  // unified view: live counters or the static mass-run snapshot
+  // unified view: live counters or the static mass-run snapshot. heroCount
+  // and stat1 are the SAME number (the title says it in words), doneCount is
+  // the checks-run counter (rescans included) under its own honest label
   const v = useLive && live
     ? {
         isLive: true,
@@ -429,11 +451,11 @@ export default async function StatsPage() {
           pct: live.scans ? Math.round((r.count * 100) / live.scans) : 0,
         })),
         topFails: live.topFails,
-        tick24h: live.tick24h,
+        checks24h: live.checks24h,
       }
     : {
         isLive: false,
-        heroCount: s.panel.total,
+        heroCount: s.panel.done,
         doneCount: s.panel.done,
         avg: s.avgScore,
         median: s.medianScore,
@@ -444,7 +466,7 @@ export default async function StatsPage() {
           pct: s.panel.done ? Math.round((Number(count) * 100) / s.panel.done) : 0,
         })),
         topFails: s.topFails as TopFail[],
-        tick24h: 0,
+        checks24h: 0,
       };
 
   const sources = Object.entries(s.sources).map(([k, n]) => ({
@@ -467,6 +489,15 @@ export default async function StatsPage() {
               {t("liveBadge")}
             </span>
           ) : null}
+          {v.isLive && v.checks24h > 0 ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-400/10 px-2.5 py-0.5 text-[11px] font-bold text-sky-300"
+              title={t("tickLead") + numFmt.format(v.checks24h)}
+            >
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-sky-400" />
+              {t("tickLead")}{numFmt.format(v.checks24h)}
+            </span>
+          ) : null}
           {s.panel.missing > 0 ? (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-2.5 py-0.5 text-[11px] font-bold text-amber-400">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
@@ -475,7 +506,11 @@ export default async function StatsPage() {
           ) : null}
         </div>
         <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight sm:text-4xl">
-          {t("h1a")} {numFmt.format(v.heroCount)} {t("h1b")}
+          {t("h1a")}{" "}
+          <span className="bg-gradient-to-r from-sky-400 via-emerald-400 to-emerald-300 bg-clip-text text-transparent">
+            {numFmt.format(v.heroCount)}
+          </span>{" "}
+          {t("h1b")}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
           {v.isLive ? (
@@ -528,22 +563,17 @@ export default async function StatsPage() {
           </div>
         ) : (
           <>
-            {v.isLive && v.tick24h > 0 ? (
-              <p className="mt-4 text-sm text-emerald-400">
-                {t("tickLead")}{numFmt.format(v.tick24h)}
-              </p>
-            ) : null}
-
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { v: numFmt.format(v.doneCount), l: t("stat1") },
-                { v: `${v.avg}`, l: t("stat2") },
-                { v: `${v.median}`, l: t("stat3") },
-                { v: `${v.gradeACount}`, l: t("stat4") },
+                { v: numFmt.format(v.heroCount), l: t("stat1"), c: "text-emerald-400" },
+                { v: numFmt.format(v.doneCount), l: t("stat2"), c: "text-sky-400" },
+                { v: `${v.avg}`, l: t("stat3"), sub: `${t("statMedian")}: ${v.median}`, c: "text-slate-100" },
+                { v: `${v.gradeACount}`, l: t("stat4"), c: "text-[#C084FC]" },
               ].map((c) => (
-                <div key={c.l} className="rounded-2xl appseal-glass-card p-5">
-                  <div className="font-display text-3xl font-extrabold text-slate-100">{c.v}</div>
+                <div key={c.l} className="appseal-glass-card rounded-2xl p-5">
+                  <div className={`font-display text-3xl font-extrabold ${c.c}`}>{c.v}</div>
                   <div className="mt-1 text-xs leading-snug text-slate-500">{c.l}</div>
+                  {"sub" in c && c.sub ? <div className="mt-0.5 text-[11px] text-slate-600">{c.sub}</div> : null}
                 </div>
               ))}
             </div>
@@ -618,28 +648,33 @@ export default async function StatsPage() {
                 {t("gapsNote")}
               </p>
               <ul className="mt-4 space-y-2.5">
-                {v.topFails.map((f) => {
-                  const miss = f.failPct + f.warnPct;
-                  return (
-                    <li key={f.id} className="flex items-center gap-3">
-                      <span
-                        className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72"
-                        title={lang === "en" ? FAIL_TITLES_EN[f.id] ?? f.title : f.title}
-                      >
-                        {lang === "en" ? FAIL_TITLES_EN[f.id] ?? f.title : f.title}
-                      </span>
-                      <div className="flex h-5 flex-1 gap-px">
-                        {miss > 0 ? (
-                          <>
-                            <div className="rounded-l-md bg-[#F87171]" style={{ width: `${f.failPct}%` }} />
-                            <div className={`bg-[#FB923C] ${f.failPct ? "" : "rounded-l-md"} ${f.warnPct ? "rounded-r-md" : ""}`} style={{ width: `${f.warnPct}%` }} />
-                          </>
-                        ) : null}
-                      </div>
-                      <span className="w-12 text-right font-mono text-xs font-bold text-[#FB923C]">{miss}%</span>
-                    </li>
-                  );
-                })}
+                {(() => {
+                  // bar widths scale to the widest row: a 3% share of scans is
+                  // still a readable bar, the % labels stay absolute
+                  const maxMiss = Math.max(...v.topFails.map((f) => f.failPct + f.warnPct), 1);
+                  return v.topFails.map((f) => {
+                    const miss = f.failPct + f.warnPct;
+                    return (
+                      <li key={f.id} className="flex items-center gap-3">
+                        <span
+                          className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72"
+                          title={lang === "en" ? FAIL_TITLES_EN[f.id] ?? f.title : f.title}
+                        >
+                          {lang === "en" ? FAIL_TITLES_EN[f.id] ?? f.title : f.title}
+                        </span>
+                        <div className="flex h-5 flex-1 gap-px">
+                          {miss > 0 ? (
+                            <>
+                              <div className="rounded-l-md bg-[#F87171]" style={{ width: `${barShare(f.failPct, maxMiss)}%` }} />
+                              <div className={`bg-[#FB923C] ${f.failPct ? "" : "rounded-l-md"} ${f.warnPct ? "rounded-r-md" : ""}`} style={{ width: `${barShare(f.warnPct, maxMiss)}%` }} />
+                            </>
+                          ) : null}
+                        </div>
+                        <span className="w-12 text-right font-mono text-xs font-bold text-[#FB923C]">{miss}%</span>
+                      </li>
+                    );
+                  });
+                })()}
               </ul>
             </section>
 
@@ -650,32 +685,38 @@ export default async function StatsPage() {
                   {t("catNote")}
                 </p>
                 <ul className="mt-4 space-y-3">
-                  {live.catRows.map((c) => {
-                    const failPct = Math.round((c.fail * 100) / live.scans);
-                    const warnPct = Math.round((c.warn * 100) / live.scans);
-                    const lossAvg = Math.round(c.loss / Math.max(1, live.scans));
-                    return (
-                      <li key={c.cat} className="flex items-center gap-3">
-                        <span className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72">
-                          {CATEGORY_LABELS[c.cat]?.[lang] ?? c.cat}
-                        </span>
-                        <div className="flex h-5 flex-1 gap-px">
-                          {failPct + warnPct > 0 ? (
-                            <>
-                              <div className={`rounded-l-md bg-[#F87171] ${warnPct ? "" : "rounded-r-md"}`} style={{ width: `${failPct}%` }} />
-                              <div className={`bg-[#FB923C] ${warnPct ? "rounded-r-md" : ""}`} style={{ width: `${warnPct}%` }} />
-                            </>
-                          ) : null}
-                        </div>
-                        <span
-                          className="w-24 text-right font-mono text-xs text-slate-500"
-                          title={t("catLossTitle")}
-                        >
-                          -{lossAvg} {t("catPts")}
-                        </span>
-                      </li>
+                  {(() => {
+                    const maxCat = Math.max(
+                      ...live.catRows.map((c) => Math.round((c.fail * 100) / live.scans) + Math.round((c.warn * 100) / live.scans)),
+                      1,
                     );
-                  })}
+                    return live.catRows.map((c) => {
+                      const failPct = Math.round((c.fail * 100) / live.scans);
+                      const warnPct = Math.round((c.warn * 100) / live.scans);
+                      const lossAvg = formatPenaltyAvg(c.loss / Math.max(1, live.scans), lang);
+                      return (
+                        <li key={c.cat} className="flex items-center gap-3">
+                          <span className="w-56 shrink-0 truncate text-sm text-slate-300 sm:w-72">
+                            {CATEGORY_LABELS[c.cat]?.[lang] ?? c.cat}
+                          </span>
+                          <div className="flex h-5 flex-1 gap-px">
+                            {failPct + warnPct > 0 ? (
+                              <>
+                                <div className={`rounded-l-md bg-[#F87171] ${warnPct ? "" : "rounded-r-md"}`} style={{ width: `${barShare(failPct, maxCat)}%` }} />
+                                <div className={`bg-[#FB923C] ${warnPct ? "rounded-r-md" : ""}`} style={{ width: `${barShare(warnPct, maxCat)}%` }} />
+                              </>
+                            ) : null}
+                          </div>
+                          <span
+                            className="w-24 text-right font-mono text-xs text-slate-500"
+                            title={t("catLossTitle")}
+                          >
+                            {lossAvg} {t("catPts")}
+                          </span>
+                        </li>
+                      );
+                    });
+                  })()}
                 </ul>
               </section>
             ) : null}
@@ -816,7 +857,7 @@ export default async function StatsPage() {
             ) : null}
 
             {v.isLive && live ? (
-              <PulseChart hours={live.hours} days={live.days} total={v.doneCount} lang={lang} />
+              <PulseChart hours={live.hours} days={live.days} days30={live.days30} total={v.doneCount} lang={lang} />
             ) : null}
 
             {v.isLive ? (

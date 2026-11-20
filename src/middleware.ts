@@ -33,8 +33,10 @@ const SCRIPT_SRC_LEGACY = `'self' 'unsafe-inline' https://mc.yandex.ru https://v
 const scriptSrcStrict = (nonce: string) =>
   `'self' 'nonce-${nonce}' 'strict-dynamic' https://mc.yandex.ru https://va.vercel-scripts.com`;
 
-// prerendered (ISR/SSG) routes - served from cache, no nonce in their HTML
-const PRERENDERED_ROUTES = /^\/(ci|digest|fixes|registry|report|verified)(?:\/|$)/i;
+// prerendered (ISR/SSG) routes - served from cache, no nonce in their HTML.
+// /registry used to be ISR but is dynamic now (URL-driven facets over the
+// 16k+-host catalog), so it moved to the strict nonce policy
+const PRERENDERED_ROUTES = /^\/(ci|digest|fixes|report|verified)(?:\/|$)/i;
 
 function contentSecurityPolicy(scriptSrc: string): string {
   return [

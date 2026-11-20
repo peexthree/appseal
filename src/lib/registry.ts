@@ -14,9 +14,20 @@ export interface RegistryEntry {
   id: string;
   /** short public description taken from the site's <title>; optional (old entries) */
   desc?: string;
+  /** builder platform detected by the engine at scan time ("Lovable",
+   *  "Replit", "Bolt.new", "Framer", "v0/Vercel", "Base44", "Firebase
+   *  Hosting"); optional - legacy entries and suffix matching still work */
+  platform?: string;
 }
 
-export const REGISTRY_MAX = 1000;
+/**
+ * Upper bound of the public registry list. The 16k+ host mass runs must not
+ * be trimmed away: every push LPUSHes one entry and LTRIMs the list to this
+ * length (newest first). ~30k entries is roughly 2MB of JSON - reads go
+ * through the 120s in-process cache, so a page view pays it once per cache
+ * lifetime, not per request.
+ */
+export const REGISTRY_MAX = 30000;
 
 /**
  * Hosts stored and displayed in canonical (www-less, lowercase) form: a scan
@@ -72,6 +83,44 @@ export function isDofollow(e: RegistryEntry): boolean {
   return e.grade === "A+" || e.grade === "A";
 }
 
+/** Chip key of the /registry filter row: the two special chips plus the five
+ *  platform buckets. Shared by the page (URL param) and the client list. */
+export type RegistryChipKey = PlatformKey | "all" | "top";
+
+export const REGISTRY_CHIP_KEYS: RegistryChipKey[] = [
+  "all", "top", "custom", "lovable", "github", "vercel", "other",
+];
+
+/** True when a raw ?platform= query param is a valid chip key. */
+export function isRegistryChipKey(v: string | undefined | null): v is RegistryChipKey {
+  return !!v && (REGISTRY_CHIP_KEYS as string[]).includes(v);
+}
+
+/**
+ * Pure filter behind the /registry chips and search: platform/top chip plus a
+ * www-insensitive query over host and description. Pure so the server page and
+ * the unit tests run the exact same matching.
+ */
+export function filterRegistryEntries(
+  entries: RegistryEntry[],
+  opts: { chip?: RegistryChipKey; q?: string } = {},
+): RegistryEntry[] {
+  let list = entries;
+  if (opts.chip === "top") list = list.filter((e) => isDofollow(e));
+  else if (opts.chip && opts.chip !== "all") {
+    list = list.filter((e) => platformBucketOf(e) === opts.chip);
+  }
+  const q = (opts.q ?? "").trim().toLowerCase().replace(/^www\./, "");
+  if (q) {
+    list = list.filter(
+      (e) =>
+        e.host.toLowerCase().replace(/^www\./, "").includes(q) ||
+        (e.desc ?? "").toLowerCase().includes(q),
+    );
+  }
+  return list;
+}
+
 /** platform buckets for the quick-filter chips (suffix = hosting subdomain) */
 export type PlatformKey = "custom" | "lovable" | "github" | "vercel" | "other";
 
@@ -83,8 +132,31 @@ export function platformOf(host: string): PlatformKey {
   const otherPlatform = [
     ".replit.app", ".replit.dev", ".repl.co", ".railway.app", ".pages.dev",
     ".netlify.app", ".onrender.com", ".bolt.host", ".workers.dev", ".fly.dev",
+    ".glitch.me", ".web.app", ".firebaseapp.com", ".amplifyapp.com",
+    ".azurestaticapps.net", ".gitlab.io", ".deno.dev",
   ].some((s) => h.endsWith(s));
   return otherPlatform ? "other" : "custom";
+}
+
+/**
+ * The engine labels a scan with the builder platform it detected in the page
+ * body (detectPlatform): a Lovable build served from a custom domain still
+ * counts as Lovable. Engine names map onto the same five buckets the chips
+ * use; entries without the field fall back to the host suffix.
+ */
+const ENGINE_PLATFORM_BUCKETS: Record<string, PlatformKey> = {
+  "Lovable": "lovable",
+  "v0/Vercel": "vercel",
+  "Replit": "other",
+  "Bolt.new": "other",
+  "Framer": "other",
+  "Base44": "other",
+  "Firebase Hosting": "other",
+};
+
+export function platformBucketOf(entry: { host: string; platform?: string }): PlatformKey {
+  const mapped = entry.platform ? ENGINE_PLATFORM_BUCKETS[entry.platform] : undefined;
+  return mapped ?? platformOf(entry.host);
 }
 
 export const PLATFORM_LABELS: Record<PlatformKey, { ru: string; en: string }> = {

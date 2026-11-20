@@ -178,6 +178,7 @@ export async function POST(req: NextRequest) {
             ts: Date.now(),
             id: scan.id,
             desc: fin.pageDesc ?? fin.pageTitle,
+            platform: fin.platform,
           });
         }
         // durable archive for every finished scan (private ones stored with

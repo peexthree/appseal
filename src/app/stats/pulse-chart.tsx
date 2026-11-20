@@ -13,7 +13,7 @@ const D = {
   lead: { ru: "Ручные проверки и авто-обход вместе - ", en: "Manual checks plus the auto-crawler - " },
   in24: { ru: " за сутки (часы UTC)", en: " in 24 h (UTC hours)" },
   in7d: { ru: " за неделю (дни UTC)", en: " in 7 days (UTC days)" },
-  inAll: { ru: " сканов всего, с 16 ноября 2026", en: " scans total, since Nov 16, 2026" },
+  inAll: { ru: " сканов всего; столбики - детализация за 30 дней", en: " scans total; the bars break the last 30 days down" },
   totalAll: { ru: "Всего сканов: ", en: "Total scans: " },
   h24: { ru: "-24ч", en: "-24h" },
   h12: { ru: "-12ч", en: "-12h" },
@@ -28,22 +28,32 @@ const d = (lang: Lang, k: keyof typeof D) => D[k][lang];
 
 /**
  * Scan pulse with a period switcher: 24 hourly buckets, 7 daily buckets or
- * the all-time counter. Client-side only for the switcher state; the bars
- * themselves are plain divs.
+ * the full history as 30 daily buckets (the counter itself has no per-scan
+ * log - the daily buckets are the deepest history Redis keeps). Client-side
+ * only for the switcher state; the bars themselves are plain divs.
  */
-export function PulseChart({ hours, days, total, lang }: { hours: number[]; days: number[]; total: number; lang: Lang }) {
+export function PulseChart({
+  hours,
+  days,
+  days30,
+  total,
+  lang,
+}: {
+  hours: number[];
+  days: number[];
+  days30: number[];
+  total: number;
+  lang: Lang;
+}) {
   const [range, setRange] = useState<Range>("24h");
   const dayFmt = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "ru-RU", { day: "numeric", month: "short", timeZone: "UTC" });
   const now = Date.now();
 
-  const bars =
-    range === "24h"
-      ? hours
-      : range === "7d"
-        ? days
-        : [total];
+  const bars = range === "24h" ? hours : range === "7d" ? days : days30;
   const max = Math.max(...bars, 1);
-  const sum = bars.reduce((s, n) => s + n, 0);
+  // the all-time lead stays the monotonic counter (matches the hero card),
+  // not the bucket sum: day buckets only exist since the counters launched
+  const sum = range === "all" ? total : bars.reduce((s, n) => s + n, 0);
 
   const ranges: { key: Range; label: string }[] = [
     { key: "24h", label: d(lang, "r24") },
@@ -82,6 +92,7 @@ export function PulseChart({ hours, days, total, lang }: { hours: number[]; days
             range === "24h"
               ? `${(new Date(now).getUTCHours() - (bars.length - 1 - i) + 48) % 24}:00 UTC`
               : "";
+          const daysBack = bars.length - 1 - i;
           return (
             <div key={i} className="flex flex-1 flex-col justify-end" style={{ height: "100%" }}>
               <div
@@ -90,9 +101,7 @@ export function PulseChart({ hours, days, total, lang }: { hours: number[]; days
                 title={
                   range === "24h"
                     ? `${hourLabel}: ${n}`
-                    : range === "7d"
-                      ? `${dayFmt.format(new Date(now - (7 - 1 - i) * 86400000))}: ${n}`
-                      : `${d(lang, "totalAll")}${n}`
+                    : `${dayFmt.format(new Date(now - daysBack * 86400000))}: ${n}`
                 }
               />
             </div>
@@ -113,7 +122,11 @@ export function PulseChart({ hours, days, total, lang }: { hours: number[]; days
             <span>{dayFmt.format(new Date(now))}</span>
           </>
         ) : (
-          <span>{d(lang, "allNote")}</span>
+          <>
+            <span>{dayFmt.format(new Date(now - 29 * 86400000))}</span>
+            <span>{d(lang, "allNote")}</span>
+            <span>{dayFmt.format(new Date(now))}</span>
+          </>
         )}
       </div>
     </section>

@@ -13,6 +13,8 @@ import {
   tldRows,
   gradeDynamics,
   platformGradeCounts,
+  barShare,
+  formatPenaltyAvg,
 } from "../src/lib/stats.ts";
 
 describe("pairsFromFlat", () => {
@@ -146,6 +148,26 @@ describe("gradeDynamics", () => {
     ]);
     assert.deepEqual(out, { improved: 1, dropped: 1, stable: 0 });
   });
+
+  it("is order-independent: oldest-first input gives the same verdict", () => {
+    const out = gradeDynamics([
+      { host: "a.example", grade: "C", ts: 100 }, // oldest
+      { host: "a.example", grade: "A", ts: 300 }, // newest -> improved
+      { host: "b.example", grade: "A", ts: 100 }, // oldest
+      { host: "b.example", grade: "C", ts: 300 }, // newest -> dropped
+    ]);
+    assert.deepEqual(out, { improved: 1, dropped: 1, stable: 0 });
+  });
+
+  it("same grade twice holds the class, E to D counts as improved", () => {
+    const out = gradeDynamics([
+      { host: "stable.example", grade: "B", ts: 100 },
+      { host: "stable.example", grade: "B", ts: 200 },
+      { host: "rescued.example", grade: "E", ts: 100 },
+      { host: "rescued.example", grade: "D", ts: 200 },
+    ]);
+    assert.deepEqual(out, { improved: 1, dropped: 0, stable: 1 });
+  });
 });
 
 describe("platformGradeCounts", () => {
@@ -158,5 +180,36 @@ describe("platformGradeCounts", () => {
     assert.equal(m.get("lovable")?.get("B"), 1);
     assert.equal(m.get("lovable")?.get("A"), 1);
     assert.equal(m.get("custom")?.get("C"), 1);
+  });
+
+  it("uses the engine-detected platform before the host suffix", () => {
+    const m = platformGradeCounts([
+      { host: "lovablebuild.com", grade: "A", platform: "Lovable" },
+      { host: "v0build.dev", grade: "B", platform: "v0/Vercel" },
+    ]);
+    assert.equal(m.get("lovable")?.get("A"), 1);
+    assert.equal(m.get("vercel")?.get("B"), 1);
+    assert.equal(m.has("custom"), false);
+  });
+});
+
+describe("barShare", () => {
+  it("scales a row to the widest row so a 3% share stays readable", () => {
+    assert.equal(barShare(3, 10), 30);
+    assert.equal(barShare(10, 10), 100);
+  });
+  it("keeps a visible sliver for non-zero rows and nothing for zeros", () => {
+    assert.equal(barShare(1, 1000), 2); // 0.1% -> 2% sliver
+    assert.equal(barShare(0, 10), 0);
+    assert.equal(barShare(5, 0), 0); // no rows at all
+  });
+});
+
+describe("formatPenaltyAvg", () => {
+  it("keeps one decimal, so nothing collapses into -0 б.", () => {
+    assert.equal(formatPenaltyAvg(0.4, "ru"), "-0,4");
+    assert.equal(formatPenaltyAvg(1.6, "ru"), "-1,6");
+    assert.equal(formatPenaltyAvg(0.4, "en"), "-0.4");
+    assert.equal(formatPenaltyAvg(0, "en"), "-0.0");
   });
 });

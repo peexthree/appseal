@@ -83,7 +83,14 @@ async function setProgress(id: string, p: Progress) {
  */
 export async function runScan(
   scan: ScanResult,
-): Promise<{ host: string; grade: string; score: number; pageTitle?: string; pageDesc?: string } | null> {
+): Promise<{
+  host: string;
+  grade: string;
+  score: number;
+  platform?: string;
+  pageTitle?: string;
+  pageDesc?: string;
+} | null> {
   try {
     await setProgress(scan.id, {
       stage: { ru: "Загружаем главную страницу…", en: "Loading the homepage…" },
@@ -345,6 +352,7 @@ export async function runScan(
       host: scan.isDemo ? "demo-app" : host,
       grade,
       score,
+      platform: platform ?? undefined,
       pageTitle: pageTitle || undefined,
       pageDesc: pageDesc || undefined,
     };

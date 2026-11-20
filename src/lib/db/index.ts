@@ -175,6 +175,86 @@ export async function archiveScan(
   }
 }
 
+export interface GradeMovementRow {
+  host: string;
+  grade: string;
+  ts: number;
+}
+
+/**
+ * Scan history for the /stats rescan-dynamics block: one row per public scan
+ * of every host that was scanned more than once, newest first. The registry
+ * list keeps a bounded window, so real first-to-last grade movement (including
+ * the pre-registry rescans) has to come from the durable scans archive.
+ * Null on no-database or query failure - the caller falls back to the
+ * registry-window computation.
+ */
+export async function gradeMovementRows(): Promise<GradeMovementRow[] | null> {
+  const sql = db();
+  if (!sql) return null;
+  try {
+    await ensureSchema(sql);
+    const rows = await sql`
+      with multi as (
+        select host from scans
+        where is_public and grade is not null and finished_at is not null
+        group by host having count(*) > 1
+      )
+      select s.host, s.grade, s.finished_at
+      from scans s
+      join multi m on m.host = s.host
+      where s.is_public and s.grade is not null and s.finished_at is not null
+      order by s.finished_at desc
+      limit 20000
+    `;
+    return rows.map((r) => ({
+      host: String(r.host),
+      grade: String(r.grade),
+      ts: new Date(r.finished_at).getTime(),
+    }));
+  } catch {
+    return null;
+  }
+}
+
+export interface HostScanRow {
+  id: string;
+  host: string;
+  score: number;
+  grade: string;
+  ts: number;
+}
+
+/**
+ * Public scan history of one host, oldest first - the /verified profile
+ * chart. Replaces the full-registry scan the page used to do (the 16k+-entry
+ * LRANGE per profile view) with an indexed per-host query. Null on
+ * no-database or query failure, so the caller can fall back to Redis.
+ */
+export async function hostScanHistory(host: string, limit = 20): Promise<HostScanRow[] | null> {
+  const sql = db();
+  if (!sql) return null;
+  try {
+    await ensureSchema(sql);
+    const rows = await sql`
+      select id, host, score, grade, finished_at
+      from scans
+      where host = ${host} and is_public and grade is not null
+      order by finished_at asc
+      limit ${limit}
+    `;
+    return rows.map((r) => ({
+      id: String(r.id),
+      host: String(r.host),
+      score: Number(r.score),
+      grade: String(r.grade),
+      ts: new Date(r.finished_at).getTime(),
+    }));
+  } catch {
+    return null;
+  }
+}
+
 export interface PurchaseLedgerRow {
   paymentId: string;
   provider: "yookassa" | "lava";

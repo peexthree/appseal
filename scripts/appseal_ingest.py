@@ -140,6 +140,11 @@ def collect() -> list[dict]:
         }
         if host in titles:
             entry["desc"] = titles[host]
+        # builder platform detected by the engine (detectPlatform): keeps the
+        # /stats platform battle honest for custom-domain builds
+        platform = d.get("platform")
+        if isinstance(platform, str) and platform.strip():
+            entry["platform"] = platform.strip()[:24]
         prev = by_host.get(host)
         if not prev or entry["ts"] > prev["ts"]:
             by_host[host] = entry

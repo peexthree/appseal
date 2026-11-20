@@ -268,6 +268,9 @@ export interface RegistryEntry {
   /** short public description: meta description / og:description / <title>;
    *  optional (old entries have none) */
   desc?: string;
+  /** builder platform detected by the engine ("Lovable", "Replit", ...);
+   *  optional (legacy entries fall back to host-suffix matching) */
+  platform?: string;
 }
 
 /**
@@ -388,6 +391,47 @@ export async function getRegistryEntries(limit = REGISTRY_MAX): Promise<Registry
     return list.slice(0, limit);
   } catch {
     return [];
+  }
+}
+
+/**
+ * Full-list read with a small in-process cache: the raised REGISTRY_MAX turns
+ * LRANGE into a ~2MB fetch, and /stats + /registry render on every request -
+ * both pay it once per TTL instead of per view. Short TTL keeps the catalog
+ * fresh (a scan lands in the registry within two minutes).
+ */
+const REGISTRY_CACHE_TTL_MS = 120_000;
+let registryCache: { at: number; entries: RegistryEntry[] } | null = null;
+
+export async function getRegistryEntriesCached(): Promise<RegistryEntry[]> {
+  if (registryCache && Date.now() - registryCache.at < REGISTRY_CACHE_TTL_MS) {
+    return registryCache.entries;
+  }
+  const entries = await getRegistryEntries();
+  if (entries.length > 0) {
+    registryCache = { at: Date.now(), entries };
+  }
+  return entries;
+}
+
+/**
+ * Sum of the last 24 hourly activity buckets - the honest "checks in the last
+ * 24 hours" number. The batch ingest pushes increment the same buckets the
+ * interactive scans do, so mass runs are counted where the old
+ * appmot:pipeline:scans24h key (pipeline-tick submissions only) was blind.
+ */
+export async function readChecksLast24h(): Promise<number> {
+  const cfg = redisConfig();
+  if (!cfg) return 0;
+  try {
+    // oldest -> newest, same order the /stats pulse chart renders
+    const keys = Array.from({ length: 24 }, (_, i) =>
+      statsHourKey(new Date(Date.now() - (23 - i) * 3600 * 1000)),
+    );
+    const values = await redisPipeline(cfg, keys.map((k) => ["GET", k] as unknown[]));
+    return values.reduce<number>((acc, v) => acc + (Number(v) || 0), 0);
+  } catch {
+    return 0;
   }
 }
 
