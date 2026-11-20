@@ -83,3 +83,5 @@ scripts/__pycache__/
 # the repo and the Vercel deploy; aggregates live in src/data/stats-harvest.json
 scripts/benchmark_data/*
 !scripts/benchmark_data/harvest_meta.json
+docs/
+TRANSFER.md
