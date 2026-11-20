@@ -74,7 +74,7 @@ const nextConfig: NextConfig = {
         source: file,
         headers: cacheHeaders(CACHE_IMMUTABLE),
       })),
-      { source: "/OG.png", headers: cacheHeaders(CACHE_DAY) },
+      { source: "/OG1.png", headers: cacheHeaders(CACHE_DAY) },
       { source: "/favicon.ico", headers: cacheHeaders(CACHE_DAY) },
     ];
   },

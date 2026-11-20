@@ -50,14 +50,14 @@ export const metadata: Metadata = {
     description:
       "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+-E и бейдж доверия за минуту.",
     type: "website",
-    images: ["/OG.png"],
+    images: ["/OG1.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "AppSeal - техосмотр для приложений, собранных с ИИ",
     description:
       "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+-E и бейдж доверия за минуту.",
-    images: ["/OG.png"],
+    images: ["/OG1.png"],
   },
 };
 

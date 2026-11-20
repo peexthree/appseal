@@ -58,13 +58,13 @@ export async function generateMetadata(): Promise<Metadata> {
       title: META[lang].title,
       description: META[lang].description,
       type: "website",
-      images: ["/OG.png"],
+      images: ["/OG1.png"],
     },
     twitter: {
       card: "summary_large_image",
       title: META[lang].title,
       description: META[lang].description,
-      images: ["/OG.png"],
+      images: ["/OG1.png"],
     },
     alternates: {
       canonical: "/",
