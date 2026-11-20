@@ -1,15 +1,15 @@
 # The CLI upload walks the working tree and the raw mass-run artifacts blow
 # past the 15000-file API limit (25k benchmark scans + 26k dev scan records);
 # none of these are read by the deployed app (Redis backend + Supabase).
+# Root-anchored on purpose: a bare "db/" would also match src/lib/db/ and
+# break the module resolution in the build container.
 .git
 .vercel
-db/
-scripts/benchmark_data/
-scripts/__pycache__/
-lighthouse-results/
-docs/
-tests/
+/db/
+/scripts/benchmark_data/
+/scripts/__pycache__/
+/lighthouse-results/
+/docs/
+/tests/
 *.log
 *.pid
-*.png
-!public/**/*.png
