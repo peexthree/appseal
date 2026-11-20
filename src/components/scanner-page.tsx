@@ -1684,6 +1684,10 @@ export function ScannerPage({
                 </span>
               ))}
               <span>·</span>
+              <a href="https://t.me/AppSeal_Monitor_Bot" target="_blank" rel="noopener" className="transition hover:text-slate-400">
+                bot
+              </a>
+              <span>·</span>
               <a href="https://t.me/peexthree" target="_blank" rel="noopener" className="transition hover:text-slate-400">
                 telegram
               </a>

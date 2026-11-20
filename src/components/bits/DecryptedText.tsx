@@ -6,8 +6,10 @@
  * library. Local adaptation: imports from framer-motion (already a
  * dependency) instead of motion.
  *
- * With animateOn="view" the real string stays in the DOM (sr-only layer +
- * invisible per-char placeholders), so SSR HTML keeps it searchable.
+ * SSR renders the real string as the only text node; the scramble mask and
+ * per-char animation switch on after hydration (layout effect below). SEO
+ * parsers without CSS concatenate text nodes blindly - the old sr-only
+ * duplicate layer doubled every heading it wrapped (pr-cy audit 20.11.26).
  */
 
 import {
@@ -159,18 +161,15 @@ export default function DecryptedText({
   const local = hoverable && hoverRadius > 0;
   const step = Math.max(16, speed);
 
-  const [frame, setFrame] = useState<Frame>(() => {
-    const revealed = chars.map(char => !startsHidden || isSpace(char));
-    return {
-      shown: chars.map((char, index) =>
-        revealed[index] ? char : pool[((char.codePointAt(0) ?? 0) + index * 7) % pool.length]
-      ),
-      revealed,
-      tint: revealed.map(shown => (shown ? 0 : 1)),
-      dim: revealed.map(shown => (shown ? 1 : FADE_FLOOR)),
-      squeeze: revealed.map(() => 1)
-    };
-  });
+  const [frame, setFrame] = useState<Frame>(() => ({
+    // SSR and the hydration render both show the real text; the scramble
+    // mask flips on in the layout effect below, before first paint.
+    shown: [...chars],
+    revealed: chars.map(() => true),
+    tint: chars.map(() => 0),
+    dim: chars.map(() => 1),
+    squeeze: chars.map(() => 1)
+  }));
 
   const containerRef = useRef<HTMLSpanElement>(null);
   const cellsRef = useRef<(HTMLSpanElement | null)[]>([]);
@@ -609,10 +608,7 @@ export default function DecryptedText({
       {...animateProps}
       {...props}
     >
-      <span className="sr-only">{chars.join('')}</span>
-
-      <span aria-hidden="true">
-        {groups.map(group =>
+      {groups.map(group =>
           typeof group === 'string' ? (
             group
           ) : (
@@ -645,7 +641,6 @@ export default function DecryptedText({
             </span>
           )
         )}
-      </span>
     </motion.span>
   );
 }

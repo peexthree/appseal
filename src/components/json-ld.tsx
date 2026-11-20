@@ -23,6 +23,7 @@ const graph = {
         width: 512,
         height: 512,
       },
+      sameAs: ["https://t.me/AppSeal_Monitor_Bot"],
     },
     {
       "@type": "WebSite",
