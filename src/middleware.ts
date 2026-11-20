@@ -85,13 +85,26 @@ export function middleware(req: NextRequest) {
   if (prefix) {
     lang = prefix[1].toLowerCase();
     effectivePath = pathname.slice(prefix[1].length + 1) || "/";
-    req.cookies.set("appseal-lang", lang);
   }
 
   const nonce = randomNonce();
   const strict = !PRERENDERED_ROUTES.test(effectivePath);
+  if (lang && strict) {
+    // pinned language for the dynamic render; prerendered routes render
+    // statically (their SSR language stays RU, the client view re-reads the
+    // cookie) and must not see a modified request at all - see below
+    req.cookies.set("appseal-lang", lang);
+  }
   const policy = contentSecurityPolicy(strict ? scriptSrcStrict(nonce) : SCRIPT_SRC_LEGACY);
 
+  // Request headers are forwarded to the render ONLY for dynamically rendered
+  // routes. Forwarding modified request headers to an ISR/prerendered route
+  // de-opts its runtime (re)generation into dynamic rendering, which Next 16
+  // hard-fails with "Page changed from static to dynamic, reason: headers" -
+  // that was the /verified/[host] 500 (the only route with no cached copy, so
+  // the only one erroring out loud; every other ISR page just silently kept
+  // serving stale cache). Prerendered routes get the unmodified request: their
+  // CSP is the legacy policy set on the response below.
   const requestHeaders = new Headers(req.headers);
   if (strict) {
     // the server render nonces its own scripts from the request CSP header and
@@ -104,10 +117,12 @@ export function middleware(req: NextRequest) {
   if (lang) {
     const url = req.nextUrl.clone();
     url.pathname = effectivePath;
-    res = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+    res = strict
+      ? NextResponse.rewrite(url, { request: { headers: requestHeaders } })
+      : NextResponse.rewrite(url);
     res.cookies.set("appseal-lang", lang, { path: "/", maxAge: 31536000, sameSite: "lax" });
   } else {
-    res = NextResponse.next({ request: { headers: requestHeaders } });
+    res = strict ? NextResponse.next({ request: { headers: requestHeaders } }) : NextResponse.next();
   }
   res.headers.set("Content-Security-Policy", policy);
   return res;
