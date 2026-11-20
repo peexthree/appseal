@@ -103,14 +103,18 @@ const D = {
     ru: "Первый массовый прогон ещё идёт - цифры появятся здесь сразу после его завершения.",
     en: "The first mass run is still in progress - the numbers will appear here right after it completes.",
   },
-  runNewBadge: { ru: "Новый прогон идёт", en: "New run in progress" },
+  runNewBadge: { ru: "Прогон приостановлен", en: "Run paused" },
   runNewNote: {
-    ru: "Новый расширенный прогон от 19.11 идёт: обработано {done} из {total} сайтов. Цифры на этой странице обновляются по мере сканирования.",
-    en: "The new expanded run of Nov 19 is in progress: {done} of {total} sites scanned so far. Numbers on this page update as the scan continues.",
+    ru: "Обработано {done} из {total} сайтов списка, из них {dead} мёртвых или не открывшихся. Цифры обновляются по мере сканирования.",
+    en: "{done} of {total} list sites processed, {dead} of them dead or unreachable. Numbers update as scanning continues.",
+  },
+  heroBreakdown: {
+    ru: "{live} живых получили класс · {dead} мёртвых · {queued} ещё не проверены",
+    en: "{live} live got a grade · {dead} dead · {queued} not scanned yet",
   },
   tickLead: { ru: "За 24 часа проверок: ", en: "Checks in the last 24 hours: " },
-  stat1: { ru: "приложений прошло техосмотр", en: "apps inspected" },
-  stat2: { ru: "проверок выполнено", en: "checks completed" },
+  stat1: { ru: "живых приложений с классом", en: "live apps with a grade" },
+  stat2: { ru: "мёртвых или не открывшихся", en: "dead or unreachable" },
   stat3: { ru: "средний балл из 100", en: "average score out of 100" },
   statMedian: { ru: "медианный балл", en: "median score" },
   stat4: { ru: "получили класс A/A+", en: "earned grade A/A+" },
@@ -434,13 +438,20 @@ export default async function StatsPage() {
         })()
       : [];
 
-  // unified view: live counters or the static mass-run snapshot. heroCount
-  // and stat1 are the SAME number (the title says it in words), doneCount is
-  // the checks-run counter (rescans included) under its own honest label
+  // unified view: live counters or the static mass-run snapshot. The title
+  // total counts everything that went through the checkup: live hosts (Redis
+  // SCARD) plus the dead/unreachable ones (snapshot, refreshed by the stats
+  // task) - the requested "8k dead" show as their own card, the queue is a
+  // breakdown line under the title
+  const deadCount = Number(s.panel.dead) + Number((s.panel as { apiError?: number }).apiError ?? 0);
+  const queuedCount = Number(s.panel.missing);
   const v = useLive && live
     ? {
         isLive: true,
-        heroCount: live.sites,
+        heroCount: live.sites + deadCount,
+        liveHosts: live.sites,
+        deadCount,
+        queuedCount,
         doneCount: live.scans,
         avg: live.avg,
         median: live.median,
@@ -455,7 +466,10 @@ export default async function StatsPage() {
       }
     : {
         isLive: false,
-        heroCount: s.panel.done,
+        heroCount: Number(s.panel.total),
+        liveHosts: Number(s.panel.done),
+        deadCount,
+        queuedCount,
         doneCount: s.panel.done,
         avg: s.avgScore,
         median: s.medianScore,
@@ -512,6 +526,14 @@ export default async function StatsPage() {
           </span>{" "}
           {t("h1b")}
         </h1>
+        {v.deadCount > 0 || v.queuedCount > 0 ? (
+          <p className="mt-2 max-w-2xl text-sm font-medium text-slate-400">
+            {t("heroBreakdown")
+              .replace("{live}", numFmt.format(v.liveHosts))
+              .replace("{dead}", numFmt.format(v.deadCount))
+              .replace("{queued}", numFmt.format(v.queuedCount))}
+          </p>
+        ) : null}
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
           {v.isLive ? (
             <>
@@ -530,8 +552,9 @@ export default async function StatsPage() {
         {s.panel.missing > 0 ? (
           <p className="mt-2 max-w-2xl text-sm font-medium text-amber-300/90">
             {t("runNewNote")
-              .replace("{done}", numFmt.format(s.panel.done))
-              .replace("{total}", numFmt.format(s.panel.total))}
+              .replace("{done}", numFmt.format(v.heroCount))
+              .replace("{total}", numFmt.format(s.panel.total))
+              .replace("{dead}", numFmt.format(v.deadCount))}
           </p>
         ) : null}
 
@@ -565,8 +588,8 @@ export default async function StatsPage() {
           <>
             <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { v: numFmt.format(v.heroCount), l: t("stat1"), c: "text-emerald-400" },
-                { v: numFmt.format(v.doneCount), l: t("stat2"), c: "text-sky-400" },
+                { v: numFmt.format(v.liveHosts), l: t("stat1"), c: "text-emerald-400" },
+                { v: numFmt.format(v.deadCount), l: t("stat2"), c: "text-[#F87171]" },
                 { v: `${v.avg}`, l: t("stat3"), sub: `${t("statMedian")}: ${v.median}`, c: "text-slate-100" },
                 { v: `${v.gradeACount}`, l: t("stat4"), c: "text-[#C084FC]" },
               ].map((c) => (
