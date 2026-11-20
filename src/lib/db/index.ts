@@ -190,8 +190,8 @@ export async function archiveScan(
       values (${scan.id}, ${scan.host}, ${scan.score}, ${scan.grade}, ${isPublic}, ${scan.lang ?? null},
               ${platform}, ${sql.json(scan)}, ${scan.startedAt}, ${scan.finishedAt})
       on conflict (id) do update set
-        score = excluded.score, grade = excluded.grade, result = excluded.result,
-        finished_at = excluded.finished_at
+        score = excluded.score, grade = excluded.grade, is_public = excluded.is_public,
+        result = excluded.result, finished_at = excluded.finished_at
     `.execute();
     return true;
   } catch {
