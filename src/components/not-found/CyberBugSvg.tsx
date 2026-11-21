@@ -33,6 +33,8 @@ export interface CyberBugSvgProps {
   showHpBar?: boolean;
   /** Флаг кратковременной вспышки урона */
   isHit?: boolean;
+  /** Скрывать SVG от скринридеров (жук внутри кнопки с собственным aria-label) */
+  ariaHidden?: boolean;
   /** Переопределение цвета акцента (опционально) */
   accentOverride?: string;
   /** Дополнительный CSS-класс контейнера */
@@ -122,6 +124,7 @@ export const CyberBugSvg: React.FC<CyberBugSvgProps> = ({
   width = 120,
   showHpBar,
   isHit = false,
+  ariaHidden = false,
   accentOverride,
   className = "",
   onClick,
@@ -276,7 +279,8 @@ export const CyberBugSvg: React.FC<CyberBugSvgProps> = ({
         xmlns="http://www.w3.org/2000/svg"
         className={`cb-root cb-state-${mode} ${isHit ? "cb-hit-flash" : ""} overflow-visible`}
         style={rootStyle}
-        aria-label={`${isBoss ? "Босс кибер-жук" : "Кибер-жук"} ${displayLabel}`}
+        aria-hidden={ariaHidden || undefined}
+        aria-label={ariaHidden ? undefined : `${isBoss ? "Босс кибер-жук" : "Кибер-жук"} ${displayLabel}`}
       >
         <defs>
           {/* Металлический градиент основной брони надкрыльев */}

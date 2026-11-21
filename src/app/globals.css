@@ -632,6 +632,12 @@ html.appseal-idle .appseal-radar-sweep {
     transform: none;
   }
 }
+/* keyboard a11y: the hitbox is an invisible square - show focus clearly */
+.nf-hitbox:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.85);
+  outline-offset: 6px;
+  border-radius: 14px;
+}
 
 /* ambient diagnostic backdrop: hex grid already on the body, so this layer
    adds the slowly sweeping radar rings only */

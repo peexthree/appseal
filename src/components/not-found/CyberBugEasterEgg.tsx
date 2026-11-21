@@ -11,7 +11,7 @@ import {
   FX_NORMAL,
   HINT_CLOUD,
   HUD_LABELS,
-  cardSpawnPoint,
+  cardSpawnPose,
   clampToast,
   headingToRotation,
   hpFor,
@@ -19,10 +19,9 @@ import {
   panicBounds,
   panicCloud,
   particleCount,
-  pickSpawnSide,
   rageCloud,
   splashCount,
-  spawnPose,
+  turnToward,
   wanderTarget,
   type FxPalette,
   type ParticleKind,
@@ -82,6 +81,10 @@ interface Splat {
   y: number;
   drops: { dx: number; dy: number; r: number }[];
   chips: { dx: number; dy: number; rot: number; s: number }[];
+  /** pre-rendered stain: one drawImage per frame instead of ~40 path fills */
+  sprite: HTMLCanvasElement | null;
+  /** logical sprite size (sprite is centered and drawn square) */
+  size: number;
   born: number;
   life: number;
   boss: boolean;
@@ -106,7 +109,59 @@ interface BugView {
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
+/** logical sprite size for a pre-rendered splat stain (34px drop offset + 15px radius + chips) */
+const SPLAT_SPRITE = 128;
+
 const BEST_KEY = "appseal-bug-best";
+
+/**
+ * Paints one splat stain (drops + gloss + embedded chips) centered at the
+ * origin. Used both for the per-stain offscreen sprite (hot path) and as the
+ * vector fallback in renderFx when sprite construction is unavailable.
+ */
+const drawSplatPaint = (
+  ctx: CanvasRenderingContext2D,
+  drops: { dx: number; dy: number; r: number }[],
+  chips: { dx: number; dy: number; rot: number; s: number }[],
+  pal: FxPalette,
+) => {
+  for (const d of drops) {
+    ctx.fillStyle = pal.meat;
+    ctx.beginPath();
+    ctx.arc(d.dx, d.dy, d.r, 0, Math.PI * 2);
+    ctx.fill();
+    // gloss highlight
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.beginPath();
+    ctx.arc(d.dx - d.r * 0.28, d.dy - d.r * 0.3, d.r * 0.24, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  for (const c of chips) {
+    ctx.save();
+    ctx.translate(c.dx, c.dy);
+    ctx.rotate(c.rot);
+    ctx.fillStyle = pal.chipBody;
+    ctx.fillRect(-c.s / 2, -c.s / 2.6, c.s, c.s / 1.3);
+    ctx.strokeStyle = pal.chipPin;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-c.s / 2, -c.s / 2.6, c.s, c.s / 1.3);
+    ctx.beginPath();
+    ctx.moveTo(-c.s / 2 + 2, -c.s / 2.6 - 3);
+    ctx.lineTo(-c.s / 2 + 2, -c.s / 2.6);
+    ctx.moveTo(c.s / 2 - 2, -c.s / 2.6 - 3);
+    ctx.lineTo(c.s / 2 - 2, -c.s / 2.6);
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+/** Paranoia spawn if the 404 card is somehow missing: a free roam point. */
+const fallbackPose = (v: { w: number; h: number }) => {
+  const b = panicBounds(v);
+  const x = rand(b.minX, b.maxX);
+  const y = rand(b.minY, b.maxY);
+  return { x, y, tx: x, ty: y, heading: rand(0, Math.PI * 2) };
+};
 
 export function CyberBugEasterEgg() {
   const lang = useLang();
@@ -144,6 +199,7 @@ export function CyberBugEasterEgg() {
     kills: 0,
   });
   const vp = useRef({ w: 0, h: 0 });
+  const cardRect = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
   const reduced = useRef(false);
   const coarse = useRef(false);
   const engine = useRef<SfxEngine | null>(null);
@@ -188,13 +244,18 @@ export function CyberBugEasterEgg() {
     const ctx = canvas.getContext("2d");
     ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
     canvasDirty.current = true;
+    // fresh card geometry: the z-sandwich and spawn poses hang off it
+    const card = document.querySelector("[data-nf-card]")?.getBoundingClientRect();
+    cardRect.current = card
+      ? { left: card.left, top: card.top, width: card.width, height: card.height }
+      : null;
     // keep a roaming bug (and its peek target) inside the new bounds
     const s = st.current;
     const b = panicBounds(vp.current);
     s.x = Math.max(b.minX, Math.min(b.maxX, s.x));
     s.y = Math.max(b.minY, Math.min(b.maxY, s.y));
-    s.tx = Math.max(24, Math.min(vp.current.w - 24, s.tx));
-    s.ty = Math.max(b.minY, Math.min(vp.current.h - 24, s.ty));
+    s.tx = Math.max(b.minX, Math.min(b.maxX, s.tx));
+    s.ty = Math.max(b.minY, Math.min(b.maxY, s.ty));
   };
 
   /* --------------------------- fx spawners ---------------------------- */
@@ -287,11 +348,30 @@ export function CyberBugEasterEgg() {
       const d = rand(0, 26);
       chips.push({ dx: Math.cos(a) * d, dy: Math.sin(a) * d, rot: Math.random() * Math.PI, s: rand(6, 10) });
     }
+    // pre-render the stain once: one drawImage per frame instead of ~40 fills
+    let sprite: HTMLCanvasElement | null = null;
+    try {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const sc = document.createElement("canvas");
+      sc.width = Math.round(SPLAT_SPRITE * dpr);
+      sc.height = Math.round(SPLAT_SPRITE * dpr);
+      const sctx = sc.getContext("2d");
+      if (sctx) {
+        sctx.scale(dpr, dpr);
+        sctx.translate(SPLAT_SPRITE / 2, SPLAT_SPRITE / 2);
+        drawSplatPaint(sctx, drops, chips, boss ? FX_BOSS : FX_NORMAL);
+        sprite = sc;
+      }
+    } catch {
+      sprite = null; // legacy vector path covers it in renderFx
+    }
     splats.current.push({
       x,
       y,
       drops,
       chips,
+      sprite,
+      size: SPLAT_SPRITE,
       born: performance.now(),
       life: rand(BALANCE.splatKeepMin, BALANCE.splatKeepMax) * 1000,
       boss,
@@ -311,40 +391,16 @@ export function CyberBugEasterEgg() {
 
     ctx.clearRect(0, 0, vp.current.w, vp.current.h);
 
-    // slime stains: organic blob of drops with gloss + embedded chips
+    // slime stains: pre-rendered blob sprite (vector fallback), fading out
     for (const s of splats.current) {
       const age = now - s.born;
       const fade = age > s.life - 2500 ? Math.max(0, (s.life - age) / 2500) : 1;
       if (fade <= 0) continue;
-      const pal = s.boss ? FX_BOSS : FX_NORMAL;
       ctx.globalAlpha = fade;
-      for (const d of s.drops) {
-        ctx.fillStyle = pal.meat;
-        ctx.beginPath();
-        ctx.arc(s.x + d.dx, s.y + d.dy, d.r, 0, Math.PI * 2);
-        ctx.fill();
-        // gloss highlight
-        ctx.fillStyle = "rgba(255,255,255,0.35)";
-        ctx.beginPath();
-        ctx.arc(s.x + d.dx - d.r * 0.28, s.y + d.dy - d.r * 0.3, d.r * 0.24, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      for (const c of s.chips) {
-        ctx.save();
-        ctx.translate(s.x + c.dx, s.y + c.dy);
-        ctx.rotate(c.rot);
-        ctx.fillStyle = pal.chipBody;
-        ctx.fillRect(-c.s / 2, -c.s / 2.6, c.s, c.s / 1.3);
-        ctx.strokeStyle = pal.chipPin;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(-c.s / 2, -c.s / 2.6, c.s, c.s / 1.3);
-        ctx.beginPath();
-        ctx.moveTo(-c.s / 2 + 2, -c.s / 2.6 - 3);
-        ctx.lineTo(-c.s / 2 + 2, -c.s / 2.6);
-        ctx.moveTo(c.s / 2 - 2, -c.s / 2.6 - 3);
-        ctx.lineTo(c.s / 2 - 2, -c.s / 2.6);
-        ctx.stroke();
-        ctx.restore();
+      if (s.sprite) {
+        ctx.drawImage(s.sprite, s.x - s.size / 2, s.y - s.size / 2, s.size, s.size);
+      } else {
+        drawSplatPaint(ctx, s.drops, s.chips, s.boss ? FX_BOSS : FX_NORMAL);
       }
       ctx.globalAlpha = 1;
     }
@@ -442,6 +498,17 @@ export function CyberBugEasterEgg() {
     if (el) {
       el.style.transform = `translate3d(${s.x}px, ${s.y}px, 0)`;
       el.style.opacity = s.mode === "respawn" ? "0" : "1";
+      // while emerging, the bug renders UNDER the frosted card (z 5 < card 10)
+      // and reads as a dim silhouette; anywhere else it walks above the page
+      const c = cardRect.current;
+      const under =
+        s.mode === "peek" &&
+        c !== null &&
+        s.x > c.left &&
+        s.x < c.left + c.width &&
+        s.y > c.top &&
+        s.y < c.top + c.height;
+      el.style.zIndex = under ? "5" : "30";
     }
     const rotEl = bugRot.current;
     if (rotEl) {
@@ -491,15 +558,20 @@ export function CyberBugEasterEgg() {
     if (dist <= BALANCE.peekSpeed * dt + 0.5) {
       s.x = s.tx;
       s.y = s.ty;
-      s.heading = -Math.PI / 2; // settle facing up
+      // keep the arrival heading - no snap: the bug faces where it crawled
       s.mode = "idle";
       s.wanderAt = performance.now() + rand(BALANCE.idleWanderMin, BALANCE.idleWanderMax) * 1000;
       setView((v) => ({ ...v, legs: "idle" }));
       return;
     }
-    s.heading = Math.atan2(dy, dx);
-    s.x += Math.cos(s.heading) * BALANCE.peekSpeed * dt;
-    s.y += Math.sin(s.heading) * BALANCE.peekSpeed * dt;
+    // smooth turn along the shortest arc; the crawl slows while misaligned so
+    // the path reads as an arc, not a spin-teleport
+    const desired = Math.atan2(dy, dx);
+    s.heading = turnToward(s.heading, desired, BALANCE.peekTurnRate * dt);
+    const align = Math.max(0, Math.cos(desired - s.heading));
+    const speed = BALANCE.peekSpeed * (0.3 + 0.7 * align);
+    s.x += Math.cos(s.heading) * speed * dt;
+    s.y += Math.sin(s.heading) * speed * dt;
   };
 
   /** Idle stroll: pick a nearby point and crawl there on the peek machinery. */
@@ -658,16 +730,32 @@ export function CyberBugEasterEgg() {
     s.hp = maxHp;
     s.hits = 0;
     s.raged = false;
-    const pose = spawnPose(pickSpawnSide(), vp.current);
-    s.x = pose.x;
-    s.y = pose.y;
+    // fresh card measurement: scroll/resize since the last spawn shifts it
+    const card = document.querySelector("[data-nf-card]")?.getBoundingClientRect();
+    cardRect.current = card
+      ? { left: card.left, top: card.top, width: card.width, height: card.height }
+      : null;
+    const pose = cardRect.current
+      ? cardSpawnPose(cardRect.current, vp.current)
+      : fallbackPose(vp.current);
     s.tx = pose.tx;
     s.ty = pose.ty;
     s.heading = pose.heading;
-    s.mode = "peek";
     s.wanderAt = performance.now() + rand(BALANCE.idleWanderMin, BALANCE.idleWanderMax) * 1000;
+    if (reduced.current) {
+      // reduced motion: no crawling - materialize fully visible at the emerge
+      // point (this is what kept past-kill respawns invisible forever)
+      s.x = pose.tx;
+      s.y = pose.ty;
+      s.mode = "idle";
+      setView({ boss, hp: maxHp, maxHp, legs: "idle" });
+    } else {
+      s.x = pose.x;
+      s.y = pose.y;
+      s.mode = "peek";
+      setView({ boss, hp: maxHp, maxHp, legs: "step" });
+    }
     if (hitbox.current) hitbox.current.style.pointerEvents = "auto";
-    setView({ boss, hp: maxHp, maxHp, legs: "step" });
     positionBug();
   };
 
@@ -689,19 +777,9 @@ export function CyberBugEasterEgg() {
       return;
     }
 
-    if (s.mode === "peek") {
-      // armored while crawling out: damage counts, sparks fly, but it keeps
-      // crawling - panicking mid-crawl would snap the edge-clamp jump
-      engine.current?.play("hit");
-      flashBug();
-      spawnSplash(cx, cy, s.boss);
-      canvasDirty.current = true;
-      setView((v) => ({ ...v, hp: s.hp }));
-      return;
-    }
-
-    if (s.mode === "idle") {
-      // first poke: yelp, cloud, and a mad dash away from the cursor
+    if (s.mode === "idle" || s.mode === "peek") {
+      // first poke (or a poke mid-emerge): yelp, cloud, and a mad dash away
+      // from the cursor - the bug answers every touch with flight
       s.mode = "panic";
       s.heading = Math.atan2(s.y - cy, s.x - cx) + rand(-0.5, 0.5);
       s.turnAt = performance.now();
@@ -800,20 +878,8 @@ export function CyberBugEasterEgg() {
     // the visitor still has zero kills
     hintAt.current = performance.now() + BALANCE.hintDelay * 1000;
 
-    // session bug #1 sits on the 404 card edge
-    const s = st.current;
-    const card = document.querySelector("[data-nf-card]")?.getBoundingClientRect();
-    const spot = card
-      ? cardSpawnPoint(
-          { left: card.left, top: card.top, width: card.width, height: card.height },
-          vp.current,
-        )
-      : { x: vp.current.w * 0.5, y: vp.current.h * 0.5 };
-    s.x = spot.x;
-    s.y = spot.y;
-    s.heading = -Math.PI / 2;
-    s.wanderAt = performance.now() + rand(BALANCE.idleWanderMin, BALANCE.idleWanderMax) * 1000;
-    positionBug();
+    // bug #1 crawls out from under the 404 card right away
+    spawnBug();
 
     const tick = (now: number) => {
       if (dead.current) return;
@@ -931,6 +997,7 @@ export function CyberBugEasterEgg() {
                 mode={view.legs === "idle" ? "idle" : "walk"}
                 width={view.boss ? 84 : 86}
                 showHpBar={false}
+                ariaHidden
               />
             </div>
           </div>

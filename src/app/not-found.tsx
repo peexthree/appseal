@@ -31,11 +31,11 @@ export default function NotFound() {
 
       <CyberBugLazy />
 
-      <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center justify-center px-4 py-20 text-center">
+      <main className="pointer-events-none relative z-10 mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center justify-center px-4 py-20 text-center">
         <div
           data-nf-card
           data-nf-shake
-          className="appseal-glass-card relative w-full rounded-3xl px-6 py-12 sm:px-10 sm:py-16"
+          className="appseal-glass-card pointer-events-auto relative w-full rounded-3xl px-6 py-12 sm:px-10 sm:py-16"
         >
           {/* status badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-mono text-[11px] font-bold tracking-[0.18em] text-slate-300">

@@ -20,10 +20,13 @@ export const BALANCE = {
   // erratic direction changes, seconds
   turnMin: 0.2,
   turnMax: 0.4,
-  // peeking return crawl
-  peekSpeed: 42,
+  // crawling out from under the 404 card (px/s) + heading slew while crawling
+  peekSpeed: 64,
+  peekTurnRate: 9.5,
   peekDistMin: 70,
   peekDistMax: 120,
+  // how deep under the card edge a newborn bug starts (px, hidden by the glass)
+  spawnInside: 28,
   // pause between splat and the next bug crawling out
   respawnMin: 2.0,
   respawnMax: 2.2,
@@ -44,9 +47,13 @@ export const BALANCE = {
   trailEvery: 0.12,
   // every Nth kill respawns as the boss
   bossEvery: 5,
-  // viewport padding the bug keeps while panicking (and under the header)
-  margin: 48,
-  headerSafe: 76,
+  // viewport padding the bug keeps while roaming (body + claws clear the edge)
+  margin: 64,
+  // real sticky-header height (h-20 = 80px); UI clouds/toasts clamp below it
+  headerSafe: 80,
+  // roaming floor: header 80 + half the 96px hitbox 48 + gap 4, so the hitbox
+  // never hides under the header's click plane
+  roamMinY: 132,
   // idle stroll: a settled bug drifts to a nearby point every few seconds
   idleWanderMin: 2.8,
   idleWanderMax: 5.4,
@@ -270,88 +277,107 @@ export interface PanicBounds {
   maxY: number;
 }
 
-/** Roaming box: viewport inset by the margin, extra headroom under the sticky header. */
+/** Roaming box: viewport inset by the margin, floored below the sticky header. */
 export function panicBounds(v: Viewport): PanicBounds {
   const m = BALANCE.margin;
   return {
     minX: m,
     maxX: v.w - m,
-    minY: BALANCE.headerSafe + 12,
+    minY: BALANCE.roamMinY,
     maxY: v.h - m,
   };
 }
 
-export function pickSpawnSide(rand: () => number = Math.random): Side {
-  const sides: Side[] = ["left", "right", "top", "bottom"];
-  return sides[Math.floor(rand() * sides.length)];
-}
-
 export interface SpawnPose {
-  /** start point, just outside the viewport on the chosen side */
+  /** start point, hidden under the card glass */
   x: number;
   y: number;
-  /** crawl target, 70-120px inward */
+  /** crawl target, past the card edge into free space */
   tx: number;
   ty: number;
   /** movement heading, radians (bug visual rotation is heading + 90deg) */
   heading: number;
 }
 
-/**
- * Spawn just past a random edge and crawl 70-120px inward. The top edge
- * starts below the sticky header and the corners are pulled in, so the bug
- * never emerges under the nav or dead in a corner.
- */
-export function spawnPose(side: Side, v: Viewport, rand: () => number = Math.random): SpawnPose {
-  const dist = BALANCE.peekDistMin + rand() * (BALANCE.peekDistMax - BALANCE.peekDistMin);
-  const inset = 64 + rand() * Math.max(24, Math.min(v.w, v.h) / 2 - 128);
-  let x: number, y: number, tx: number, ty: number, heading: number;
-  switch (side) {
-    case "left":
-      x = -44;
-      y = inset;
-      tx = dist;
-      ty = y;
-      heading = 0;
-      break;
-    case "right":
-      x = v.w + 44;
-      y = inset;
-      tx = v.w - dist;
-      ty = y;
-      heading = Math.PI;
-      break;
-    case "top":
-      x = inset;
-      y = BALANCE.headerSafe;
-      tx = x;
-      ty = y + dist;
-      heading = Math.PI / 2;
-      break;
-    default: // bottom
-      x = inset;
-      y = v.h + 44;
-      tx = x;
-      ty = v.h - dist;
-      heading = -Math.PI / 2;
-  }
-  return { x, y, tx, ty, heading };
+export interface CardRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 }
 
 /**
- * First spawn of a session: near the bottom-right edge of the 404 card, so
- * the bug reads as "sitting on the card", clamped inside the viewport.
+ * Spawn pose emerging from under the 404 card: the start point sits inside
+ * the card (hidden behind the frosted glass while the bug renders below it),
+ * the target sits a peekDist beyond the chosen edge, heading points outward.
+ * Edges without enough roaming room (a phone card spans nearly the full
+ * width) are skipped; the crawl distance shrinks to what the room allows.
  */
-export function cardSpawnPoint(
-  card: { left: number; top: number; width: number; height: number },
+export function cardSpawnPose(
+  card: CardRect,
   v: Viewport,
-): { x: number; y: number } {
-  const x = card.left + card.width - 56;
-  const y = card.top + card.height - 24;
-  return {
-    x: Math.max(BALANCE.margin, Math.min(v.w - BALANCE.margin, x)),
-    y: Math.max(BALANCE.headerSafe, Math.min(v.h - BALANCE.margin, y)),
+  rand: () => number = Math.random,
+): SpawnPose {
+  const b = panicBounds(v);
+  const right = card.left + card.width;
+  const bottom = card.top + card.height;
+  // free roam room beyond each card edge
+  const room: Record<Side, number> = {
+    left: card.left - b.minX,
+    right: b.maxX - right,
+    top: card.top - b.minY,
+    bottom: b.maxY - bottom,
   };
+  const open = (Object.keys(room) as Side[]).filter((s) => room[s] >= 24);
+  const pool = open.length > 0 ? open : (["bottom", "right", "left", "top"] as Side[]);
+  const side = pool[Math.floor(rand() * pool.length)];
+
+  const dist = Math.max(
+    16,
+    Math.min(
+      BALANCE.peekDistMin + rand() * (BALANCE.peekDistMax - BALANCE.peekDistMin),
+      room[side] - 8,
+    ),
+  );
+  // position along the chosen edge: at least 44px clear of both corners and
+  // inside the roam box on the crossing axis
+  const along = (lo: number, hi: number, boxLo: number, boxHi: number) => {
+    const from = Math.max(lo, boxLo);
+    const to = Math.min(hi, boxHi);
+    return to <= from ? (from + to) / 2 : from + rand() * (to - from);
+  };
+
+  let x: number, y: number, tx: number, ty: number, heading: number;
+  switch (side) {
+    case "left":
+      x = card.left + BALANCE.spawnInside;
+      y = along(card.top + 44, bottom - 44, b.minY, b.maxY);
+      tx = card.left - dist;
+      ty = y;
+      heading = Math.PI;
+      break;
+    case "right":
+      x = right - BALANCE.spawnInside;
+      y = along(card.top + 44, bottom - 44, b.minY, b.maxY);
+      tx = right + dist;
+      ty = y;
+      heading = 0;
+      break;
+    case "top":
+      x = along(card.left + 44, right - 44, b.minX, b.maxX);
+      y = card.top + BALANCE.spawnInside;
+      tx = x;
+      ty = card.top - dist;
+      heading = -Math.PI / 2;
+      break;
+    default: // bottom
+      x = along(card.left + 44, right - 44, b.minX, b.maxX);
+      y = bottom - BALANCE.spawnInside;
+      tx = x;
+      ty = bottom + dist;
+      heading = Math.PI / 2;
+  }
+  return { x, y, tx, ty, heading };
 }
 
 /** Keeps a toast fully inside the window (no clipped text at the edges). */
@@ -368,6 +394,18 @@ export function clampToast(x: number, y: number, width: number, height: number, 
 /** Heading -> on-screen rotation for a top-view bug whose head points up. */
 export function headingToRotation(heading: number): number {
   return (heading * 180) / Math.PI + 90;
+}
+
+/**
+ * Rotate `heading` toward `target` along the shortest arc by at most `maxStep`
+ * radians. This is what keeps turns smooth: a crawling bug slews its heading
+ * instead of snapping to the new direction.
+ */
+export function turnToward(heading: number, target: number, maxStep: number): number {
+  let d = target - heading;
+  while (d > Math.PI) d -= 2 * Math.PI;
+  while (d < -Math.PI) d += 2 * Math.PI;
+  return Math.abs(d) <= maxStep ? target : heading + Math.sign(d) * maxStep;
 }
 
 /**

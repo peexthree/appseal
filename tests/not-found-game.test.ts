@@ -4,7 +4,7 @@ import {
   BALANCE,
   BUG_A11Y,
   HINT_CLOUD,
-  cardSpawnPoint,
+  cardSpawnPose,
   clampToast,
   headingToRotation,
   hpFor,
@@ -14,7 +14,7 @@ import {
   particleCount,
   rageCloud,
   splashCount,
-  spawnPose,
+  turnToward,
   wanderTarget,
   BOSS_RANDOM_KILLS,
 } from "../src/components/not-found/constants.ts";
@@ -154,39 +154,81 @@ test("BUG_A11Y labels cover normal and boss bugs", () => {
 
 /* ------------------------------- geometry ------------------------------- */
 
-test("panicBounds insets the viewport by the margin and clears the header", () => {
+test("panicBounds clears the header plane and keeps claws on-screen", () => {
   const b = panicBounds({ w: 1440, h: 900 });
   assert.equal(b.minX, BALANCE.margin);
   assert.equal(b.maxX, 1440 - BALANCE.margin);
-  assert.ok(b.minY >= BALANCE.headerSafe, "roaming must start below the sticky header");
+  assert.equal(b.minY, BALANCE.roamMinY);
+  assert.ok(b.minY >= BALANCE.headerSafe + 48, "hitbox half must clear the sticky header");
 });
 
-test("spawnPose: all four sides start outside and crawl 70-120px inward", () => {
+test("cardSpawnPose: newborn bugs start under the card glass and emerge outward", () => {
   const v = { w: 1440, h: 900 };
-  for (const side of ["left", "right", "top", "bottom"] as const) {
-    const p = spawnPose(side, v, () => 0);
-    const startOut =
-      side === "left" ? p.x < 0 : side === "right" ? p.x > v.w : side === "top" ? p.y < v.h : p.y > v.h;
-    assert.ok(startOut, `${side} spawn must start outside the viewport`);
-    const dist = Math.hypot(p.tx - p.x, p.ty - p.y);
-    assert.ok(dist >= 69 && dist <= 121, `${side} crawl distance ${dist} outside 70..120`);
-    // heading points inward
-    const hx = Math.cos(p.heading);
-    const hy = Math.sin(p.heading);
-    assert.ok(hx * (p.tx - p.x) + hy * (p.ty - p.y) > 0, `${side} heading must point inward`);
+  const card = { left: 384, top: 170, width: 672, height: 560 };
+  const b = panicBounds(v);
+  for (let i = 0; i < 300; i++) {
+    const p = cardSpawnPose(card, v);
+    // start hidden under the glass
+    const startInside =
+      p.x > card.left &&
+      p.x < card.left + card.width &&
+      p.y > card.top &&
+      p.y < card.top + card.height;
+    assert.ok(startInside, `start ${p.x},${p.y} must sit under the card`);
+    // target clears the card edge by a visible margin
+    const outside =
+      p.tx < card.left - 12 ||
+      p.tx > card.left + card.width + 12 ||
+      p.ty < card.top - 12 ||
+      p.ty > card.top + card.height + 12;
+    assert.ok(outside, `target ${p.tx},${p.ty} must clear the card edge`);
+    // target stays inside the roam box
+    assert.ok(
+      p.tx >= b.minX && p.tx <= b.maxX && p.ty >= b.minY && p.ty <= b.maxY,
+      `target ${p.tx},${p.ty} outside the roam box`,
+    );
+    // the straight ray from start along heading exits the card
+    const mid = { x: p.x + Math.cos(p.heading) * 160, y: p.y + Math.sin(p.heading) * 160 };
+    const midOutside =
+      mid.x < card.left ||
+      mid.x > card.left + card.width ||
+      mid.y < card.top ||
+      mid.y > card.top + card.height;
+    assert.ok(midOutside, "heading must lead out of the card");
   }
 });
 
-test("spawnPose top edge never emerges under the sticky header", () => {
-  const p = spawnPose("top", { w: 800, h: 900 }, () => 0);
-  assert.ok(p.y >= BALANCE.headerSafe, "top spawn must start below the header");
+test("cardSpawnPose: still valid where the card hugs the screen (phone)", () => {
+  const v = { w: 375, h: 812 };
+  const card = { left: 16, top: 120, width: 343, height: 560 };
+  const b = panicBounds(v);
+  for (let i = 0; i < 300; i++) {
+    const p = cardSpawnPose(card, v);
+    const outside =
+      p.tx < card.left - 12 ||
+      p.tx > card.left + card.width + 12 ||
+      p.ty < card.top - 12 ||
+      p.ty > card.top + card.height + 12;
+    assert.ok(outside, `target ${p.tx},${p.ty} must clear the card even on a phone`);
+    assert.ok(
+      p.tx >= b.minX && p.tx <= b.maxX && p.ty >= b.minY && p.ty <= b.maxY,
+      `target ${p.tx},${p.ty} outside the roam box`,
+    );
+    // whatever the restricted room, the crawl still moves the bug outward
+    const dist = Math.hypot(p.tx - p.x, p.ty - p.y);
+    assert.ok(dist >= 16, `crawl ${dist} too short to read as emerging`);
+  }
 });
 
-test("cardSpawnPoint clamps into the viewport", () => {
-  const v = { w: 375, h: 812 };
-  const p = cardSpawnPoint({ left: -40, top: 0, width: 460, height: 600 }, v);
-  assert.ok(p.x >= BALANCE.margin && p.x <= v.w - BALANCE.margin);
-  assert.ok(p.y >= BALANCE.headerSafe && p.y <= v.h - BALANCE.margin);
+test("turnToward turns along the shortest arc and respects the cap", () => {
+  assert.equal(turnToward(0, 0.1, 0.5), 0.1, "within the cap snaps to the target");
+  assert.equal(turnToward(0, 1, 0.5), 0.5);
+  assert.equal(turnToward(0, -1, 0.5), -0.5);
+  // wrap-around: from 2.5 to -2.5 the short way runs through pi (gap 1.283 rad)
+  assert.ok(Math.abs(turnToward(2.5, -2.5, 0.3) - 2.8) < 1e-9, "must turn through pi");
+  assert.ok(Math.abs(turnToward(-2.5, 2.5, 0.3) - -2.8) < 1e-9, "must turn through -pi");
+  // a cap that covers the whole gap lands exactly on the target
+  assert.equal(turnToward(3, -3, 1), -3);
 });
 
 test("clampToast keeps a wide toast inside a narrow phone", () => {
