@@ -1,28 +1,36 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  A11Y_SUFFIX,
   BALANCE,
   BOSS_RANDOM_KILLS,
-  BUG_A11Y,
+  BUG_TYPES,
   RANDOM_KILLS,
   SKINS,
+  TYPE_NAMES,
+  WAVE_ANNOUNCE,
   WEEKEND_KILLS,
   cardSpawnPose,
   clampToast,
   headingToRotation,
   hitSizeFor,
-  hpFor,
+  hpForType,
   killPhraseFor,
   panicBounds,
   panicCloud,
-  panicSpeedFor,
   particleCount,
+  pickType,
   rageCloud,
+  respawnGapFor,
   skinFor,
   splashCount,
   turnToward,
+  typeSpeedFor,
+  unlockedTypes,
   walkCycleFor,
   wanderTarget,
+  waveFor,
+  waveSpeedFor,
 } from "../src/components/not-found/constants.ts";
 
 /**
@@ -34,32 +42,48 @@ import {
 
 /* -------------------------------- balance -------------------------------- */
 
-test("hpFor: desktop normal bug takes 3 clicks, touch 2", () => {
-  assert.equal(hpFor(false, false), 3);
-  assert.equal(hpFor(true, false), 2);
+test("hpForType: desktop/touch hp per enemy type", () => {
+  assert.equal(hpForType("normal", false), 3);
+  assert.equal(hpForType("normal", true), 2);
+  assert.equal(hpForType("boss", false), 5);
+  assert.equal(hpForType("boss", true), 4);
+  assert.equal(hpForType("spawnling", false), 1);
+  assert.equal(hpForType("tank", false), 7);
+  assert.equal(hpForType("tank", true), 5);
 });
 
-test("hpFor: boss takes 5 desktop / 4 touch clicks", () => {
-  assert.equal(hpFor(false, true), 5);
-  assert.equal(hpFor(true, true), 4);
+test("hitSizeFor: per-type hitboxes, touch always bigger", () => {
+  assert.equal(hitSizeFor("normal", false), BUG_TYPES.normal.hitSize);
+  assert.equal(hitSizeFor("normal", true), BUG_TYPES.normal.hitSizeTouch);
+  assert.equal(hitSizeFor("boss", false), 150);
+  assert.equal(hitSizeFor("boss", true), 180);
+  assert.equal(hitSizeFor("spawnling", false), 64);
+  // touch targets are never smaller than the desktop ones
+  for (const t of Object.keys(BUG_TYPES) as Array<keyof typeof BUG_TYPES>) {
+    assert.ok(BUG_TYPES[t].hitSizeTouch >= BUG_TYPES[t].hitSize, `${t} touch hitbox too small`);
+    assert.ok(BUG_TYPES[t].hpTouch <= BUG_TYPES[t].hpDesktop, `${t} touch hp too high`);
+    assert.match(BUG_TYPES[t].accent, /^#[0-9a-fA-F]{6}$/, `${t} accent not a hex color`);
+    assert.ok(BUG_TYPES[t].panicSpeed >= 100, `${t} panic speed too low`);
+  }
 });
 
-test("hitSizeFor: touch gets bigger targets, boss covers the tail", () => {
-  assert.equal(hitSizeFor(false, false), BALANCE.hitSize);
-  assert.equal(hitSizeFor(false, true), BALANCE.hitSizeBoss);
-  assert.equal(hitSizeFor(true, false), BALANCE.hitSizeTouch);
-  assert.equal(hitSizeFor(true, true), BALANCE.hitSizeTouchBoss);
-});
-
-test("panicSpeedFor composes wounded sprint, boss rage and the touch slowdown", () => {
-  const eps = 1e-9;
-  assert.ok(Math.abs(panicSpeedFor(3, 3, false, false) - BALANCE.panicSpeed) < eps);
-  assert.ok(Math.abs(panicSpeedFor(1, 3, false, false) - BALANCE.panicSpeedWounded) < eps);
-  // 1/5 hp = 0.2 <= 0.35 -> the boss is enraged
-  const rage = panicSpeedFor(1, 5, true, false);
-  assert.ok(Math.abs(rage - BALANCE.panicSpeedWounded * BALANCE.bossRageMult) < eps);
-  const touch = panicSpeedFor(3, 3, false, true);
-  assert.ok(Math.abs(touch - BALANCE.panicSpeed * BALANCE.coarsePanicMult) < eps);
+test("typeSpeedFor composes type base, wounded, rage, wave and touch", () => {
+  // normal desktop wave 1 full hp = base
+  assert.equal(typeSpeedFor("normal", 3, 3, 0, false), BUG_TYPES.normal.panicSpeed);
+  // wounded sprint at 1 hp
+  assert.equal(typeSpeedFor("normal", 1, 3, 0, false), Math.round(BUG_TYPES.normal.panicSpeed * BALANCE.woundedMult));
+  // boss rage at hpRatio <= 0.35
+  const bossRage = typeSpeedFor("boss", 1, 5, 0, false);
+  assert.ok(bossRage > BUG_TYPES.boss.panicSpeed * BALANCE.woundedMult, "boss must rage at 1/5 hp");
+  // berserk flash: 2.6x at 1/2 hp
+  const berserk = typeSpeedFor("berserk", 1, 2, 0, false);
+  assert.ok(berserk > 600, `berserk must flash past 600 px/s, got ${berserk}`);
+  // wave escalation
+  assert.ok(typeSpeedFor("normal", 3, 3, 40, false) > typeSpeedFor("normal", 3, 3, 0, false), "wave 5 must be faster");
+  // touch slowdown
+  assert.ok(typeSpeedFor("normal", 3, 3, 0, true) < BUG_TYPES.normal.panicSpeed, "touch must be slower");
+  // tank crawls
+  assert.equal(typeSpeedFor("tank", 7, 7, 0, false), BUG_TYPES.tank.panicSpeed);
 });
 
 test("skins unlock at 0/10/25/50 lifetime kills", () => {
@@ -229,11 +253,57 @@ test("rageCloud draws only from the rage pool", () => {
   }
 });
 
-test("BUG_A11Y labels cover normal and boss bugs", () => {
-  assert.match(BUG_A11Y.ru.bug, /Enter/);
-  assert.match(BUG_A11Y.ru.boss, /500/);
-  assert.match(BUG_A11Y.en.bug, /Enter/);
-  assert.match(BUG_A11Y.en.boss, /500/);
+test("TYPE_NAMES + A11Y_SUFFIX cover every enemy type in both languages", () => {
+  for (const t of Object.keys(BUG_TYPES) as Array<keyof typeof BUG_TYPES>) {
+    assert.ok(TYPE_NAMES.ru[t].length > 3, `ru name for ${t} missing`);
+    assert.ok(TYPE_NAMES.en[t].length > 3, `en name for ${t} missing`);
+  }
+  assert.match(A11Y_SUFFIX.ru, /Enter/);
+  assert.match(A11Y_SUFFIX.en, /Enter/);
+});
+
+/* --------------------------- waves / progression --------------------------- */
+
+test("waveFor: +1 per 10 kills, capped at 6", () => {
+  assert.equal(waveFor(0), 1);
+  assert.equal(waveFor(9), 1);
+  assert.equal(waveFor(10), 2);
+  assert.equal(waveFor(49), 5);
+  assert.equal(waveFor(50), 6);
+  assert.equal(waveFor(999), 6);
+});
+
+test("waveSpeedFor and respawnGapFor escalate within bounds", () => {
+  assert.equal(waveSpeedFor(0), 1);
+  assert.ok(waveSpeedFor(10) > 1, "wave 2 must be faster");
+  assert.ok(waveSpeedFor(50) > waveSpeedFor(10), "wave 6 faster than wave 2");
+  // respawn gap shrinks with waves but never below the flatten beat
+  for (let k = 0; k <= 60; k += 5) {
+    const gap = respawnGapFor(k, (a) => a);
+    assert.ok(gap >= 1.3, `wave gap ${gap} at ${k} kills too short`);
+    const gapMax = respawnGapFor(k, (_a, b) => b);
+    assert.ok(gapMax <= 3.5, `wave gap ${gapMax} at ${k} kills too long`);
+  }
+});
+
+test("unlockedTypes and pickType follow the wave schedule", () => {
+  assert.deepEqual(unlockedTypes(0), ["normal"]);
+  assert.deepEqual(unlockedTypes(10), ["normal", "berserk"]);
+  assert.deepEqual(unlockedTypes(50), ["normal", "berserk", "ghost", "lightning", "splitter", "tank"]);
+  // wave 1 rolls only normals
+  for (let i = 0; i < 60; i++) assert.equal(pickType(5), "normal");
+  // wave 2+ rolls within the unlocked set
+  const allowed = new Set(unlockedTypes(25));
+  for (let i = 0; i < 200; i++) assert.ok(allowed.has(pickType(25)), "pickType left the unlocked pool");
+  // determinism via injected rand
+  assert.equal(pickType(25, () => 0.99), "ghost", "highest weight tail of wave-3 pool");
+});
+
+test("wave announcements exist for waves 2-6 in both languages", () => {
+  for (const w of [2, 3, 4, 5, 6]) {
+    assert.ok(WAVE_ANNOUNCE.ru[w].length > 8, `ru wave ${w} announcement missing`);
+    assert.ok(WAVE_ANNOUNCE.en[w].length > 8, `en wave ${w} announcement missing`);
+  }
 });
 
 /* ------------------------------- geometry ------------------------------- */

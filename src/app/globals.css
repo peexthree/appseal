@@ -835,6 +835,19 @@ html.appseal-idle .appseal-radar-sweep {
   100% { transform: scale(1.3, 0.05); opacity: 0.8; }
 }
 
+/* ghost bug: translucent shell, always half-in-this-reality */
+.nf-ghost {
+  opacity: 0.55;
+}
+/* splitter bug: slow pulse, hinting it will not die alone */
+.nf-splitter {
+  animation: nf-splitter-pulse 1.6s ease-in-out infinite;
+}
+@keyframes nf-splitter-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.07); }
+}
+
 /* boss kill: one soft white flash across the screen */
 .nf-boss-flash {
   position: fixed;
@@ -1030,6 +1043,7 @@ html.appseal-idle .appseal-radar-sweep {
   .nf-shake,
   .nf-squash,
   .nf-flatten,
+  .nf-splitter,
   .cb-pre-dash {
     animation: none;
   }

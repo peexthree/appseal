@@ -10,11 +10,7 @@ import type { Lang } from "@/lib/scanner/types";
 /* ------------------------------- balance ------------------------------- */
 
 export const BALANCE = {
-  hpDesktop: 3,
-  hpTouch: 2,
-  hpBossDesktop: 5,
-  hpBossTouch: 4,
-  // panic escape, px/s; wounded bugs feel agony but stay catchable
+  // panic escape, px/s; the walk-cycle anchor (walkCycleFor) reads these
   panicSpeed: 330,
   panicSpeedWounded: 375,
   // erratic direction changes, seconds
@@ -68,14 +64,11 @@ export const BALANCE = {
   walkCycleBoss: 0.52,
   walkCycleMin: 0.28,
   walkCycleMax: 1.05,
-  // hitbox sizes (px): desktop / touch (fingers miss small squares), boss
-  // covers the longer tail silhouette
-  hitSize: 96,
-  hitSizeBoss: 150,
-  hitSizeTouch: 120,
-  hitSizeTouchBoss: 180,
+  // hitbox sizes live in BUG_TYPES (per enemy type, desktop/touch variants)
   // touch panic multiplier: same drama, catchable on a phone
   coarsePanicMult: 0.85,
+  // wounded sprint multiplier applied on top of the type's panic speed at 1 hp
+  woundedMult: 1.14,
   // pause between splat and the next bug crawling out (victory beat included)
   respawnMin: 2.5,
   respawnMax: 3.5,
@@ -85,31 +78,159 @@ export const BALANCE = {
   preDashMs: 200,
   // slime stains kept on the board
   splatCap: 8,
+  // ghost bug: blink-teleport every N seconds, N ms telegraph before the jump
+  ghostTpEvery: 3.0,
+  ghostTelegraphMs: 200,
+  // lightning bug: evasive hop every N seconds, N ms charge before the hop
+  lightningEvery: 2.5,
+  lightningChargeMs: 500,
+  lightningHop: 150,
 } as const;
 
-export function hpFor(isCoarse: boolean, boss: boolean): number {
-  if (boss) return isCoarse ? BALANCE.hpBossTouch : BALANCE.hpBossDesktop;
-  return isCoarse ? BALANCE.hpTouch : BALANCE.hpDesktop;
+/* ------------------------------ enemy types ------------------------------ */
+
+export type BugType =
+  | "normal"
+  | "boss"
+  | "berserk"
+  | "ghost"
+  | "lightning"
+  | "splitter"
+  | "spawnling"
+  | "tank";
+
+export interface TypeDef {
+  /** svg accent + fx tint */
+  accent: string;
+  hpDesktop: number;
+  hpTouch: number;
+  /** base panic speed, px/s (wounded/rage/wave/coarse apply on top) */
+  panicSpeed: number;
+  /** svg width (the boss rig scales 1.4 on top of it) */
+  width: number;
+  hitSize: number;
+  hitSizeTouch: number;
+  /** speed multiplier at hpRatio <= 0.35 (berserk flash, boss rage) */
+  rageMult: number;
+  /** shell engraving */
+  label: "404" | "500" | "ERROR";
 }
 
-/** Hitbox size in px: bigger targets on touch, boss covers its tail. */
-export function hitSizeFor(isCoarse: boolean, boss: boolean): number {
-  if (boss) return isCoarse ? BALANCE.hitSizeTouchBoss : BALANCE.hitSizeBoss;
-  return isCoarse ? BALANCE.hitSizeTouch : BALANCE.hitSize;
+export const BUG_TYPES: Record<BugType, TypeDef> = {
+  normal:    { accent: "#39FF14", hpDesktop: 3, hpTouch: 2, panicSpeed: 330, width: 86,  hitSize: 96,  hitSizeTouch: 120, rageMult: 1,    label: "404" },
+  boss:      { accent: "#FF2E5B", hpDesktop: 5, hpTouch: 4, panicSpeed: 330, width: 84,  hitSize: 150, hitSizeTouch: 180, rageMult: 1.25, label: "500" },
+  berserk:   { accent: "#ef4444", hpDesktop: 2, hpTouch: 2, panicSpeed: 260, width: 86,  hitSize: 96,  hitSizeTouch: 120, rageMult: 2.6,  label: "404" },
+  ghost:     { accent: "#38BDF8", hpDesktop: 3, hpTouch: 2, panicSpeed: 300, width: 86,  hitSize: 96,  hitSizeTouch: 120, rageMult: 1,    label: "404" },
+  lightning: { accent: "#FBBF24", hpDesktop: 2, hpTouch: 2, panicSpeed: 310, width: 86,  hitSize: 96,  hitSizeTouch: 120, rageMult: 1,    label: "404" },
+  splitter:  { accent: "#22C55E", hpDesktop: 3, hpTouch: 2, panicSpeed: 320, width: 86,  hitSize: 96,  hitSizeTouch: 120, rageMult: 1,    label: "404" },
+  spawnling: { accent: "#A3E635", hpDesktop: 1, hpTouch: 1, panicSpeed: 380, width: 56,  hitSize: 64,  hitSizeTouch: 84,  rageMult: 1,    label: "404" },
+  tank:      { accent: "#94A3B8", hpDesktop: 7, hpTouch: 5, panicSpeed: 120, width: 110, hitSize: 150, hitSizeTouch: 180, rageMult: 1,    label: "ERROR" },
+};
+
+export function hpForType(type: BugType, isCoarse: boolean): number {
+  const def = BUG_TYPES[type];
+  return isCoarse ? def.hpTouch : def.hpDesktop;
+}
+
+export function hitSizeFor(type: BugType, isCoarse: boolean): number {
+  const def = BUG_TYPES[type];
+  return isCoarse ? def.hitSizeTouch : def.hitSize;
 }
 
 /**
- * Ground speed of a panicking bug: wounded sprint, boss rage multiplier and
- * the touch slowdown compose here so the movement code and the gait
- * (walkCycleFor) never disagree about the current speed.
+ * Ground speed of a panicking bug: the type's base speed, wounded sprint at
+ * 1 hp, the type's rage multiplier at hpRatio <= 0.35, the wave escalation
+ * and the touch slowdown all compose here - one source of truth for the
+ * movement code and the gait.
  */
-export function panicSpeedFor(hp: number, maxHp: number, boss: boolean, coarse: boolean): number {
-  const base = hp === 1 ? BALANCE.panicSpeedWounded : BALANCE.panicSpeed;
-  // engine-side mirror of the SVG rig's isBossEnraged (hpRatio <= 0.35)
-  const enraged = boss && maxHp > 0 && hp / maxHp <= 0.35;
-  const speed = enraged ? base * BALANCE.bossRageMult : base;
-  return coarse ? speed * BALANCE.coarsePanicMult : speed;
+export function typeSpeedFor(type: BugType, hp: number, maxHp: number, kills: number, coarse: boolean): number {
+  const def = BUG_TYPES[type];
+  let speed = hp === 1 ? def.panicSpeed * BALANCE.woundedMult : def.panicSpeed;
+  // rage: hpRatio <= 0.35, or the last wound of a low-hp tier - a berserk
+  // at 1/2 hp is at 50% ratio and must still flash
+  if (def.rageMult > 1 && maxHp > 0 && (hp / maxHp <= 0.35 || hp === 1)) speed *= def.rageMult;
+  speed *= waveSpeedFor(kills);
+  if (coarse) speed *= BALANCE.coarsePanicMult;
+  return Math.round(speed);
 }
+
+/** 1-based wave: +1 per 10 kills, capped at 6 (endless tier). */
+export function waveFor(kills: number): number {
+  return Math.min(6, Math.floor(kills / 10) + 1);
+}
+
+/** Panic speed multiplier per wave - they get angrier every 10 kills. */
+export const WAVE_SPEED = [1, 1.12, 1.25, 1.4, 1.55, 1.75] as const;
+
+export function waveSpeedFor(kills: number): number {
+  return WAVE_SPEED[waveFor(kills) - 1];
+}
+
+/** Respawn gap multiplier per wave - the board fills up faster. */
+export const WAVE_GAP = [1, 0.9, 0.8, 0.72, 0.62, 0.55] as const;
+
+export function respawnGapFor(
+  kills: number,
+  rand: (a: number, b: number) => number = (a, b) => a + Math.random() * (b - a),
+): number {
+  return rand(BALANCE.respawnMin, BALANCE.respawnMax) * WAVE_GAP[waveFor(kills) - 1];
+}
+
+const TYPE_WAVES: Array<[BugType, number]> = [
+  ["normal", 1],
+  ["berserk", 2],
+  ["ghost", 3],
+  ["lightning", 4],
+  ["splitter", 5],
+  ["tank", 6],
+];
+
+/** Enemy types unlocked at the current wave (boss is routed separately). */
+export function unlockedTypes(kills: number): BugType[] {
+  const w = waveFor(kills);
+  return TYPE_WAVES.filter(([, at]) => at <= w).map(([t]) => t);
+}
+
+const TYPE_WEIGHTS: Record<BugType, number> = {
+  normal: 5,
+  berserk: 2,
+  ghost: 2,
+  lightning: 2,
+  splitter: 2,
+  spawnling: 0,
+  tank: 1,
+  boss: 0,
+};
+
+/** Weighted pick among the unlocked types (spawnlings/boss never roll here). */
+export function pickType(kills: number, rand: () => number = Math.random): BugType {
+  const pool = unlockedTypes(kills).filter((t) => TYPE_WEIGHTS[t] > 0);
+  const total = pool.reduce((s, t) => s + TYPE_WEIGHTS[t], 0);
+  let roll = rand() * total;
+  for (const t of pool) {
+    roll -= TYPE_WEIGHTS[t];
+    if (roll <= 0) return t;
+  }
+  return pool[pool.length - 1];
+}
+
+/** One-time announcement when a new wave starts (sparse by wave number). */
+export const WAVE_ANNOUNCE: Record<Lang, Record<number, string>> = {
+  ru: {
+    2: "УРОВЕНЬ 2... ОНИ ЗЛЯТСЯ",
+    3: "УРОВЕНЬ 3... ИХ КТО-ТО ТЕЛЕПОРТИРУЕТ ЗА СПИНУ",
+    4: "УРОВЕНЬ 4... ЖЁЛТЫЕ МОЛНИИ",
+    5: "УРОВЕНЬ 5... ДЕЛИТЕЛИ ПРОРВАЛИСЬ",
+    6: "УРОВЕНЬ 6... ТАНКИ НА ПОДХОДЕ",
+  },
+  en: {
+    2: "WAVE 2... THEY'RE ANGRY",
+    3: "WAVE 3... SOMEONE TELEPORTS THEM BEHIND YOU",
+    4: "WAVE 4... YELLOW LIGHTNING",
+    5: "WAVE 5... SPLITTERS BROKE THROUGH",
+    6: "WAVE 6... TANKS INBOUND",
+  },
+};
 
 export function particleCount(boss: boolean, rand: () => number = Math.random): number {
   const [lo, hi] = boss ? BALANCE.particlesBoss : BALANCE.particlesNormal;
@@ -152,6 +273,18 @@ export const FX_BOSS: FxPalette = {
   chipBody: "#140810",
   chipPin: "#fbbf24",
   ring: "#FF2E5B",
+};
+
+/** FX tint per enemy type (normal/boss keep their dedicated palettes). */
+export const FX_BY_TYPE: Record<BugType, FxPalette> = {
+  normal: FX_NORMAL,
+  boss: FX_BOSS,
+  berserk: { ...FX_NORMAL, meat: "#ef4444", shardEdge: "#ef4444", ring: "#ef4444", spark: "#fca5a5" },
+  ghost: { ...FX_NORMAL, meat: "#38BDF8", shardEdge: "#38BDF8", ring: "#38BDF8", spark: "#7dd3fc" },
+  lightning: { ...FX_NORMAL, meat: "#FBBF24", shardEdge: "#FBBF24", ring: "#FBBF24", spark: "#fde68a" },
+  splitter: { ...FX_NORMAL, meat: "#22C55E", shardEdge: "#22C55E", ring: "#22C55E", spark: "#86efac" },
+  spawnling: { ...FX_NORMAL, meat: "#A3E635", shardEdge: "#A3E635", ring: "#A3E635", spark: "#d9f99d" },
+  tank: { ...FX_NORMAL, meat: "#94A3B8", shardEdge: "#94A3B8", ring: "#94A3B8", spark: "#cbd5e1" },
 };
 
 export const CODE_FRAGMENTS = ["null", "NaN", "</div>", ";", "404", "0x00", "{err}"] as const;
@@ -341,23 +474,41 @@ export function rageCloud(lang: Lang, rand: () => number = Math.random): string 
   return pool[Math.floor(rand() * pool.length)];
 }
 
-/** Accessible labels for the splattable bug button (keyboard a11y). */
-export const BUG_A11Y: Record<Lang, { bug: string; boss: string }> = {
+/** Accessible name per enemy type (keyboard a11y). */
+export const TYPE_NAMES: Record<Lang, Record<BugType, string>> = {
   ru: {
-    bug: "Кибер-жук 404. Enter или пробел - раздавить",
-    boss: "Босс-жук 500. Enter или пробел - раздавить",
+    normal: "Кибер-жук 404",
+    boss: "Босс-жук 500",
+    berserk: "Жук-берсерк",
+    ghost: "Жук-призрак",
+    lightning: "Жук-молния",
+    splitter: "Жук-делитель",
+    spawnling: "Малой жук",
+    tank: "Жук-танк",
   },
   en: {
-    bug: "Cyber bug 404. Enter or Space to squash",
-    boss: "Boss bug 500. Enter or Space to squash",
+    normal: "Cyber bug 404",
+    boss: "Boss bug 500",
+    berserk: "Berserk bug",
+    ghost: "Ghost bug",
+    lightning: "Lightning bug",
+    splitter: "Splitter bug",
+    spawnling: "Small bug",
+    tank: "Tank bug",
   },
+};
+
+/** Keyboard instruction appended to every hitbox aria-label. */
+export const A11Y_SUFFIX: Record<Lang, string> = {
+  ru: "Enter или пробел - раздавить",
+  en: "Enter or Space to squash",
 };
 
 /* --------------------------- HUD / UI micro-copy --------------------------- */
 
-export const HUD_LABELS: Record<Lang, { splatted: string; total: string; best: string }> = {
-  ru: { splatted: "БАГОВ", total: "ВСЕГО", best: "РЕКОРД" },
-  en: { splatted: "BUGS", total: "TOTAL", best: "BEST" },
+export const HUD_LABELS: Record<Lang, { splatted: string; total: string; wave: string; best: string }> = {
+  ru: { splatted: "БАГОВ", total: "ВСЕГО", wave: "ВОЛНА", best: "РЕКОРД" },
+  en: { splatted: "BUGS", total: "TOTAL", wave: "WAVE", best: "BEST" },
 };
 
 /* ----------------------- persistent progress / skins ----------------------- */
