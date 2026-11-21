@@ -537,16 +537,22 @@ export function CyberBugEasterEgg() {
     if (el) {
       el.style.transform = `translate3d(${s.x}px, ${s.y}px, 0)`;
       el.style.opacity = s.mode === "respawn" ? "0" : "1";
-      // while emerging, the bug renders UNDER the frosted card (z 5 < card 10)
-      // and reads as a dim silhouette; anywhere else it walks above the page
+      // while ANY part of the bug still overlaps the card it renders UNDER
+      // the frosted glass (z 5 < card 10): the part beyond the edge is not
+      // covered by the glass and reads crisp, the rest stays a dim silhouette.
+      // The old check used only the center point, so a half-emerged bug
+      // snapped to the front layer mid-crawl ("half of the body teleports").
+      // The flip to z 30 fires only when the bug is FULLY clear of the card,
+      // where the layer change is physically invisible - and it is a pure
+      // geometry check, so it also holds while panicking or idling.
       const c = cardRect.current;
+      const overlap = hitSizeFor(coarse.current, s.boss) / 2 + 12;
       const under =
-        s.mode === "peek" &&
         c !== null &&
-        s.x > c.left &&
-        s.x < c.left + c.width &&
-        s.y > c.top &&
-        s.y < c.top + c.height;
+        s.x + overlap > c.left &&
+        s.x - overlap < c.left + c.width &&
+        s.y + overlap > c.top &&
+        s.y - overlap < c.top + c.height;
       el.style.zIndex = under ? "5" : "30";
     }
     const rotEl = bugRot.current;
