@@ -6,16 +6,23 @@ import { SfxEngine } from "./sfxEngine";
 import {
   A11Y_SUFFIX,
   BALANCE,
+  BITE_PHRASES,
   BUG_TYPES,
   CODE_FRAGMENTS,
   FX_BY_TYPE,
   FX_NORMAL,
+  GAMEOVER,
+  HUNT_CLOUD,
   HUD_LABELS,
+  POWERUP_TOAST,
+  POWERUPS,
+  SHIELD_BLOCK_PHRASE,
   SKIN_UNLOCK_LABEL,
   TOTAL_KEY,
   TYPE_NAMES,
   UNLOCKS_KEY,
   WAVE_ANNOUNCE,
+  biteAfterFor,
   cardSpawnPose,
   clampToast,
   headingToRotation,
@@ -25,6 +32,7 @@ import {
   panicBounds,
   panicCloud,
   particleCount,
+  pickPowerup,
   pickType,
   rageCloud,
   respawnGapFor,
@@ -38,6 +46,7 @@ import {
   type BugType,
   type FxPalette,
   type ParticleKind,
+  type PowerupKind,
 } from "./constants";
 import { ymGoal } from "@/components/yandex-metrika";
 import { useLang } from "@/lib/use-lang";
@@ -50,7 +59,7 @@ import { useLang } from "@/lib/use-lang";
  * game loop mutates only refs and DOM (zero re-renders per frame).
  */
 
-type BugMode = "idle" | "panic" | "peek" | "respawn" | "dying";
+type BugMode = "idle" | "panic" | "peek" | "respawn" | "dying" | "hunt";
 
 interface BugState {
   mode: BugMode;
@@ -72,6 +81,8 @@ interface BugState {
   wanderAt: number;
   /** next ghost-teleport / lightning-hop timestamp (ms) */
   abilityAt: number;
+  /** patience deadline: past it the bug hunts the 404 card for a bite */
+  biteAt: number;
   kills: number;
 }
 
@@ -191,7 +202,9 @@ export function CyberBugEasterEgg() {
   const [view, setView] = useState<BugView>({ boss: false, type: "normal", hp: 3, maxHp: 3, legs: "idle" });
   // HUD is visible from the first paint: the visitor sees the reward system
   // before the first splat; total/best fill in from localStorage on mount
-  const [hud, setHud] = useState({ kills: 0, best: 0, total: 0, wave: 1, sfxOn: true });
+  const [hud, setHud] = useState({ kills: 0, best: 0, total: 0, wave: 1, lives: 3, shield: false, sfxOn: true });
+  // game over: the bugs ate the page through all 404 lives
+  const [gameOver, setGameOver] = useState(false);
   // touch device -> bigger hitbox + slower panic (set once on mount)
   const [isTouch, setIsTouch] = useState(false);
   // aria-live mirror of the last kill toast (DOM toasts are silent to SRs)
@@ -207,6 +220,9 @@ export function CyberBugEasterEgg() {
   const toastLayer = useRef<HTMLDivElement>(null);
   const svgFlash = useRef<HTMLDivElement>(null);
   const bossFlashEl = useRef<HTMLDivElement>(null);
+  const freezeEl = useRef<HTMLDivElement>(null);
+  const redEl = useRef<HTMLDivElement>(null);
+  const dropLayer = useRef<HTMLDivElement>(null);
 
   const st = useRef<BugState>({
     mode: "idle",
@@ -225,6 +241,7 @@ export function CyberBugEasterEgg() {
     trailAt: 0,
     wanderAt: 0,
     abilityAt: 0,
+    biteAt: 0,
     kills: 0,
   });
   const vp = useRef({ w: 0, h: 0 });
@@ -249,6 +266,12 @@ export function CyberBugEasterEgg() {
   const chain = useRef(0);
   /** current wave (1-based, +1 per 10 kills) */
   const wave = useRef(1);
+  /** the three 404 lives - a bite steals one, at zero the game ends */
+  const lives = useRef(3);
+  /** shield power-up: absorbs one bite */
+  const shield = useRef(false);
+  /** freeze power-up: every bug slows to a crawl until this timestamp */
+  const frozenUntil = useRef(0);
   /** kill hit-stop: the loop serves dt=0 until this timestamp passes */
   const hitStopUntil = useRef(0);
   /** last --cb-walk-speed written to the svg (quantized, avoids style churn) */
@@ -667,6 +690,30 @@ export function CyberBugEasterEgg() {
     setView((v) => (v.legs === "step" ? v : { ...v, legs: "step" }));
   };
 
+  /** A bug past its patience crawls to the card, dives under the glass, bites. */
+  const stepHunt = (dt: number) => {
+    const s = st.current;
+    const c = cardRect.current;
+    const tx = c ? c.left + c.width / 2 : s.tx;
+    const ty = c ? c.top + c.height / 2 : s.ty;
+    const desired = Math.atan2(ty - s.y, tx - s.x);
+    s.heading = turnToward(s.heading, desired, BALANCE.peekTurnRate * 2 * dt);
+    const speed = typeSpeedFor(s.type, s.hp, s.maxHp, s.kills, coarse.current) * 1.5;
+    s.x += Math.cos(s.heading) * speed * dt;
+    s.y += Math.sin(s.heading) * speed * dt;
+    // fully under the glass -> it bites from beneath
+    const half = hitSizeFor(s.type, coarse.current) / 2;
+    if (
+      c &&
+      s.x - half > c.left &&
+      s.x + half < c.left + c.width &&
+      s.y - half > c.top &&
+      s.y + half < c.top + c.height
+    ) {
+      bite();
+    }
+  };
+
   /** Ghost blink target: near the card perimeter (plotting a bite), or roam. */
   const ghostTarget = () => {
     const s = st.current;
@@ -841,6 +888,149 @@ export function CyberBugEasterEgg() {
     }
   };
 
+  /** Bite aftermath: a red page-wide flash + the card shakes (boss flash reuse). */
+  const redFlash = () => {
+    const el = redEl.current;
+    if (!el || reduced.current) return;
+    el.classList.remove("nf-flash-on");
+    void el.getBoundingClientRect(); // restart the animation
+    el.classList.add("nf-flash-on");
+  };
+
+  /** A bug fully under the glass bites a life out of the page. */
+  const bite = () => {
+    const s = st.current;
+    if (shield.current) {
+      shield.current = false;
+      setHud((h) => ({ ...h, shield: false }));
+      showToast(SHIELD_BLOCK_PHRASE[langRef.current], "achievement", s.x, s.y);
+      ymGoal("nf_shield_block");
+      // the bug bounces off, patience resets
+      s.mode = "panic";
+      s.heading = Math.atan2(
+        s.y - (cardRect.current?.top ?? s.y),
+        s.x - (cardRect.current?.left ?? s.x),
+      );
+      s.turnAt = performance.now();
+      s.trailAt = 0;
+      s.biteAt = performance.now() + biteAfterFor(s.kills) * 1000;
+      setView((v) => ({ ...v, legs: "panic" }));
+      engine.current?.play("panic", s.type === "boss");
+      return;
+    }
+    lives.current -= 1;
+    setHud((h) => ({ ...h, lives: lives.current }));
+    shakeCard();
+    redFlash();
+    const line = BITE_PHRASES[langRef.current][Math.floor(Math.random() * BITE_PHRASES[langRef.current].length)];
+    showToast(line, "boss", s.x, s.y);
+    setLive(line);
+    ymGoal("nf_bite");
+    if (lives.current <= 0) {
+      endGame();
+      return;
+    }
+    // fed bug retreats under the glass; the next one crawls out after a beat
+    s.mode = "respawn";
+    if (hitbox.current) hitbox.current.style.pointerEvents = "none";
+    setView((v) => ({ ...v, legs: "idle", hp: v.maxHp }));
+    addTimer(() => {
+      spawnBug();
+    }, respawnGapFor(s.kills) * 1000);
+  };
+
+  /** All 404 lives gone: the board stops, the score screen rises. */
+  const endGame = () => {
+    const s = st.current;
+    s.mode = "respawn";
+    if (hitbox.current) hitbox.current.style.pointerEvents = "none";
+    setGameOver(true);
+    ymGoal("nf_game_over");
+  };
+
+  /** Fresh run: lives back, counters reset, total/skins persist. */
+  const restartGame = () => {
+    lives.current = 3;
+    shield.current = false;
+    chain.current = 0;
+    wave.current = 1;
+    st.current.kills = 0;
+    lastRandom.current = -1;
+    lastBossRandom.current = -1;
+    frozenUntil.current = 0;
+    setGameOver(false);
+    setHud((h) => ({ ...h, kills: 0, wave: 1, lives: 3, shield: false }));
+    spawnBug();
+  };
+
+  /** Tappable power-up dropped at the splat point (~15% of kills). */
+  const spawnDrop = (x: number, y: number) => {
+    const layer = dropLayer.current;
+    if (!layer || gameOver) return;
+    const kind = pickPowerup();
+    const v = vp.current;
+    const el = document.createElement("button");
+    el.type = "button";
+    el.setAttribute("aria-label", `${POWERUPS[kind].name[langRef.current]} - кликни, чтобы применить`);
+    el.className =
+      "nf-drop appseal-glass-card pointer-events-auto absolute z-40 flex items-center gap-1.5 rounded-full px-3 py-2 font-mono text-[12px] font-bold text-slate-100";
+    el.textContent = `${POWERUPS[kind].icon} ${POWERUPS[kind].name[langRef.current]}`;
+    const cx = Math.max(80, Math.min(v.w - 100, x));
+    const cy = Math.max(BALANCE.headerSafe + 40, Math.min(v.h - 140, y));
+    el.style.left = `${cx - 70}px`;
+    el.style.top = `${cy - 24}px`;
+    el.addEventListener(
+      "pointerdown",
+      (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.remove();
+        applyPowerup(kind, cx, cy);
+      },
+      { once: true },
+    );
+    layer.appendChild(el);
+    addTimer(() => el.classList.add("nf-out"), (BALANCE.dropLifetime - 0.5) * 1000);
+    addTimer(() => el.remove(), BALANCE.dropLifetime * 1000);
+  };
+
+  /** Power-up activation: bomb AoE splat, 3s board freeze, or a shield. */
+  const applyPowerup = (kind: PowerupKind, x: number, y: number) => {
+    const s = st.current;
+    engine.current?.unlock();
+    if (kind === "bomb") {
+      const pal = palFor(s.mode === "dying" || s.mode === "respawn" ? "normal" : s.type);
+      spawnExplosion(x, y, pal, true);
+      ripples.current.push({ x, y, r0: 10, r1: BALANCE.bombRadius + 40, born: performance.now(), life: 0.6, pal });
+      shakeCard();
+      buzz([60, 30, 60]);
+      canvasDirty.current = true;
+      const alive = s.mode !== "dying" && s.mode !== "respawn";
+      const dist = Math.hypot(s.x - x, s.y - y);
+      if (alive && dist <= BALANCE.bombRadius) {
+        s.hp = 0;
+        splatBug(x, y);
+      }
+      showToast(POWERUP_TOAST.bomb[langRef.current], "info", x, y);
+      ymGoal("nf_bomb");
+    } else if (kind === "freeze") {
+      frozenUntil.current = performance.now() + BALANCE.freezeMs;
+      const el = freezeEl.current;
+      if (el) {
+        el.classList.remove("nf-freeze-on");
+        void el.getBoundingClientRect();
+        el.classList.add("nf-freeze-on");
+      }
+      showToast(POWERUP_TOAST.freeze[langRef.current], "info", x, y);
+      ymGoal("nf_freeze");
+    } else {
+      shield.current = true;
+      setHud((h) => ({ ...h, shield: true }));
+      showToast(POWERUP_TOAST.shield[langRef.current], "achievement", x, y);
+      ymGoal("nf_shield");
+    }
+  };
+
   /** Skin application: tints particles/stains/ripples + the svg accent. */
   const applySkin = (color: string) => {
     skinPal.current = { ...FX_NORMAL, meat: color, shardEdge: color, ring: color };
@@ -947,11 +1137,16 @@ export function CyberBugEasterEgg() {
       best: Math.max(h.best, newKills),
       total: total.current,
       wave: wave.current,
+      lives: lives.current,
+      shield: shield.current,
       sfxOn: engine.current?.enabled ?? true,
     }));
 
     // screenreader mirror of the kill toast
     setLive(`#${newKills} ${phrase.text}`);
+
+    // power-up drop: ~15% of kills leave a tappable gift
+    if (Math.random() < BALANCE.dropChance) spawnDrop(atX, atY);
 
     // victory beat: flatten to the floor, then hide, then respawn (every 5th
     // bug is the boss); a boss kill adds a short white flash
@@ -1005,6 +1200,7 @@ export function CyberBugEasterEgg() {
     s.heading = pose.heading;
     s.wanderAt = performance.now() + rand(BALANCE.idleWanderMin, BALANCE.idleWanderMax) * 1000;
     s.abilityAt = performance.now() + rand(1800, 3200);
+    s.biteAt = performance.now() + biteAfterFor(s.kills) * 1000;
     if (reduced.current) {
       // reduced motion: no crawling - materialize fully visible at the emerge
       // point (this is what kept past-kill respawns invisible forever)
@@ -1181,20 +1377,29 @@ export function CyberBugEasterEgg() {
         // kill hit-stop: movement stops and particles hang (dt=0) while rings
         // keep expanding on wall-clock time - reads as a heavy impact
         const frozen = now < hitStopUntil.current;
-        if (!reduced.current && !frozen) {
-          if (st.current.mode === "panic") stepPanic(dt, now);
-          else if (st.current.mode === "peek") stepPeek(dt);
-          else if (st.current.mode === "idle" && now >= st.current.wanderAt) startWander();
+        // freeze power-up: every bug slows to a crawl (movement pauses whole)
+        const chilled = now < frozenUntil.current;
+        if (!reduced.current && !frozen && !chilled) {
+          const s = st.current;
+          // a bug past its patience loses it and hunts the 404 card for a bite
+          if ((s.mode === "idle" || s.mode === "panic" || s.mode === "peek") && now >= s.biteAt) {
+            s.mode = "hunt";
+            setView((v) => (v.legs === "step" ? v : { ...v, legs: "step" }));
+            showPhrase(HUNT_CLOUD[langRef.current], s.x, s.y);
+          }
+          if (s.mode === "panic") stepPanic(dt, now);
+          else if (s.mode === "peek") stepPeek(dt);
+          else if (s.mode === "idle" && now >= s.wanderAt) startWander();
+          else if (s.mode === "hunt") stepHunt(dt);
           // typed abilities (ghost teleport / lightning hop) only fire while
           // the bug is alive and the board is not frozen; reduced motion
           // players get a calmer board - abilities stay off there
-          const ab = st.current;
-          if (ab.mode !== "dying" && ab.mode !== "respawn") {
-            if (ab.type === "ghost" && now >= ab.abilityAt) {
-              ab.abilityAt = now + BALANCE.ghostTpEvery * 1000;
+          if (s.mode !== "dying" && s.mode !== "respawn") {
+            if (s.type === "ghost" && now >= s.abilityAt) {
+              s.abilityAt = now + BALANCE.ghostTpEvery * 1000;
               ghostTeleport();
-            } else if (ab.type === "lightning" && now >= ab.abilityAt) {
-              ab.abilityAt = now + BALANCE.lightningEvery * 1000;
+            } else if (s.type === "lightning" && now >= s.abilityAt) {
+              s.abilityAt = now + BALANCE.lightningEvery * 1000;
               lightningHop();
             }
           }
@@ -1327,8 +1532,13 @@ export function CyberBugEasterEgg() {
       <div ref={phraseLayer} className="pointer-events-none fixed inset-0 z-40" aria-hidden="true" />
       <div ref={toastLayer} className="pointer-events-none fixed inset-0 z-40" aria-hidden="true" />
 
-      {/* boss-kill screen flash (opacity-only, pointer-events none) */}
+      {/* boss-kill white flash + bite red flash + freeze tint (opacity-only) */}
       <div ref={bossFlashEl} className="nf-boss-flash" aria-hidden="true" />
+      <div ref={redEl} className="nf-red-flash" aria-hidden="true" />
+      <div ref={freezeEl} className="nf-freeze-tint" aria-hidden="true" />
+
+      {/* tappable power-up drops (~15% of kills leave one for 6s) */}
+      <div ref={dropLayer} className="pointer-events-none fixed inset-0 z-40" aria-hidden="false" />
 
       {/* screenreader mirror of the kill toasts (DOM toasts are silent) */}
       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
@@ -1356,12 +1566,44 @@ export function CyberBugEasterEgg() {
             {HUD_LABELS[lang].best}: {hud.best} ]
           </span>
         </div>
-        {hud.wave > 1 && (
-          <div className="appseal-glass-card rounded-full px-4 py-1.5 font-mono text-[11px] font-bold tracking-widest text-amber-300">
-            {HUD_LABELS[lang].wave}: {hud.wave}
+        {(
+          <div className="appseal-glass-card flex items-center gap-2.5 rounded-full px-3.5 py-1.5 font-mono text-[11px] font-bold tracking-widest">
+            <span className="flex items-center gap-0.5" aria-label={`${HUD_LABELS[lang].best === "РЕКОРД" ? "Жизни" : "Lives"}: ${hud.lives}/3`}>
+              {["4", "0", "4"].map((c, i) => (
+                <span key={i} className={i < hud.lives ? "text-emerald-400" : "text-slate-600"}>
+                  {c}
+                </span>
+              ))}
+            </span>
+            {hud.wave > 1 && (
+              <span className="text-amber-300">
+                {HUD_LABELS[lang].wave}: {hud.wave}
+              </span>
+            )}
+            {hud.shield && <span aria-hidden="true">🛡️</span>}
           </div>
         )}
       </div>
+
+      {/* game over: the bugs ate all three 404 lives */}
+      {gameOver && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-black/75 px-4 text-center backdrop-blur-sm">
+          <div className="cb-critical-label font-display text-[56px] font-extrabold leading-none text-red-400 drop-shadow-[0_0_30px_rgba(248,113,113,0.5)] sm:text-[72px]">
+            {GAMEOVER[lang].title}
+          </div>
+          <p className="max-w-sm font-mono text-[13px] text-slate-300">{GAMEOVER[lang].sub}</p>
+          <p className="font-mono text-[15px] font-bold text-slate-100">
+            {GAMEOVER[lang].score}: {hud.kills} · {GAMEOVER[lang].best}: {hud.best}
+          </p>
+          <button
+            type="button"
+            onClick={restartGame}
+            className="appseal-glass-card pointer-events-auto rounded-xl px-6 py-3 font-mono text-sm font-bold text-emerald-300 transition hover:text-emerald-200"
+          >
+            {GAMEOVER[lang].restart}
+          </button>
+        </div>
+      )}
 
       {/* z-40: SFX toggle - always reachable, even before the first splat.
           position: fixed inline because .appseal-glass-card (unlayered CSS)

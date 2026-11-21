@@ -85,7 +85,65 @@ export const BALANCE = {
   lightningEvery: 2.5,
   lightningChargeMs: 500,
   lightningHop: 150,
+  // power-up drops
+  dropChance: 0.15,
+  dropLifetime: 6,
+  bombRadius: 150,
+  freezeMs: 3000,
 } as const;
+
+/* ----------------------- lives / bites / power-ups ----------------------- */
+
+/** Seconds a bug waits before it loses patience and hunts the 404 card. */
+export function biteAfterFor(kills: number): number {
+  return Math.max(9, 17 - waveFor(kills) * 1.3);
+}
+
+export type PowerupKind = "bomb" | "freeze" | "shield";
+
+export const POWERUPS: Record<PowerupKind, { icon: string; name: Record<Lang, string>; weight: number }> = {
+  bomb: { icon: "💣", name: { ru: "БОМБА", en: "BOMB" }, weight: 4 },
+  freeze: { icon: "❄️", name: { ru: "ЗАМОРОЗКА", en: "FREEZE" }, weight: 3 },
+  shield: { icon: "🛡️", name: { ru: "ЩИТ", en: "SHIELD" }, weight: 3 },
+};
+
+export function pickPowerup(rand: () => number = Math.random): PowerupKind {
+  const entries = Object.entries(POWERUPS) as Array<[PowerupKind, (typeof POWERUPS)[PowerupKind]]>;
+  const total = entries.reduce((s, [, d]) => s + d.weight, 0);
+  let roll = rand() * total;
+  for (const [k, d] of entries) {
+    roll -= d.weight;
+    if (roll <= 0) return k;
+  }
+  return "bomb";
+}
+
+export const BITE_PHRASES: Record<Lang, string[]> = {
+  ru: ["ЖУК ПРОГРЫЗ СТРАНИЦУ!", "МИНУС КУСОК ЛЕНДИНГА!", "ОН ДОБРАЛСЯ ДО ПРОДА!"],
+  en: ["THE BUG ATE THE PAGE!", "THERE GOES A PIECE OF IT!", "IT REACHED PRODUCTION!"],
+};
+
+export const SHIELD_BLOCK_PHRASE: Record<Lang, string> = {
+  ru: "ЩИТ ПОГЛОТИЛ УКУС",
+  en: "SHIELD ABSORBED THE BITE",
+};
+
+/** Cloud when a bug loses patience and starts hunting the card. */
+export const HUNT_CLOUD: Record<Lang, string> = {
+  ru: "Я ИДУ К ТВОЕМУ ПРОДУ!",
+  en: "I'M GOING FOR YOUR PROD!",
+};
+
+export const POWERUP_TOAST: Record<PowerupKind, Record<Lang, string>> = {
+  bomb: { ru: "ВЗРЫВ! ВСЁ РЯДОМ РАЗДАВЛЕНО", en: "BOOM! EVERYTHING NEARBY SPLATTED" },
+  freeze: { ru: "ЗАМОРОЗКА НА 3 СЕКУНДЫ", en: "FROZEN FOR 3 SECONDS" },
+  shield: { ru: "ЩИТ АКТИВЕН: ОДИН УКУС НЕ СТРАШЕН", en: "SHIELD UP: ONE BITE ABSORBED" },
+};
+
+export const GAMEOVER: Record<Lang, { title: string; sub: string; restart: string; score: string; best: string }> = {
+  ru: { title: "ИГРА ОКОНЧЕНА", sub: "Баги съели страницу. Страница всё ещё 404...", restart: "НАЧАТЬ СНАЧАЛА", score: "СЧЁТ", best: "РЕКОРД" },
+  en: { title: "GAME OVER", sub: "The bugs ate the page. It's still 404...", restart: "PLAY AGAIN", score: "SCORE", best: "BEST" },
+};
 
 /* ------------------------------ enemy types ------------------------------ */
 

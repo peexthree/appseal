@@ -5,11 +5,13 @@ import {
   BALANCE,
   BOSS_RANDOM_KILLS,
   BUG_TYPES,
+  POWERUPS,
   RANDOM_KILLS,
   SKINS,
   TYPE_NAMES,
   WAVE_ANNOUNCE,
   WEEKEND_KILLS,
+  biteAfterFor,
   cardSpawnPose,
   clampToast,
   headingToRotation,
@@ -19,6 +21,7 @@ import {
   panicBounds,
   panicCloud,
   particleCount,
+  pickPowerup,
   pickType,
   rageCloud,
   respawnGapFor,
@@ -303,6 +306,39 @@ test("wave announcements exist for waves 2-6 in both languages", () => {
   for (const w of [2, 3, 4, 5, 6]) {
     assert.ok(WAVE_ANNOUNCE.ru[w].length > 8, `ru wave ${w} announcement missing`);
     assert.ok(WAVE_ANNOUNCE.en[w].length > 8, `en wave ${w} announcement missing`);
+  }
+});
+
+/* ----------------------- lives / bites / power-ups ----------------------- */
+
+test("biteAfterFor: patience shrinks with waves, floored at 9s", () => {
+  assert.ok(biteAfterFor(0) >= 15, "wave 1 patience generous");
+  assert.ok(biteAfterFor(50) >= 9, "endless patience floored");
+  assert.ok(biteAfterFor(50) < biteAfterFor(0), "late waves hunt sooner");
+  // monotonic non-increasing across the run
+  let prev = biteAfterFor(0);
+  for (let k = 10; k <= 50; k += 10) {
+    assert.ok(biteAfterFor(k) <= prev, "patience must not grow with kills");
+    prev = biteAfterFor(k);
+  }
+});
+
+test("pickPowerup rolls only real kinds, weights honored via injected rand", () => {
+  for (let i = 0; i < 100; i++) {
+    const k = pickPowerup();
+    assert.ok(["bomb", "freeze", "shield"].includes(k), "unknown powerup kind");
+  }
+  // bomb weight 4/10 -> rand 0.95 lands past bomb+freeze (4+3=7/10)
+  assert.equal(pickPowerup(() => 0.95), "shield");
+  assert.equal(pickPowerup(() => 0.5), "freeze");
+  assert.equal(pickPowerup(() => 0.2), "bomb");
+});
+
+test("POWERUPS table: icons, names and weights complete", () => {
+  for (const k of ["bomb", "freeze", "shield"] as const) {
+    assert.ok(POWERUPS[k].icon.length > 0, `${k} icon missing`);
+    assert.ok(POWERUPS[k].name.ru.length >= 3 && POWERUPS[k].name.en.length >= 3, `${k} names missing`);
+    assert.ok(POWERUPS[k].weight > 0, `${k} weight missing`);
   }
 });
 

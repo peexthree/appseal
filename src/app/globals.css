@@ -866,6 +866,52 @@ html.appseal-idle .appseal-radar-sweep {
   100% { opacity: 0; }
 }
 
+/* bite: red page-wide flash - a life just got eaten */
+.nf-red-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 46;
+  pointer-events: none;
+  background: rgba(239, 68, 68, 0.22);
+  opacity: 0;
+}
+.nf-red-flash.nf-flash-on {
+  animation: nf-boss-flash 0.45s ease-out both;
+}
+
+/* freeze power-up: cold blue tint while the board crawls */
+.nf-freeze-tint {
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  pointer-events: none;
+  background: rgba(56, 189, 248, 0.14);
+  opacity: 0;
+}
+.nf-freeze-tint.nf-freeze-on {
+  animation: nf-freeze-tint 3s ease-out both;
+}
+@keyframes nf-freeze-tint {
+  0%   { opacity: 0; }
+  15%  { opacity: 1; }
+  80%  { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+/* tappable power-up chip dropped at the splat point */
+.nf-drop {
+  animation: nf-drop-in 0.25s ease-out both;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.nf-drop.nf-out {
+  opacity: 0;
+  transform: translateY(6px);
+}
+@keyframes nf-drop-in {
+  from { transform: scale(0.6); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
 /* ----------------------------------------------------------------- */
 /* cyber-bug rig (cb-* namespace, user-authored 21.11): tripod walk,  */
 /* elytra breathing revealing the energy core, running circuit traces, */
@@ -1047,9 +1093,18 @@ html.appseal-idle .appseal-radar-sweep {
   .cb-pre-dash {
     animation: none;
   }
-  .nf-boss-flash.nf-flash-on {
+  .nf-boss-flash.nf-flash-on,
+  .nf-red-flash.nf-flash-on,
+  .nf-freeze-tint.nf-freeze-on,
+  .nf-drop {
     animation: none;
+  }
+  .nf-boss-flash.nf-flash-on,
+  .nf-red-flash.nf-flash-on {
     opacity: 0;
+  }
+  .nf-freeze-tint.nf-freeze-on {
+    opacity: 0.6;
   }
   .nf-phrase,
   .nf-toast {
