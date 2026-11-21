@@ -2,22 +2,28 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   BALANCE,
+  BOSS_RANDOM_KILLS,
   BUG_A11Y,
   HINT_CLOUD,
+  RANDOM_KILLS,
+  SKINS,
+  WEEKEND_KILLS,
   cardSpawnPose,
   clampToast,
   headingToRotation,
+  hitSizeFor,
   hpFor,
   killPhraseFor,
   panicBounds,
   panicCloud,
+  panicSpeedFor,
   particleCount,
   rageCloud,
+  skinFor,
   splashCount,
   turnToward,
   walkCycleFor,
   wanderTarget,
-  BOSS_RANDOM_KILLS,
 } from "../src/components/not-found/constants.ts";
 
 /**
@@ -37,6 +43,42 @@ test("hpFor: desktop normal bug takes 3 clicks, touch 2", () => {
 test("hpFor: boss takes 5 desktop / 4 touch clicks", () => {
   assert.equal(hpFor(false, true), 5);
   assert.equal(hpFor(true, true), 4);
+});
+
+test("hitSizeFor: touch gets bigger targets, boss covers the tail", () => {
+  assert.equal(hitSizeFor(false, false), BALANCE.hitSize);
+  assert.equal(hitSizeFor(false, true), BALANCE.hitSizeBoss);
+  assert.equal(hitSizeFor(true, false), BALANCE.hitSizeTouch);
+  assert.equal(hitSizeFor(true, true), BALANCE.hitSizeTouchBoss);
+});
+
+test("panicSpeedFor composes wounded sprint, boss rage and the touch slowdown", () => {
+  const eps = 1e-9;
+  assert.ok(Math.abs(panicSpeedFor(3, 3, false, false) - BALANCE.panicSpeed) < eps);
+  assert.ok(Math.abs(panicSpeedFor(1, 3, false, false) - BALANCE.panicSpeedWounded) < eps);
+  // 1/5 hp = 0.2 <= 0.35 -> the boss is enraged
+  const rage = panicSpeedFor(1, 5, true, false);
+  assert.ok(Math.abs(rage - BALANCE.panicSpeedWounded * BALANCE.bossRageMult) < eps);
+  const touch = panicSpeedFor(3, 3, false, true);
+  assert.ok(Math.abs(touch - BALANCE.panicSpeed * BALANCE.coarsePanicMult) < eps);
+});
+
+test("skins unlock at 0/10/25/50 lifetime kills", () => {
+  assert.equal(SKINS.length, 4);
+  assert.equal(skinFor(0).color, "#39FF14");
+  assert.equal(skinFor(9).color, "#39FF14");
+  assert.equal(skinFor(10).color, "#38BDF8");
+  assert.equal(skinFor(24).color, "#38BDF8");
+  assert.equal(skinFor(25).color, "#A855F7");
+  assert.equal(skinFor(49).color, "#A855F7");
+  assert.equal(skinFor(50).color, "#FBBF24");
+  assert.equal(skinFor(999).color, "#FBBF24");
+});
+
+test("respawn window leaves room for the victory beat", () => {
+  assert.ok(BALANCE.respawnMin >= 2.5, "respawn must not rush the flatten");
+  assert.ok(BALANCE.respawnMax > BALANCE.respawnMin);
+  assert.ok(BALANCE.flattenMs < BALANCE.respawnMin * 1000);
 });
 
 test("particleCount stays inside the spec ranges", () => {
@@ -82,14 +124,14 @@ test("killPhraseFor adds milestones 15 and 20 (ru+en)", () => {
 });
 
 test("killPhraseFor routes boss kills past milestones to the boss pool", () => {
-  // kills 25+ are boss kills outside the fixed specials
-  const a = killPhraseFor(25, "ru", 0, -1);
-  assert.ok(BOSS_RANDOM_KILLS.ru.includes(a.phrase.text), "kill 25 must draw from the boss pool");
-  const b = killPhraseFor(30, "en", 0, -1);
-  assert.ok(BOSS_RANDOM_KILLS.en.includes(b.phrase.text), "kill 30 must draw from the boss pool");
+  // boss kills outside the fixed specials (25/30/50 are milestones now)
+  const a = killPhraseFor(35, "ru", 0, -1);
+  assert.ok(BOSS_RANDOM_KILLS.ru.includes(a.phrase.text), "kill 35 must draw from the boss pool");
+  const b = killPhraseFor(40, "en", 0, -1);
+  assert.ok(BOSS_RANDOM_KILLS.en.includes(b.phrase.text), "kill 40 must draw from the boss pool");
   // non-boss kills still draw from the normal pool
-  const c = killPhraseFor(26, "ru", 0, -1);
-  assert.ok(!BOSS_RANDOM_KILLS.ru.includes(c.phrase.text), "kill 26 must NOT draw from the boss pool");
+  const c = killPhraseFor(36, "ru", 0, -1);
+  assert.ok(!BOSS_RANDOM_KILLS.ru.includes(c.phrase.text), "kill 36 must NOT draw from the boss pool");
 });
 
 test("killPhraseFor en milestones exist", () => {
@@ -97,17 +139,64 @@ test("killPhraseFor en milestones exist", () => {
   assert.match(killPhraseFor(10, "en", 0).phrase.text, /ACHIEVEMENT/);
 });
 
-test("killPhraseFor never repeats the same random line twice in a row", () => {
+test("phrase pools are sized for 50+ kill sessions", () => {
+  assert.equal(RANDOM_KILLS.ru.length, 14);
+  assert.equal(RANDOM_KILLS.en.length, 14);
+  assert.equal(BOSS_RANDOM_KILLS.ru.length, 10);
+  assert.equal(BOSS_RANDOM_KILLS.en.length, 10);
+  assert.equal(WEEKEND_KILLS.ru.length, 6);
+  assert.equal(WEEKEND_KILLS.en.length, 6);
+  // no duplicate lines inside any pool
+  for (const pool of [
+    RANDOM_KILLS.ru,
+    RANDOM_KILLS.en,
+    BOSS_RANDOM_KILLS.ru,
+    BOSS_RANDOM_KILLS.en,
+    WEEKEND_KILLS.ru,
+    WEEKEND_KILLS.en,
+  ]) {
+    assert.equal(new Set(pool).size, pool.length, "pool contains duplicate lines");
+  }
+});
+
+test("killPhraseFor adds milestones 25, 30 and 50 (ru+en)", () => {
+  for (const k of [25, 30, 50]) {
+    const ru = killPhraseFor(k, "ru", 0);
+    assert.equal(ru.phrase.tone, "achievement", `kill ${k} ru must be an achievement`);
+    assert.ok(ru.phrase.text.length > 5, `kill ${k} ru must have a fixed line`);
+    const en = killPhraseFor(k, "en", 0);
+    assert.equal(en.phrase.tone, "achievement", `kill ${k} en must be an achievement`);
+  }
+});
+
+test("weekend pool merges into random kills with the no-repeat rule intact", () => {
+  // weekday draw never leaves the base pool
+  const wd = killPhraseFor(7, "ru", 0, -1, () => 0.99, false);
+  assert.ok(RANDOM_KILLS.ru.includes(wd.phrase.text), "weekday draw must use the base pool");
+  // weekend draw can land in the weekend pool (deterministic pick)
+  const we = killPhraseFor(7, "ru", 0, -1, () => 0.99, true);
+  assert.ok(WEEKEND_KILLS.ru.includes(we.phrase.text), "0.99*20 floors to 19 -> weekend line");
+  // no immediate repeats over the merged 20-line weekend pool
   let prev = 0;
+  let counter = 0;
+  for (let i = 0; i < 400; i++) {
+    const { randomIndex } = killPhraseFor(7, "ru", prev, -1, () => (counter++ % 20) / 20, true);
+    assert.notEqual(randomIndex, prev, "weekend line repeated back-to-back");
+    prev = randomIndex;
+  }
+});
+
+test("killPhraseFor never repeats the same random line twice in a row", () => {
+  let prev = -1;
   let counter = 0;
   const seen = new Set<number>();
   for (let i = 0; i < 300; i++) {
-    const { randomIndex } = killPhraseFor(7, "ru", prev, -1, () => (counter++ % 6) / 6);
+    const { randomIndex } = killPhraseFor(7, "ru", prev, -1, () => (counter++ % 6) / 6, false);
     assert.notEqual(randomIndex, prev, "random line repeated back-to-back");
     seen.add(randomIndex);
     prev = randomIndex;
   }
-  // the cycling rand walks the whole 6-line pool over 300 draws
+  // the cycling rand walks 6 distinct lines of the 14-line weekday pool
   assert.equal(seen.size, 6);
 });
 
@@ -115,14 +204,14 @@ test("killPhraseFor never repeats the same boss line twice in a row", () => {
   let prevBoss = -1;
   let counter = 0;
   const seen = new Set<number>();
-  for (let i = 0; i < 250; i++) {
-    const { bossRandomIndex } = killPhraseFor(25, "ru", -1, prevBoss, () => (counter++ % 5) / 5);
+  for (let i = 0; i < 350; i++) {
+    const { bossRandomIndex } = killPhraseFor(35, "ru", -1, prevBoss, () => (counter++ % 10) / 10);
     assert.notEqual(bossRandomIndex, prevBoss, "boss line repeated back-to-back");
     seen.add(bossRandomIndex);
     prevBoss = bossRandomIndex;
   }
-  // the cycling rand walks the whole 5-line boss pool over 250 draws
-  assert.equal(seen.size, 5);
+  // the cycling rand walks the whole 10-line boss pool over 350 draws
+  assert.equal(seen.size, 10);
 });
 
 test("panicCloud for the boss always comes from the boss pool", () => {

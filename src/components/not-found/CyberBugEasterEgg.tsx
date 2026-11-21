@@ -11,15 +11,22 @@ import {
   FX_NORMAL,
   HINT_CLOUD,
   HUD_LABELS,
+  ONBOARD_HINT,
+  SKIN_UNLOCK_LABEL,
+  TOTAL_KEY,
+  UNLOCKS_KEY,
   cardSpawnPose,
   clampToast,
   headingToRotation,
+  hitSizeFor,
   hpFor,
   killPhraseFor,
   panicBounds,
   panicCloud,
+  panicSpeedFor,
   particleCount,
   rageCloud,
+  skinFor,
   splashCount,
   turnToward,
   walkCycleFor,
@@ -38,7 +45,7 @@ import { useLang } from "@/lib/use-lang";
  * game loop mutates only refs and DOM (zero re-renders per frame).
  */
 
-type BugMode = "idle" | "panic" | "peek" | "respawn";
+type BugMode = "idle" | "panic" | "peek" | "respawn" | "dying";
 
 interface BugState {
   mode: BugMode;
@@ -114,6 +121,7 @@ const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const SPLAT_SPRITE = 128;
 
 const BEST_KEY = "appseal-bug-best";
+// TOTAL_KEY / UNLOCKS_KEY live in constants.ts (lifetime progress + skins)
 
 /**
  * Paints one splat stain (drops + gloss + embedded chips) centered at the
@@ -172,7 +180,18 @@ export function CyberBugEasterEgg() {
   }, [lang]);
 
   const [view, setView] = useState<BugView>({ boss: false, hp: 3, maxHp: 3, legs: "idle" });
-  const [hud, setHud] = useState({ kills: 0, best: 0, sfxOn: true, visible: false });
+  // HUD is visible from the first paint: the visitor sees the reward system
+  // before the first splat; total/best fill in from localStorage on mount
+  const [hud, setHud] = useState({ kills: 0, best: 0, total: 0, sfxOn: true });
+  // touch device -> bigger hitbox + slower panic (set once on mount)
+  const [isTouch, setIsTouch] = useState(false);
+  // aria-live mirror of the last kill toast (DOM toasts are silent to SRs)
+  const [live, setLive] = useState("");
+  // unlocked carapace skin color; the boss always stays crimson
+  const [skinColor, setSkinColor] = useState("");
+  // onboarding: pulsing ring + tooltip until the first landed click
+  const [onboard, setOnboard] = useState(true);
+  const [tip, setTip] = useState(true);
 
   const bugEl = useRef<HTMLDivElement>(null);
   const bugRot = useRef<HTMLDivElement>(null);
@@ -181,6 +200,7 @@ export function CyberBugEasterEgg() {
   const phraseLayer = useRef<HTMLDivElement>(null);
   const toastLayer = useRef<HTMLDivElement>(null);
   const svgFlash = useRef<HTMLDivElement>(null);
+  const bossFlashEl = useRef<HTMLDivElement>(null);
 
   const st = useRef<BugState>({
     mode: "idle",
@@ -215,6 +235,10 @@ export function CyberBugEasterEgg() {
   const hintAt = useRef(0);
   const codeFont = useRef("10px ui-monospace, monospace");
   const best = useRef(0);
+  /** lifetime kills across visits (localStorage TOTAL_KEY) */
+  const total = useRef(0);
+  /** normal-tier palette tinted with the unlocked skin (boss stays FX_BOSS) */
+  const skinPal = useRef<FxPalette | null>(null);
   /** kill hit-stop: the loop serves dt=0 until this timestamp passes */
   const hitStopUntil = useRef(0);
   /** last --cb-walk-speed written to the svg (quantized, avoids style churn) */
@@ -391,7 +415,7 @@ export function CyberBugEasterEgg() {
       life: rand(BALANCE.splatKeepMin, BALANCE.splatKeepMax) * 1000,
       boss,
     });
-    if (splats.current.length > 6) splats.current.shift();
+    if (splats.current.length > BALANCE.splatCap) splats.current.shift();
   };
 
   /* --------------------------- canvas render --------------------------- */
@@ -415,7 +439,7 @@ export function CyberBugEasterEgg() {
       if (s.sprite) {
         ctx.drawImage(s.sprite, s.x - s.size / 2, s.y - s.size / 2, s.size, s.size);
       } else {
-        drawSplatPaint(ctx, s.drops, s.chips, s.boss ? FX_BOSS : FX_NORMAL);
+        drawSplatPaint(ctx, s.drops, s.chips, s.boss ? FX_BOSS : (skinPal.current ?? FX_NORMAL));
       }
       ctx.globalAlpha = 1;
     }
@@ -435,7 +459,7 @@ export function CyberBugEasterEgg() {
       p.y += p.vy * dt;
       p.rot += p.vr * dt;
       const alpha = 1 - p.age / p.life;
-      const pal = p.boss ? FX_BOSS : FX_NORMAL;
+      const pal = p.boss ? FX_BOSS : (skinPal.current ?? FX_NORMAL);
       ctx.globalAlpha = Math.max(0, alpha);
       if (p.kind === "meat") {
         ctx.fillStyle = pal.meat;
@@ -494,7 +518,7 @@ export function CyberBugEasterEgg() {
       if (t >= 1) continue;
       const rad = r.r0 + (r.r1 - r.r0) * (1 - Math.pow(1 - t, 2));
       ctx.globalAlpha = (1 - t) * 0.8;
-      ctx.strokeStyle = r.boss ? FX_BOSS.ring : FX_NORMAL.ring;
+      ctx.strokeStyle = r.boss ? FX_BOSS.ring : (skinPal.current?.ring ?? FX_NORMAL.ring);
       ctx.lineWidth = 3 - t * 2;
       ctx.beginPath();
       ctx.arc(r.x, r.y, rad, 0, Math.PI * 2);
@@ -536,8 +560,7 @@ export function CyberBugEasterEgg() {
     // the style engine every frame.
     let speed = 0;
     if (s.mode === "panic") {
-      const base = s.hp === 1 ? BALANCE.panicSpeedWounded : BALANCE.panicSpeed;
-      speed = s.boss && s.hp / s.maxHp <= 0.35 ? base * BALANCE.bossRageMult : base;
+      speed = panicSpeedFor(s.hp, s.maxHp, s.boss, coarse.current);
     } else if (s.mode === "peek") {
       const desired = Math.atan2(s.ty - s.y, s.tx - s.x);
       const align = Math.max(0, Math.cos(desired - s.heading));
@@ -558,10 +581,7 @@ export function CyberBugEasterEgg() {
       s.heading += rand(-1.35, 1.35);
       s.turnAt = now + rand(BALANCE.turnMin, BALANCE.turnMax) * 1000;
     }
-    const base = s.hp === 1 ? BALANCE.panicSpeedWounded : BALANCE.panicSpeed;
-    // engine-side mirror of the SVG rig's isBossEnraged (hpRatio <= 0.35)
-    const enraged = s.boss && s.hp / s.maxHp <= 0.35;
-    const speed = enraged ? base * BALANCE.bossRageMult : base;
+    const speed = panicSpeedFor(s.hp, s.maxHp, s.boss, coarse.current);
     s.x += Math.cos(s.heading) * speed * dt;
     s.y += Math.sin(s.heading) * speed * dt;
     const b = panicBounds(vp.current);
@@ -693,12 +713,28 @@ export function CyberBugEasterEgg() {
     el.classList.add("nf-squash");
   };
 
+  /** Touch feedback: light tap on a landed hit, double pulse on the splat. */
+  const buzz = (pattern: number | number[]) => {
+    try {
+      navigator.vibrate?.(pattern);
+    } catch {
+      /* unsupported */
+    }
+  };
+
+  /** Skin application: tints particles/stains/ripples + the svg accent. */
+  const applySkin = (color: string) => {
+    skinPal.current = { ...FX_NORMAL, meat: color, shardEdge: color, ring: color };
+    setSkinColor(color);
+  };
+
   const splatBug = (atX: number, atY: number) => {
     const s = st.current;
     s.kills += 1;
     const newKills = s.kills;
     const boss = s.boss;
     engine.current?.play("splat", boss);
+    buzz([40, 15, 40]);
 
     // kill hit-stop: the whole board freezes for a beat (particles hang in
     // mid-air) so the splat lands with weight; skipped under reduced motion
@@ -754,18 +790,58 @@ export function CyberBugEasterEgg() {
       }
     }
 
-    // HUD shows up after the first splat
+    // lifetime progress: the total drives the skin unlocks
+    total.current += 1;
+    const prevSkin = skinFor(total.current - 1);
+    const newSkin = skinFor(total.current);
+    applySkin(newSkin.color);
+    try {
+      localStorage.setItem(TOTAL_KEY, String(total.current));
+      const unlocks = JSON.parse(localStorage.getItem(UNLOCKS_KEY) ?? "[]") as number[];
+      if (!unlocks.includes(newSkin.kills)) unlocks.push(newSkin.kills);
+      localStorage.setItem(UNLOCKS_KEY, JSON.stringify(unlocks));
+    } catch {
+      /* private mode */
+    }
+    if (newSkin !== prevSkin) {
+      showToast(
+        `${SKIN_UNLOCK_LABEL[langRef.current]} ${newSkin.name[langRef.current]}`,
+        "achievement",
+        atX,
+        atY,
+      );
+      ymGoal("nf_skin_unlock");
+    }
+
     setHud((h) => ({
       kills: newKills,
       best: Math.max(h.best, newKills),
+      total: total.current,
       sfxOn: engine.current?.enabled ?? true,
-      visible: true,
     }));
 
-    // hide the bug, pause, then respawn (every 5th bug is the boss)
-    s.mode = "respawn";
+    // screenreader mirror of the kill toast
+    setLive(`#${newKills} ${phrase.text}`);
+
+    // victory beat: flatten to the floor, then hide, then respawn (every 5th
+    // bug is the boss); a boss kill adds a short white flash
+    s.mode = "dying";
     if (hitbox.current) hitbox.current.style.pointerEvents = "none";
+    const flattenEl = svgFlash.current;
+    if (flattenEl) {
+      flattenEl.classList.remove("nf-flatten");
+      void flattenEl.getBoundingClientRect(); // restart the animation
+      flattenEl.classList.add("nf-flatten");
+    }
+    if (boss && bossFlashEl.current) {
+      bossFlashEl.current.classList.remove("nf-flash-on");
+      void bossFlashEl.current.getBoundingClientRect();
+      bossFlashEl.current.classList.add("nf-flash-on");
+    }
     setView((v) => ({ ...v, legs: "idle", hp: v.maxHp }));
+    addTimer(() => {
+      s.mode = "respawn";
+    }, BALANCE.flattenMs);
     addTimer(() => {
       spawnBug();
     }, rand(BALANCE.respawnMin, BALANCE.respawnMax) * 1000);
@@ -806,12 +882,21 @@ export function CyberBugEasterEgg() {
       setView({ boss, hp: maxHp, maxHp, legs: "step" });
     }
     if (hitbox.current) hitbox.current.style.pointerEvents = "auto";
+    // clear death/dash leftovers from the previous bug
+    svgFlash.current?.classList.remove("nf-flatten", "nf-squash");
+    svgFlash.current?.querySelector("svg")?.classList.remove("cb-pre-dash");
     positionBug();
   };
 
   /** Shared hit pipeline for pointer and keyboard strikes. */
   const applyHit = (cx: number, cy: number) => {
     const s = st.current;
+    if (s.mode === "dying") return;
+
+    // onboarding visuals served their purpose on the first landed click
+    setOnboard(false);
+    setTip(false);
+    buzz(12);
 
     // reduced motion: the bug stays put and pops on the first click
     if (reduced.current) {
@@ -850,16 +935,29 @@ export function CyberBugEasterEgg() {
       const b = panicBounds(vp.current);
       const nx = Math.max(b.minX, Math.min(b.maxX, s.x + Math.cos(ang) * BALANCE.bossDashDist));
       const ny = Math.max(b.minY, Math.min(b.maxY, s.y + Math.sin(ang) * BALANCE.bossDashDist));
-      ripples.current.push({ x: s.x, y: s.y, r0: 8, r1: 46, born: performance.now(), life: 0.35, boss: true });
+      // telegraph: warning ripple + fast flicker, THEN the blink-dash - the
+      // bug never vanishes without a 200ms tell (hitbox stays live meanwhile)
+      ripples.current.push({ x: s.x, y: s.y, r0: 4, r1: 24, born: performance.now(), life: 0.3, boss: true });
       ripples.current.push({ x: nx, y: ny, r0: 8, r1: 60, born: performance.now(), life: 0.45, boss: true });
       spawnSplash(s.x, s.y, true);
-      s.x = nx;
-      s.y = ny;
-      s.heading = ang;
-      s.turnAt = performance.now();
-      squashBug();
-      showPhrase(rageCloud(langRef.current), s.x, s.y);
+      const svg = svgFlash.current?.querySelector("svg");
+      if (svg) {
+        svg.classList.remove("cb-pre-dash");
+        void svg.getBoundingClientRect(); // restart the animation
+        svg.classList.add("cb-pre-dash");
+      }
       canvasDirty.current = true;
+      addTimer(() => {
+        // the bug may die during the windup - never dash a corpse
+        if (s.mode === "dying" || s.mode === "respawn") return;
+        s.x = nx;
+        s.y = ny;
+        s.heading = ang;
+        s.turnAt = performance.now();
+        squashBug();
+        showPhrase(rageCloud(langRef.current), s.x, s.y);
+        canvasDirty.current = true;
+      }, BALANCE.preDashMs);
     }
 
     // every intermediate hit sprays sparks, slime and knocks the bug back
@@ -879,7 +977,7 @@ export function CyberBugEasterEgg() {
   const onKeyHit = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== "Enter" && e.key !== " ") return;
     e.preventDefault();
-    if (st.current.mode === "respawn") return;
+    if (st.current.mode === "respawn" || st.current.mode === "dying") return;
     engine.current?.unlock();
     // strike where the bug actually is (no pointer coordinates exist)
     applyHit(st.current.x, st.current.y - 22);
@@ -899,6 +997,7 @@ export function CyberBugEasterEgg() {
     dead.current = false;
     coarse.current = window.matchMedia("(pointer: coarse)").matches;
     reduced.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setIsTouch(coarse.current);
     engine.current = new SfxEngine();
     // mp3s lazy-load on the first pointer gesture (unlock -> preload); until
     // they decode, the synthesized fallback voices cover the game audibly -
@@ -925,6 +1024,18 @@ export function CyberBugEasterEgg() {
     } catch {
       /* private mode */
     }
+
+    // lifetime kills + unlocked skin from previous visits
+    try {
+      total.current = parseInt(localStorage.getItem(TOTAL_KEY) ?? "", 10) || 0;
+      if (total.current > 0) setHud((h) => ({ ...h, total: total.current }));
+    } catch {
+      /* private mode */
+    }
+    applySkin(skinFor(total.current).color);
+
+    // onboarding tooltip fades on its own if the visitor never clicks
+    addTimer(() => setTip(false), BALANCE.onboardTipMs);
 
     // one-time catch hint: armed 5.5s after mount, fires in tick() while
     // the visitor still has zero kills
@@ -969,8 +1080,9 @@ export function CyberBugEasterEgg() {
 
   /* ------------------------------ render ------------------------------ */
 
-  // boss hitbox covers the longer silhouette (tail stabilizers stick out)
-  const hitSize = view.boss ? 150 : 96;
+  // boss hitbox covers the longer silhouette (tail stabilizers stick out);
+  // touch gets a bigger target (fingers miss small squares)
+  const hitSize = hitSizeFor(isTouch, view.boss);
   const half = hitSize / 2;
 
   return (
@@ -1004,8 +1116,25 @@ export function CyberBugEasterEgg() {
           onKeyDown={onKeyHit}
           role="button"
           tabIndex={0}
-          aria-label={view.boss ? BUG_A11Y[lang].boss : BUG_A11Y[lang].bug}
+          aria-label={`${view.boss ? BUG_A11Y[lang].boss : BUG_A11Y[lang].bug} - HP ${view.hp}/${view.maxHp}`}
         >
+          {/* onboarding: pulsing ring + tooltip until the first landed click */}
+          {onboard && (
+            <>
+              <div
+                className="nf-onboard-ring pointer-events-none absolute inset-0 rounded-full"
+                aria-hidden="true"
+              />
+              {tip && (
+                <div
+                  className="nf-onboard-tip appseal-glass-card pointer-events-none absolute whitespace-nowrap rounded-full px-3 py-1 font-mono text-[11px] font-bold text-slate-100"
+                  style={{ top: -(half + 34) }}
+                >
+                  {ONBOARD_HINT[lang]}
+                </div>
+              )}
+            </>
+          )}
           {/* boss HP readout stays OUTSIDE the rotator: level while the bug
               turns, and pointer-events-none so it never eats clicks */}
           {view.boss && (
@@ -1052,6 +1181,7 @@ export function CyberBugEasterEgg() {
                 mode={view.legs === "idle" ? "idle" : "walk"}
                 width={view.boss ? 84 : 86}
                 showHpBar={false}
+                accentOverride={view.boss ? undefined : skinColor || undefined}
                 ariaHidden
               />
             </div>
@@ -1063,21 +1193,43 @@ export function CyberBugEasterEgg() {
       <div ref={phraseLayer} className="pointer-events-none fixed inset-0 z-40" aria-hidden="true" />
       <div ref={toastLayer} className="pointer-events-none fixed inset-0 z-40" aria-hidden="true" />
 
-      {/* z-40: HUD counter + SFX toggle, appears after the first splat */}
-      {hud.visible && (
-        <div className="pointer-events-none fixed bottom-4 left-4 z-40 flex items-center gap-2">
-          <div className="appseal-glass-card rounded-full px-4 py-2 font-mono text-[11px] tracking-wider text-slate-200">
-            [ {HUD_LABELS[lang].splatted}: {hud.kills} · {HUD_LABELS[lang].best}: {hud.best} ]
-          </div>
-          <button
-            type="button"
-            onClick={toggleSfx}
-            className="appseal-glass-card pointer-events-auto rounded-full px-3 py-2 font-mono text-[11px] font-bold tracking-wider text-sky-300 transition hover:text-sky-200"
-          >
-            {hud.sfxOn ? "SFX ON" : "SFX OFF"}
-          </button>
+      {/* boss-kill screen flash (opacity-only, pointer-events none) */}
+      <div ref={bossFlashEl} className="nf-boss-flash" aria-hidden="true" />
+
+      {/* screenreader mirror of the kill toasts (DOM toasts are silent) */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {live}
+      </div>
+
+      {/* z-40: HUD counter - visible from the first paint, never hides */}
+      <div className="pointer-events-none fixed bottom-4 left-4 z-40 flex items-center gap-2">
+        <div className="appseal-glass-card flex items-center gap-1.5 rounded-full px-4 py-2 font-mono text-[11px] tracking-wider text-slate-200">
+          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" className="shrink-0">
+            <ellipse cx="8" cy="9.6" rx="4" ry="5" fill="#34D399" />
+            <circle cx="8" cy="3.6" r="2.3" fill="#34D399" />
+            <path
+              d="M 4.6 6 L 1.5 4.5 M 4.2 9.5 L 1 9.5 M 4.6 12.5 L 1.8 14 M 11.4 6 L 14.5 4.5 M 11.8 9.5 L 15 9.5 M 11.4 12.5 L 14.2 14"
+              stroke="#34D399"
+              strokeWidth="1.1"
+              strokeLinecap="round"
+            />
+            <rect x="6.9" y="6.6" width="2.2" height="4.6" rx="1" fill="#090d16" opacity="0.55" />
+          </svg>
+          <span>
+            [ {HUD_LABELS[lang].splatted}: {hud.kills} · {HUD_LABELS[lang].total}: {hud.total} ·{" "}
+            {HUD_LABELS[lang].best}: {hud.best} ]
+          </span>
         </div>
-      )}
+      </div>
+
+      {/* z-40: SFX toggle - always reachable, even before the first splat */}
+      <button
+        type="button"
+        onClick={toggleSfx}
+        className="appseal-glass-card pointer-events-auto fixed bottom-4 right-4 z-40 rounded-full px-3 py-2 font-mono text-[11px] font-bold tracking-wider text-sky-300 transition hover:text-sky-200"
+      >
+        {hud.sfxOn ? "SFX ON" : "SFX OFF"}
+      </button>
     </>
   );
 }

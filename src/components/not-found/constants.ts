@@ -27,9 +27,6 @@ export const BALANCE = {
   peekDistMax: 120,
   // how deep under the card edge a newborn bug starts (px, hidden by the glass)
   spawnInside: 28,
-  // pause between splat and the next bug crawling out
-  respawnMin: 2.0,
-  respawnMax: 2.2,
   // reaction cloud above the bug on the first click
   cloudLife: 0.85,
   // kill toast on screen
@@ -72,12 +69,50 @@ export const BALANCE = {
   walkCycleMin: 0.28,
   walkCycleMax: 1.05,
   // one-time catch hint for players who never clicked the bug
-  hintDelay: 5.5,
+  hintDelay: 2.0,
+  // onboarding tooltip fades on its own unless the visitor clicks first
+  onboardTipMs: 3000,
+  // hitbox sizes (px): desktop / touch (fingers miss small squares), boss
+  // covers the longer tail silhouette
+  hitSize: 96,
+  hitSizeBoss: 150,
+  hitSizeTouch: 120,
+  hitSizeTouchBoss: 180,
+  // touch panic multiplier: same drama, catchable on a phone
+  coarsePanicMult: 0.85,
+  // pause between splat and the next bug crawling out (victory beat included)
+  respawnMin: 2.5,
+  respawnMax: 3.5,
+  // flatten-to-the-floor death animation before the corpse hides
+  flattenMs: 300,
+  // boss blink-dash windup: flicker + warning ripple before the teleport
+  preDashMs: 200,
+  // slime stains kept on the board
+  splatCap: 8,
 } as const;
 
 export function hpFor(isCoarse: boolean, boss: boolean): number {
   if (boss) return isCoarse ? BALANCE.hpBossTouch : BALANCE.hpBossDesktop;
   return isCoarse ? BALANCE.hpTouch : BALANCE.hpDesktop;
+}
+
+/** Hitbox size in px: bigger targets on touch, boss covers its tail. */
+export function hitSizeFor(isCoarse: boolean, boss: boolean): number {
+  if (boss) return isCoarse ? BALANCE.hitSizeTouchBoss : BALANCE.hitSizeBoss;
+  return isCoarse ? BALANCE.hitSizeTouch : BALANCE.hitSize;
+}
+
+/**
+ * Ground speed of a panicking bug: wounded sprint, boss rage multiplier and
+ * the touch slowdown compose here so the movement code and the gait
+ * (walkCycleFor) never disagree about the current speed.
+ */
+export function panicSpeedFor(hp: number, maxHp: number, boss: boolean, coarse: boolean): number {
+  const base = hp === 1 ? BALANCE.panicSpeedWounded : BALANCE.panicSpeed;
+  // engine-side mirror of the SVG rig's isBossEnraged (hpRatio <= 0.35)
+  const enraged = boss && maxHp > 0 && hp / maxHp <= 0.35;
+  const speed = enraged ? base * BALANCE.bossRageMult : base;
+  return coarse ? speed * BALANCE.coarsePanicMult : speed;
 }
 
 export function particleCount(boss: boolean, rand: () => number = Math.random): number {
@@ -143,6 +178,9 @@ const KILL_SPECIALS: Record<Lang, Record<number, KillPhrase>> = {
     10: { text: "ДОСТИЖЕНИЕ: Дезинсектор Продакшена. Может, уже на главную?", tone: "achievement" },
     15: { text: "ДОСТИЖЕНИЕ: Старший дезинсектор. Жуки шлют друг другу твой скриншот", tone: "achievement" },
     20: { text: "ДОСТИЖЕНИЕ: Живой антивирус. Ноль незакрытых инцидентов за смену", tone: "achievement" },
+    25: { text: "ДОСТИЖЕНИЕ: Карьерный дезинсектор. QA предлагает тебе зарплату", tone: "achievement" },
+    30: { text: "ДОСТИЖЕНИЕ: Легенда продакшена. Жуки уходят в запой при виде курсора", tone: "achievement" },
+    50: { text: "ДОСТИЖЕНИЕ: Полсотни жуков. Продакшен блестит как новый", tone: "achievement" },
   },
   en: {
     1: { text: "One bug down. The page is still 404, but it feels calmer" },
@@ -153,10 +191,13 @@ const KILL_SPECIALS: Record<Lang, Record<number, KillPhrase>> = {
     10: { text: "ACHIEVEMENT: Production Exterminator. Homepage time?", tone: "achievement" },
     15: { text: "ACHIEVEMENT: Senior Exterminator. Bugs now share screenshots of you", tone: "achievement" },
     20: { text: "ACHIEVEMENT: Living Antivirus. Zero open incidents this shift", tone: "achievement" },
+    25: { text: "ACHIEVEMENT: Career Exterminator. QA is offering you a salary", tone: "achievement" },
+    30: { text: "ACHIEVEMENT: Production Legend. Bugs flee at the sight of your cursor", tone: "achievement" },
+    50: { text: "ACHIEVEMENT: Fifty bugs down. Production shines like new", tone: "achievement" },
   },
 };
 
-const RANDOM_KILLS: Record<Lang, string[]> = {
+export const RANDOM_KILLS: Record<Lang, string[]> = {
   ru: [
     "Это был не баг, а фича...",
     "Бэкендер плачет в углу",
@@ -164,6 +205,14 @@ const RANDOM_KILLS: Record<Lang, string[]> = {
     "200 OK (исправлено вручную)",
     "Внимание: превышен лимит дезинсекции",
     "Кто-нибудь видел Олега?",
+    "Патч-ноут: \"улучшена стабильность\" (жук удалён)",
+    "Деплой откатили, жука тоже",
+    "Ушёл в оффлайн. Навсегда",
+    "Стектрейс кончился, жук кончился",
+    "Жук ушёл на рефакторинг. В никуда",
+    "Тикет закрыт: wontfix (жук мёртв)",
+    "Кеш почистили вместе с жуком",
+    "Сборка зелёная. Жук - нет",
   ],
   en: [
     "That wasn't a bug, it was a feature...",
@@ -172,10 +221,44 @@ const RANDOM_KILLS: Record<Lang, string[]> = {
     "200 OK (fixed manually)",
     "Warning: disinsection quota exceeded",
     "Has anyone seen Oleg?",
+    "Patch notes: \"improved stability\" (bug removed)",
+    "Deploy rolled back, bug rolled out",
+    "Went offline. Permanently",
+    "Out of stack trace, out of bug",
+    "Bug sent to refactoring. Into the void",
+    "Ticket closed as wontfix (bug is dead)",
+    "Cache cleared, bug included",
+    "Build is green. The bug is not",
   ],
 };
 
-/** Boss-only kill lines: bosses killed past the fixed milestones (25+). */
+/** Saturday/Sunday lines: merged into the random pool on weekends. */
+export const WEEKEND_KILLS: Record<Lang, string[]> = {
+  ru: [
+    "Выходной? Жуки тоже так думали",
+    "Суббота, а баги всё равно полезли",
+    "Дежурный спрятался, жук спрятался. Теперь жук найден",
+    "Воскресенье - идеальный день для дезинсекции",
+    "Никто не деплоит в выходные. Жуки - исключение",
+    "Отдыхаешь? Жук отдыхал. Теперь не отдыхает",
+  ],
+  en: [
+    "Weekend? The bugs thought so too",
+    "Saturday and they still crawled out",
+    "The on-call hid, the bug hid. Now the bug is found",
+    "Sunday is a perfect day for disinsection",
+    "Nobody deploys on weekends. Bugs are the exception",
+    "Resting? The bug was resting. Not anymore",
+  ],
+};
+
+/** True on Saturday/Sunday (local time) - gates the weekend phrase pool. */
+export function isWeekendNow(): boolean {
+  const d = new Date().getDay();
+  return d === 0 || d === 6;
+}
+
+/** Boss-only kill lines: bosses killed outside the fixed milestones. */
 export const BOSS_RANDOM_KILLS: Record<Lang, string[]> = {
   ru: [
     "500: нейтрализован. Кластер опустел",
@@ -183,6 +266,11 @@ export const BOSS_RANDOM_KILLS: Record<Lang, string[]> = {
     "Инцидент закрыт без постмортема",
     "Этот был злой. Ты злее",
     "Роллбэк не понадобится",
+    "SLA спасён, дежурный может спать",
+    "Босс дропнул редкий лут: спокойствие",
+    "Алерт-канал впервые за сутки замолчал",
+    "500 больше не отвечает. Никогда",
+    "Этот босс был финальным. Теперь ты босс",
   ],
   en: [
     "500 neutralized. Cluster is empty",
@@ -190,15 +278,22 @@ export const BOSS_RANDOM_KILLS: Record<Lang, string[]> = {
     "Incident closed, no postmortem needed",
     "That one was mean. You are meaner",
     "No rollback required",
+    "SLA saved, the on-call can sleep",
+    "Boss dropped rare loot: peace of mind",
+    "The alert channel is silent for the first time today",
+    "500 no longer responds. Ever",
+    "That was the final boss. Now you are the boss",
   ],
 };
 
 /**
- * Phrase for the Nth splat: fixed lines for milestones 1-5, 10, 15 and 20, a
- * random line afterwards. Boss kills (every bossEvery-th) draw from their own
- * pool so long sessions stay fresh. `prevRandom`/`prevBossRandom` are the last
- * indices used per pool, so neither pool repeats itself twice in a row; the
- * new indices are returned to carry over.
+ * Phrase for the Nth splat: fixed lines for milestones 1-5, 10, 15, 20, 25,
+ * 30 and 50, a random line afterwards. Boss kills (every bossEvery-th) draw
+ * from their own pool so long sessions stay fresh; on weekends the random
+ * pool merges with WEEKEND_KILLS (easter egg inside the easter egg).
+ * `prevRandom`/`prevBossRandom` are the last indices used per pool, so
+ * neither pool repeats itself twice in a row; the new indices are returned
+ * to carry over.
  */
 export function killPhraseFor(
   kills: number,
@@ -206,11 +301,17 @@ export function killPhraseFor(
   prevRandom: number,
   prevBossRandom: number = -1,
   rand: () => number = Math.random,
+  isWeekend: boolean = isWeekendNow(),
 ): { phrase: KillPhrase; randomIndex: number; bossRandomIndex: number } {
   const special = KILL_SPECIALS[lang][kills];
   if (special) return { phrase: special, randomIndex: prevRandom, bossRandomIndex: prevBossRandom };
   const boss = kills % BALANCE.bossEvery === 0;
-  const pool = boss ? BOSS_RANDOM_KILLS[lang] : RANDOM_KILLS[lang];
+  const normal = RANDOM_KILLS[lang];
+  const pool = boss
+    ? BOSS_RANDOM_KILLS[lang]
+    : isWeekend
+      ? [...normal, ...WEEKEND_KILLS[lang]]
+      : normal;
   const prev = boss ? prevBossRandom : prevRandom;
   let idx = Math.floor(rand() * pool.length);
   if (pool.length > 1 && idx === prev) idx = (idx + 1) % pool.length;
@@ -264,9 +365,46 @@ export const BUG_A11Y: Record<Lang, { bug: string; boss: string }> = {
 
 /* --------------------------- HUD / UI micro-copy --------------------------- */
 
-export const HUD_LABELS: Record<Lang, { splatted: string; best: string }> = {
-  ru: { splatted: "БАГОВ РАЗДАВЛЕНО", best: "РЕКОРД" },
-  en: { splatted: "BUGS SPLATTED", best: "BEST" },
+export const HUD_LABELS: Record<Lang, { splatted: string; total: string; best: string }> = {
+  ru: { splatted: "БАГОВ", total: "ВСЕГО", best: "РЕКОРД" },
+  en: { splatted: "BUGS", total: "TOTAL", best: "BEST" },
+};
+
+/* ----------------------- persistent progress / skins ----------------------- */
+
+export const TOTAL_KEY = "appseal-bug-total";
+export const UNLOCKS_KEY = "appseal-bug-unlocks";
+
+export interface SkinDef {
+  kills: number;
+  color: string;
+  name: Record<Lang, string>;
+}
+
+/** Carapace accent unlocked by lifetime kills (CyberBugSvg accentOverride). */
+export const SKINS: SkinDef[] = [
+  { kills: 0, color: "#39FF14", name: { ru: "Зелёный", en: "Green" } },
+  { kills: 10, color: "#38BDF8", name: { ru: "Ледяной", en: "Ice" } },
+  { kills: 25, color: "#A855F7", name: { ru: "Плазменный", en: "Plasma" } },
+  { kills: 50, color: "#FBBF24", name: { ru: "Золотой", en: "Gold" } },
+];
+
+/** The skin for a lifetime kill count: the highest threshold reached. */
+export function skinFor(totalKills: number): SkinDef {
+  let cur = SKINS[0];
+  for (const s of SKINS) if (totalKills >= s.kills) cur = s;
+  return cur;
+}
+
+export const SKIN_UNLOCK_LABEL: Record<Lang, string> = {
+  ru: "НОВЫЙ СКИН ЖУКА:",
+  en: "NEW BUG SKIN:",
+};
+
+/** Short onboarding tooltip pinned above the hitbox (first visit only). */
+export const ONBOARD_HINT: Record<Lang, string> = {
+  ru: "Кликни!",
+  en: "Click!",
 };
 
 /* ----------------------------- pure geometry ----------------------------- */

@@ -818,6 +818,56 @@ html.appseal-idle .appseal-radar-sweep {
   100% { transform: scale(1, 1); }
 }
 
+/* onboarding: pulsing ring around the hitbox + short tooltip until the
+   visitor lands the first click */
+.nf-onboard-ring {
+  border: 2px solid rgba(57, 255, 20, 0.55);
+  animation: nf-onboard-ring 1.6s ease-out infinite;
+}
+@keyframes nf-onboard-ring {
+  0%   { transform: scale(0.92); opacity: 0.9; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+.nf-onboard-tip {
+  left: 50%;
+  transform: translateX(-50%);
+  animation: nf-onboard-tip-in 0.3s ease-out both;
+}
+@keyframes nf-onboard-tip-in {
+  from { opacity: 0; margin-top: 5px; }
+  to   { opacity: 1; margin-top: 0; }
+}
+
+/* death flatten: squash to the floor before the corpse fades (defined after
+   nf-squash so it wins the cascade when both classes linger) */
+.nf-flatten {
+  animation: nf-flatten 0.3s ease-in both;
+  transform-origin: 50% 88%;
+}
+@keyframes nf-flatten {
+  0%   { transform: scale(1, 1); opacity: 1; }
+  55%  { transform: scale(1.22, 0.14); opacity: 1; }
+  100% { transform: scale(1.3, 0.05); opacity: 0.8; }
+}
+
+/* boss kill: one soft white flash across the screen */
+.nf-boss-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  background: #ffffff;
+  opacity: 0;
+}
+.nf-boss-flash.nf-flash-on {
+  animation: nf-boss-flash 0.4s ease-out both;
+}
+@keyframes nf-boss-flash {
+  0%   { opacity: 0; }
+  30%  { opacity: 0.15; }
+  100% { opacity: 0; }
+}
+
 /* ----------------------------------------------------------------- */
 /* cyber-bug rig (cb-* namespace, user-authored 21.11): tripod walk,  */
 /* elytra breathing revealing the energy core, running circuit traces, */
@@ -975,13 +1025,34 @@ html.appseal-idle .appseal-radar-sweep {
   animation: cb-hit-recoil 0.28s ease-out;
 }
 
+/* boss blink-dash telegraph: two fast flickers during the 200ms windup,
+   then the engine moves the bug to the pre-computed dash point */
+.cb-pre-dash {
+  animation: cb-pre-dash 0.2s linear both;
+}
+@keyframes cb-pre-dash {
+  0%   { opacity: 1; }
+  25%  { opacity: 0.25; }
+  50%  { opacity: 1; }
+  75%  { opacity: 0.25; }
+  100% { opacity: 1; }
+}
+
 /* reduced motion: radar static, no shake, hover tensing without transition -
    the bug still reacts to clicks, it just never runs or trembles */
 @media (prefers-reduced-motion: reduce) {
   .nf-radar-sweep,
   .nf-shake,
-  .nf-squash {
+  .nf-squash,
+  .nf-onboard-ring,
+  .nf-onboard-tip,
+  .nf-flatten,
+  .cb-pre-dash {
     animation: none;
+  }
+  .nf-boss-flash.nf-flash-on {
+    animation: none;
+    opacity: 0;
   }
   .nf-phrase,
   .nf-toast {
