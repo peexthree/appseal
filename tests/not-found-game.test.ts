@@ -15,6 +15,7 @@ import {
   rageCloud,
   splashCount,
   turnToward,
+  walkCycleFor,
   wanderTarget,
   BOSS_RANDOM_KILLS,
 } from "../src/components/not-found/constants.ts";
@@ -229,6 +230,24 @@ test("turnToward turns along the shortest arc and respects the cap", () => {
   assert.ok(Math.abs(turnToward(-2.5, 2.5, 0.3) - -2.8) < 1e-9, "must turn through -pi");
   // a cap that covers the whole gap lands exactly on the target
   assert.equal(turnToward(3, -3, 1), -3);
+});
+
+test("walkCycleFor ties the leg cycle to ground speed with clamps", () => {
+  const eps = 1e-9;
+  // authored anchor: panic speed cycles at the authored base
+  assert.ok(Math.abs(walkCycleFor(BALANCE.panicSpeed, false) - BALANCE.walkCycleBase) < eps);
+  assert.ok(Math.abs(walkCycleFor(BALANCE.panicSpeed, true) - BALANCE.walkCycleBoss) < eps);
+  // wounded sprint shortens the cycle, never below the floor
+  const wounded = walkCycleFor(BALANCE.panicSpeedWounded, false);
+  assert.ok(wounded < BALANCE.walkCycleBase, "faster legs at wounded sprint");
+  assert.ok(walkCycleFor(700, false) >= BALANCE.walkCycleMin, "cycle floors instead of blurring");
+  // boss rage: 330 * 1.25 = 412.5 px/s
+  const rage = walkCycleFor(BALANCE.panicSpeed * BALANCE.bossRageMult, true);
+  assert.ok(rage < BALANCE.walkCycleBoss, "enraged boss scrambles faster than its authored gait");
+  // slow crawl stretches the cycle, capped at a deliberate max
+  const crawl = walkCycleFor(BALANCE.peekSpeed, false);
+  assert.equal(crawl, BALANCE.walkCycleMax, "crawl clamps at the slow deliberate max");
+  assert.ok(walkCycleFor(1, false) === BALANCE.walkCycleMax, "degenerate speed never freezes the gait");
 });
 
 test("clampToast keeps a wide toast inside a narrow phone", () => {

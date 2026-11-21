@@ -732,6 +732,18 @@ html.appseal-idle .appseal-radar-sweep {
   80% { transform: translate3d(2px, -1px, 0); }
 }
 
+/* panic squash-and-stretch on the bug wrapper (outside the rotation pivot):
+ * squashes flat for the jump, overshoots tall, settles back */
+.nf-squash {
+  animation: nf-squash 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+@keyframes nf-squash {
+  0% { transform: scale(1, 1); }
+  35% { transform: scale(1.14, 0.8); }
+  70% { transform: scale(0.94, 1.1); }
+  100% { transform: scale(1, 1); }
+}
+
 /* ----------------------------------------------------------------- */
 /* cyber-bug rig (cb-* namespace, user-authored 21.11): tripod walk,  */
 /* elytra breathing revealing the energy core, running circuit traces, */
@@ -893,7 +905,8 @@ html.appseal-idle .appseal-radar-sweep {
    the bug still reacts to clicks, it just never runs or trembles */
 @media (prefers-reduced-motion: reduce) {
   .nf-radar-sweep,
-  .nf-shake {
+  .nf-shake,
+  .nf-squash {
     animation: none;
   }
   .nf-phrase,

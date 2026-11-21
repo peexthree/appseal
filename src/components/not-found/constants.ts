@@ -63,6 +63,14 @@ export const BALANCE = {
   // (engine-side mirror of the SVG rig's isBossEnraged at hpRatio <= 0.35)
   bossRageMult: 1.25,
   bossDashDist: 210,
+  // kill hit-stop: the whole board freezes this many ms on a splat
+  hitStopMs: 70,
+  // leg-cycle duration bounds: authored 0.42s at panicSpeed; slow crawls
+  // stretch the cycle (deliberate steps), rage shrinks it (scrambling)
+  walkCycleBase: 0.42,
+  walkCycleBoss: 0.52,
+  walkCycleMin: 0.28,
+  walkCycleMax: 1.05,
   // one-time catch hint for players who never clicked the bug
   hintDelay: 5.5,
 } as const;
@@ -406,6 +414,18 @@ export function turnToward(heading: number, target: number, maxStep: number): nu
   while (d > Math.PI) d -= 2 * Math.PI;
   while (d < -Math.PI) d += 2 * Math.PI;
   return Math.abs(d) <= maxStep ? target : heading + Math.sign(d) * maxStep;
+}
+
+/**
+ * Leg-cycle duration for the current ground speed (px/s): the authored rig
+ * cycles at walkCycleBase while sprinting at panicSpeed, faster legs when
+ * enraged/wounded, slow deliberate steps while crawling - clamped so an
+ * extreme speed never freezes or blurs the gait.
+ */
+export function walkCycleFor(speed: number, boss: boolean): number {
+  const base = boss ? BALANCE.walkCycleBoss : BALANCE.walkCycleBase;
+  const cycle = (base * BALANCE.panicSpeed) / Math.max(1, speed);
+  return Math.min(BALANCE.walkCycleMax, Math.max(BALANCE.walkCycleMin, cycle));
 }
 
 /**

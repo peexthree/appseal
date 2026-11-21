@@ -22,6 +22,7 @@ import {
   rageCloud,
   splashCount,
   turnToward,
+  walkCycleFor,
   wanderTarget,
   type FxPalette,
   type ParticleKind,
@@ -214,6 +215,10 @@ export function CyberBugEasterEgg() {
   const hintAt = useRef(0);
   const codeFont = useRef("10px ui-monospace, monospace");
   const best = useRef(0);
+  /** kill hit-stop: the loop serves dt=0 until this timestamp passes */
+  const hitStopUntil = useRef(0);
+  /** last --cb-walk-speed written to the svg (quantized, avoids style churn) */
+  const lastCycle = useRef(0);
 
   const particles = useRef<Particle[]>([]);
   const splats = useRef<Splat[]>([]);
@@ -333,13 +338,23 @@ export function CyberBugEasterEgg() {
     }
   };
 
-  const spawnSplatStain = (x: number, y: number, boss: boolean) => {
+  const spawnSplatStain = (x: number, y: number, boss: boolean, dir?: number) => {
+    // splash casts away from the strike: most drops bias along the impact
+    // vector, the rest scatter; a few far droplets spray further out
+    const base = dir ?? rand(0, Math.PI * 2);
     const drops: Splat["drops"] = [];
     const n = 10 + Math.floor(Math.random() * 7); // 10-16 drops
     for (let i = 0; i < n; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const d = rand(4, 34);
+      const biased = Math.random() < 0.7;
+      const a = biased ? base + rand(-1.05, 1.05) : Math.random() * Math.PI * 2;
+      const d = rand(4, biased ? 40 : 26);
       drops.push({ dx: Math.cos(a) * d, dy: Math.sin(a) * d * 0.7, r: rand(4, 15) });
+    }
+    for (let i = 0; i < 3; i++) {
+      // far spray: small droplets flung furthest along the impact vector
+      const a = base + rand(-0.5, 0.5);
+      const d = rand(32, 48);
+      drops.push({ dx: Math.cos(a) * d, dy: Math.sin(a) * d * 0.7, r: rand(2, 4) });
     }
     const chips: Splat["chips"] = [];
     const cn = 2 + Math.floor(Math.random() * 3); // 2-4 embedded chips
@@ -514,6 +529,27 @@ export function CyberBugEasterEgg() {
     if (rotEl) {
       rotEl.style.transform = `rotate(${headingToRotation(s.heading)}deg)`;
     }
+    // gait follows the actual ground speed: authored 0.42s at panicSpeed,
+    // faster when enraged/wounded, slow deliberate steps while crawling.
+    // Written straight onto the svg's inline var (React never rewrites keys
+    // it does not see changed); quantized to 20ms so the loop does not churn
+    // the style engine every frame.
+    let speed = 0;
+    if (s.mode === "panic") {
+      const base = s.hp === 1 ? BALANCE.panicSpeedWounded : BALANCE.panicSpeed;
+      speed = s.boss && s.hp / s.maxHp <= 0.35 ? base * BALANCE.bossRageMult : base;
+    } else if (s.mode === "peek") {
+      const desired = Math.atan2(s.ty - s.y, s.tx - s.x);
+      const align = Math.max(0, Math.cos(desired - s.heading));
+      speed = BALANCE.peekSpeed * (0.3 + 0.7 * align);
+    }
+    if (speed > 0) {
+      const cycle = Math.round(walkCycleFor(speed, s.boss) * 50) / 50;
+      if (Math.abs(cycle - lastCycle.current) > 0.001) {
+        lastCycle.current = cycle;
+        svgFlash.current?.querySelector("svg")?.style.setProperty("--cb-walk-speed", `${cycle}s`);
+      }
+    }
   };
 
   const stepPanic = (dt: number, now: number) => {
@@ -648,6 +684,15 @@ export function CyberBugEasterEgg() {
     svg.classList.add("cb-hit-flash");
   };
 
+  /** Panic squash-and-stretch on the wrapper (outside the rotation pivot). */
+  const squashBug = () => {
+    const el = svgFlash.current;
+    if (!el || reduced.current) return;
+    el.classList.remove("nf-squash");
+    void el.getBoundingClientRect(); // restart the animation
+    el.classList.add("nf-squash");
+  };
+
   const splatBug = (atX: number, atY: number) => {
     const s = st.current;
     s.kills += 1;
@@ -655,8 +700,13 @@ export function CyberBugEasterEgg() {
     const boss = s.boss;
     engine.current?.play("splat", boss);
 
+    // kill hit-stop: the whole board freezes for a beat (particles hang in
+    // mid-air) so the splat lands with weight; skipped under reduced motion
+    if (!reduced.current) hitStopUntil.current = performance.now() + BALANCE.hitStopMs;
+
     spawnExplosion(s.x, s.y, boss);
-    spawnSplatStain(s.x, s.y, boss);
+    // the stain casts away from the strike, reading the impact direction
+    spawnSplatStain(s.x, s.y, boss, Math.atan2(s.y - atY, s.x - atX));
     ripples.current.push({
       x: s.x,
       y: s.y,
@@ -786,6 +836,7 @@ export function CyberBugEasterEgg() {
       s.trailAt = 0;
       setView((v) => ({ ...v, legs: "panic" }));
       engine.current?.play("panic", s.boss);
+      squashBug();
       showPhrase(panicCloud(s.boss, langRef.current), s.x, s.y);
     } else {
       engine.current?.play("hit");
@@ -806,6 +857,7 @@ export function CyberBugEasterEgg() {
       s.y = ny;
       s.heading = ang;
       s.turnAt = performance.now();
+      squashBug();
       showPhrase(rageCloud(langRef.current), s.x, s.y);
       canvasDirty.current = true;
     }
@@ -885,7 +937,10 @@ export function CyberBugEasterEgg() {
       if (dead.current) return;
       const dt = Math.min((now - last.current) / 1000, 0.05);
       last.current = now;
-      if (!reduced.current) {
+      // kill hit-stop: movement stops and particles hang (dt=0) while rings
+      // keep expanding on wall-clock time - reads as a heavy impact
+      const frozen = now < hitStopUntil.current;
+      if (!reduced.current && !frozen) {
         if (st.current.mode === "panic") stepPanic(dt, now);
         else if (st.current.mode === "peek") stepPeek(dt);
         else if (st.current.mode === "idle" && now >= st.current.wanderAt) startWander();
@@ -896,7 +951,7 @@ export function CyberBugEasterEgg() {
         showPhrase(HINT_CLOUD[langRef.current], st.current.x, st.current.y);
       }
       positionBug();
-      renderFx(dt, now);
+      renderFx(frozen ? 0 : dt, now);
       raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
