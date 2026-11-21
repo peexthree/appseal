@@ -19,7 +19,7 @@ import {
   setNonceFinal,
   setNonceMapping,
 } from "@/lib/passes";
-import { getClientIp, regionLine } from "@/lib/sec";
+import { getClientIp, maskEmail, regionLine } from "@/lib/sec";
 import { ledgerPurchase } from "@/lib/db/index";
 import { sendTelegramAlert } from "@/lib/telegram";
 import type { Lang } from "@/lib/scanner/types";
@@ -120,7 +120,10 @@ export async function POST(req: NextRequest) {
         `💳 Попытка покупки!\n` +
         `📦 Тариф: ${kindLabel}\n` +
         `💰 Провайдер: ${providerLabel}\n` +
-        `📧 Email: ${email}\n` +
+        // 152-FZ: the payer email is personal data - Telegram only ever sees
+        // the masked form; the full address lives with YooKassa/Lava, which
+        // the buyer knowingly handed it to for the receipt
+        `📧 Email: ${maskEmail(email)}\n` +
         `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
         // 152-FZ: raw IP stays server-side, only the edge country reaches Telegram
         regionLine(req.headers)

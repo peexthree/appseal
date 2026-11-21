@@ -185,6 +185,18 @@ export function regionLine(headers: Headers): string {
   return /^[A-Z]{2}$/.test(country) ? `📡 Регион: ${country}` : "";
 }
 
+/** 152-FZ: a payer email is direct personal data - owner notifications over
+ *  Telegram (a foreign third party) only get a masked form that keeps enough
+ *  to match the payment against the YooKassa/Lava dashboards and nothing that
+ *  identifies a person on its own. Domain stays: "i***@gmail.com" does not
+ *  single anyone out, while "ivan.petrov1990@..." would. */
+export function maskEmail(email: string): string {
+  const value = email.trim();
+  const at = value.lastIndexOf("@");
+  if (at <= 0 || at === value.length - 1) return "***";
+  return `${value[0]}***@${value.slice(at + 1)}`;
+}
+
 /** Cron-tick gate: when a TICK_SECRET is configured, every call must present
  *  it via the x-tick-secret header or a ?secret= query parameter (both are
  *  compared constant-time). Without the env var the endpoint stays public -

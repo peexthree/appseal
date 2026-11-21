@@ -56,3 +56,33 @@ describe("owner-alert privacy regression", () => {
     assert.doesNotMatch(source, /📡 IP:/);
   });
 });
+
+/* ------------------- payer email privacy (152-FZ) --------------------- */
+
+/**
+ * 152-FZ: a payer email is direct personal data, and the bot explicitly
+ * promises "у нас не хранится" - so the purchase alert must reach Telegram
+ * only in the masked i***@domain form (matching the YooKassa/Lava dashboards
+ * is still possible, identifying a person is not).
+ */
+describe("payer email privacy regression", () => {
+  it("maskEmail keeps the dashboard match and drops identification", async () => {
+    const { maskEmail } = await import("../src/lib/sec.ts");
+    assert.equal(maskEmail("ivan.petrov1990@gmail.com"), "i***@gmail.com");
+    assert.equal(maskEmail("a@yandex.ru"), "a***@yandex.ru");
+    // garbage stays out of the alert entirely
+    assert.equal(maskEmail("no-at-sign"), "***");
+    assert.equal(maskEmail("a@"), "***");
+    assert.equal(maskEmail("@domain.com"), "***");
+    assert.equal(maskEmail(""), "***");
+  });
+
+  it("the purchase alert embeds only maskEmail(email), never the raw address", () => {
+    const source = readFileSync(
+      fileURLToPath(new URL("../src/app/api/purchase/route.ts", import.meta.url)),
+      "utf-8",
+    );
+    assert.match(source, /maskEmail\(email\)/);
+    assert.doesNotMatch(source, /📧 Email: \$\{email\}/);
+  });
+});
