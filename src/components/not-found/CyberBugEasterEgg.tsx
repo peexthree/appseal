@@ -1745,7 +1745,7 @@ export function CyberBugEasterEgg() {
     void fetch("/api/nf-record")
       .then((r) => (r.ok ? r.json() : null))
       .then((j: { record?: number } | null) => {
-        if (j && typeof j.record === "number" && j.record > 0) {
+        if (j && typeof j.record === "number") {
           worldRec.current = j.record;
           paintWorld();
         }
