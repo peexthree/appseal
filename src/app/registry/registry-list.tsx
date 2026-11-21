@@ -158,7 +158,7 @@ function RegistryRow({ entry, lang }: { entry: RegistryEntry; lang: Lang }) {
       </div>
       {dofollow ? (
         <>
-          <span className={`hidden rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider sm:inline ${
+          <span className={`hidden rounded border px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider sm:inline ${
             entry.grade === "A+"
               ? "border-[#C084FC]/40 text-[#C084FC] bg-[#C084FC]/10"
               : "border-[#34D399]/30 text-[#34D399] bg-[#34D399]/10"
@@ -266,7 +266,7 @@ export default function RegistryList({
                     className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${cls}`}
                   >
                     {k === "all" ? D.chipsAll[lang] : k === "top" ? D.chipsTop[lang] : PLATFORM_LABELS[k][lang]}
-                    <span className="ml-1.5 font-mono text-[10px] opacity-70">{chipCounts[k]}</span>
+                    <span className="ml-1.5 font-mono text-[11px] opacity-70">{chipCounts[k]}</span>
                   </Link>
                 );
               })}
@@ -385,7 +385,7 @@ export default function RegistryList({
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} AppSeal · {D.footerTrust[lang]}
             </p>
-            <p className="font-mono text-[10px] text-slate-700">
+            <p className="font-mono text-[11px] text-slate-700">
               <a href="/" className="transition hover:text-slate-500">{D.fHome[lang]}</a> · <a href="/stats" className="transition hover:text-slate-500">{D.fStats[lang]}</a> · <a href="/versus" className="transition hover:text-slate-500">versus</a> · <a href="/fixes" className="transition hover:text-slate-500">{D.fFixes[lang]}</a> · <a href="/bot" className="transition hover:text-slate-500">{D.fBot[lang]}</a> · <a href="/legal" className="transition hover:text-slate-500">{D.fLegal[lang]}</a>
             </p>
           </div>

@@ -230,10 +230,24 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* obsidian glass card: translucent dark pane over the hex-grid backdrop -
-   darker and clearer than the old flat #111827 slab, with a 1px crystal
-   edge, a top-light bevel and a deep drop shadow (Linear/Raycast style) */
-.appseal-card {
+/* --------------------------------------------------------------------- */
+/* glass surfaces: three tiers, every panel class is an alias of one tier */
+/*   A "card"     dense obsidian pane - cards, inner-page panels, panes    */
+/*                that sit on the page backdrop (Linear/Raycast style)     */
+/*   B "panel"    light smoked pane over the pricing light-streak video -  */
+/*                glossy, low blur, sheen + top bevel                      */
+/*   tile         neutral 4%-white square (ecosystem grid)                 */
+/*   dropdown     menu overlay, denser than A so menu text stays crisp     */
+/* Tune blur/contrast HERE, not per class. Mobile drops blur entirely:    */
+/* backdrop-filter is the most expensive paint on phones, and at 390px     */
+/* there is nothing behind a pane worth blurring - the denser solid        */
+/* fallback keeps text AA while the video/bg still reads around the pane.  */
+/* --------------------------------------------------------------------- */
+
+/* tier A: obsidian card - 1px crystal edge, top-light bevel, deep shadow */
+.appseal-card,
+.appseal-glass-card,
+.appseal-glass-outer {
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.07);
   background-image: linear-gradient(180deg, rgba(12, 16, 24, 0.55), rgba(5, 7, 11, 0.78));
@@ -241,8 +255,10 @@
     inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
     inset 0 0 24px rgba(56, 189, 248, 0.02),
     0 20px 40px -15px rgba(0, 0, 0, 0.7);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+.appseal-card {
   transition:
     transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
     border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
@@ -271,11 +287,25 @@
   opacity: 1;
 }
 
-/* glass variants: pricing section only, so the light-streak video bleeds
-   through the cards - glossy pane, not frosted: low blur, sheen + top bevel */
+/* tier B: glossy pane - the light-streak video bleeds through, sheen on top */
 .appseal-card.appseal-glass {
   background-image: linear-gradient(180deg, rgba(17, 24, 39, 0.4), rgba(13, 19, 32, 0.46));
   border-color: rgba(148, 163, 184, 0.18);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+.appseal-glass-panel {
+  position: relative;
+  background-color: rgba(11, 16, 28, 0.4);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+/* calm monochrome plan card: graphite surface + hairline border; the color
+   accent (emerald) belongs to the featured Launch Pass card only. Same tier
+   B blur, a step denser than the sheen panels to read calmer */
+.appseal-plan-calm {
+  background-color: rgba(11, 16, 28, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   -webkit-backdrop-filter: blur(5px);
   backdrop-filter: blur(5px);
 }
@@ -290,28 +320,32 @@
     linear-gradient(165deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02) 38%, rgba(255, 255, 255, 0) 58%);
   pointer-events: none;
 }
-.appseal-glass-panel {
-  position: relative;
-  background-color: rgba(11, 16, 28, 0.4);
-  -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
-}
 
-/* calm monochrome plan card: graphite surface + hairline border; the color
-   accent (emerald) belongs to the featured Launch Pass card only */
-.appseal-plan-calm {
-  background-color: rgba(11, 16, 28, 0.6);
+/* tier A addon: menus float over arbitrary content - denser fill + blur */
+.appseal-dropdown {
   border: 1px solid rgba(255, 255, 255, 0.08);
-  -webkit-backdrop-filter: blur(5px);
-  backdrop-filter: blur(5px);
+  background-image: linear-gradient(180deg, rgba(12, 16, 24, 0.72), rgba(5, 7, 11, 0.85));
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+    0 18px 50px -12px rgba(0, 0, 0, 0.75);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
 }
 
-/* outer ring pane (case study, registry banner): very light smoked glass so
-   the hex-grid reads through while inner tiles keep their contrast */
-.appseal-glass-outer {
-  background-color: rgba(8, 11, 16, 0.45);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
-  backdrop-filter: blur(12px) saturate(130%);
+/* mobile: blur off everywhere, one solid fallback surface */
+@media (max-width: 640px) {
+  .appseal-card,
+  .appseal-glass-card,
+  .appseal-glass-outer,
+  .appseal-dropdown,
+  .appseal-card.appseal-glass,
+  .appseal-glass-panel,
+  .appseal-plan-calm {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-image: none;
+    background-color: rgba(10, 14, 22, 0.88);
+  }
 }
 
 /* big ghost step numbers (01/02/03): gradient fading into the glass */
@@ -336,30 +370,6 @@
 /* the won case tile: delicate emerald glow rising from the top edge */
 .appseal-case-win {
   background: radial-gradient(circle at top, rgba(16, 185, 129, 0.15), transparent 70%);
-}
-
-/* navbar dropdowns (tools menu, quick-links panel): obsidian glass floating
-   over content - slightly denser than cards so menu text stays crisp */
-.appseal-dropdown {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background-image: linear-gradient(180deg, rgba(12, 16, 24, 0.72), rgba(5, 7, 11, 0.85));
-  box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-    0 18px 50px -12px rgba(0, 0, 0, 0.75);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  backdrop-filter: blur(16px) saturate(140%);
-}
-
-/* static glass pane for inner-page panels: same obsidian surface as
-   .appseal-card but without the hover lift (tables, accordions, summaries) */
-.appseal-glass-card {
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  background-image: linear-gradient(180deg, rgba(12, 16, 24, 0.55), rgba(5, 7, 11, 0.78));
-  box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
-    0 12px 32px -18px rgba(0, 0, 0, 0.65);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  backdrop-filter: blur(16px) saturate(140%);
 }
 
 /* gradient text with a slow sheen (hero accent, stat numbers) */

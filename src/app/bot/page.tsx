@@ -209,7 +209,7 @@ export default async function BotPage() {
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} AppSeal · Crawler & Scanner Documentation
             </p>
-            <p className="font-mono text-[10px] text-slate-700">
+            <p className="font-mono text-[11px] text-slate-700">
               <Link href="/" className="transition hover:text-slate-500">{t("fHome")}</Link> · <Link href="/registry" className="transition hover:text-slate-500">{t("fRegistry")}</Link> · <Link href="/stats" className="transition hover:text-slate-500">{t("fStats")}</Link> · <Link href="/fixes" className="transition hover:text-slate-500">{t("fFixes")}</Link> · <Link href="/legal" className="transition hover:text-slate-500">{t("fLegal")}</Link>
             </p>
           </div>

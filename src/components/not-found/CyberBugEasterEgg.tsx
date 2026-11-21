@@ -892,7 +892,7 @@ export function CyberBugEasterEgg() {
               className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2"
               style={{ top: -(half + 26), width: 104 }}
             >
-              <div className="flex w-full items-center justify-between px-0.5 font-mono text-[10px] font-bold uppercase tracking-widest">
+              <div className="flex w-full items-center justify-between px-0.5 font-mono text-[11px] font-bold uppercase tracking-widest">
                 <span className="text-[#FF2E5B]">BOSS // 500</span>
                 <span className="text-slate-300">
                   {view.hp}/{view.maxHp}

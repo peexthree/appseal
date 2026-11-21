@@ -130,7 +130,7 @@ function CheckRow({
               )}
               <Badge
                 variant="outline"
-                className="border-none text-[10px] font-bold uppercase tracking-wider"
+                className="border-none text-[11px] font-bold uppercase tracking-wider"
                 style={{ color: sev.color, backgroundColor: `${sev.color}1a` }}
               >
                 {sev.label[lang]}
@@ -138,7 +138,7 @@ function CheckRow({
             </>
           )}
           {r.status !== "fail" && r.status !== "warn" && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
               {STATUS_LABEL[r.status][lang]}
             </span>
           )}
@@ -153,7 +153,7 @@ function CheckRow({
               {r.finding!.evidence.length > 0 && (
                 <div className="mt-3">
                   <div className="mb-1.5 flex items-center justify-between">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                       {t(lang, "evidence")}
                     </p>
                     <button
@@ -636,13 +636,13 @@ export function ReportView({
           <span>📋</span>
           <span>{lang === "ru" ? "Проверки и проблемы" : "Findings & Checks"}</span>
           {fails + warns > 0 ? (
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-extrabold ${
               activeTab === "checks" ? "bg-[#090d16] text-sky-400" : "bg-red-500/20 text-red-400 border border-red-500/40"
             }`}>
               {fails + warns}
             </span>
           ) : (
-            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
+            <span className={`rounded-full px-1.5 py-0.5 text-[11px] font-extrabold ${
               activeTab === "checks" ? "bg-[#090d16] text-emerald-400" : "bg-emerald-500/20 text-emerald-400"
             }`}>
               ✓
@@ -661,7 +661,7 @@ export function ReportView({
         >
           <span>🤖</span>
           <span>{lang === "ru" ? "Исправить с AI" : "Fix with AI"}</span>
-          <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded ${
+          <span className={`text-[11px] font-extrabold uppercase px-1.5 py-0.2 rounded ${
             activeTab === "ai-fix" ? "bg-[#090d16]/30 text-[#090d16]" : "bg-sky-500/15 text-sky-400"
           }`}>
             Cursor / Claude
@@ -679,7 +679,7 @@ export function ReportView({
         >
           <span>🏷️</span>
           <span>{lang === "ru" ? "Бейдж на сайт" : "Trust Badge"}</span>
-          <span className={`text-[10px] font-mono font-bold ${
+          <span className={`text-[11px] font-mono font-bold ${
             activeTab === "badge" ? "text-[#090d16]" : "text-emerald-400"
           }`}>
             {scan.grade}
@@ -697,7 +697,7 @@ export function ReportView({
         >
           <span>🛠️</span>
           <span>{lang === "ru" ? "Инструменты разработчика" : "Dev Tools"}</span>
-          <span className="text-[10px] text-slate-500">CI/CD, конфиги</span>
+          <span className="text-[11px] text-slate-500">CI/CD, конфиги</span>
         </button>
       </div>
 
@@ -842,11 +842,11 @@ export function ReportView({
                     <span>{CAT_ICONS[cat]}</span>
                     <span>{CATEGORY_META[cat].title[lang]}</span>
                     {catIssues > 0 ? (
-                      <span className="rounded-full bg-red-500/20 px-1.5 text-[10px] font-bold text-red-400">
+                      <span className="rounded-full bg-red-500/20 px-1.5 text-[11px] font-bold text-red-400">
                         {catIssues}
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-600">({count})</span>
+                      <span className="text-[11px] text-slate-600">({count})</span>
                     )}
                   </button>
                 );

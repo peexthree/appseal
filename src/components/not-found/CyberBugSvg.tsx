@@ -231,7 +231,7 @@ export const CyberBugSvg: React.FC<CyberBugSvgProps> = ({
           className="mb-2 flex flex-col items-center gap-1"
           style={{ width: Math.max(120, renderWidth * 0.88) }}
         >
-          <div className="flex w-full items-center justify-between px-0.5 font-mono text-[10px] font-bold tracking-widest uppercase">
+          <div className="flex w-full items-center justify-between px-0.5 font-mono text-[11px] font-bold tracking-widest uppercase">
             <span style={{ color: accent }}>
               {isBoss ? `BOSS // ${displayLabel}` : `BUG // ${displayLabel}`}
             </span>

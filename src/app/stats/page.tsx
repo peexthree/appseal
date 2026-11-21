@@ -752,7 +752,7 @@ export default async function StatsPage() {
                 {t("battleNoteB")}
               </p>
               <div className="mt-4 overflow-hidden rounded-2xl appseal-glass-card">
-                <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   <span className="flex-1">{t("thPlatform")}</span>
                   <span className="w-20 text-right">{t("thDomains")}</span>
                   <span className="w-24 text-right">{t("thAvg")}</span>
@@ -775,7 +775,7 @@ export default async function StatsPage() {
                           {PLATFORM_LABELS[row.key][lang]}
                         </Link>
                       </span>
-                      {row.grades ? <span className="text-[10px] text-slate-500">{row.grades}</span> : null}
+                      {row.grades ? <span className="text-[11px] text-slate-500">{row.grades}</span> : null}
                     </span>
                     <span className="w-20 text-right font-mono text-xs text-slate-400">{row.count}</span>
                     <span
@@ -799,7 +799,7 @@ export default async function StatsPage() {
                     <h2 className="font-display text-xl font-extrabold">{t("weekTopTitle")}</h2>
                     <p className="mt-1 text-sm text-slate-500">{t("weekTopNote")}</p>
                     <div className="mt-4 overflow-hidden rounded-2xl appseal-glass-card">
-                      <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                         <span className="w-10 shrink-0">{t("thPlace")}</span>
                         <span className="flex-1">{t("thHost")}</span>
                         <span className="w-24 text-right">{t("thGrade")}</span>

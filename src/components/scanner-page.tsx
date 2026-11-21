@@ -806,7 +806,7 @@ export function ScannerPage({
                     role="listbox"
                     aria-label={t(lang, "suggestTitle")}
                   >
-                    <p className="px-3.5 pb-1 pt-2.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                    <p className="px-3.5 pb-1 pt-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
                       {t(lang, "suggestTitle")}
                     </p>
                     {suggestionMatches.map((c) => (
@@ -839,12 +839,12 @@ export function ScannerPage({
                             </span>
                           )}
                           {c.target === "demo://app" && (
-                            <span className="text-[10px] font-medium text-slate-500 sm:hidden">
+                            <span className="text-[11px] font-medium text-slate-500 sm:hidden">
                               {t(lang, "suggestDemoNote")}
                             </span>
                           )}
                           {c.target === "demo://app" && (
-                            <span className="hidden text-[10px] font-medium text-slate-500 sm:inline">
+                            <span className="hidden text-[11px] font-medium text-slate-500 sm:inline">
                               {t(lang, "suggestDemoNote")}
                             </span>
                           )}
@@ -872,7 +872,7 @@ export function ScannerPage({
                   onChange={(e) => setConsent(e.target.checked)}
                   className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-[#111827] text-sky-400 accent-sky-400 focus:ring-sky-400"
                 />
-                <span className="text-[12px] leading-relaxed text-slate-400">
+                <span className="text-[13px] leading-relaxed text-slate-400">
                   {lang === "ru"
                     ? "Запуская проверку, вы подтверждаете, что являетесь владельцем/разработчиком ресурса или действуете с его разрешения. Скан выполняется в пассивном режиме чтения публичных HTTP-ответов."
                     : "By starting the scan, you confirm that you are the owner/developer of the resource or have authorization. The scan runs in passive mode reading public HTTP responses."}
@@ -888,7 +888,7 @@ export function ScannerPage({
                   onChange={(e) => setPrivateScan(e.target.checked)}
                   className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-[#111827] text-sky-400 accent-sky-400 focus:ring-sky-400"
                 />
-                <span className="text-[12px] leading-relaxed text-slate-400">
+                <span className="text-[13px] leading-relaxed text-slate-400">
                   {t(lang, "privateScanLabel")}{" "}
                   <span className="text-[11px] text-slate-500">({t(lang, "privateScanNote")})</span>
                 </span>
@@ -1139,7 +1139,7 @@ export function ScannerPage({
                         {x.chips.map((chip) => (
                           <span
                             key={chip}
-                            className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-mono text-[10px] text-slate-400"
+                            className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-mono text-[11px] text-slate-400"
                           >
                             {chip}
                           </span>
@@ -1291,9 +1291,9 @@ export function ScannerPage({
                     <Reveal key={step.t} delay={step.d} className="h-full">
                       <div className={`h-full ${step.cls}`}>
                         {idx === 2 && <span aria-hidden className="appseal-glow-once" />}
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{t(lang, step.t)}</p>
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{t(lang, step.t)}</p>
                         <p className={`font-display mt-2 text-2xl font-extrabold ${step.nc}`}>{t(lang, step.n)}</p>
-                        <p className="mt-2 text-[12px] leading-relaxed text-slate-400">{t(lang, step.dKey)}</p>
+                        <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{t(lang, step.dKey)}</p>
                       </div>
                     </Reveal>,
                   ])}
@@ -1314,7 +1314,7 @@ export function ScannerPage({
                     setCaseCopied(true);
                     setTimeout(() => setCaseCopied(false), 2000);
                   }}
-                  className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-2 py-1 text-[10px] font-semibold text-slate-400 transition hover:border-sky-500/50 hover:text-sky-400"
+                  className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-2 py-1 text-[11px] font-semibold text-slate-400 transition hover:border-sky-500/50 hover:text-sky-400"
                 >
                   {caseCopied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
                   {caseCopied ? t(lang, "copied") : t(lang, "copyBtn")}
@@ -1432,7 +1432,7 @@ export function ScannerPage({
                     <h3 className="text-sm font-bold uppercase tracking-wider text-slate-200">
                       {CATEGORY_META[c.key].title[lang]}
                     </h3>
-                    <span className="appseal-count-badge ml-auto shrink-0 rounded border border-slate-700 bg-[#090d16] px-2 py-0.5 font-mono text-[10px] font-semibold text-sky-400">
+                    <span className="appseal-count-badge ml-auto shrink-0 rounded border border-slate-700 bg-[#090d16] px-2 py-0.5 font-mono text-[11px] font-semibold text-sky-400">
                       [{c.count[lang]}]
                     </span>
                   </div>
@@ -1486,7 +1486,7 @@ export function ScannerPage({
                   </span>
                   <h3 className="mt-4 text-sm font-bold leading-snug text-slate-100">{t(lang, c.tKey)}</h3>
                   <p className="mt-2 flex-1 text-[13px] leading-relaxed text-slate-400">{t(lang, c.dKey)}</p>
-                  <span className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-sky-400">
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-sky-400">
                     {t(lang, "ecoCardCta")}
                     <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                   </span>
@@ -1533,7 +1533,7 @@ export function ScannerPage({
                   ))}
                 </ul>
                 <div className="mt-auto pt-5">
-                  <p className="mb-2.5 text-center text-[10px] text-slate-500">{t(lang, "planFreeNote")}</p>
+                  <p className="mb-2.5 text-center text-[11px] text-slate-500">{t(lang, "planFreeNote")}</p>
                   <Button
                     className="h-11 w-full rounded-xl border border-white/[0.15] bg-white/[0.05] text-[13px] font-bold text-slate-100 shadow-none hover:bg-white/[0.09]"
                     onClick={() => {
@@ -1550,7 +1550,7 @@ export function ScannerPage({
             {/* Launch Pass: static neon emerald frame, featured center card */}
             <Reveal delay={0.08} className="h-full">
               <div className="relative h-full">
-                <span className="absolute -top-3.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-emerald-200/40 bg-emerald-400 px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#090d16] shadow-[0_0_26px_-2px_rgba(52,211,153,0.8)]">
+                <span className="absolute -top-3.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-emerald-200/40 bg-emerald-400 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#090d16] shadow-[0_0_26px_-2px_rgba(52,211,153,0.8)]">
                   {t(lang, "planMostPopular")}
                 </span>
                 <div className="appseal-glass-panel flex h-full flex-col rounded-2xl border border-emerald-400/60 p-6 shadow-[0_0_32px_-8px_rgba(52,211,153,0.55),0_0_90px_-28px_rgba(52,211,153,0.4)]">
@@ -1570,7 +1570,7 @@ export function ScannerPage({
                     ))}
                   </ul>
                   <div className="mt-auto pt-5">
-                    <p className="mb-2.5 text-center text-[10px] text-slate-400">{t(lang, "planPaidNote")}</p>
+                    <p className="mb-2.5 text-center text-[11px] text-slate-400">{t(lang, "planPaidNote")}</p>
                     {/* the whole funnel lives in the bot: it asks for the domain
                         and the receipt email in the chat (start=ru-lp falls
                         through to the greeting menu with the plan buttons) */}
@@ -1614,7 +1614,7 @@ export function ScannerPage({
                   ))}
                 </ul>
                 <div className="mt-auto pt-5">
-                  <p className="mb-2.5 text-center text-[10px] text-slate-400">{t(lang, "planPaidNote")}</p>
+                  <p className="mb-2.5 text-center text-[11px] text-slate-400">{t(lang, "planPaidNote")}</p>
                   <a
                     href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-pro`}
                     className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.15] bg-white/[0.05] text-[13px] font-bold text-slate-100 transition hover:bg-white/[0.09]"
@@ -1639,7 +1639,7 @@ export function ScannerPage({
                   {t(lang, "planAgencyPrice")}{" "}
                   <span className="whitespace-nowrap text-sm font-semibold text-slate-400">{t(lang, "planAgencyPer")}</span>
                 </p>
-                <span className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                <span className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
                   {t(lang, "planAgencyDeal")}
                 </span>
                 <p className="mt-2 text-[11px] leading-snug text-slate-400">{t(lang, "planAgencySub")}</p>
@@ -1653,7 +1653,7 @@ export function ScannerPage({
                   ))}
                 </ul>
                 <div className="mt-auto pt-5">
-                  <p className="mb-2.5 text-center text-[10px] text-slate-400">{t(lang, "planPaidNote")}</p>
+                  <p className="mb-2.5 text-center text-[11px] text-slate-400">{t(lang, "planPaidNote")}</p>
                   <a
                     href={`https://t.me/AppSeal_Monitor_Bot?start=${lang === "en" ? "en" : "ru"}-pack5`}
                     className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.15] bg-white/[0.05] text-[13px] font-bold text-slate-100 transition hover:bg-white/[0.09]"
@@ -1840,7 +1840,7 @@ export function ScannerPage({
                 className="h-[44px] w-[228px] drop-shadow-[0_4px_16px_rgba(192,132,252,0.18)]"
               />
             </a>
-            <p className="mt-1.5 max-w-[228px] text-[10px] leading-snug text-slate-600">
+            <p className="mt-1.5 max-w-[228px] text-[11px] leading-snug text-slate-600">
               {t(lang, "footerBadgeNote")}
             </p>
           </div>

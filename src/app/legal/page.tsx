@@ -534,7 +534,7 @@ export default async function LegalPage() {
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} AppSeal · Terms, Data &amp; Disclaimer
             </p>
-            <p className="font-mono text-[10px] text-slate-700">
+            <p className="font-mono text-[11px] text-slate-700">
               <Link href="/" className="transition hover:text-slate-500">{t("fHome")}</Link> · <Link href="/registry" className="transition hover:text-slate-500">{t("fRegistry")}</Link> · <Link href="/bot" className="transition hover:text-slate-500">{t("fBot")}</Link>
             </p>
           </div>

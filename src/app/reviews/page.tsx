@@ -81,7 +81,7 @@ export default async function ReviewsPage() {
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} AppSeal · {t("footTag")}
             </p>
-            <p className="font-mono text-[10px] text-slate-700">
+            <p className="font-mono text-[11px] text-slate-700">
               <Link href="/" className="transition hover:text-slate-500">{t("fHome")}</Link> · <Link href="/stats" className="transition hover:text-slate-500">{t("fStats")}</Link> · <Link href="/legal" className="transition hover:text-slate-500">{t("fLegal")}</Link>
             </p>
           </div>

@@ -287,7 +287,7 @@ export function SiteHeader({
               <button
                 key={l}
                 onClick={() => switchLang(l)}
-                className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase transition ${
+                className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase transition ${
                   lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-400 hover:text-slate-200"
                 }`}
                 aria-pressed={lang === l}

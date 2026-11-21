@@ -68,7 +68,7 @@ export function HostView({ host, history, latest }: { host: string; history: Reg
               {t("eyebrow")}
             </p>
             {dofollow && (
-              <span className="rounded border border-[#34D399]/30 bg-[#34D399]/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#34D399]">
+              <span className="rounded border border-[#34D399]/30 bg-[#34D399]/10 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#34D399]">
                 dofollow
               </span>
             )}
