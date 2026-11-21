@@ -751,13 +751,31 @@ html.appseal-idle .appseal-radar-sweep {
   to { transform: rotate(360deg); }
 }
 
-/* reaction cloud above the bug ("Эй!", "Я фича!"): pop in, hover, fade.
-   position: absolute here (unlayered) because .appseal-glass-card sets
-   position: relative and unlayered rules beat Tailwind's layered utilities */
+/* reaction cloud above the bug ("Эй!", "Я фича!"): an opaque speech bubble
+   with a tail, tinted with the speaker's accent via --nf-phrase-color -
+   nothing under it bleeds through. position: absolute here (unlayered)
+   because .appseal-glass-card sets position: relative and unlayered rules
+   beat Tailwind's layered utilities */
 .nf-phrase {
   position: absolute;
+  background: #0b101c;
+  border: 1px solid var(--nf-phrase-color, #39ff14);
+  color: var(--nf-phrase-color, #39ff14);
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.7);
   animation: nf-phrase-pop 0.16s ease-out both;
   transition: opacity 0.22s ease-in, transform 0.22s ease-in;
+}
+.nf-phrase::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5.5px;
+  width: 9px;
+  height: 9px;
+  transform: translateX(-50%) rotate(45deg);
+  background: #0b101c;
+  border-right: 1px solid var(--nf-phrase-color, #39ff14);
+  border-bottom: 1px solid var(--nf-phrase-color, #39ff14);
 }
 .nf-phrase.nf-out {
   opacity: 0;
@@ -768,10 +786,11 @@ html.appseal-idle .appseal-radar-sweep {
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* kill toast: quick pop, auto fade via timeout removal (absolute for the
-   same glass-card override reason as .nf-phrase) */
+/* kill toast: quick pop, auto fade via timeout removal; near-opaque so the
+   card copy never bleeds through (absolute for the glass-card reason) */
 .nf-toast {
   position: absolute;
+  background: rgba(9, 13, 22, 0.94);
   animation: nf-toast-pop 0.18s ease-out both;
   transition: opacity 0.4s ease-in, transform 0.4s ease-in;
 }
@@ -921,6 +940,64 @@ html.appseal-idle .appseal-radar-sweep {
   25%      { transform: translate3d(1px, -1px, 0); }
   50%      { transform: translate3d(-1px, 1px, 0); }
   75%      { transform: translate3d(1px, 1px, 0); }
+}
+
+/* the 404 digits double as the lives meter: alive = site gradient, eaten =
+   dim dark-red shell (the engine toggles data-dead per digit) */
+.nf-lives span {
+  background: linear-gradient(180deg, #7dd3fc, #38bdf8 55%, #2563eb);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px rgba(56, 189, 248, 0.3));
+}
+.nf-lives span[data-dead="1"] {
+  background: none;
+  color: rgba(153, 27, 27, 0.6);
+  filter: none;
+  text-shadow: 0 0 16px rgba(239, 68, 68, 0.2);
+}
+
+/* persistent bite damage: the card scuffs as lives are eaten */
+[data-nf-damage]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background:
+    radial-gradient(58px 44px at 88% 4%, rgba(120, 22, 22, 0.6), transparent 70%),
+    radial-gradient(44px 36px at 5% 96%, rgba(120, 22, 22, 0.45), transparent 70%);
+}
+[data-nf-damage].nf-dmg-1::after { opacity: 0.6; }
+[data-nf-damage].nf-dmg-2::after { opacity: 1; }
+[data-nf-damage].nf-dmg-1,
+[data-nf-damage].nf-dmg-2 {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+[data-nf-damage].nf-dmg-2 {
+  transform: rotate(-0.35deg);
+}
+
+/* the bug chomps the page: lunge-squeeze on the shell at the bite moment */
+.nf-bite-chomp {
+  animation: nf-bite-chomp 0.35s cubic-bezier(0.3, 1.4, 0.4, 1) both;
+}
+@keyframes nf-bite-chomp {
+  0%   { transform: scale(1, 1) rotate(0deg); }
+  30%  { transform: scale(1.35, 0.75) rotate(-6deg); }
+  60%  { transform: scale(0.85, 1.15) rotate(4deg); }
+  100% { transform: scale(1, 1) rotate(0deg); }
+}
+
+/* dragged power-up chip: grows a little while held */
+.nf-drop-drag {
+  opacity: 1 !important;
+  transform: scale(1.12);
+  cursor: grabbing;
+  box-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.75);
 }
 
 /* ----------------------------------------------------------------- */
@@ -1101,6 +1178,7 @@ html.appseal-idle .appseal-radar-sweep {
   .nf-squash,
   .nf-flatten,
   .nf-splitter,
+  .nf-bite-chomp,
   .cb-pre-dash {
     animation: none;
   }

@@ -25,6 +25,7 @@ import {
   SWARM_ROACH_SPEED_CHARGED,
   SWARM_SIZE,
   SWARM_VICTORY,
+  WORLD_RECORD_PHRASE,
   SKIN_UNLOCK_LABEL,
   TOTAL_KEY,
   TYPE_NAMES,
@@ -285,6 +286,10 @@ export function CyberBugEasterEgg() {
   const roaches = useRef<Roach[]>([]);
   /** the 50-kill swarm fires once per run */
   const swarmDone = useRef(false);
+  /** de-personalized all-time record across every visitor (server-backed) */
+  const worldRec = useRef(0);
+  /** the world-record toast fires once per run */
+  const worldToasted = useRef(false);
   /** kill hit-stop: the loop serves dt=0 until this timestamp passes */
   const hitStopUntil = useRef(0);
   /** last --cb-walk-speed written to the svg (quantized, avoids style churn) */
@@ -858,13 +863,14 @@ export function CyberBugEasterEgg() {
 
   /* ------------------------------ actions ------------------------------ */
 
-  const showPhrase = (text: string, x: number, y: number) => {
+  const showPhrase = (text: string, x: number, y: number, color?: string) => {
     const layer = phraseLayer.current;
     if (!layer) return;
     const el = document.createElement("div");
     el.className =
-      "nf-phrase appseal-glass-card absolute whitespace-nowrap rounded-full px-3 py-1.5 font-mono text-[11px] font-bold text-slate-100";
+      "nf-phrase absolute whitespace-nowrap rounded-2xl px-3 py-1.5 font-mono text-[11px] font-bold text-slate-100";
     el.textContent = text;
+    if (color) el.style.setProperty("--nf-phrase-color", color);
     layer.appendChild(el);
     // left/top are plain left-edge coordinates: no CSS translate helpers here,
     // the clamp below must own the full geometry (no double offsets)
@@ -877,7 +883,8 @@ export function CyberBugEasterEgg() {
     addTimer(() => el.remove(), BALANCE.cloudLife * 1000);
   };
 
-  const showToast = (text: string, tone: "info" | "boss" | "achievement", x: number, y: number) => {
+  /** Announcements float at a fixed central spot (never at the kill point). */
+  const showToast = (text: string, tone: "info" | "boss" | "achievement") => {
     const layer = toastLayer.current;
     if (!layer) return;
     const el = document.createElement("div");
@@ -889,10 +896,13 @@ export function CyberBugEasterEgg() {
     layer.appendChild(el);
     const w = el.offsetWidth;
     const h = el.offsetHeight;
+    const v = vp.current;
     // stack offset: a second toast while one is visible slides below it
     const slot = toastCount.current;
     toastCount.current += 1;
-    const pos = clampToast(x, y + slot * 52, w, h, vp.current);
+    // the anchor is the screen center; the clamp slides it out of the card's
+    // text block so announcements never cover the page copy
+    const pos = clampToast(v.w / 2, v.h / 2 + slot * 52, w, h, v, cardRect.current);
     el.style.left = `${pos.x}px`;
     el.style.top = `${pos.y}px`;
     addTimer(() => el.classList.add("nf-out"), (BALANCE.toastLife - 0.5) * 1000);
@@ -954,7 +964,7 @@ export function CyberBugEasterEgg() {
     if (shield.current) {
       shield.current = false;
       setHud((h) => ({ ...h, shield: false }));
-      showToast(SHIELD_BLOCK_PHRASE[langRef.current], "achievement", s.x, s.y);
+      showToast(SHIELD_BLOCK_PHRASE[langRef.current], "achievement");
       ymGoal("nf_shield_block");
       // the bug bounces off, patience resets
       s.mode = "panic";
@@ -973,9 +983,23 @@ export function CyberBugEasterEgg() {
     setHud((h) => ({ ...h, lives: lives.current }));
     shakeCard();
     redFlash();
+    // the bug visibly chomps: a lunge-squeeze on the shell + red page chunks
+    // spray from the bite point - the damage text became an animation
+    const chompEl = svgFlash.current;
+    if (chompEl && !reduced.current) {
+      chompEl.classList.remove("nf-bite-chomp");
+      void chompEl.getBoundingClientRect();
+      chompEl.classList.add("nf-bite-chomp");
+    }
+    spawnExplosion(
+      s.x,
+      s.y,
+      { ...FX_NORMAL, meat: "#ef4444", shardEdge: "#ef4444", ring: "#ef4444", spark: "#fca5a5" },
+      true,
+    );
+    canvasDirty.current = true;
     const line = BITE_PHRASES[langRef.current][Math.floor(Math.random() * BITE_PHRASES[langRef.current].length)];
-    showToast(line, "boss", s.x, s.y);
-    setLive(line);
+    setLive(`${line} Жизни: ${lives.current}/3`);
     ymGoal("nf_bite");
     if (lives.current <= 0) {
       endGame();
@@ -1020,7 +1044,7 @@ export function CyberBugEasterEgg() {
       });
     }
     shakeCard();
-    showToast(SWARM_ANNOUNCE[langRef.current], "boss", v.w / 2, v.h / 2);
+    showToast(SWARM_ANNOUNCE[langRef.current], "boss");
     ymGoal("nf_swarm");
     document.querySelector("[data-nf-card]")?.classList.add("nf-rumble");
   };
@@ -1054,19 +1078,14 @@ export function CyberBugEasterEgg() {
       /* private mode */
     }
     if (newSkin !== prevSkin) {
-      showToast(
-        `${SKIN_UNLOCK_LABEL[langRef.current]} ${newSkin.name[langRef.current]}`,
-        "achievement",
-        x,
-        y,
-      );
+      showToast(`${SKIN_UNLOCK_LABEL[langRef.current]} ${newSkin.name[langRef.current]}`, "achievement");
       ymGoal("nf_skin_unlock");
     }
     const newWave = waveFor(newKills);
     if (newWave > wave.current) {
       wave.current = newWave;
       const line = WAVE_ANNOUNCE[langRef.current][newWave];
-      if (line) showToast(line, "achievement", x, y);
+      if (line) showToast(line, "achievement");
       ymGoal("nf_wave_up");
     }
     setHud((h) => ({
@@ -1079,6 +1098,7 @@ export function CyberBugEasterEgg() {
       sfxOn: engine.current?.enabled ?? true,
     }));
     ymGoal("nf_roach_kill");
+    bumpWorld(newKills);
     if (roaches.current.length === 0) {
       swarmDone.current = true;
       document.querySelector("[data-nf-card]")?.classList.remove("nf-rumble");
@@ -1092,7 +1112,7 @@ export function CyberBugEasterEgg() {
       for (let i = 0; i < 5; i++) {
         addTimer(() => spawnExplosion(rand(80, vp.current.w - 80), rand(BALANCE.headerSafe + 60, vp.current.h - 120), FX_BY_TYPE.spawnling, false), i * 180);
       }
-      showToast(SWARM_VICTORY[langRef.current], "achievement", vp.current.w / 2, vp.current.h / 2);
+      showToast(SWARM_VICTORY[langRef.current], "achievement");
       ymGoal("nf_swarm_victory");
     }
   };
@@ -1185,6 +1205,7 @@ export function CyberBugEasterEgg() {
     chain.current = 0;
     wave.current = 1;
     swarmDone.current = false;
+    worldToasted.current = false;
     st.current.kills = 0;
     lastRandom.current = -1;
     lastBossRandom.current = -1;
@@ -1196,7 +1217,8 @@ export function CyberBugEasterEgg() {
     spawnBug();
   };
 
-  /** Tappable power-up dropped at the splat point (~15% of kills). */
+  /** Draggable power-up dropped at the splat point (~15% of kills): tap it
+   * where it lies, or hold LMB and drag it to the spot, release detonates. */
   const spawnDrop = (x: number, y: number) => {
     const layer = dropLayer.current;
     if (!layer || gameOver) return;
@@ -1204,27 +1226,89 @@ export function CyberBugEasterEgg() {
     const v = vp.current;
     const el = document.createElement("button");
     el.type = "button";
-    el.setAttribute("aria-label", `${POWERUPS[kind].name[langRef.current]} - кликни, чтобы применить`);
+    el.setAttribute("aria-label", `${POWERUPS[kind].name[langRef.current]} - кликни или перетащи`);
     el.className =
-      "nf-drop appseal-glass-card pointer-events-auto absolute z-40 flex items-center gap-1.5 rounded-full px-3 py-2 font-mono text-[12px] font-bold text-slate-100";
+      "nf-drop appseal-glass-card pointer-events-auto absolute z-40 flex cursor-grab touch-none items-center gap-1.5 rounded-full px-3 py-2 font-mono text-[12px] font-bold text-slate-100";
     el.textContent = `${POWERUPS[kind].icon} ${POWERUPS[kind].name[langRef.current]}`;
     const cx = Math.max(80, Math.min(v.w - 100, x));
     const cy = Math.max(BALANCE.headerSafe + 40, Math.min(v.h - 140, y));
     el.style.left = `${cx - 70}px`;
     el.style.top = `${cy - 24}px`;
+    // lifetime fade - paused while the chip is being dragged
+    const fadeId = addTimer(() => el.classList.add("nf-out"), (BALANCE.dropLifetime - 0.5) * 1000);
+    const killId = addTimer(() => el.remove(), BALANCE.dropLifetime * 1000);
+    const pauseLifetime = () => {
+      clearTimeout(fadeId);
+      clearTimeout(killId);
+      timers.current.delete(fadeId);
+      timers.current.delete(killId);
+    };
+    let dragging = false;
     el.addEventListener(
       "pointerdown",
       (e) => {
         e.preventDefault();
         e.stopPropagation();
-        el.remove();
-        applyPowerup(kind, cx, cy);
+        dragging = true;
+        pauseLifetime();
+        el.classList.add("nf-drop-drag");
+        try {
+          el.setPointerCapture(e.pointerId);
+        } catch {
+          /* capture unsupported - moves still land while pressed */
+        }
       },
       { once: true },
     );
+    el.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      el.style.left = `${e.clientX - 70}px`;
+      el.style.top = `${e.clientY - 24}px`;
+    });
+    el.addEventListener(
+      "pointerup",
+      (e) => {
+        if (!dragging) return;
+        dragging = false;
+        el.remove();
+        applyPowerup(kind, e.clientX, e.clientY);
+      },
+      { once: true },
+    );
+    // keyboard fallback: Enter/Space detonates at the chip's position
+    el.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      pauseLifetime();
+      const r = el.getBoundingClientRect();
+      el.remove();
+      applyPowerup(kind, r.x + 70, r.y + 24);
+    });
     layer.appendChild(el);
-    addTimer(() => el.classList.add("nf-out"), (BALANCE.dropLifetime - 0.5) * 1000);
-    addTimer(() => el.remove(), BALANCE.dropLifetime * 1000);
+  };
+
+  /** All-time record painting + server sync (competition between players). */
+  const paintWorld = () => {
+    const el = document.querySelector<HTMLElement>("[data-nf-world]");
+    if (el) el.textContent = String(worldRec.current);
+  };
+
+  const bumpWorld = (newKills: number) => {
+    if (newKills <= worldRec.current) return;
+    worldRec.current = newKills;
+    paintWorld();
+    void fetch("/api/nf-record", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ score: newKills }),
+    }).catch(() => {
+      /* offline - the local paint already shows the run */
+    });
+    if (!worldToasted.current) {
+      worldToasted.current = true;
+      showToast(WORLD_RECORD_PHRASE[langRef.current], "achievement");
+      ymGoal("nf_world_record");
+    }
   };
 
   /** Power-up activation: bomb AoE splat, 3s board freeze, or a shield. */
@@ -1249,7 +1333,7 @@ export function CyberBugEasterEgg() {
         const r = roaches.current[i];
         if (Math.hypot(r.x - x, r.y - y) <= BALANCE.bombRadius) killRoach(i, r.x, r.y);
       }
-      showToast(POWERUP_TOAST.bomb[langRef.current], "info", x, y);
+      showToast(POWERUP_TOAST.bomb[langRef.current], "info");
       ymGoal("nf_bomb");
     } else if (kind === "freeze") {
       frozenUntil.current = performance.now() + BALANCE.freezeMs;
@@ -1259,12 +1343,12 @@ export function CyberBugEasterEgg() {
         void el.getBoundingClientRect();
         el.classList.add("nf-freeze-on");
       }
-      showToast(POWERUP_TOAST.freeze[langRef.current], "info", x, y);
+      showToast(POWERUP_TOAST.freeze[langRef.current], "info");
       ymGoal("nf_freeze");
     } else {
       shield.current = true;
       setHud((h) => ({ ...h, shield: true }));
-      showToast(POWERUP_TOAST.shield[langRef.current], "achievement", x, y);
+      showToast(POWERUP_TOAST.shield[langRef.current], "achievement");
       ymGoal("nf_shield");
     }
   };
@@ -1318,7 +1402,7 @@ export function CyberBugEasterEgg() {
     );
     lastRandom.current = randomIndex;
     lastBossRandom.current = bossRandomIndex;
-    showToast(phrase.text, phrase.tone ?? "info", atX, atY);
+    showToast(phrase.text, phrase.tone ?? "info");
     if (phrase.tone === "achievement") {
       document.querySelector("[data-cta-home]")?.classList.add("nf-cta-win");
     }
@@ -1352,12 +1436,7 @@ export function CyberBugEasterEgg() {
       /* private mode */
     }
     if (newSkin !== prevSkin) {
-      showToast(
-        `${SKIN_UNLOCK_LABEL[langRef.current]} ${newSkin.name[langRef.current]}`,
-        "achievement",
-        atX,
-        atY,
-      );
+      showToast(`${SKIN_UNLOCK_LABEL[langRef.current]} ${newSkin.name[langRef.current]}`, "achievement");
       ymGoal("nf_skin_unlock");
     }
 
@@ -1366,7 +1445,7 @@ export function CyberBugEasterEgg() {
     if (newWave > wave.current) {
       wave.current = newWave;
       const line = WAVE_ANNOUNCE[langRef.current][newWave];
-      if (line) showToast(line, "achievement", atX, atY);
+      if (line) showToast(line, "achievement");
       ymGoal("nf_wave_up");
     }
 
@@ -1389,7 +1468,10 @@ export function CyberBugEasterEgg() {
     // screenreader mirror of the kill toast
     setLive(`#${newKills} ${phrase.text}`);
 
-    // power-up drop: ~15% of kills leave a tappable gift
+    // all-time record competition
+    bumpWorld(newKills);
+
+    // power-up drop: ~15% of kills leave a draggable gift
     if (Math.random() < BALANCE.dropChance) spawnDrop(atX, atY);
 
     // victory beat: flatten to the floor, then hide, then respawn (every 5th
@@ -1461,7 +1543,7 @@ export function CyberBugEasterEgg() {
     if (hitbox.current) hitbox.current.style.pointerEvents = "auto";
     // clear death/dash leftovers from the previous bug, then dress the tier
     const shell = svgFlash.current;
-    shell?.classList.remove("nf-flatten", "nf-squash", "nf-ghost", "nf-splitter");
+    shell?.classList.remove("nf-flatten", "nf-squash", "nf-ghost", "nf-splitter", "nf-bite-chomp");
     shell?.querySelector("svg")?.classList.remove("cb-pre-dash");
     if (type === "ghost") shell?.classList.add("nf-ghost");
     if (type === "splitter") shell?.classList.add("nf-splitter");
@@ -1498,7 +1580,7 @@ export function CyberBugEasterEgg() {
       setView((v) => ({ ...v, legs: "panic" }));
       engine.current?.play("panic", s.boss);
       squashBug();
-      showPhrase(panicCloud(s.boss, langRef.current), s.x, s.y);
+      showPhrase(panicCloud(s.boss, langRef.current), s.x, s.y, palFor(s.type).meat);
     } else {
       engine.current?.play("hit");
     }
@@ -1531,7 +1613,7 @@ export function CyberBugEasterEgg() {
         s.heading = ang;
         s.turnAt = performance.now();
         squashBug();
-        showPhrase(rageCloud(langRef.current), s.x, s.y);
+        showPhrase(rageCloud(langRef.current), s.x, s.y, "#FF2E5B");
         canvasDirty.current = true;
       }, BALANCE.preDashMs);
     }
@@ -1566,15 +1648,35 @@ export function CyberBugEasterEgg() {
     applyHit(st.current.x, st.current.y - 22);
   };
 
-  const toggleSfx = () => {
-    const eng = engine.current;
-    if (!eng) return;
-    eng.unlock();
-    eng.setEnabled(!eng.enabled);
-    setHud((h) => ({ ...h, sfxOn: eng.enabled }));
-  };
-
   /* ------------------------------ lifecycle ------------------------------ */
+
+  // paints the card HUD (stats grid, lives digits, shield, sfx) from state:
+  // the card is static SSR markup - the engine owns its data slots
+  useEffect(() => {
+    const set = (key: string, val: string) => {
+      const el = document.querySelector(`[data-nf-stat="${key}"]`);
+      if (el) el.textContent = val;
+    };
+    set("kills", String(hud.kills));
+    set("best", String(hud.best));
+    set("total", String(hud.total));
+    set("wave", String(hud.wave));
+    document.querySelectorAll<HTMLElement>("[data-nf-life]").forEach((el, idx) => {
+      el.dataset.dead = idx >= hud.lives ? "1" : "0";
+    });
+    const sh = document.querySelector<HTMLElement>("[data-nf-shield]");
+    if (sh) sh.style.display = hud.shield ? "" : "none";
+    const sfxBtn = document.querySelector<HTMLElement>("[data-nf-sfx-btn]");
+    if (sfxBtn) sfxBtn.textContent = hud.sfxOn ? "SFX ON" : "SFX OFF";
+    // persistent card damage: every eaten life scuffs the frame further
+    const card = document.querySelector<HTMLElement>("[data-nf-damage]");
+    if (card) {
+      card.classList.remove("nf-dmg-1", "nf-dmg-2");
+      const dmg = 3 - hud.lives;
+      if (dmg >= 1) card.classList.add("nf-dmg-1");
+      if (dmg >= 2) card.classList.add("nf-dmg-2");
+    }
+  }, [hud]);
 
   useEffect(() => {
     dead.current = false;
@@ -1582,6 +1684,28 @@ export function CyberBugEasterEgg() {
     reduced.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setIsTouch(coarse.current);
     engine.current = new SfxEngine();
+
+    // SFX toggle lives inside the card's corner slot (DOM-injected: the card
+    // is static SSR markup owned by the engine)
+    const slot = document.querySelector("[data-nf-sfx-slot]");
+    if (slot) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.nfSfxBtn = "1";
+      btn.setAttribute("aria-label", "SFX on/off");
+      btn.className =
+        "rounded-full border border-white/10 bg-white/5 px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider text-sky-300 transition hover:text-sky-200";
+      btn.textContent = "SFX ON";
+      btn.addEventListener("click", () => {
+        const eng = engine.current;
+        if (!eng) return;
+        eng.unlock();
+        eng.setEnabled(!eng.enabled);
+        btn.textContent = eng.enabled ? "SFX ON" : "SFX OFF";
+        setHud((h) => ({ ...h, sfxOn: eng.enabled }));
+      });
+      slot.appendChild(btn);
+    }
     // mp3s lazy-load on the first pointer gesture (unlock -> preload); until
     // they decode, the synthesized fallback voices cover the game audibly -
     // saves ~136KB of fetches on every 404 view, muted users included
@@ -1617,6 +1741,19 @@ export function CyberBugEasterEgg() {
     }
     applySkin(skinFor(total.current).color);
 
+    // all-time world record across every visitor (de-personalized)
+    void fetch("/api/nf-record")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { record?: number } | null) => {
+        if (j && typeof j.record === "number" && j.record > 0) {
+          worldRec.current = j.record;
+          paintWorld();
+        }
+      })
+      .catch(() => {
+        /* offline - the row stays at its placeholder */
+      });
+
     // bug #1 crawls out from under the 404 card right away
     spawnBug();
 
@@ -1636,7 +1773,7 @@ export function CyberBugEasterEgg() {
           if ((s.mode === "idle" || s.mode === "panic" || s.mode === "peek") && now >= s.biteAt) {
             s.mode = "hunt";
             setView((v) => (v.legs === "step" ? v : { ...v, legs: "step" }));
-            showPhrase(HUNT_CLOUD[langRef.current], s.x, s.y);
+            showPhrase(HUNT_CLOUD[langRef.current], s.x, s.y, "#FBBF24");
           }
           if (s.mode === "panic") stepPanic(dt, now);
           else if (s.mode === "peek") stepPeek(dt);
@@ -1801,46 +1938,6 @@ export function CyberBugEasterEgg() {
         {live}
       </div>
 
-      {/* z-40: HUD counter - visible from the first paint, never hides;
-          bottom-20 keeps it above the cookie consent bar (fixed bottom-0
-          z-[70]) so first-time visitors actually see the counter */}
-      <div className="pointer-events-none fixed bottom-20 left-4 z-40 flex flex-col items-start gap-1.5">
-        <div className="appseal-glass-card flex items-center gap-1.5 rounded-full px-4 py-2 font-mono text-[11px] tracking-wider text-slate-200">
-          <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" className="shrink-0">
-            <ellipse cx="8" cy="9.6" rx="4" ry="5" fill="#34D399" />
-            <circle cx="8" cy="3.6" r="2.3" fill="#34D399" />
-            <path
-              d="M 4.6 6 L 1.5 4.5 M 4.2 9.5 L 1 9.5 M 4.6 12.5 L 1.8 14 M 11.4 6 L 14.5 4.5 M 11.8 9.5 L 15 9.5 M 11.4 12.5 L 14.2 14"
-              stroke="#34D399"
-              strokeWidth="1.1"
-              strokeLinecap="round"
-            />
-            <rect x="6.9" y="6.6" width="2.2" height="4.6" rx="1" fill="#090d16" opacity="0.55" />
-          </svg>
-          <span>
-            [ {HUD_LABELS[lang].splatted}: {hud.kills} · {HUD_LABELS[lang].total}: {hud.total} ·{" "}
-            {HUD_LABELS[lang].best}: {hud.best} ]
-          </span>
-        </div>
-        {(
-          <div className="appseal-glass-card flex items-center gap-2.5 rounded-full px-3.5 py-1.5 font-mono text-[11px] font-bold tracking-widest">
-            <span className="flex items-center gap-0.5" aria-label={`${HUD_LABELS[lang].best === "РЕКОРД" ? "Жизни" : "Lives"}: ${hud.lives}/3`}>
-              {["4", "0", "4"].map((c, i) => (
-                <span key={i} className={i < hud.lives ? "text-emerald-400" : "text-slate-600"}>
-                  {c}
-                </span>
-              ))}
-            </span>
-            {hud.wave > 1 && (
-              <span className="text-amber-300">
-                {HUD_LABELS[lang].wave}: {hud.wave}
-              </span>
-            )}
-            {hud.shield && <span aria-hidden="true">🛡️</span>}
-          </div>
-        )}
-      </div>
-
       {/* game over: the bugs ate all three 404 lives */}
       {gameOver && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 bg-black/75 px-4 text-center backdrop-blur-sm">
@@ -1860,19 +1957,6 @@ export function CyberBugEasterEgg() {
           </button>
         </div>
       )}
-
-      {/* z-40: SFX toggle - always reachable, even before the first splat.
-          position: fixed inline because .appseal-glass-card (unlayered CSS)
-          overrides the layered .fixed utility; bottom-20 clears the cookie
-          consent bar (fixed bottom-0 z-[70]) that covers the bottom corners */}
-      <button
-        type="button"
-        onClick={toggleSfx}
-        style={{ position: "fixed" }}
-        className="appseal-glass-card pointer-events-auto bottom-20 right-4 z-40 rounded-full px-3 py-2 font-mono text-[11px] font-bold tracking-wider text-sky-300 transition hover:text-sky-200"
-      >
-        {hud.sfxOn ? "SFX ON" : "SFX OFF"}
-      </button>
     </>
   );
 }

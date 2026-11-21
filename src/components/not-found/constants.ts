@@ -42,11 +42,11 @@ export const BALANCE = {
   bossEvery: 5,
   // viewport padding the bug keeps while roaming (body + claws clear the edge)
   margin: 64,
-  // real sticky-header height (h-20 = 80px); UI clouds/toasts clamp below it
-  headerSafe: 80,
-  // roaming floor: header 80 + half the 96px hitbox 48 + gap 4, so the hitbox
-  // never hides under the header's click plane
-  roamMinY: 132,
+  // top pad above the play area: the 404 game screen has no navbar, so this
+  // is just a hairline of breathing room
+  headerSafe: 8,
+  // roaming floor: a small top pad, the card itself is fair game
+  roamMinY: 68,
   // idle stroll: a settled bug drifts to a nearby point every few seconds
   idleWanderMin: 2.8,
   idleWanderMax: 5.4,
@@ -165,6 +165,12 @@ export const SWARM_ANNOUNCE: Record<Lang, string> = {
 export const SWARM_VICTORY: Record<Lang, string> = {
   ru: "ВЫ ПОБЕДИЛИ ХАОС. НО 404 ВСЁ ЕЩЁ СУЩЕСТВУЕТ...",
   en: "YOU BEAT THE CHAOS. THE 404 REMAINS...",
+};
+
+/** Toasted once per run when the player passes the all-time world record. */
+export const WORLD_RECORD_PHRASE: Record<Lang, string> = {
+  ru: "НОВЫЙ РЕКОРД ВСЕХ ИГРОКОВ!",
+  en: "NEW ALL-TIME WORLD RECORD!",
 };
 
 /** A single swarm roach (pure state, drawn on the canvas). */
@@ -752,15 +758,39 @@ export function cardSpawnPose(
   return { x, y, tx, ty, heading };
 }
 
-/** Keeps a toast fully inside the window (no clipped text at the edges). */
-export function clampToast(x: number, y: number, width: number, height: number, v: Viewport): { x: number; y: number } {
+/**
+ * Keeps a toast fully inside the window (no clipped text at the edges) and,
+ * when a card rect is given, slides it out of the card's text block so game
+ * messages never cover the page copy.
+ */
+export function clampToast(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  v: Viewport,
+  card?: CardRect | null,
+): { x: number; y: number } {
   // a measured toast can exceed a narrow phone - cap it so the clamps stay valid
   const w = Math.min(width, v.w - 24);
   const h = Math.min(height, v.h - BALANCE.headerSafe - 32);
-  return {
+  const pos = {
     x: Math.max(12, Math.min(v.w - w - 12, x - w / 2)),
     y: Math.max(BALANCE.headerSafe + 4, Math.min(v.h - h - 16, y - h / 2)),
   };
+  if (card) {
+    const overlapX = pos.x < card.left + card.width && pos.x + w > card.left;
+    const overlapY = pos.y < card.top + card.height && pos.y + h > card.top;
+    if (overlapX && overlapY) {
+      // slide below the card when there is room, otherwise above it
+      if (card.top + card.height + h + 12 <= v.h - 16) {
+        pos.y = card.top + card.height + 12;
+      } else if (card.top - h - 12 >= BALANCE.headerSafe + 4) {
+        pos.y = card.top - h - 12;
+      }
+    }
+  }
+  return pos;
 }
 
 /** Heading -> on-screen rotation for a top-view bug whose head points up. */

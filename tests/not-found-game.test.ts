@@ -469,6 +469,19 @@ test("clampToast keeps a wide toast inside a narrow phone", () => {
   assert.ok(c.y + 60 <= v.h - 16, "toast must not overflow the bottom");
 });
 
+test("clampToast slides out of the card text block when a card is given", () => {
+  const v = { w: 1280, h: 900 };
+  const card = { left: 320, top: 100, width: 640, height: 500 };
+  // a toast born over the card center slides below the card
+  const a = clampToast(640, 300, 300, 60, v, card);
+  assert.ok(a.y >= card.top + card.height + 12 - 1, `toast must clear the card bottom, got ${a.y}`);
+  // a short viewport with no room below -> it slides above instead
+  const v2 = { w: 1280, h: 640 };
+  const card2 = { left: 320, top: 120, width: 640, height: 500 };
+  const b = clampToast(640, 350, 300, 60, v2, card2);
+  assert.ok(b.y + 60 <= card2.top - 12 + 1, `toast must clear the card top, got ${b.y}`);
+});
+
 test("headingToRotation maps movement heading to the top-view bug", () => {
   assert.equal(headingToRotation(0), 90, "moving right -> head turned right");
   assert.equal(headingToRotation(-Math.PI / 2), 0, "moving up -> head up");
