@@ -648,6 +648,9 @@ export function CyberBugEasterEgg() {
     coarse.current = window.matchMedia("(pointer: coarse)").matches;
     reduced.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     engine.current = new SfxEngine();
+    // mp3 hit/splat set decodes without a user gesture (OfflineAudioContext),
+    // so the recorded sounds are ready by the first click
+    engine.current.preload();
     setHud((h) => ({ ...h, sfxOn: engine.current?.enabled ?? true }));
 
     resizeCanvas();

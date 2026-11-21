@@ -1,10 +1,25 @@
 /**
- * Synthesized sound effects for the 404 cyber-bug easter egg. Zero audio
- * files - everything is Web Audio API oscillators + one procedural noise
- * buffer. The AudioContext is created lazily inside the first pointerdown
- * (autoplay policies on Safari/Chrome), never at module import, and is
- * closed on unmount. Kept deliberately quiet: accent, not assault.
+ * Sound effects for the 404 cyber-bug easter egg. Real recorded SFX (mp3 in
+ * /sound/) for hits and the death splat, plus a synthesized robo-squeak for
+ * panic as fallback/keep. Files are fetched and decoded through an
+ * OfflineAudioContext on mount - decoding needs no user gesture, so the
+ * buffers are ready by the first click (autoplay policies only gate audible
+ * playback, which happens through the lazily-unlocked real AudioContext).
+ * If a file fails to load the synthesized voice covers it - the game never
+ * breaks audibly. Hit sounds rotate round-robin so repeated smacking stays
+ * interesting instead of hammering one sample.
  */
+
+const SOUND_BASE = "/sound/";
+
+const HIT_SOUNDS = [
+  "freesound_community-accidentally-punching-the-floor-99814.mp3",
+  "homemade_sfx-slap-hurt-pain-sound-effect-262618.mp3",
+  "freesound_community-ough-47202.mp3",
+  "freesound_community-homemadeoof-47509.mp3",
+];
+
+const SPLAT_SOUND = "freesound_community-splash-death-splash-46048.mp3";
 
 const STORAGE_KEY = "appseal-sfx";
 
@@ -15,6 +30,11 @@ export class SfxEngine {
   private master: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private on = true;
+  private hitBuffers: AudioBuffer[] = [];
+  private splatBuffer: AudioBuffer | null = null;
+  private hitIdx = 0;
+  private loading = false;
+  private loaded = false;
 
   constructor() {
     // default ON, remembered toggle; storage may be unavailable in private mode
@@ -41,8 +61,40 @@ export class SfxEngine {
     }
   }
 
-  /** Create/resume the context - call only from a user gesture handler. */
+  /**
+   * Fetch + decode the mp3 set. Safe to call before any gesture (offline
+   * decoding makes no sound); idempotent and fail-soft per file.
+   */
+  preload(): void {
+    if (this.loaded || this.loading || typeof window === "undefined") return;
+    const OfflineCtor: typeof OfflineAudioContext | undefined =
+      window.OfflineAudioContext ??
+      (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext })
+        .webkitOfflineAudioContext;
+    if (!OfflineCtor) return;
+    this.loading = true;
+    // 1-sample offline context exists purely to host decodeAudioData
+    const offline = new OfflineCtor(1, 1, 44100);
+    const decode = async (url: string): Promise<AudioBuffer | null> => {
+      try {
+        const res = await fetch(SOUND_BASE + url);
+        if (!res.ok) return null;
+        const raw = await res.arrayBuffer();
+        return await offline.decodeAudioData(raw);
+      } catch {
+        return null;
+      }
+    };
+    void Promise.all([...HIT_SOUNDS.map(decode), decode(SPLAT_SOUND)]).then((all) => {
+      this.hitBuffers = all.slice(0, HIT_SOUNDS.length).filter((b): b is AudioBuffer => !!b);
+      this.splatBuffer = all[all.length - 1];
+      this.loaded = true;
+    });
+  }
+
+  /** Create/resume the audible context - call only from a user gesture handler. */
   unlock(): void {
+    this.preload();
     try {
       if (!this.ctx) {
         const Ctor: typeof AudioContext | undefined =
@@ -83,6 +135,10 @@ export class SfxEngine {
     this.ctx = null;
     this.master = null;
     this.noise = null;
+    this.hitBuffers = [];
+    this.splatBuffer = null;
+    this.loaded = false;
+    this.loading = false;
   }
 
   private buildNoise(ctx: AudioContext): AudioBuffer {
@@ -93,27 +149,26 @@ export class SfxEngine {
     return buf;
   }
 
-  /** Robo-squeak: sawtooth sweeping up then collapsing, ~0.25s. */
-  private panic(boss: boolean): void {
+  private playBuffer(buffer: AudioBuffer, gain: number, rate = 1): void {
     const ctx = this.ctx!;
-    const t = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sawtooth";
-    const base = boss ? 150 : 300;
-    osc.frequency.setValueAtTime(base, t);
-    osc.frequency.exponentialRampToValueAtTime(boss ? 640 : 920, t + 0.09);
-    osc.frequency.exponentialRampToValueAtTime(boss ? 110 : 160, t + 0.24);
-    gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(0.11, t + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
-    osc.connect(gain).connect(this.master!);
-    osc.start(t);
-    osc.stop(t + 0.28);
+    const src = ctx.createBufferSource();
+    const g = ctx.createGain();
+    src.buffer = buffer;
+    src.playbackRate.value = rate;
+    g.gain.value = gain;
+    src.connect(g).connect(this.master!);
+    src.start();
   }
 
-  /** Dull metallic knock on chitin: triangle dropping fast, ~0.13s. */
+  /** Recorded hit from the rotation pool, slight pitch jitter for life. */
   private hit(): void {
+    if (this.hitBuffers.length > 0) {
+      const buf = this.hitBuffers[this.hitIdx % this.hitBuffers.length];
+      this.hitIdx += 1;
+      this.playBuffer(buf, 0.5, 0.96 + Math.random() * 0.08);
+      return;
+    }
+    // fallback: dull metallic knock on chitin
     const ctx = this.ctx!;
     const t = ctx.currentTime;
     const osc = ctx.createOscillator();
@@ -129,8 +184,13 @@ export class SfxEngine {
     osc.stop(t + 0.15);
   }
 
-  /** Two-layer splat: juicy sub "chpok" down to ~32Hz + acid hiss (bandpass noise). */
+  /** Recorded death splash; the boss pops deeper and slower. */
   private splat(boss: boolean): void {
+    if (this.splatBuffer) {
+      this.playBuffer(this.splatBuffer, boss ? 0.9 : 0.75, boss ? 0.82 : 1);
+      return;
+    }
+    // fallback: two-layer synth - sub "chpok" + acid hiss
     const ctx = this.ctx!;
     const t = ctx.currentTime;
     const dur = boss ? 0.45 : 0.35;
@@ -162,5 +222,24 @@ export class SfxEngine {
     hiss.connect(band).connect(hissGain).connect(this.master!);
     hiss.start(t);
     hiss.stop(t + dur + 0.05);
+  }
+
+  /** Robo-squeak: sawtooth sweeping up then collapsing, ~0.25s (kept synth). */
+  private panic(boss: boolean): void {
+    const ctx = this.ctx!;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    const base = boss ? 150 : 300;
+    osc.frequency.setValueAtTime(base, t);
+    osc.frequency.exponentialRampToValueAtTime(boss ? 640 : 920, t + 0.09);
+    osc.frequency.exponentialRampToValueAtTime(boss ? 110 : 160, t + 0.24);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.11, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+    osc.connect(gain).connect(this.master!);
+    osc.start(t);
+    osc.stop(t + 0.28);
   }
 }
