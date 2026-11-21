@@ -1201,8 +1201,10 @@ export function CyberBugEasterEgg() {
         {live}
       </div>
 
-      {/* z-40: HUD counter - visible from the first paint, never hides */}
-      <div className="pointer-events-none fixed bottom-4 left-4 z-40 flex items-center gap-2">
+      {/* z-40: HUD counter - visible from the first paint, never hides;
+          bottom-20 keeps it above the cookie consent bar (fixed bottom-0
+          z-[70]) so first-time visitors actually see the counter */}
+      <div className="pointer-events-none fixed bottom-20 left-4 z-40 flex items-center gap-2">
         <div className="appseal-glass-card flex items-center gap-1.5 rounded-full px-4 py-2 font-mono text-[11px] tracking-wider text-slate-200">
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" className="shrink-0">
             <ellipse cx="8" cy="9.6" rx="4" ry="5" fill="#34D399" />
@@ -1222,11 +1224,15 @@ export function CyberBugEasterEgg() {
         </div>
       </div>
 
-      {/* z-40: SFX toggle - always reachable, even before the first splat */}
+      {/* z-40: SFX toggle - always reachable, even before the first splat.
+          position: fixed inline because .appseal-glass-card (unlayered CSS)
+          overrides the layered .fixed utility; bottom-20 clears the cookie
+          consent bar (fixed bottom-0 z-[70]) that covers the bottom corners */}
       <button
         type="button"
         onClick={toggleSfx}
-        className="appseal-glass-card pointer-events-auto fixed bottom-4 right-4 z-40 rounded-full px-3 py-2 font-mono text-[11px] font-bold tracking-wider text-sky-300 transition hover:text-sky-200"
+        style={{ position: "fixed" }}
+        className="appseal-glass-card pointer-events-auto bottom-20 right-4 z-40 rounded-full px-3 py-2 font-mono text-[11px] font-bold tracking-wider text-sky-300 transition hover:text-sky-200"
       >
         {hud.sfxOn ? "SFX ON" : "SFX OFF"}
       </button>

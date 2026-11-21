@@ -751,8 +751,11 @@ html.appseal-idle .appseal-radar-sweep {
   to { transform: rotate(360deg); }
 }
 
-/* reaction cloud above the bug ("Эй!", "Я фича!"): pop in, hover, fade */
+/* reaction cloud above the bug ("Эй!", "Я фича!"): pop in, hover, fade.
+   position: absolute here (unlayered) because .appseal-glass-card sets
+   position: relative and unlayered rules beat Tailwind's layered utilities */
 .nf-phrase {
+  position: absolute;
   animation: nf-phrase-pop 0.16s ease-out both;
   transition: opacity 0.22s ease-in, transform 0.22s ease-in;
 }
@@ -765,8 +768,10 @@ html.appseal-idle .appseal-radar-sweep {
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* kill toast: quick pop, auto fade via timeout removal */
+/* kill toast: quick pop, auto fade via timeout removal (absolute for the
+   same glass-card override reason as .nf-phrase) */
 .nf-toast {
+  position: absolute;
   animation: nf-toast-pop 0.18s ease-out both;
   transition: opacity 0.4s ease-in, transform 0.4s ease-in;
 }
@@ -829,6 +834,7 @@ html.appseal-idle .appseal-radar-sweep {
   100% { transform: scale(1.18); opacity: 0; }
 }
 .nf-onboard-tip {
+  position: absolute;
   left: 50%;
   transform: translateX(-50%);
   animation: nf-onboard-tip-in 0.3s ease-out both;
