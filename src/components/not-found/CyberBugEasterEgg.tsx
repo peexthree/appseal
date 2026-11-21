@@ -5,9 +5,11 @@ import { CyberBugSvg } from "./CyberBugSvg";
 import { SfxEngine } from "./sfxEngine";
 import {
   BALANCE,
+  BUG_A11Y,
   CODE_FRAGMENTS,
   FX_BOSS,
   FX_NORMAL,
+  HINT_CLOUD,
   HUD_LABELS,
   cardSpawnPoint,
   clampToast,
@@ -18,11 +20,14 @@ import {
   panicCloud,
   particleCount,
   pickSpawnSide,
+  rageCloud,
   splashCount,
   spawnPose,
+  wanderTarget,
   type FxPalette,
   type ParticleKind,
 } from "./constants";
+import { ymGoal } from "@/components/yandex-metrika";
 import { useLang } from "@/lib/use-lang";
 
 /**
@@ -46,13 +51,21 @@ interface BugState {
   maxHp: number;
   boss: boolean;
   hits: number;
+  /** boss blink-dash armed flag (the SVG rig shows full rage at last HP) */
+  raged: boolean;
   turnAt: number;
   trailAt: number;
+  /** next idle-stroll timestamp (ms); the tick() wander branch reads this */
+  wanderAt: number;
   kills: number;
 }
 
 interface Particle {
   kind: ParticleKind;
+  /** fx palette tier captured at spawn so mid-flight recolors stay impossible */
+  boss: boolean;
+  /** code-fragment glyph, picked once at spawn (per-frame rerolls strobe) */
+  char?: string;
   x: number;
   y: number;
   vx: number;
@@ -93,6 +106,8 @@ interface BugView {
 
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
+const BEST_KEY = "appseal-bug-best";
+
 export function CyberBugEasterEgg() {
   const lang = useLang();
   const langRef = useRef(lang);
@@ -101,7 +116,7 @@ export function CyberBugEasterEgg() {
   }, [lang]);
 
   const [view, setView] = useState<BugView>({ boss: false, hp: 3, maxHp: 3, legs: "idle" });
-  const [hud, setHud] = useState({ kills: 0, sfxOn: true, visible: false });
+  const [hud, setHud] = useState({ kills: 0, best: 0, sfxOn: true, visible: false });
 
   const bugEl = useRef<HTMLDivElement>(null);
   const bugRot = useRef<HTMLDivElement>(null);
@@ -122,8 +137,10 @@ export function CyberBugEasterEgg() {
     maxHp: 3,
     boss: false,
     hits: 0,
+    raged: false,
     turnAt: 0,
     trailAt: 0,
+    wanderAt: 0,
     kills: 0,
   });
   const vp = useRef({ w: 0, h: 0 });
@@ -135,6 +152,12 @@ export function CyberBugEasterEgg() {
   const dead = useRef(false);
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
   const lastRandom = useRef(-1);
+  const lastBossRandom = useRef(-1);
+  const toastCount = useRef(0);
+  const hintShown = useRef(false);
+  const hintAt = useRef(0);
+  const codeFont = useRef("10px ui-monospace, monospace");
+  const best = useRef(0);
 
   const particles = useRef<Particle[]>([]);
   const splats = useRef<Splat[]>([]);
@@ -177,13 +200,13 @@ export function CyberBugEasterEgg() {
   /* --------------------------- fx spawners ---------------------------- */
 
   const spawnSplash = (x: number, y: number, boss: boolean) => {
-    const pal = boss ? FX_BOSS : FX_NORMAL;
     const n = splashCount();
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
       const sp = rand(90, 240);
       particles.current.push({
         kind: Math.random() < 0.6 ? "meat" : "spark",
+        boss,
         x,
         y,
         vx: Math.cos(a) * sp,
@@ -195,13 +218,12 @@ export function CyberBugEasterEgg() {
         age: 0,
       });
     }
-    void pal;
   };
 
   const spawnTrailDrip = (x: number, y: number, boss: boolean) => {
-    const pal = boss ? FX_BOSS : FX_NORMAL;
     particles.current.push({
       kind: "meat",
+      boss,
       x: x + rand(-6, 6),
       y: y + rand(-4, 8),
       vx: rand(-20, 20),
@@ -212,11 +234,9 @@ export function CyberBugEasterEgg() {
       life: rand(0.5, 0.9),
       age: 0,
     });
-    void pal;
   };
 
   const spawnExplosion = (x: number, y: number, boss: boolean) => {
-    const pal = boss ? FX_BOSS : FX_NORMAL;
     const count = particleCount(boss);
     const boost = boss ? 1.3 : 1;
     for (let i = 0; i < count; i++) {
@@ -234,6 +254,8 @@ export function CyberBugEasterEgg() {
       const [lo, hi] = kindLife[kind];
       particles.current.push({
         kind,
+        boss,
+        char: kind === "code" ? CODE_FRAGMENTS[Math.floor(Math.random() * CODE_FRAGMENTS.length)] : undefined,
         x,
         y,
         vx: Math.cos(a) * sp,
@@ -248,7 +270,6 @@ export function CyberBugEasterEgg() {
     if (particles.current.length > 240) {
       particles.current.splice(0, particles.current.length - 240);
     }
-    void pal;
   };
 
   const spawnSplatStain = (x: number, y: number, boss: boolean) => {
@@ -343,7 +364,7 @@ export function CyberBugEasterEgg() {
       p.y += p.vy * dt;
       p.rot += p.vr * dt;
       const alpha = 1 - p.age / p.life;
-      const pal = st.current.boss ? FX_BOSS : FX_NORMAL;
+      const pal = p.boss ? FX_BOSS : FX_NORMAL;
       ctx.globalAlpha = Math.max(0, alpha);
       if (p.kind === "meat") {
         ctx.fillStyle = pal.meat;
@@ -383,11 +404,12 @@ export function CyberBugEasterEgg() {
         ctx.stroke();
         ctx.restore();
       } else {
-        // code fragment
+        // code fragment: glyph picked at spawn (per-frame rerolls strobe), font
+        // resolved once on mount - canvas ignores var() inside ctx.font
         ctx.fillStyle = pal.meat;
-        ctx.font = `${Math.round(p.size)}px var(--font-code), ui-monospace, monospace`;
+        ctx.font = `${Math.round(p.size)}px ${codeFont.current}`;
         ctx.textAlign = "center";
-        ctx.fillText(CODE_FRAGMENTS[Math.floor(Math.random() * CODE_FRAGMENTS.length)], p.x, p.y);
+        ctx.fillText(p.char ?? "404", p.x, p.y);
       }
       keep.push(p);
     }
@@ -433,7 +455,10 @@ export function CyberBugEasterEgg() {
       s.heading += rand(-1.35, 1.35);
       s.turnAt = now + rand(BALANCE.turnMin, BALANCE.turnMax) * 1000;
     }
-    const speed = s.hp === 1 ? BALANCE.panicSpeedWounded : BALANCE.panicSpeed;
+    const base = s.hp === 1 ? BALANCE.panicSpeedWounded : BALANCE.panicSpeed;
+    // engine-side mirror of the SVG rig's isBossEnraged (hpRatio <= 0.35)
+    const enraged = s.boss && s.hp / s.maxHp <= 0.35;
+    const speed = enraged ? base * BALANCE.bossRageMult : base;
     s.x += Math.cos(s.heading) * speed * dt;
     s.y += Math.sin(s.heading) * speed * dt;
     const b = panicBounds(vp.current);
@@ -468,12 +493,23 @@ export function CyberBugEasterEgg() {
       s.y = s.ty;
       s.heading = -Math.PI / 2; // settle facing up
       s.mode = "idle";
+      s.wanderAt = performance.now() + rand(BALANCE.idleWanderMin, BALANCE.idleWanderMax) * 1000;
       setView((v) => ({ ...v, legs: "idle" }));
       return;
     }
     s.heading = Math.atan2(dy, dx);
     s.x += Math.cos(s.heading) * BALANCE.peekSpeed * dt;
     s.y += Math.sin(s.heading) * BALANCE.peekSpeed * dt;
+  };
+
+  /** Idle stroll: pick a nearby point and crawl there on the peek machinery. */
+  const startWander = () => {
+    const s = st.current;
+    const t = wanderTarget(s.x, s.y, vp.current);
+    s.tx = t.tx;
+    s.ty = t.ty;
+    s.mode = "peek";
+    setView((v) => (v.legs === "step" ? v : { ...v, legs: "step" }));
   };
 
   /* ------------------------------ actions ------------------------------ */
@@ -509,11 +545,17 @@ export function CyberBugEasterEgg() {
     layer.appendChild(el);
     const w = el.offsetWidth;
     const h = el.offsetHeight;
-    const pos = clampToast(x, y, w, h, vp.current);
+    // stack offset: a second toast while one is visible slides below it
+    const slot = toastCount.current;
+    toastCount.current += 1;
+    const pos = clampToast(x, y + slot * 52, w, h, vp.current);
     el.style.left = `${pos.x}px`;
     el.style.top = `${pos.y}px`;
     addTimer(() => el.classList.add("nf-out"), (BALANCE.toastLife - 0.5) * 1000);
-    addTimer(() => el.remove(), BALANCE.toastLife * 1000);
+    addTimer(() => {
+      el.remove();
+      toastCount.current = Math.max(0, toastCount.current - 1);
+    }, BALANCE.toastLife * 1000);
   };
 
   const shakeCard = () => {
@@ -561,16 +603,42 @@ export function CyberBugEasterEgg() {
       `color: ${boss ? "#FF2E5B" : "#39FF14"}; font-weight: bold;`,
     );
 
-    // milestone / random kill phrase
-    const { phrase, randomIndex } = killPhraseFor(newKills, langRef.current, lastRandom.current);
+    // milestone / random kill phrase (boss kills draw from their own pool)
+    const { phrase, randomIndex, bossRandomIndex } = killPhraseFor(
+      newKills,
+      langRef.current,
+      lastRandom.current,
+      lastBossRandom.current,
+    );
     lastRandom.current = randomIndex;
+    lastBossRandom.current = bossRandomIndex;
     showToast(phrase.text, phrase.tone ?? "info", atX, atY);
     if (phrase.tone === "achievement") {
       document.querySelector("[data-cta-home]")?.classList.add("nf-cta-win");
     }
 
+    // analytics goals: every splat, boss kills, the 10-kill achievement
+    ymGoal("nf_bug_splat");
+    if (boss) ymGoal("nf_boss_kill");
+    if (phrase.tone === "achievement" && newKills === 10) ymGoal("nf_achievement10");
+
+    // session best: persist and surface in the HUD
+    if (newKills > best.current) {
+      best.current = newKills;
+      try {
+        localStorage.setItem(BEST_KEY, String(newKills));
+      } catch {
+        /* private mode */
+      }
+    }
+
     // HUD shows up after the first splat
-    setHud((h) => ({ kills: newKills, sfxOn: engine.current?.enabled ?? true, visible: true }));
+    setHud((h) => ({
+      kills: newKills,
+      best: Math.max(h.best, newKills),
+      sfxOn: engine.current?.enabled ?? true,
+      visible: true,
+    }));
 
     // hide the bug, pause, then respawn (every 5th bug is the boss)
     s.mode = "respawn";
@@ -589,6 +657,7 @@ export function CyberBugEasterEgg() {
     s.maxHp = maxHp;
     s.hp = maxHp;
     s.hits = 0;
+    s.raged = false;
     const pose = spawnPose(pickSpawnSide(), vp.current);
     s.x = pose.x;
     s.y = pose.y;
@@ -596,19 +665,15 @@ export function CyberBugEasterEgg() {
     s.ty = pose.ty;
     s.heading = pose.heading;
     s.mode = "peek";
+    s.wanderAt = performance.now() + rand(BALANCE.idleWanderMin, BALANCE.idleWanderMax) * 1000;
     if (hitbox.current) hitbox.current.style.pointerEvents = "auto";
     setView({ boss, hp: maxHp, maxHp, legs: "step" });
     positionBug();
   };
 
-  const onHit = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
+  /** Shared hit pipeline for pointer and keyboard strikes. */
+  const applyHit = (cx: number, cy: number) => {
     const s = st.current;
-    if (s.mode === "respawn" || s.mode === "peek") return;
-    engine.current?.unlock();
-
-    const cx = e.clientX;
-    const cy = e.clientY;
 
     // reduced motion: the bug stays put and pops on the first click
     if (reduced.current) {
@@ -624,7 +689,18 @@ export function CyberBugEasterEgg() {
       return;
     }
 
-    if (s.hits === 1) {
+    if (s.mode === "peek") {
+      // armored while crawling out: damage counts, sparks fly, but it keeps
+      // crawling - panicking mid-crawl would snap the edge-clamp jump
+      engine.current?.play("hit");
+      flashBug();
+      spawnSplash(cx, cy, s.boss);
+      canvasDirty.current = true;
+      setView((v) => ({ ...v, hp: s.hp }));
+      return;
+    }
+
+    if (s.mode === "idle") {
       // first poke: yelp, cloud, and a mad dash away from the cursor
       s.mode = "panic";
       s.heading = Math.atan2(s.y - cy, s.x - cx) + rand(-0.5, 0.5);
@@ -637,11 +713,46 @@ export function CyberBugEasterEgg() {
       engine.current?.play("hit");
     }
 
+    // boss phase change: after the 3rd landed hit the boss blinks away from
+    // the cursor; the SVG rig shows full rage at the last HP point
+    if (s.boss && !s.raged && s.hits >= 3) {
+      s.raged = true;
+      const ang = Math.atan2(s.y - cy, s.x - cx);
+      const b = panicBounds(vp.current);
+      const nx = Math.max(b.minX, Math.min(b.maxX, s.x + Math.cos(ang) * BALANCE.bossDashDist));
+      const ny = Math.max(b.minY, Math.min(b.maxY, s.y + Math.sin(ang) * BALANCE.bossDashDist));
+      ripples.current.push({ x: s.x, y: s.y, r0: 8, r1: 46, born: performance.now(), life: 0.35, boss: true });
+      ripples.current.push({ x: nx, y: ny, r0: 8, r1: 60, born: performance.now(), life: 0.45, boss: true });
+      spawnSplash(s.x, s.y, true);
+      s.x = nx;
+      s.y = ny;
+      s.heading = ang;
+      s.turnAt = performance.now();
+      showPhrase(rageCloud(langRef.current), s.x, s.y);
+      canvasDirty.current = true;
+    }
+
     // every intermediate hit sprays sparks, slime and knocks the bug back
     flashBug();
     spawnSplash(cx, cy, s.boss);
     canvasDirty.current = true;
     setView((v) => ({ ...v, hp: s.hp, legs: "panic" }));
+  };
+
+  const onHit = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (st.current.mode === "respawn") return;
+    engine.current?.unlock();
+    applyHit(e.clientX, e.clientY);
+  };
+
+  const onKeyHit = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    if (st.current.mode === "respawn") return;
+    engine.current?.unlock();
+    // strike where the bug actually is (no pointer coordinates exist)
+    applyHit(st.current.x, st.current.y - 22);
   };
 
   const toggleSfx = () => {
@@ -659,14 +770,35 @@ export function CyberBugEasterEgg() {
     coarse.current = window.matchMedia("(pointer: coarse)").matches;
     reduced.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     engine.current = new SfxEngine();
-    // mp3 hit/splat set decodes without a user gesture (OfflineAudioContext),
-    // so the recorded sounds are ready by the first click
-    engine.current.preload();
+    // mp3s lazy-load on the first pointer gesture (unlock -> preload); until
+    // they decode, the synthesized fallback voices cover the game audibly -
+    // saves ~136KB of fetches on every 404 view, muted users included
     setHud((h) => ({ ...h, sfxOn: engine.current?.enabled ?? true }));
 
     resizeCanvas();
     const onResize = () => resizeCanvas();
     window.addEventListener("resize", onResize);
+
+    // canvas ignores var() inside ctx.font - resolve the mono family once
+    try {
+      const fam = getComputedStyle(document.documentElement).getPropertyValue("--font-code").trim();
+      codeFont.current = fam ? `${fam}, ui-monospace, monospace` : "ui-monospace, monospace";
+    } catch {
+      /* keep the fallback family */
+    }
+
+    // session best from a previous visit
+    try {
+      const savedBest = parseInt(localStorage.getItem(BEST_KEY) ?? "", 10) || 0;
+      best.current = savedBest;
+      if (savedBest > 0) setHud((h) => ({ ...h, best: savedBest }));
+    } catch {
+      /* private mode */
+    }
+
+    // one-time catch hint: armed 5.5s after mount, fires in tick() while
+    // the visitor still has zero kills
+    hintAt.current = performance.now() + BALANCE.hintDelay * 1000;
 
     // session bug #1 sits on the 404 card edge
     const s = st.current;
@@ -680,6 +812,7 @@ export function CyberBugEasterEgg() {
     s.x = spot.x;
     s.y = spot.y;
     s.heading = -Math.PI / 2;
+    s.wanderAt = performance.now() + rand(BALANCE.idleWanderMin, BALANCE.idleWanderMax) * 1000;
     positionBug();
 
     const tick = (now: number) => {
@@ -689,6 +822,12 @@ export function CyberBugEasterEgg() {
       if (!reduced.current) {
         if (st.current.mode === "panic") stepPanic(dt, now);
         else if (st.current.mode === "peek") stepPeek(dt);
+        else if (st.current.mode === "idle" && now >= st.current.wanderAt) startWander();
+      }
+      // one-time catch hint for players who never clicked the bug
+      if (!hintShown.current && st.current.kills === 0 && hintAt.current > 0 && now >= hintAt.current) {
+        hintShown.current = true;
+        showPhrase(HINT_CLOUD[langRef.current], st.current.x, st.current.y);
       }
       positionBug();
       renderFx(dt, now);
@@ -709,7 +848,8 @@ export function CyberBugEasterEgg() {
 
   /* ------------------------------ render ------------------------------ */
 
-  const hitSize = view.boss ? 128 : 96;
+  // boss hitbox covers the longer silhouette (tail stabilizers stick out)
+  const hitSize = view.boss ? 150 : 96;
   const half = hitSize / 2;
 
   return (
@@ -734,13 +874,16 @@ export function CyberBugEasterEgg() {
         ref={bugEl}
         className="fixed left-0 top-0 z-30 h-0 w-0 will-change-transform"
         style={{ opacity: 0 }}
-        aria-hidden="true"
       >
         <div
           ref={hitbox}
-          className="pointer-events-auto absolute cursor-crosshair touch-none select-none"
+          className="nf-hitbox pointer-events-auto absolute cursor-crosshair touch-none select-none"
           style={{ width: hitSize, height: hitSize, marginLeft: -half, marginTop: -half }}
           onPointerDown={onHit}
+          onKeyDown={onKeyHit}
+          role="button"
+          tabIndex={0}
+          aria-label={view.boss ? BUG_A11Y[lang].boss : BUG_A11Y[lang].bug}
         >
           {/* boss HP readout stays OUTSIDE the rotator: level while the bug
               turns, and pointer-events-none so it never eats clicks */}
@@ -802,7 +945,7 @@ export function CyberBugEasterEgg() {
       {hud.visible && (
         <div className="pointer-events-none fixed bottom-4 left-4 z-40 flex items-center gap-2">
           <div className="appseal-glass-card rounded-full px-4 py-2 font-mono text-[11px] tracking-wider text-slate-200">
-            [ {HUD_LABELS[lang].splatted}: {hud.kills} ]
+            [ {HUD_LABELS[lang].splatted}: {hud.kills} · {HUD_LABELS[lang].best}: {hud.best} ]
           </div>
           <button
             type="button"

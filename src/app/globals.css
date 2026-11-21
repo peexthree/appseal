@@ -658,45 +658,18 @@
 /* 404 cyber-disinsection easter egg (nf-* namespace)                 */
 /* ----------------------------------------------------------------- */
 
-/* bug rig: SVG is stretched by the wrapper; glow is a cheap CSS drop-shadow
-   instead of an SVG filter - one filter chain per frame is expensive */
-.nf-bug-svg {
-  overflow: visible;
-  display: block;
+/* hitbox: subtle hover response - the bug "tenses up" under the cursor;
+   guarded against sticky hover on touch and inert under reduced motion */
+.nf-hitbox {
+  transition: transform 0.14s ease;
 }
-.nf-glow-green { filter: drop-shadow(0 0 9px rgba(57, 255, 20, 0.55)); }
-.nf-glow-amber { filter: drop-shadow(0 0 9px rgba(255, 184, 0, 0.6)); }
-.nf-glow-red { filter: drop-shadow(0 0 11px rgba(255, 46, 91, 0.6)); }
-
-/* legs pivot around the hip where they meet the shell; data-side picks the
-   origin because a top-view bug hinges from the body edge */
-.nf-leg {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
+.nf-hitbox:hover {
+  transform: scale(1.07);
 }
-.nf-leg[data-side="l"] { transform-origin: 88% 50%; }
-.nf-leg[data-side="r"] { transform-origin: 12% 50%; }
-.nf-leg-a { animation: nf-leg-swing-a var(--nf-leg-dur, 3.4s) linear infinite; }
-.nf-leg-b { animation: nf-leg-swing-b var(--nf-leg-dur, 3.4s) linear infinite; }
-@keyframes nf-leg-swing-a {
-  0%, 100% { transform: rotate(var(--nf-leg-amp, 2.5deg)); }
-  50% { transform: rotate(calc(var(--nf-leg-amp, 2.5deg) * -1)); }
-}
-@keyframes nf-leg-swing-b {
-  0%, 100% { transform: rotate(calc(var(--nf-leg-amp, 2.5deg) * -1)); }
-  50% { transform: rotate(var(--nf-leg-amp, 2.5deg)); }
-}
-
-/* antennae sway from the head outward; panic shortens the period */
-.nf-antenna {
-  transform-box: fill-box;
-  animation: nf-ant-sway var(--nf-ant-dur, 2.4s) ease-in-out infinite alternate;
-}
-.nf-antenna[data-side="l"] { transform-origin: 92% 82%; }
-.nf-antenna[data-side="r"] { transform-origin: 8% 82%; }
-@keyframes nf-ant-sway {
-  from { transform: rotate(4deg); }
-  to { transform: rotate(-5deg); }
+@media (hover: none) {
+  .nf-hitbox:hover {
+    transform: none;
+  }
 }
 
 /* ambient diagnostic backdrop: hex grid already on the body, so this layer
@@ -791,16 +764,6 @@
   60% { transform: translate3d(-2px, 2px, 0); }
   80% { transform: translate3d(2px, -1px, 0); }
 }
-
-/* bug fade-in while crawling out of an edge */
-.nf-bug-in {
-  transition: opacity 0.45s ease-out;
-}
-@keyframes nf-emerge {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 
 /* ----------------------------------------------------------------- */
 /* cyber-bug rig (cb-* namespace, user-authored 21.11): tripod walk,  */
@@ -959,13 +922,10 @@
   animation: cb-hit-recoil 0.28s ease-out;
 }
 
-/* reduced motion: radar static, legs/antennae frozen, no shake - the bug
-   still reacts to clicks, it just never runs or trembles */
+/* reduced motion: radar static, no shake, hover tensing without transition -
+   the bug still reacts to clicks, it just never runs or trembles */
 @media (prefers-reduced-motion: reduce) {
   .nf-radar-sweep,
-  .nf-leg-a,
-  .nf-leg-b,
-  .nf-antenna,
   .nf-shake {
     animation: none;
   }
@@ -973,6 +933,9 @@
   .nf-toast {
     animation: none;
     transition: opacity 0.2s ease;
+  }
+  .nf-hitbox {
+    transition: none;
   }
   .cb-root,
   .cb-root * {

@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   BALANCE,
+  BUG_A11Y,
+  HINT_CLOUD,
   cardSpawnPoint,
   clampToast,
   headingToRotation,
@@ -10,8 +12,11 @@ import {
   panicBounds,
   panicCloud,
   particleCount,
+  rageCloud,
   splashCount,
   spawnPose,
+  wanderTarget,
+  BOSS_RANDOM_KILLS,
 } from "../src/components/not-found/constants.ts";
 
 /**
@@ -63,6 +68,29 @@ test("killPhraseFor routes milestones 1-5 and 10 to fixed lines (ru)", () => {
   assert.equal(killPhraseFor(10, "ru", 0).phrase.tone, "achievement");
 });
 
+test("killPhraseFor adds milestones 15 and 20 (ru+en)", () => {
+  for (const k of [15, 20]) {
+    const ru = killPhraseFor(k, "ru", 0);
+    assert.equal(ru.phrase.tone, "achievement", `kill ${k} ru must be an achievement`);
+    assert.ok(ru.phrase.text.length > 5, `kill ${k} ru must have a fixed line`);
+    const en = killPhraseFor(k, "en", 0);
+    assert.equal(en.phrase.tone, "achievement", `kill ${k} en must be an achievement`);
+  }
+  assert.match(killPhraseFor(15, "ru", 0).phrase.text, /Старший дезинсектор/);
+  assert.match(killPhraseFor(20, "ru", 0).phrase.text, /антивирус/);
+});
+
+test("killPhraseFor routes boss kills past milestones to the boss pool", () => {
+  // kills 25+ are boss kills outside the fixed specials
+  const a = killPhraseFor(25, "ru", 0, -1);
+  assert.ok(BOSS_RANDOM_KILLS.ru.includes(a.phrase.text), "kill 25 must draw from the boss pool");
+  const b = killPhraseFor(30, "en", 0, -1);
+  assert.ok(BOSS_RANDOM_KILLS.en.includes(b.phrase.text), "kill 30 must draw from the boss pool");
+  // non-boss kills still draw from the normal pool
+  const c = killPhraseFor(26, "ru", 0, -1);
+  assert.ok(!BOSS_RANDOM_KILLS.ru.includes(c.phrase.text), "kill 26 must NOT draw from the boss pool");
+});
+
 test("killPhraseFor en milestones exist", () => {
   assert.match(killPhraseFor(5, "en", 0).phrase.text, /BOSS 500/);
   assert.match(killPhraseFor(10, "en", 0).phrase.text, /ACHIEVEMENT/);
@@ -73,13 +101,27 @@ test("killPhraseFor never repeats the same random line twice in a row", () => {
   let counter = 0;
   const seen = new Set<number>();
   for (let i = 0; i < 300; i++) {
-    const { randomIndex } = killPhraseFor(7, "ru", prev, () => (counter++ % 6) / 6);
+    const { randomIndex } = killPhraseFor(7, "ru", prev, -1, () => (counter++ % 6) / 6);
     assert.notEqual(randomIndex, prev, "random line repeated back-to-back");
     seen.add(randomIndex);
     prev = randomIndex;
   }
   // the cycling rand walks the whole 6-line pool over 300 draws
   assert.equal(seen.size, 6);
+});
+
+test("killPhraseFor never repeats the same boss line twice in a row", () => {
+  let prevBoss = -1;
+  let counter = 0;
+  const seen = new Set<number>();
+  for (let i = 0; i < 250; i++) {
+    const { bossRandomIndex } = killPhraseFor(25, "ru", -1, prevBoss, () => (counter++ % 5) / 5);
+    assert.notEqual(bossRandomIndex, prevBoss, "boss line repeated back-to-back");
+    seen.add(bossRandomIndex);
+    prevBoss = bossRandomIndex;
+  }
+  // the cycling rand walks the whole 5-line boss pool over 250 draws
+  assert.equal(seen.size, 5);
 });
 
 test("panicCloud for the boss always comes from the boss pool", () => {
@@ -89,6 +131,25 @@ test("panicCloud for the boss always comes from the boss pool", () => {
   }
   const normal = panicCloud(false, "ru");
   assert.ok(["Эй!", "Не трогай прод!", "Я фича!", "Отмена!"].includes(normal));
+});
+
+test("rageCloud draws only from the rage pool", () => {
+  for (let i = 0; i < 50; i++) {
+    assert.ok(["ЯРОСТЬ!", "РЕЖИМ ЯРОСТИ!"].includes(rageCloud("ru")));
+    assert.ok(["ENRAGED!", "RAGE MODE!"].includes(rageCloud("en")));
+  }
+});
+
+test("HINT_CLOUD exists for both languages", () => {
+  assert.ok(HINT_CLOUD.ru.length > 5);
+  assert.ok(HINT_CLOUD.en.length > 5);
+});
+
+test("BUG_A11Y labels cover normal and boss bugs", () => {
+  assert.match(BUG_A11Y.ru.bug, /Enter/);
+  assert.match(BUG_A11Y.ru.boss, /500/);
+  assert.match(BUG_A11Y.en.bug, /Enter/);
+  assert.match(BUG_A11Y.en.boss, /500/);
 });
 
 /* ------------------------------- geometry ------------------------------- */
@@ -146,4 +207,20 @@ test("headingToRotation maps movement heading to the top-view bug", () => {
   assert.equal(headingToRotation(-Math.PI / 2), 0, "moving up -> head up");
   assert.equal(headingToRotation(Math.PI / 2), 180, "moving down -> head down");
   assert.equal(headingToRotation(Math.PI), 270, "moving left -> head left");
+});
+
+test("wanderTarget keeps the stroll point inside the roaming box", () => {
+  const v = { w: 1440, h: 900 };
+  for (let i = 0; i < 200; i++) {
+    // wander from a corner point: only clamping keeps the target legal
+    const t = wanderTarget(100, 100, v);
+    const b = panicBounds(v);
+    assert.ok(t.tx >= b.minX && t.tx <= b.maxX, `tx ${t.tx} outside the box`);
+    assert.ok(t.ty >= b.minY && t.ty <= b.maxY, `ty ${t.ty} outside the box`);
+  }
+  // long-distance stroll from the center stays within one step of the radius
+  const t = wanderTarget(720, 450, v, () => 0.999);
+  const b = panicBounds(v);
+  const dist = Math.hypot(t.tx - 720, t.ty - 450);
+  assert.ok(dist <= BALANCE.wanderDistMax + 1, `stroll ${dist} longer than wanderDistMax`);
 });

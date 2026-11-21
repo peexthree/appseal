@@ -47,6 +47,17 @@ export const BALANCE = {
   // viewport padding the bug keeps while panicking (and under the header)
   margin: 48,
   headerSafe: 76,
+  // idle stroll: a settled bug drifts to a nearby point every few seconds
+  idleWanderMin: 2.8,
+  idleWanderMax: 5.4,
+  wanderDistMin: 60,
+  wanderDistMax: 140,
+  // boss blink-dash: distance from the cursor + rage speed multiplier
+  // (engine-side mirror of the SVG rig's isBossEnraged at hpRatio <= 0.35)
+  bossRageMult: 1.25,
+  bossDashDist: 210,
+  // one-time catch hint for players who never clicked the bug
+  hintDelay: 5.5,
 } as const;
 
 export function hpFor(isCoarse: boolean, boss: boolean): number {
@@ -69,7 +80,6 @@ export type ParticleKind = "meat" | "shard" | "chip" | "spark" | "code";
 
 export interface FxPalette {
   meat: string;
-  slime: string;
   shell: string;
   shardEdge: string;
   spark: string;
@@ -80,7 +90,6 @@ export interface FxPalette {
 
 export const FX_NORMAL: FxPalette = {
   meat: "#39FF14",
-  slime: "rgba(57, 255, 20, 0.5)",
   shell: "#1f2735",
   shardEdge: "#39FF14",
   spark: "#22d3ee",
@@ -91,7 +100,6 @@ export const FX_NORMAL: FxPalette = {
 
 export const FX_BOSS: FxPalette = {
   meat: "#ff4d7d",
-  slime: "rgba(255, 46, 91, 0.55)",
   shell: "#160a12",
   shardEdge: "#FF2E5B",
   spark: "#ff8fa8",
@@ -118,6 +126,8 @@ const KILL_SPECIALS: Record<Lang, Record<number, KillPhrase>> = {
     4: { text: "Вы вошли во вкус. Может, вам в QA?" },
     5: { text: "БОСС 500 ПОВЕРЖЕН! Продакшен спасён (наверное)", tone: "boss" },
     10: { text: "ДОСТИЖЕНИЕ: Дезинсектор Продакшена. Может, уже на главную?", tone: "achievement" },
+    15: { text: "ДОСТИЖЕНИЕ: Старший дезинсектор. Жуки шлют друг другу твой скриншот", tone: "achievement" },
+    20: { text: "ДОСТИЖЕНИЕ: Живой антивирус. Ноль незакрытых инцидентов за смену", tone: "achievement" },
   },
   en: {
     1: { text: "One bug down. The page is still 404, but it feels calmer" },
@@ -126,6 +136,8 @@ const KILL_SPECIALS: Record<Lang, Record<number, KillPhrase>> = {
     4: { text: "You're getting the hang of it. QA is hiring, by the way" },
     5: { text: "BOSS 500 DEFEATED! Production saved (probably)", tone: "boss" },
     10: { text: "ACHIEVEMENT: Production Exterminator. Homepage time?", tone: "achievement" },
+    15: { text: "ACHIEVEMENT: Senior Exterminator. Bugs now share screenshots of you", tone: "achievement" },
+    20: { text: "ACHIEVEMENT: Living Antivirus. Zero open incidents this shift", tone: "achievement" },
   },
 };
 
@@ -148,23 +160,48 @@ const RANDOM_KILLS: Record<Lang, string[]> = {
   ],
 };
 
+/** Boss-only kill lines: bosses killed past the fixed milestones (25+). */
+export const BOSS_RANDOM_KILLS: Record<Lang, string[]> = {
+  ru: [
+    "500: нейтрализован. Кластер опустел",
+    "Босс упал, мониторинг радостно пищит",
+    "Инцидент закрыт без постмортема",
+    "Этот был злой. Ты злее",
+    "Роллбэк не понадобится",
+  ],
+  en: [
+    "500 neutralized. Cluster is empty",
+    "Boss down, monitoring squeaks with joy",
+    "Incident closed, no postmortem needed",
+    "That one was mean. You are meaner",
+    "No rollback required",
+  ],
+};
+
 /**
- * Phrase for the Nth splat: fixed lines for milestones 1-5 and 10, a random
- * line afterwards. `prevRandom` is the last random index used, so the pool
- * never repeats itself twice in a row; returns the new index to carry over.
+ * Phrase for the Nth splat: fixed lines for milestones 1-5, 10, 15 and 20, a
+ * random line afterwards. Boss kills (every bossEvery-th) draw from their own
+ * pool so long sessions stay fresh. `prevRandom`/`prevBossRandom` are the last
+ * indices used per pool, so neither pool repeats itself twice in a row; the
+ * new indices are returned to carry over.
  */
 export function killPhraseFor(
   kills: number,
   lang: Lang,
   prevRandom: number,
+  prevBossRandom: number = -1,
   rand: () => number = Math.random,
-): { phrase: KillPhrase; randomIndex: number } {
+): { phrase: KillPhrase; randomIndex: number; bossRandomIndex: number } {
   const special = KILL_SPECIALS[lang][kills];
-  if (special) return { phrase: special, randomIndex: prevRandom };
-  const pool = RANDOM_KILLS[lang];
+  if (special) return { phrase: special, randomIndex: prevRandom, bossRandomIndex: prevBossRandom };
+  const boss = kills % BALANCE.bossEvery === 0;
+  const pool = boss ? BOSS_RANDOM_KILLS[lang] : RANDOM_KILLS[lang];
+  const prev = boss ? prevBossRandom : prevRandom;
   let idx = Math.floor(rand() * pool.length);
-  if (pool.length > 1 && idx === prevRandom) idx = (idx + 1) % pool.length;
-  return { phrase: { text: pool[idx] }, randomIndex: idx };
+  if (pool.length > 1 && idx === prev) idx = (idx + 1) % pool.length;
+  return boss
+    ? { phrase: { text: pool[idx] }, randomIndex: prevRandom, bossRandomIndex: idx }
+    : { phrase: { text: pool[idx] }, randomIndex: idx, bossRandomIndex: prevBossRandom };
 }
 
 const PANIC_CLOUDS: Record<Lang, string[]> = {
@@ -181,11 +218,40 @@ export function panicCloud(boss: boolean, lang: Lang, rand: () => number = Math.
   return pool[Math.floor(rand() * pool.length)];
 }
 
+const RAGE_CLOUDS: Record<Lang, string[]> = {
+  ru: ["ЯРОСТЬ!", "РЕЖИМ ЯРОСТИ!"],
+  en: ["ENRAGED!", "RAGE MODE!"],
+};
+
+/** Cloud when the boss blink-dashes away (3rd landed hit). */
+export function rageCloud(lang: Lang, rand: () => number = Math.random): string {
+  const pool = RAGE_CLOUDS[lang];
+  return pool[Math.floor(rand() * pool.length)];
+}
+
+/** One-time hint cloud for players who never clicked the bug. */
+export const HINT_CLOUD: Record<Lang, string> = {
+  ru: "Поймай жука - кликни по нему!",
+  en: "Catch the bug - click it!",
+};
+
+/** Accessible labels for the splattable bug button (keyboard a11y). */
+export const BUG_A11Y: Record<Lang, { bug: string; boss: string }> = {
+  ru: {
+    bug: "Кибер-жук 404. Enter или пробел - раздавить",
+    boss: "Босс-жук 500. Enter или пробел - раздавить",
+  },
+  en: {
+    bug: "Cyber bug 404. Enter or Space to squash",
+    boss: "Boss bug 500. Enter or Space to squash",
+  },
+};
+
 /* --------------------------- HUD / UI micro-copy --------------------------- */
 
-export const HUD_LABELS: Record<Lang, { splatted: string; sfx: string }> = {
-  ru: { splatted: "БАГОВ РАЗДАВЛЕНО", sfx: "SFX" },
-  en: { splatted: "BUGS SPLATTED", sfx: "SFX" },
+export const HUD_LABELS: Record<Lang, { splatted: string; best: string }> = {
+  ru: { splatted: "БАГОВ РАЗДАВЛЕНО", best: "РЕКОРД" },
+  en: { splatted: "BUGS SPLATTED", best: "BEST" },
 };
 
 /* ----------------------------- pure geometry ----------------------------- */
@@ -302,4 +368,24 @@ export function clampToast(x: number, y: number, width: number, height: number, 
 /** Heading -> on-screen rotation for a top-view bug whose head points up. */
 export function headingToRotation(heading: number): number {
   return (heading * 180) / Math.PI + 90;
+}
+
+/**
+ * Target for an idle stroll: a point 60-140px away in a random direction,
+ * clamped into the roaming box so the bug never strolls under the header or
+ * off-screen. The bug then crawl-walks there via the peek machinery.
+ */
+export function wanderTarget(
+  x: number,
+  y: number,
+  v: Viewport,
+  rand: () => number = Math.random,
+): { tx: number; ty: number } {
+  const b = panicBounds(v);
+  const ang = rand() * Math.PI * 2;
+  const d = BALANCE.wanderDistMin + rand() * (BALANCE.wanderDistMax - BALANCE.wanderDistMin);
+  return {
+    tx: Math.max(b.minX, Math.min(b.maxX, x + Math.cos(ang) * d)),
+    ty: Math.max(b.minY, Math.min(b.maxY, y + Math.sin(ang) * d)),
+  };
 }
