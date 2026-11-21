@@ -58,13 +58,13 @@ export async function generateMetadata(): Promise<Metadata> {
       title: META[lang].title,
       description: META[lang].description,
       type: "website",
-      images: ["/OG1.png"],
+      images: ["/OG1.jpg"],
     },
     twitter: {
       card: "summary_large_image",
       title: META[lang].title,
       description: META[lang].description,
-      images: ["/OG1.png"],
+      images: ["/OG1.jpg"],
     },
     alternates: {
       canonical: "/",
@@ -100,51 +100,55 @@ async function getLiveChips(): Promise<{ target: string; grade: Grade; score: nu
 }
 
 /**
- * JSON-LD Product with the paid offers: RUB prices are parsed from the same
- * i18n strings the pricing section renders - a single source of truth, the
- * markup never drifts from the visible tariffs. Static dict data only, no
- * user input ever reaches this JSON (safe for dangerouslySetInnerHTML).
+ * JSON-LD Product with the paid offers: prices are parsed from the same i18n
+ * strings the pricing section renders - a single source of truth, the markup
+ * never drifts from the visible tariffs. Language-aware: an EN render with
+ * $ prices must not ship RUB offers. Static dict data only, no user input
+ * ever reaches this JSON (safe for dangerouslySetInnerHTML).
  */
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://appseal.online";
 
-/** "1 490 ₽" -> "1490": digits-only extraction from the i18n ru price string */
-function rubPrice(v: string): string {
+/** "1 490 ₽" -> "1490", "$6" -> "6": digits-only price extraction */
+function priceValue(v: string): string {
   return v.replace(/\D+/g, "") || "0";
 }
 
-const productLd = {
-  "@context": "https://schema.org",
-  "@type": "Product",
-  name: "AppSeal Security Check",
-  url: BASE_URL,
-  description: DICT.tagline.ru,
-  offers: [
-    {
-      "@type": "Offer",
-      name: DICT.planLP.ru,
-      price: rubPrice(DICT.planLPPrice.ru),
-      priceCurrency: "RUB",
-      availability: "https://schema.org/InStock",
-      url: `${BASE_URL}/#pricing`,
-    },
-    {
-      "@type": "Offer",
-      name: DICT.planPro.ru,
-      price: rubPrice(DICT.planProPrice.ru),
-      priceCurrency: "RUB",
-      availability: "https://schema.org/InStock",
-      url: `${BASE_URL}/#pricing`,
-    },
-    {
-      "@type": "Offer",
-      name: DICT.planAgencyTitle.ru,
-      price: rubPrice(DICT.planAgencyPrice.ru),
-      priceCurrency: "RUB",
-      availability: "https://schema.org/InStock",
-      url: `${BASE_URL}/#pricing`,
-    },
-  ],
-};
+function productLd(lang: Lang) {
+  const currency = lang === "en" ? "USD" : "RUB";
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "AppSeal Security Check",
+    url: BASE_URL,
+    description: DICT.tagline[lang],
+    offers: [
+      {
+        "@type": "Offer",
+        name: DICT.planLP[lang],
+        price: priceValue(DICT.planLPPrice[lang]),
+        priceCurrency: currency,
+        availability: "https://schema.org/InStock",
+        url: `${BASE_URL}/#pricing`,
+      },
+      {
+        "@type": "Offer",
+        name: DICT.planPro[lang],
+        price: priceValue(DICT.planProPrice[lang]),
+        priceCurrency: currency,
+        availability: "https://schema.org/InStock",
+        url: `${BASE_URL}/#pricing`,
+      },
+      {
+        "@type": "Offer",
+        name: DICT.planAgencyTitle[lang],
+        price: priceValue(DICT.planAgencyPrice[lang]),
+        priceCurrency: currency,
+        availability: "https://schema.org/InStock",
+        url: `${BASE_URL}/#pricing`,
+      },
+    ],
+  };
+}
 
 export default async function Home() {
   const h = await headers();
@@ -159,7 +163,7 @@ export default async function Home() {
   return (
     <>
       <JsonLd nonce={nonce} />
-      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd) }} />
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(productLd(lang)) }} />
       <ScannerPage initialScan={null} initialLang={lang} initialTotals={totals} initialChips={chips} />
     </>
   );

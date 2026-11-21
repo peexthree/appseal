@@ -116,6 +116,19 @@ export function middleware(req: NextRequest) {
     effectivePath = pathname.slice(prefix[1].length + 1) || "/";
   }
 
+  // first visit without a cookie: seed the language from Accept-Language so
+  // the landing's country/language detection does not fork from everything
+  // else - inner pages (pageLang), the client views (useLang) and the cookie
+  // banner all read the same appseal-lang cookie, and without a seed they
+  // defaulted to RU while the landing rendered EN. The request-level seed is
+  // applied further down ONLY for strict (per-request) routes - forwarding a
+  // modified request to a prerendered route de-opts its ISR regeneration.
+  const seededLang = !prefix && !req.cookies.has("appseal-lang")
+    ? (req.headers.get("accept-language") ?? "").toLowerCase().split(",")[0]?.trim().startsWith("en")
+      ? "en"
+      : "ru"
+    : null;
+
   const nonce = randomNonce();
   const strict = !PRERENDERED_ROUTES.test(effectivePath) && DYNAMIC_ROUTES.test(effectivePath);
   // the landing is the page our own scanner grades - its CSP must be free of
@@ -127,6 +140,10 @@ export function middleware(req: NextRequest) {
     // statically (their SSR language stays RU, the client view re-reads the
     // cookie) and must not see a modified request at all - see below
     req.cookies.set("appseal-lang", lang);
+  } else if (seededLang && strict) {
+    // same rule for the Accept-Language seed: only dynamic renders see it
+    // in-request, the response cookie below persists it for everything else
+    req.cookies.set("appseal-lang", seededLang);
   }
   const policy = contentSecurityPolicy(
     strict ? scriptSrcStrict(nonce) : SCRIPT_SRC_LEGACY,
@@ -160,12 +177,21 @@ export function middleware(req: NextRequest) {
   } else {
     res = strict ? NextResponse.next({ request: { headers: requestHeaders } }) : NextResponse.next();
   }
+  if (seededLang && !lang) {
+    // persist the Accept-Language seed: inner pages, the client views and the
+    // cookie banner all read this cookie on the next navigation
+    res.cookies.set("appseal-lang", seededLang, { path: "/", maxAge: 31536000, sameSite: "lax" });
+  }
   res.headers.set("Content-Security-Policy", policy);
   return res;
 }
 
 export const config = {
-  // everything except the API and Next internals; file requests (dots in the
-  // last segment) pass through inside middleware
-  matcher: ["/((?!api|_next).*)"],
+  // everything except the API, Next internals and the static asset files -
+  // mp4/webp/png/svg/mp3/txt used to run through the nonce-CSP middleware on
+  // every request (edge invocations + CSP headers no document ever reads).
+  // Dotted dynamic paths stay inside: /verified/myapp.com, /report/<rkey>.
+  matcher: [
+    "/((?!api|_next|video/|img/|sound/|favicon\\.ico|robots\\.txt|sitemap\\.xml|site\\.webmanifest|llms\\.txt|indexnow-key\\.txt|yandex_[0-9a-f]+\\.html|OG1\\.(?:png|jpg)|ico\\.(?:svg|png)|apple(?:-touch-)?\\.png|logo\\.svg|[A-E](?:plus)?\\.(?:png|webp)).*)",
+  ],
 };

@@ -46,6 +46,12 @@ const D = {
     ru: "Свежего скана нет - проверьте домен ещё раз",
     en: "No fresh scan yet - run a new check on the domain",
   },
+  rescan: { ru: "Перепроверить", en: "Re-scan" },
+  passExpired: {
+    ru: "пасс истёк",
+    en: "pass expired",
+  },
+  passRenewCta: { ru: "Продлить в боте", en: "Renew in the bot" },
   emptyText: {
     ru: "Здесь появятся ваши домены - отсканируйте первый или купите пасс.",
     en: "Your domains will appear here - scan the first one or buy a pass.",
@@ -81,6 +87,8 @@ interface HostCard {
   ts: number | null;
   /** active pass expiry bound to this chat (ISO string), null when none */
   until: string | null;
+  /** a pass for this host existed and has run out - offer the renew CTA */
+  expired: boolean;
 }
 
 /** Domains visible to this chat + the newest registry data for each: hosts
@@ -96,11 +104,16 @@ async function loadCabinet(chatId: string): Promise<HostCard[]> {
   ]);
   const chatPaidHosts = paidPasses.filter((p) => p.chatId === chatId).map((p) => p.host);
   // the "pass until" line rides only on still-active passes - an expired
-  // date would read as a live entitlement
+  // date would read as a live entitlement; expired passes are tracked
+  // separately so the card can offer the renew CTA instead of vanishing
   const untilByHost = new Map<string, string>();
+  const expiredHosts = new Set<string>();
   for (const p of paidPasses) {
-    if (p.chatId === chatId && new Date(p.until).getTime() > Date.now()) {
+    if (p.chatId !== chatId) continue;
+    if (new Date(p.until).getTime() > Date.now()) {
       untilByHost.set(p.host, p.until);
+    } else {
+      expiredHosts.add(p.host);
     }
   }
   const hosts = [...new Set([...passHosts, ...redeemedHosts, ...chatPaidHosts])];
@@ -113,6 +126,7 @@ async function loadCabinet(chatId: string): Promise<HostCard[]> {
         score: entry?.score ?? null,
         ts: entry?.ts ?? null,
         until: untilByHost.get(host) ?? null,
+        expired: !untilByHost.has(host) && expiredHosts.has(host),
       };
     }),
   );
@@ -207,8 +221,36 @@ export default async function MyScansPage({ searchParams }: { searchParams: Prom
                           <dd className="text-slate-300">{fmtDate(c.until)}</dd>
                         </div>
                       )}
+                      {c.expired && (
+                        <div className="flex items-baseline justify-between gap-3">
+                          <dt className="text-slate-500">{t("passUntil")}</dt>
+                          <dd className="font-semibold text-amber-400">{t("passExpired")}</dd>
+                        </div>
+                      )}
                     </dl>
                     {c.ts === null && <p className="mt-2 text-[11px] text-slate-500">{t("noScan")}</p>}
+                    {/* next steps: without them the cabinet is a dead end -
+                        the paying user returns here and has nowhere to go */}
+                    <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
+                      <Link
+                        href={`/?domain=${encodeURIComponent(c.host)}#scan`}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-1.5 text-xs font-bold text-sky-300 transition hover:bg-sky-500/20"
+                      >
+                        <ShieldAlert className="h-3.5 w-3.5" />
+                        {t("rescan")}
+                      </Link>
+                      {c.expired && (
+                        <a
+                          href={`${BOT_URL}?start=${lang === "en" ? "en" : "ru"}-lp`}
+                          target="_blank"
+                          rel="noopener"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-400 px-3 py-1.5 text-xs font-bold text-[#090d16] transition hover:bg-emerald-300"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          {t("passRenewCta")}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

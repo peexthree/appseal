@@ -1,17 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Manrope, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { YandexMetrika } from "@/components/yandex-metrika";
 import { CookieConsent } from "@/components/cookie-consent";
+import { VisibilityPause } from "@/components/visibility-pause";
 
+// one sans family for body and display (Manrope was a near-invisible visual
+// double of Inter that still shipped its own woff2 per subset)
 const inter = Inter({
   variable: "--font-body",
-  subsets: ["latin", "cyrillic"],
-});
-const manrope = Manrope({
-  variable: "--font-display",
   subsets: ["latin", "cyrillic"],
 });
 const jet = JetBrains_Mono({
@@ -50,14 +49,14 @@ export const metadata: Metadata = {
     description:
       "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+-E и бейдж доверия за минуту.",
     type: "website",
-    images: ["/OG1.png"],
+    images: ["/OG1.jpg"],
   },
   twitter: {
     card: "summary_large_image",
     title: "AppSeal - техосмотр для приложений, собранных с ИИ",
     description:
       "AppSeal сканирует живое приложение на утечки секретов, открытые базы, дырявые админки и признаки заброшенности. Оценка A+-E и бейдж доверия за минуту.",
-    images: ["/OG1.png"],
+    images: ["/OG1.jpg"],
   },
 };
 
@@ -69,10 +68,11 @@ export default function RootLayout({
   return (
     <html lang="ru" className="dark" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${manrope.variable} ${jet.variable} antialiased`}
+        className={`${inter.variable} ${jet.variable} antialiased`}
       >
         {children}
         <Toaster />
+        <VisibilityPause />
         <Analytics />
         <YandexMetrika />
         <CookieConsent />

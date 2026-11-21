@@ -85,3 +85,6 @@ scripts/benchmark_data/*
 !scripts/benchmark_data/harvest_meta.json
 docs/
 TRANSFER.md
+
+# local audit artifacts
+lighthouse-results/

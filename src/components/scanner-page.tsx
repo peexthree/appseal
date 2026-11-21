@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { CSSProperties } from "react";
+import dynamic from "next/dynamic";
 import { track } from "@vercel/analytics";
 import { ymGoal } from "@/components/yandex-metrika";
 import { motion } from "framer-motion";
@@ -10,7 +11,6 @@ import { CATEGORY_META } from "@/lib/scanner/types";
 import { GRADE_META, getTrophyPath } from "@/lib/scanner/grade";
 import { t, list } from "@/lib/i18n";
 import statsData from "@/data/stats-harvest.json";
-import { ReportView } from "@/components/report-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Reveal } from "@/components/reveal";
@@ -19,9 +19,16 @@ import { Stat } from "@/components/stat";
 import { ShieldHeaders, Zap, FileCheck2, KeyRound, ShieldAlert, Lock, Activity, Sparkles, ArrowRight, ArrowUp, Globe, Check, Copy, Send, ChevronDown, Scale, CodeXml, GitBranch } from "@/components/icons/appseal-icons";
 import { SiteHeader } from "@/components/site-header";
 // React Bits preview (local only, not committed to prod decision yet)
-import DecryptedText from "@/components/bits/DecryptedText";
 import SpotlightCard from "@/components/bits/SpotlightCard";
 import Particles from "@/components/bits/Particles";
+
+// the report lives behind the scan - it never renders on first paint, so its
+// ~140KB of code (fixtures, PDF helpers, tabs) must not sit in the landing
+// bundle; ssr:false is safe in a client component
+const ReportView = dynamic(
+  () => import("@/components/report-view").then((m) => m.ReportView),
+  { ssr: false },
+);
 
 type Phase = "form" | "scanning" | "report" | "error";
 
@@ -346,6 +353,7 @@ export function ScannerPage({
   const [error, setError] = useState("");
   const [quotaHit, setQuotaHit] = useState(false);
   const [privateHit, setPrivateHit] = useState(false);
+  const [privateFallback, setPrivateFallback] = useState(false);
   const [passInfo, setPassInfo] = useState<{ host: string; until: string } | null>(null);
   const [paidPending, setPaidPending] = useState(false);
   // one-click demo chips: server-resolved live grades when available
@@ -375,6 +383,29 @@ export function ScannerPage({
   const lastTermStage = useRef("");
   const [faqOpen, setFaqOpen] = useState<number[]>([]);
   const reportRef = useRef<HTMLDivElement>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+
+  // the hero loop is the LCP competitor: the poster paints from the SSR HTML,
+  // the 524KB mp4 attaches only after the window load event (plus an idle
+  // frame) so the fetch never races the render-critical window
+  useEffect(() => {
+    const video = heroVideoRef.current;
+    if (!video || video.getAttribute("src")) return;
+    const start = () => {
+      requestAnimationFrame(() => {
+        video.setAttribute("src", "/video/Radar_pulse.mp4");
+        video.play().catch(() => {
+          /* autoplay blocked (data saver, low-power): the poster stays */
+        });
+      });
+    };
+    if (document.readyState === "complete") {
+      const id = window.setTimeout(start, 80);
+      return () => window.clearTimeout(id);
+    }
+    window.addEventListener("load", start, { once: true });
+    return () => window.removeEventListener("load", start);
+  }, []);
 
   // grade showcase walks the ranks on its own every 5s
   useEffect(() => {
@@ -451,53 +482,81 @@ export function ScannerPage({
     setTermLines((prev) => [...prev.slice(-14), `[${String(secs).padStart(2, "0")}s] ${stage}`]);
   }, [scan, lang]);
 
-  const startScan = useCallback(async (target: string) => {
-    setError("");
-    setQuotaHit(false);
-    setPrivateHit(false);
-    setScan(null);
-    setScanId(null);
-    setPhase("scanning");
-    setTermLines([]);
-    scanStartedAt.current = Date.now();
-    lastTermStage.current = "";
-    track("scan_submit", { demo: target.startsWith("demo://"), lang });
-    ymGoal("scan_submit", { demo: target.startsWith("demo://") });
-    try {
-      const res = await fetch("/api/scan", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          url: target,
-          lang,
-          adminKey,
-          // Pass-only option: keep this scan out of the public registry
-          ...(privateScan ? { private: true } : {}),
-        }),
-      });
-      if (res.status === 429) {
-        setQuotaHit(true);
+  // server error strings -> human text (the API answers with bare codes like
+  // "invalid url"; showing those raw reads as a bug in a product that sells
+  // "findings in plain language")
+  const serverErrorText = useCallback(
+    (msg: string) => {
+      const m = msg.toLowerCase();
+      if (m.includes("invalid url") || m.includes("url required") || m.includes("url")) {
+        return t(lang, "errInvalidUrl");
+      }
+      return msg;
+    },
+    [lang],
+  );
+
+  const startScan = useCallback(
+    async (target: string) => {
+      setError("");
+      setQuotaHit(false);
+      setPrivateHit(false);
+      setPrivateFallback(false);
+      setScan(null);
+      setScanId(null);
+      setPhase("scanning");
+      setTermLines([]);
+      scanStartedAt.current = Date.now();
+      lastTermStage.current = "";
+      track("scan_submit", { demo: target.startsWith("demo://"), lang });
+      ymGoal("scan_submit", { demo: target.startsWith("demo://") });
+      const submit = async (withPrivate: boolean): Promise<void> => {
+        const res = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            url: target,
+            lang,
+            adminKey,
+            // Pass-only option: keep this scan out of the public registry
+            ...(withPrivate ? { private: true } : {}),
+          }),
+        });
+        if (res.status === 429) {
+          setQuotaHit(true);
+          setPhase("error");
+          return;
+        }
+        if (res.status === 402) {
+          // the API rejects private scans without an active pass on the
+          // domain: fall back to the public scan instead of dead-ending the
+          // visitor who only wanted privacy - the regular scan stays free
+          if (withPrivate) {
+            setPrivateFallback(true);
+            await submit(false);
+            return;
+          }
+          setPrivateHit(true);
+          setPhase("error");
+          return;
+        }
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(j.error ?? `HTTP ${res.status}`);
+        }
+        const { id, rkey: rk } = (await res.json()) as { id: string; rkey?: string };
+        setScanId(id);
+        setRkey(rk ?? null);
+      };
+      try {
+        await submit(privateScan);
+      } catch (e) {
+        setError(serverErrorText(e instanceof Error ? e.message : String(e)));
         setPhase("error");
-        return;
       }
-      if (res.status === 402) {
-        // the API rejects private scans without an active pass on the domain
-        setPrivateHit(true);
-        setPhase("error");
-        return;
-      }
-      if (!res.ok) {
-        const j = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(j.error ?? `HTTP ${res.status}`);
-      }
-      const { id, rkey: rk } = (await res.json()) as { id: string; rkey?: string };
-      setScanId(id);
-      setRkey(rk ?? null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setPhase("error");
-    }
-  }, [lang, adminKey, privateScan]);
+    },
+    [lang, adminKey, privateScan, serverErrorText],
+  );
 
   // returning from YooKassa: /?paid=<nonce> -> resolve the payment, show the pass
   useEffect(() => {
@@ -528,7 +587,18 @@ export function ScannerPage({
   useEffect(() => {
     if (!scanId) return;
     let alive = true;
+    // hard cap: without it a dead network or a wedged scan polls forever and
+    // the only way out is a page reload
+    const MAX_POLLS = 120;
+    let polls = 0;
     const tick = async () => {
+      if (!alive) return;
+      polls += 1;
+      if (polls > MAX_POLLS) {
+        setError(t(lang, "pollTimeout"));
+        setPhase("error");
+        return;
+      }
       try {
         // the report key keeps this session on the full record; without it
         // the server downgrades a finished scan to the public view
@@ -561,12 +631,23 @@ export function ScannerPage({
     };
   }, [scanId, lang, rkey]);
 
+  // stop watching the scan without losing the typed URL: the scan itself
+  // continues server-side (public results land in the registry), this only
+  // ends the polling view
+  const cancelScan = () => {
+    setScanId(null);
+    setScan(null);
+    setPhase("form");
+    setPrivateFallback(false);
+  };
+
   const reset = () => {
     setPhase("form");
     setScan(null);
     setScanId(null);
     setRkey(null);
     setUrl("");
+    setPrivateFallback(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -605,7 +686,7 @@ export function ScannerPage({
             lands here, at the top of the landing) */}
         <section
           id="scan"
-          className="appmot-grid relative z-10 isolate pb-14 pt-14 sm:pt-20"
+          className="relative z-10 isolate pb-14 pt-14 sm:pt-20"
           aria-label="Scanner"
         >
           {/* looping hero backdrop: radar sweep behind the headline; pulled up
@@ -614,17 +695,17 @@ export function ScannerPage({
               it into the page background so text stays readable. Full-bleed:
               the section is trapped in the max-w-5xl main, so the video
               centers itself on 100vw and overflows the container; the root
-              overflow-x-clip eats the scrollbar-width overshoot. preload=
-              "metadata" leaves autoplay untouched (autoplay fetches data on
-              its own once it starts) but keeps browsers from eagerly buffering
-              the whole mp4 while playback is deferred or blocked (data saver,
-              iOS low-power mode) - that was ~500KB competing with the LCP
-              window on a slow pipe; the poster frame covers the wait */}
+              overflow-x-clip eats the scrollbar-width overshoot. The src is
+              NOT in the SSR HTML: preload="metadata" is ignored under
+              autoplay, so a live src fetched the whole 524KB loop inside the
+              LCP window and the video's first frame became the LCP element
+              (~5.8s on throttled mobile). The poster paints from the SSR HTML,
+              the loop attaches only after the window load event - LCP settles
+              on the poster while the video fills in behind it */}
           <video
-            src="/video/Radar_pulse.mp4"
+            ref={heroVideoRef}
             poster="/img/hero-poster.jpg"
-            preload="metadata"
-            autoPlay
+            preload="none"
             loop
             muted
             playsInline
@@ -656,24 +737,10 @@ export function ScannerPage({
               {t(lang, "tagline")}
             </p>
             <h1 className="font-display mt-4 text-4xl font-extrabold leading-tight tracking-tight text-slate-50 sm:text-5xl">
-              <DecryptedText
-                text={t(lang, "heroTitle")}
-                animateOn="view"
-                effect="fade"
-                speed={36}
-                maxIterations={7}
-                characters={lang === "ru" ? "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЫЭЮЯ01<>/#@$%" : undefined}
-                encryptedClassName="text-sky-200/40"
-              />{" "}
-              <DecryptedText
-                text={t(lang, "heroTitleAccent")}
-                parentClassName="appseal-gradient-text"
-                animateOn="view"
-                effect="fade"
-                speed={36}
-                maxIterations={7}
-                characters={lang === "ru" ? "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЫЭЮЯ01<>/#@$%" : undefined}
-              />
+              {/* plain SSR text, no scramble: the headline is the LCP element,
+                  and a post-hydration reveal pinned LCP to the JS timeline */}
+              {t(lang, "heroTitle")}{" "}
+              <span className="appseal-gradient-text">{t(lang, "heroTitleAccent")}</span>
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-slate-400">
               {t(lang, "heroSub")}
@@ -693,7 +760,16 @@ export function ScannerPage({
                         onSubmit={(e) => {
                           e.preventDefault();
                           setSuggestOpen(false);
-                          if (url.trim() && consent) void startScan(url.trim());
+                          const value = url.trim();
+                          if (!value || !consent) return;
+                          // client-side guard: "мой сайт" used to travel to the
+                          // API and come back as a raw "invalid url" string
+                          if (!/^https?:\/\/.+/i.test(value) && !/^([a-z0-9-]+\.)+[a-z]{2,}(\/\S*)?$/i.test(value)) {
+                            setError(t(lang, "errInvalidUrl"));
+                            setPhase("error");
+                            return;
+                          }
+                          void startScan(value);
                         }}
                       >
                         <Input
@@ -704,7 +780,8 @@ export function ScannerPage({
                           placeholder={t(lang, "inputPlaceholder")}
                           className="h-12 w-full flex-1 border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
                           inputMode="url"
-                          aria-label="App URL"
+                          aria-label={lang === "ru" ? "Адрес приложения" : "App URL"}
+                          data-scan-input
                           autoComplete="off"
                           required
                         />
@@ -751,9 +828,21 @@ export function ScannerPage({
                         <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: GRADE_META[c.grade].color }} />
                         <span className="font-mono">{c.target}</span>
                         <span className="ml-auto flex shrink-0 items-center gap-2 font-mono text-xs">
-                          <span style={{ color: GRADE_META[c.grade].color }}>
-                            {c.grade} · {c.score}
-                          </span>
+                          {/* the demo target intentionally scores 0: a bare
+                              "E · 0" reads as a broken chip, so the demo shows
+                              the note instead of the score */}
+                          {c.target === "demo://app" ? (
+                            <span style={{ color: GRADE_META[c.grade].color }}>{c.grade}</span>
+                          ) : (
+                            <span style={{ color: GRADE_META[c.grade].color }}>
+                              {c.grade} · {c.score}
+                            </span>
+                          )}
+                          {c.target === "demo://app" && (
+                            <span className="text-[10px] font-medium text-slate-500 sm:hidden">
+                              {t(lang, "suggestDemoNote")}
+                            </span>
+                          )}
                           {c.target === "demo://app" && (
                             <span className="hidden text-[10px] font-medium text-slate-500 sm:inline">
                               {t(lang, "suggestDemoNote")}
@@ -823,6 +912,18 @@ export function ScannerPage({
                 <p className="font-semibold text-slate-100">{t(lang, "scanning")}</p>
                 <span className="ml-auto font-mono text-sm text-sky-400">{scan?.progress ?? 0}%</span>
               </div>
+              {privateFallback && (
+                <p className="mt-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-[11px] leading-snug text-amber-300">
+                  {t(lang, "privateFallbackNote")}
+                </p>
+              )}
+              <Button
+                variant="outline"
+                onClick={cancelScan}
+                className="mt-3 h-8 border-slate-700 bg-transparent px-3 text-[11px] font-semibold text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+              >
+                {t(lang, "scanCancel")}
+              </Button>
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
                 <div
                   className="h-full rounded-full bg-sky-400 transition-all duration-500"
@@ -845,13 +946,16 @@ export function ScannerPage({
                   ))}
                 </div>
               )}
-              {/* live radar: categories click through as the scan advances */}
-              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {/* live radar: categories click through as the scan advances -
+                  all five of them, trust included (the differentiator the
+                  copy promises) */}
+              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {[
-                  { key: "secrets" as const, from: 8, to: 34, Icon: KeyRound },
-                  { key: "headers" as const, from: 34, to: 56, Icon: ShieldHeaders },
-                  { key: "admin" as const, from: 56, to: 78, Icon: Lock },
-                  { key: "liveness" as const, from: 78, to: 100, Icon: Activity },
+                  { key: "secrets" as const, from: 8, to: 30, Icon: KeyRound },
+                  { key: "headers" as const, from: 30, to: 50, Icon: ShieldHeaders },
+                  { key: "admin" as const, from: 50, to: 68, Icon: Lock },
+                  { key: "liveness" as const, from: 68, to: 86, Icon: Activity },
+                  { key: "trust" as const, from: 86, to: 100, Icon: Sparkles },
                 ].map((c) => {
                   const p = scan?.progress ?? 0;
                   const state = p >= c.to ? "done" : p >= c.from ? "active" : "wait";
@@ -1254,7 +1358,7 @@ export function ScannerPage({
                         className="rounded-[10px] bg-sky-400 px-5 text-sm font-bold text-[#090d16] hover:bg-sky-300"
                         onClick={() => {
                           window.scrollTo({ top: 0, behavior: "smooth" });
-                          document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
+                          document.querySelector<HTMLInputElement>('input[data-scan-input]')?.focus();
                         }}
                       >
                         <Zap className="h-4 w-4" />
@@ -1434,7 +1538,7 @@ export function ScannerPage({
                     className="h-11 w-full rounded-xl border border-white/[0.15] bg-white/[0.05] text-[13px] font-bold text-slate-100 shadow-none hover:bg-white/[0.09]"
                     onClick={() => {
                       window.scrollTo({ top: 0, behavior: "smooth" });
-                      document.querySelector<HTMLInputElement>('input[aria-label="App URL"]')?.focus();
+                      document.querySelector<HTMLInputElement>('input[data-scan-input]')?.focus();
                     }}
                   >
                     <ArrowUp className="h-4 w-4" />
@@ -1674,23 +1778,25 @@ export function ScannerPage({
             <p className="text-xs text-slate-500">
               © {new Date().getFullYear()} AppSeal · {t(lang, "footerText")}
             </p>
-            <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 font-mono text-[10px] text-slate-700 sm:justify-start">
+            <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 py-1 font-mono text-[11px] text-slate-700 sm:justify-start">
               <span>{t(lang, "footerEngine")}</span>
               <span>·</span>
               {list(lang, "footerNav").map((label, i) => (
-                <span key={FOOTER_NAV_HREFS[i]} className="inline-flex items-center gap-1.5">
+                <span key={FOOTER_NAV_HREFS[i]} className="inline-flex items-center gap-2">
                   {i > 0 && <span>·</span>}
-                  <a href={FOOTER_NAV_HREFS[i]} className="transition hover:text-slate-400">
+                  {/* py padding grows the tap target: 10px type with a 6px
+                      gap made footer links ~14px tall on phones */}
+                  <a href={FOOTER_NAV_HREFS[i]} className="px-0.5 py-1 transition hover:text-slate-400">
                     {label}
                   </a>
                 </span>
               ))}
               <span>·</span>
-              <a href="https://t.me/AppSeal_Monitor_Bot" target="_blank" rel="noopener" className="transition hover:text-slate-400">
+              <a href="https://t.me/AppSeal_Monitor_Bot" target="_blank" rel="noopener" className="px-0.5 py-1 transition hover:text-slate-400">
                 bot
               </a>
               <span>·</span>
-              <a href="https://t.me/peexthree" target="_blank" rel="noopener" className="transition hover:text-slate-400">
+              <a href="https://t.me/peexthree" target="_blank" rel="noopener" className="px-0.5 py-1 transition hover:text-slate-400">
                 telegram
               </a>
               <span>·</span>

@@ -47,6 +47,19 @@ export const DICT = {
   demoBtn: { ru: "Скан демо-приложения", en: "Scan the demo app" },
   scanning: { ru: "Идёт техосмотр", en: "Inspection in progress" },
   errTitle: { ru: "Не получилось", en: "Something went wrong" },
+  errInvalidUrl: {
+    ru: "Похоже, это не адрес сайта. Введите домен вида example.com или ссылку https://…",
+    en: "That does not look like a site address. Enter a domain like example.com or an https:// link",
+  },
+  pollTimeout: {
+    ru: "Скан затянулся сверх отведённого времени. Запустите проверку ещё раз - обычно это снимается повтором.",
+    en: "The scan ran over its time budget. Run the check again - a retry usually clears it.",
+  },
+  scanCancel: { ru: "Остановить опрос", en: "Stop polling" },
+  privateFallbackNote: {
+    ru: "Пасс на этот домен не активен - скан выполнен публично: результат попадёт в открытый реестр. Приватность - с пассом.",
+    en: "No active pass for this domain - the scan ran publicly and lands in the open registry. Privacy comes with a pass.",
+  },
   rescan: { ru: "Проверить другое приложение", en: "Scan another app" },
   downloadPdf: { ru: "Скачать PDF-отчёт", en: "Download PDF report" },
   fixPromptTitle: { ru: "Промпт для ИИ-фикса", en: "AI-fix prompt" },
@@ -95,6 +108,7 @@ export const DICT = {
   },
   passGateCta: { ru: "Смотреть Launch Pass", en: "See Launch Pass" },
   passGatePdf: { ru: "PDF - в Launch Pass", en: "PDF - Launch Pass" },
+  pdfChecking: { ru: "Проверяем пасс…", en: "Checking pass…" },
   passPreviewLabel: { ru: "Так выглядит бейдж твоего сайта:", en: "Here is how your site badge looks:" },
   fixToastTitle: {
     ru: "Исправил ошибки в Cursor/Lovable? Запусти перепроверку - бесплатный скан покажет новый класс, а заодно откроет и бейдж.",
@@ -166,7 +180,7 @@ export const DICT = {
   pricingTitle: { ru: "Тарифы", en: "Pricing" },
   planFreeCta: { ru: "Проверить бесплатно", en: "Scan for free" },
   planSoonCta: { ru: "Скоро", en: "Coming soon" },
-  planMostPopular: { ru: "Хит перед релизом", en: "Most popular" },
+  planMostPopular: { ru: "Популярный выбор", en: "Most popular" },
   planLPSub: {
     ru: "разовая покупка на 7 дней - без автосписаний",
     en: "one-time purchase for 7 days - no auto-renewal",
@@ -384,9 +398,6 @@ export const DICT = {
     ru: "Минимум. Мы не собираем email и не храним персональные данные: в системе остаются только домен пропуска и соль-хеш IP для лимита. Полный отчёт видит только инициатор скана по секретной ссылке; в реестр попадают лишь домен, класс и дата.",
     en: "Bare minimum. We collect no email and store no personal data: only the pass domain and a salted IP hash for the quota live in our system. The full report is visible only to the scan initiator via a secret link; the registry shows just the domain, grade and date.",
   },
-  bootStage1: { ru: "Подмешиваем сигнатуры утечек...", en: "Loading leak signatures..." },
-  bootStage2: { ru: "Проверяем заголовки безопасности...", en: "Checking security headers..." },
-  bootStage3: { ru: "Калибруем шкалу оценок...", en: "Calibrating the grade scale..." },
   footerText: {
     ru: "AppSeal - независимый слой доверия для эпохи, когда софт пишут все.",
     en: "AppSeal - an independent trust layer for the era when everyone writes software.",

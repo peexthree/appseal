@@ -141,7 +141,8 @@
 }
 
 .font-display {
-  font-family: var(--font-display), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  /* display weight shares the single sans family (--font-body) */
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* custom scrollbar for evidence panes */
@@ -166,20 +167,6 @@
 }
 .appseal-pulse {
   animation: appseal-pulse 1.6s ease-in-out infinite;
-}
-
-/* faint techno grid for the hero background */
-.appseal-grid::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
-  background-size: 44px 44px;
-  mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
-  -webkit-mask-image: linear-gradient(to bottom, black 30%, transparent 90%);
 }
 
 /* ----------------------------------------------------------------- */
@@ -384,6 +371,22 @@
   color: transparent;
   animation: appseal-sheen 7s ease-in-out infinite;
 }
+/* the sheen repaints the text every frame - on phones it is noise */
+@media (max-width: 640px) {
+  .appseal-gradient-text {
+    animation: none;
+  }
+}
+/* tab hidden: freeze every decorative loop (toggled by VisibilityPause) -
+   the page keeps no background CPU/GPU cost while the user is elsewhere */
+html.appseal-idle .appseal-aurora span,
+html.appseal-idle .appseal-marquee,
+html.appseal-idle .appseal-gradient-text,
+html.appseal-idle .appseal-ring::before,
+html.appseal-idle .appseal-live::after,
+html.appseal-idle .appseal-radar-sweep {
+  animation-play-state: paused !important;
+}
 @keyframes appseal-sheen {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -500,28 +503,6 @@
   -webkit-mask-image: linear-gradient(to bottom, black, transparent 70%);
 }
 
-/* tech corners: four L-brackets hugging the card edges (HUD style).
-   Color and arm length are configurable per element via CSS vars */
-.appseal-corners::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  --corner-color: rgba(56, 189, 248, 0.4);
-  --corner-len: 16px;
-  background:
-    linear-gradient(var(--corner-color), var(--corner-color)) top left / var(--corner-len) 1px,
-    linear-gradient(var(--corner-color), var(--corner-color)) top left / 1px var(--corner-len),
-    linear-gradient(var(--corner-color), var(--corner-color)) top right / var(--corner-len) 1px,
-    linear-gradient(var(--corner-color), var(--corner-color)) top right / 1px var(--corner-len),
-    linear-gradient(var(--corner-color), var(--corner-color)) bottom left / var(--corner-len) 1px,
-    linear-gradient(var(--corner-color), var(--corner-color)) bottom left / 1px var(--corner-len),
-    linear-gradient(var(--corner-color), var(--corner-color)) bottom right / var(--corner-len) 1px,
-    linear-gradient(var(--corner-color), var(--corner-color)) bottom right / 1px var(--corner-len);
-  background-repeat: no-repeat;
-}
-
 /* section separator replacing border-t: gradient hairline that blooms at
    the center with a small neon diamond node */
 .appseal-sect {
@@ -555,21 +536,6 @@
   pointer-events: none;
 }
 
-/* glossy data bar: add on top of a per-row background color and the sheen
-   + inner shadow give the column volume (histograms, grade rows) */
-.appseal-bar {
-  position: relative;
-}
-.appseal-bar::after {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 46%;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0));
-  pointer-events: none;
-}
-
 /* bar track: recessed slot behind stat bars */
 .appseal-track {
   background-color: rgba(9, 13, 22, 0.75);
@@ -591,21 +557,6 @@
   border-radius: 9999px;
   background: linear-gradient(90deg, #38bdf8, rgba(56, 189, 248, 0));
   box-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
-}
-
-/* CRT scanlines for terminal panes: barely visible horizontal raster.
-   Apply to an already-positioned element (relative/absolute) */
-.appseal-scanlines::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.028) 0 1px,
-    transparent 1px 3px
-  );
 }
 
 /* live status dot: solid center + expanding echo ring (CSS-only ping) */

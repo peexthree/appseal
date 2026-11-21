@@ -38,13 +38,22 @@ const CACHE_IMMUTABLE = "public, max-age=31536000, immutable";
 const CACHE_DAY = "public, max-age=86400, stale-while-revalidate=604800";
 const cacheHeaders = (value: string) => [{ key: "Cache-Control", value }];
 const immutableFiles = [
+  // grade art: PNG for the badge API/PDF, webp for the report UI - both lists
+  // must stay in sync with getTrophyPath (src/lib/scanner/grade.ts)
   "/A.png",
   "/Aplus.png",
   "/B.png",
   "/C.png",
   "/D.png",
   "/E.png",
+  "/A.webp",
+  "/Aplus.webp",
+  "/B.webp",
+  "/C.webp",
+  "/D.webp",
+  "/E.webp",
   "/ico.png",
+  "/ico.svg",
   "/apple.png",
   "/apple-touch-icon.png",
   "/logo.svg",
@@ -70,11 +79,12 @@ const nextConfig: NextConfig = {
       { source: "/api/:path*", headers: [{ key: "Content-Security-Policy", value: API_CSP }] },
       { source: "/video/:path*", headers: cacheHeaders(CACHE_IMMUTABLE) },
       { source: "/img/:path*", headers: cacheHeaders(CACHE_IMMUTABLE) },
+      { source: "/sound/:path*", headers: cacheHeaders(CACHE_IMMUTABLE) },
       ...immutableFiles.map((file) => ({
         source: file,
         headers: cacheHeaders(CACHE_IMMUTABLE),
       })),
-      { source: "/OG1.png", headers: cacheHeaders(CACHE_DAY) },
+      { source: "/OG1.jpg", headers: cacheHeaders(CACHE_DAY) },
       { source: "/favicon.ico", headers: cacheHeaders(CACHE_DAY) },
     ];
   },

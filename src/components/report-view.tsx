@@ -524,7 +524,14 @@ export function ReportView({
         {/* Action Buttons Bar */}
         <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-slate-800/80 pt-5">
           <div className="flex flex-wrap items-center gap-2.5">
-            {passActive === false ? (
+            {passActive === true ? (
+              <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold shadow-lg shadow-sky-500/20">
+                <a href={`/api/report?id=${scan.id}${reportKey ? `&key=${reportKey}` : ""}`} download>
+                  <Download className="h-4 w-4 mr-1.5" />
+                  {t(lang, "downloadPdf")}
+                </a>
+              </Button>
+            ) : passActive === false ? (
               <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold shadow-lg shadow-sky-500/20">
                 <a href="/#pricing">
                   <Download className="h-4 w-4 mr-1.5" />
@@ -532,11 +539,11 @@ export function ReportView({
                 </a>
               </Button>
             ) : (
-              <Button asChild className="bg-sky-400 text-[#090d16] hover:bg-sky-300 font-bold shadow-lg shadow-sky-500/20">
-                <a href={`/api/report?id=${scan.id}${reportKey ? `&key=${reportKey}` : ""}`} download>
-                  <Download className="h-4 w-4 mr-1.5" />
-                  {t(lang, "downloadPdf")}
-                </a>
+              // pass status is still loading: disabled placeholder - a live
+              // download link here would fetch the 402 gate response as a file
+              <Button disabled className="bg-sky-400/50 text-[#090d16] font-bold shadow-lg shadow-sky-500/20" aria-busy="true">
+                <Download className="h-4 w-4 mr-1.5" />
+                {t(lang, "pdfChecking")}
               </Button>
             )}
 
@@ -959,15 +966,41 @@ export function ReportView({
               </p>
             </div>
 
-            <Button
-              onClick={copyBadge}
-              className="bg-sky-400 hover:bg-sky-300 text-[#090d16] font-bold text-sm shrink-0 shadow-lg shadow-sky-500/20"
-            >
-              {badgeCopied ? <Check className="h-4 w-4 mr-1.5 text-emerald-950" /> : <Copy className="h-4 w-4 mr-1.5" />}
-              {badgeCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Скопировать код" : "Copy code")}
-            </Button>
+            {passActive === true && (
+              <Button
+                onClick={copyBadge}
+                className="bg-sky-400 hover:bg-sky-300 text-[#090d16] font-bold text-sm shrink-0 shadow-lg shadow-sky-500/20"
+              >
+                {badgeCopied ? <Check className="h-4 w-4 mr-1.5 text-emerald-950" /> : <Copy className="h-4 w-4 mr-1.5" />}
+                {badgeCopied ? (lang === "ru" ? "Скопировано!" : "Copied!") : (lang === "ru" ? "Скопировать код" : "Copy code")}
+              </Button>
+            )}
           </div>
 
+          {passActive !== true && (
+            // badge embeds are gated server-side (/api/badge answers with the
+            // grey "Launch Pass required" stub for hosts without a pass) - the
+            // copy-ready code block for a non-pass visitor shipped a broken
+            // embed, so the honest gate card replaces it until a pass is known
+            <div className="rounded-xl border border-sky-500/30 bg-sky-500/[0.06] p-5 space-y-3">
+              <p className="text-sm font-bold text-slate-100">{t(lang, "passGateTitle")}</p>
+              <p className="text-[13px] leading-relaxed text-slate-300">
+                {t(lang, "passGateText").replace("{host}", scan.host)}
+              </p>
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <Button asChild className="bg-sky-400 hover:bg-sky-300 text-[#090d16] font-bold text-sm shadow-lg shadow-sky-500/20">
+                  <a href="/#pricing">{t(lang, "passGateCta")}</a>
+                </Button>
+                <Button asChild variant="outline" className="border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white text-sm">
+                  <a href="/#scan">{t(lang, "fixToastCta")}</a>
+                </Button>
+              </div>
+              <p className="pt-1 text-[11px] leading-relaxed text-slate-500">{t(lang, "fixToastTitle")}</p>
+            </div>
+          )}
+
+          {passActive === true && (
+            <>
           {/* Badge Format & Syntax Controls */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
             <div className="flex items-center gap-2">
@@ -1059,6 +1092,8 @@ export function ReportView({
               </pre>
             </div>
           </div>
+            </>
+          )}
         </div>
       )}
 

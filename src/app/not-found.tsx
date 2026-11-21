@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
-import { CyberBugEasterEgg } from "@/components/not-found/CyberBugEasterEgg";
+import { CyberBugLazy } from "@/components/not-found/game-lazy";
 
 /**
  * Custom 404 with the cyber-disinsection easter egg. Kept fully static:
@@ -29,7 +29,7 @@ export default function NotFound() {
 
       <SiteHeader />
 
-      <CyberBugEasterEgg />
+      <CyberBugLazy />
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center justify-center px-4 py-20 text-center">
         <div
