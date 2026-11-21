@@ -5,18 +5,21 @@ import { animate, useInView, useReducedMotion } from "framer-motion";
 
 /**
  * Animated counter: counts up from 0 to `value` (~1.2s) when scrolled into
- * view. Supports a suffix (% / M) and one decimal. Reduced-motion users
- * see the final value immediately.
+ * view. Supports a suffix (% / M) and one decimal. `delay` staggers a row
+ * of counters so they ramp in sequence. Reduced-motion users see the final
+ * value immediately.
  */
 export function Stat({
   value,
   suffix = "",
   decimals = 0,
+  delay = 0,
   className,
 }: {
   value: number;
   suffix?: string;
   decimals?: number;
+  delay?: number;
   className?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -29,13 +32,20 @@ export function Stat({
   useEffect(() => {
     // reduced-motion keeps the initial value (already `value` from useState)
     if (reduce || !inView) return;
-    const ctrl = animate(0, value, {
-      duration: 1.2,
-      ease: "easeOut",
-      onUpdate: (v) => setShown(v),
-    });
-    return () => ctrl.stop();
-  }, [inView, reduce, value]);
+    const id = window.setTimeout(() => {
+      const ctrl = animate(0, value, {
+        duration: 1.2,
+        ease: "easeOut",
+        onUpdate: (v) => setShown(v),
+      });
+      cleanup = () => ctrl.stop();
+    }, delay);
+    let cleanup: () => void = () => {};
+    return () => {
+      window.clearTimeout(id);
+      cleanup();
+    };
+  }, [inView, reduce, value, delay]);
 
   return (
     <span ref={ref} className={className}>

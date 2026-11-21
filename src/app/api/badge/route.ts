@@ -5,7 +5,11 @@ import { hasPassAccess } from "@/lib/passes";
 import { canonicalHost } from "@/lib/registry";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { BADGE_CACHE_HEADERS } from "./headers";
 
+// nodejs, not edge: trophy mode reads PNGs from disk (node:fs) and the pass
+// gate pulls node:crypto-based helpers. Redis load under viral traffic is
+// handled by the CDN cache headers in ./headers.ts instead.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -24,9 +28,12 @@ const TROPHY_FILE = {
  *  the trust seal is a paid benefit, a lapsed pass must not keep displaying it. */
 const GATE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="228" height="44" viewBox="0 0 228 44" role="img" aria-label="AppSeal badge: Launch Pass required"><rect width="228" height="44" rx="8" fill="#080B11"/><rect x="0.5" y="0.5" width="227" height="43" rx="7.5" fill="none" stroke="#1E293B"/><text x="14" y="19" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#38BDF8">AppSeal</text><text x="14" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#7C8BA1">badge - Launch Pass required</text></svg>`;
 
+// The gate placeholder shares the badge cache contract: a pass lapsing (or
+// activating) becomes visible with the same <=5 min lag as the live badge,
+// while viral embeds stop hitting the Redis gate on every single view.
 const GATE_HEADERS = {
   "content-type": "image/svg+xml; charset=utf-8",
-  "cache-control": "no-store",
+  ...BADGE_CACHE_HEADERS,
 } as const;
 
 /** host query values only - a badge is an image, never a URL input surface */
@@ -96,7 +103,7 @@ export async function GET(req: NextRequest) {
       return new Response(buffer, {
         headers: {
           "content-type": "image/png",
-          "cache-control": "public, max-age=300",
+          ...BADGE_CACHE_HEADERS,
         },
       });
     } catch {
@@ -180,8 +187,9 @@ export async function GET(req: NextRequest) {
   return new Response(svg, {
     headers: {
       "content-type": "image/svg+xml; charset=utf-8",
-      // 5 minutes: an embedded badge shows the live rank with a small lag
-      "cache-control": "public, max-age=300",
+      // 5 minutes: an embedded badge shows the live rank with a small lag;
+      // s-maxage serves the viral share of views straight from the CDN
+      ...BADGE_CACHE_HEADERS,
     },
   });
 }

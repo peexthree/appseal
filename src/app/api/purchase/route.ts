@@ -19,7 +19,7 @@ import {
   setNonceFinal,
   setNonceMapping,
 } from "@/lib/passes";
-import { getClientIp } from "@/lib/sec";
+import { getClientIp, regionLine } from "@/lib/sec";
 import { ledgerPurchase } from "@/lib/db/index";
 import { sendTelegramAlert } from "@/lib/telegram";
 import type { Lang } from "@/lib/scanner/types";
@@ -122,7 +122,8 @@ export async function POST(req: NextRequest) {
         `💰 Провайдер: ${providerLabel}\n` +
         `📧 Email: ${email}\n` +
         `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
-        (ip !== "unknown" ? `📡 IP: ${ip}` : "")
+        // 152-FZ: raw IP stays server-side, only the edge country reaches Telegram
+        regionLine(req.headers)
       ),
     );
 

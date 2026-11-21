@@ -173,12 +173,17 @@ export function SiteHeader({
               setMenuOpen((v) => !v);
             }
           }}
-          className="group flex shrink-0 items-center gap-3"
+          className={`group flex shrink-0 items-center gap-3 rounded-full transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+            // в покое подложка невидима (прозрачная рамка), в скролле - стекло
+            scrolled
+              ? "border border-white/[0.06] bg-[rgba(9,13,22,0.75)] px-3 py-1.5 backdrop-blur-xl"
+              : "border border-transparent"
+          }`}
           aria-label="AppSeal home"
           aria-expanded={scrolled ? menuOpen : undefined}
         >
           <img
-            src="/ico.png"
+            src="/ico.svg"
             alt="AppSeal"
             width={56}
             height={56}
@@ -288,7 +293,7 @@ export function SiteHeader({
                 key={l}
                 onClick={() => switchLang(l)}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase transition ${
-                  lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-400 hover:text-slate-200"
+                  lang === l ? "bg-sky-400/15 text-sky-300" : "text-slate-400 hover:text-slate-200"
                 }`}
                 aria-pressed={lang === l}
               >
@@ -298,11 +303,11 @@ export function SiteHeader({
           </nav>
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:bg-white/10 md:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:bg-white/10 md:hidden"
             aria-expanded={menuOpen}
             aria-label="Menu"
           >
-            {menuOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
@@ -367,7 +372,7 @@ export function SiteHeader({
                   key={l}
                   onClick={() => switchLang(l)}
                   className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase transition ${
-                    lang === l ? "bg-sky-400 text-[#090d16]" : "text-slate-400 hover:text-slate-200"
+                    lang === l ? "bg-sky-400/15 text-sky-300" : "text-slate-400 hover:text-slate-200"
                   }`}
                   aria-pressed={lang === l}
                 >

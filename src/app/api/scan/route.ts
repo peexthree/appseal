@@ -6,7 +6,7 @@ import { assertPublicTarget } from "@/lib/scanner/guard";
 import { bumpDailyQuota, hasActivePass, hasPassAccess, hashIp } from "@/lib/passes";
 import { lookupApiToken, tokenFromHeaders } from "@/lib/api-tokens";
 import { archiveScan } from "@/lib/db/index";
-import { getClientIp, secretsMatch } from "@/lib/sec";
+import { getClientIp, regionLine, secretsMatch } from "@/lib/sec";
 import { sendTelegramAlert } from "@/lib/telegram";
 import type { Lang, ScanResult } from "@/lib/scanner/types";
 
@@ -58,6 +58,9 @@ export async function POST(req: NextRequest) {
     const token = tokenFromHeaders(req.headers);
     const apiTok = token ? await lookupApiToken(token) : null;
     const ip = getClientIp(req.headers);
+    // 152-FZ: the raw IP is personal data and never leaves the server - the
+    // owner alert carries only the coarse edge-derived country instead
+    const region = regionLine(req.headers);
 
     // private scan: stays out of the public registry/catalog entirely, but
     // needs a reason to exist - admin key, API token, or a live pass on the
@@ -165,7 +168,7 @@ export async function POST(req: NextRequest) {
             `🔍 Новая проверка сайта\n` +
             `🌐 URL: ${norm.isDemo ? "demo" : norm.url}\n` +
             `🕐 ${new Date().toLocaleString("ru-RU", { timeZone: "Asia/Yekaterinburg" })}\n` +
-            (ip !== "unknown" ? `📡 IP: ${ip}` : "")
+            region
           );
 
           // runScan never throws: the final record lands in the store; its return

@@ -250,7 +250,9 @@
 .appseal-glass-outer {
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  background-image: linear-gradient(180deg, rgba(12, 16, 24, 0.55), rgba(5, 7, 11, 0.78));
+  /* a breath of cold 240-hue in the fill keeps the pane from reading as
+     flat neutral gray against the blue-accented page */
+  background-image: linear-gradient(180deg, rgba(12, 16, 26, 0.55), rgba(5, 7, 13, 0.78));
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
     inset 0 0 24px rgba(56, 189, 248, 0.02),
@@ -263,6 +265,10 @@
     transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
     border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* hover raise implies clickability where the card actually is interactive */
+.appseal-card:has(a, button, [role="button"], [role="checkbox"]) {
+  cursor: pointer;
 }
 .appseal-card::before {
   content: "";
@@ -470,6 +476,64 @@ html.appseal-idle .appseal-radar-sweep {
   background: rgba(56, 189, 248, 0.08);
 }
 
+/* ----------------------------------------------------------------- */
+/* premium CTA: sky->indigo gradient, inner bevel and a slow sheen     */
+/* sweep - the one "money" button of the page (hero submit)            */
+/* ----------------------------------------------------------------- */
+.btn-premium {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  box-shadow:
+    0 0 20px -4px rgba(56, 189, 248, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.btn-premium::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.15) 50%, transparent 60%);
+  animation: btn-sheen 3s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes btn-sheen {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(100%); }
+}
+.btn-premium:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.btn-premium:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* tech corner brackets: monoline HUD brackets on all four corners of a
+   card (how-it-works, etc). Two background layers per corner, no extra
+   elements; brightens together with the card hover */
+.appseal-corners::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  background:
+    linear-gradient(#38bdf8, #38bdf8) left 0 top 0 / 12px 1px,
+    linear-gradient(#38bdf8, #38bdf8) left 0 top 0 / 1px 12px,
+    linear-gradient(#38bdf8, #38bdf8) right 0 top 0 / 12px 1px,
+    linear-gradient(#38bdf8, #38bdf8) right 0 top 0 / 1px 12px,
+    linear-gradient(#38bdf8, #38bdf8) left 0 bottom 0 / 12px 1px,
+    linear-gradient(#38bdf8, #38bdf8) left 0 bottom 0 / 1px 12px,
+    linear-gradient(#38bdf8, #38bdf8) right 0 bottom 0 / 12px 1px,
+    linear-gradient(#38bdf8, #38bdf8) right 0 bottom 0 / 1px 12px;
+  background-repeat: no-repeat;
+  opacity: 0.28;
+  transition: opacity 0.3s;
+}
+.appseal-card:hover.appseal-corners::after,
+.appseal-corners:hover::after {
+  opacity: 0.65;
+}
+
 /* one-shot emerald glow for the case timeline result card (opacity only) */
 .appseal-glow-once {
   position: absolute;
@@ -536,14 +600,22 @@ html.appseal-idle .appseal-radar-sweep {
 .appseal-sect::after {
   content: "";
   position: absolute;
-  top: -2px;
+  top: -3px;
   left: 50%;
-  width: 5px;
-  height: 5px;
+  width: 7px;
+  height: 7px;
   transform: translateX(-50%) rotate(45deg);
   background: #38bdf8;
-  box-shadow: 0 0 10px 2px rgba(56, 189, 248, 0.5);
+  /* outer halo ring around the diamond node + soft glow */
+  box-shadow:
+    0 0 0 3px rgba(56, 189, 248, 0.14),
+    0 0 14px 3px rgba(56, 189, 248, 0.5);
   pointer-events: none;
+  animation: appseal-diamond 0.8s ease-in-out infinite alternate;
+}
+@keyframes appseal-diamond {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
 }
 
 /* bar track: recessed slot behind stat bars */
@@ -610,7 +682,9 @@ html.appseal-idle .appseal-radar-sweep {
   .appseal-glow-once,
   .appseal-wave,
   .appseal-live::after,
-  .appseal-radar-sweep {
+  .appseal-radar-sweep,
+  .appseal-sect::after,
+  .btn-premium::after {
     animation: none;
   }
 }

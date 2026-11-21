@@ -173,6 +173,18 @@ export function getConnIp(headers: Headers): string {
   return connIp(headers);
 }
 
+/** 152-FZ: the raw client IP is personal data, so owner notifications never
+ *  carry it - the coarse edge-derived country replaces it. The value comes
+ *  from x-vercel-ip-country, which the Vercel edge sets itself (client-supplied
+ *  x-vercel-* headers are stripped, so it cannot be forged); no external geo
+ *  API is involved. A strict ISO 3166-1 alpha-2 check keeps any malformed
+ *  value out of the alert; without a usable country the line is empty.
+ *  Returns the ready-to-append alert line ("📡 Регион: XX") or "". */
+export function regionLine(headers: Headers): string {
+  const country = (headers.get("x-vercel-ip-country") ?? "").trim().toUpperCase();
+  return /^[A-Z]{2}$/.test(country) ? `📡 Регион: ${country}` : "";
+}
+
 /** Cron-tick gate: when a TICK_SECRET is configured, every call must present
  *  it via the x-tick-secret header or a ?secret= query parameter (both are
  *  compared constant-time). Without the env var the endpoint stays public -

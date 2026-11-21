@@ -235,6 +235,44 @@ function ReviewStars({ rating, lang }: { rating: number; lang: Lang }) {
   );
 }
 
+/** custom checkbox: native accent-sky-400 renders differently in every OS -
+ *  this one paints the same way everywhere (border, fill, dark check mark) */
+function ConsentCheck({
+  checked,
+  onToggle,
+  label,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  label: string;
+}) {
+  return (
+    <span
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      tabIndex={0}
+      onClick={(e) => {
+        e.preventDefault();
+        onToggle();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === " " || e.key === "Enter") {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
+      className={`mt-0.5 grid h-[18px] w-[18px] shrink-0 place-items-center rounded-[5px] border transition duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400 ${
+        checked
+          ? "border-sky-400 bg-sky-400 text-[#090d16]"
+          : "border-white/20 bg-white/[0.03] text-transparent hover:border-white/35"
+      }`}
+    >
+      <Check className="h-3 w-3" strokeWidth={3} />
+    </span>
+  );
+}
+
 /** landing reviews strip: up to 3 latest approved reviews fetched at mount.
  *  Empty feed renders one honest invitation line - no invented quotes; the
  *  full showcase and the submit form live on /reviews. */
@@ -382,6 +420,9 @@ export function ScannerPage({
   const scanStartedAt = useRef(0);
   const lastTermStage = useRef("");
   const [faqOpen, setFaqOpen] = useState<number[]>([]);
+  // collapsed consent accordion under the hero form (T-04: the full 152-FZ
+  // text unfolds on demand instead of sitting between CTA and the fold)
+  const [consentOpen, setConsentOpen] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -710,7 +751,7 @@ export function ScannerPage({
             muted
             playsInline
             aria-hidden
-            className="pointer-events-none absolute left-1/2 -top-20 -z-10 h-[600px] w-screen max-w-none -translate-x-1/2 object-cover opacity-50 [mask-image:linear-gradient(to_bottom,black_30%,transparent_96%)]"
+            className="pointer-events-none absolute left-1/2 -top-20 -z-10 h-[600px] w-screen max-w-none -translate-x-1/2 object-cover opacity-35 [mask-image:linear-gradient(to_bottom,black_25%,transparent_90%)]"
           />
           {/* React Bits preview: particle drift over the radar video; canvas
               pauses off-screen and respects prefers-reduced-motion internally */}
@@ -733,16 +774,16 @@ export function ScannerPage({
             />
           </div>
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-sky-400">
+            <p className="text-xs font-bold uppercase tracking-[0.15em] text-sky-400">
               {t(lang, "tagline")}
             </p>
-            <h1 className="font-display mt-4 text-4xl font-extrabold leading-tight tracking-tight text-slate-50 sm:text-5xl">
+            <h1 className="font-display mt-4 text-[2rem] font-extrabold leading-[1.15] tracking-tight text-slate-50 sm:text-5xl">
               {/* plain SSR text, no scramble: the headline is the LCP element,
                   and a post-hydration reveal pinned LCP to the JS timeline */}
-              {t(lang, "heroTitle")}{" "}
+            {t(lang, "heroTitle")}{" "}
               <span className="appseal-gradient-text">{t(lang, "heroTitleAccent")}</span>
             </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-slate-400">
+            <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-relaxed text-slate-300">
               {t(lang, "heroSub")}
             </p>
           </div>
@@ -778,7 +819,7 @@ export function ScannerPage({
                           onFocus={() => setSuggestOpen(true)}
                           onBlur={() => window.setTimeout(() => setSuggestOpen(false), 140)}
                           placeholder={t(lang, "inputPlaceholder")}
-                          className="h-12 w-full flex-1 border-slate-700 bg-[#111827] text-base text-slate-100 placeholder:text-slate-500"
+                          className="h-12 w-full flex-1 border-white/10 bg-white/[0.03] text-base text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] placeholder:text-slate-500 focus-visible:border-sky-400/50 focus-visible:ring-sky-400/[0.08]"
                           inputMode="url"
                           aria-label={lang === "ru" ? "Адрес приложения" : "App URL"}
                           data-scan-input
@@ -788,7 +829,7 @@ export function ScannerPage({
                         <Button
                           type="submit"
                           disabled={!consent}
-                          className="h-12 bg-sky-400 px-6 text-base font-bold text-[#090d16] shadow-[0_0_30px_-5px_rgba(56,189,248,0.5)] hover:bg-sky-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="btn-premium h-12 px-6 text-base font-bold text-[#090d16]"
                         >
                           <Zap className="h-4 w-4" />
                           {t(lang, "scanBtn")}
@@ -863,36 +904,113 @@ export function ScannerPage({
                 </p>
               )}
 
-              {/* Consent & legal checkbox (152-FZ & passive scan notice) */}
-              <label className="mt-3.5 flex items-start gap-2.5 text-left cursor-pointer select-none px-1">
-                <input
-                  type="checkbox"
-                  aria-label={lang === "ru" ? "Подтверждение прав на проверку сайта" : "Ownership confirmation"}
-                  checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-[#111827] text-sky-400 accent-sky-400 focus:ring-sky-400"
-                />
-                <span className="text-[13px] leading-relaxed text-slate-400">
-                  {lang === "ru"
-                    ? "Запуская проверку, вы подтверждаете, что являетесь владельцем/разработчиком ресурса или действуете с его разрешения. Скан выполняется в пассивном режиме чтения публичных HTTP-ответов."
-                    : "By starting the scan, you confirm that you are the owner/developer of the resource or have authorization. The scan runs in passive mode reading public HTTP responses."}
-                </span>
-              </label>
+              {/* consent: collapsed accordion row (T-04) - the short line sits
+                  under the CTA, the full 152-FZ text unfolds on demand */}
+              <div className="mt-3.5 px-1">
+                <div className="flex items-center gap-2.5">
+                  <ConsentCheck
+                    checked={consent}
+                    onToggle={() => setConsent((v) => !v)}
+                    label={lang === "ru" ? "Подтверждение прав на проверку сайта" : "Ownership confirmation"}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setConsentOpen((v) => !v)}
+                    aria-expanded={consentOpen}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded text-left"
+                  >
+                    <span className="truncate text-[13px] font-medium text-slate-400">
+                      {t(lang, "consentShort")}
+                    </span>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform duration-300 ${
+                        consentOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                </div>
+                {/* smooth height via the grid-rows trick (same as the FAQ) */}
+                <div
+                  className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                    consentOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <p className="pt-2 text-[11px] leading-relaxed text-slate-500">
+                      {lang === "ru"
+                        ? "Запуская проверку, вы подтверждаете, что являетесь владельцем/разработчиком ресурса или действуете с его разрешения. Скан выполняется в пассивном режиме чтения публичных HTTP-ответов."
+                        : "By starting the scan, you confirm that you are the owner/developer of the resource or have authorization. The scan runs in passive mode reading public HTTP responses."}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-              {/* private scan opt-out: Pass-only, mirrors the Pro card feature list */}
-              <label className="mt-2 flex items-start gap-2.5 text-left cursor-pointer select-none px-1">
-                <input
-                  type="checkbox"
+              {/* private scan opt-out: quiet chip-toggle instead of a second
+                  checkbox row (Pass-only, mirrors the Pro card feature list) */}
+              <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={privateScan}
                   aria-label={t(lang, "privateScanLabel")}
-                  checked={privateScan}
-                  onChange={(e) => setPrivateScan(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-700 bg-[#111827] text-sky-400 accent-sky-400 focus:ring-sky-400"
-                />
-                <span className="text-[13px] leading-relaxed text-slate-400">
-                  {t(lang, "privateScanLabel")}{" "}
-                  <span className="text-[11px] text-slate-500">({t(lang, "privateScanNote")})</span>
+                  onClick={() => setPrivateScan((v) => !v)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    privateScan
+                      ? "border-sky-400/50 bg-sky-400/10 text-sky-300"
+                      : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20 hover:text-slate-200"
+                  }`}
+                >
+                  <Lock className={`h-3.5 w-3.5 ${privateScan ? "text-sky-400" : "text-slate-500"}`} />
+                  {t(lang, "privateScanLabel")}
+                </button>
+                <span className="text-[11px] text-slate-500">{t(lang, "privateScanNote")}</span>
+              </div>
+
+              {/* trust strip: quiet pill badges under the CTA (premium SaaS
+                  pattern) - icons page-local, strings from trustPills */}
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {list(lang, "trustPills").map((p, i) => {
+                  const PillIcon = [ShieldHeaders, Activity, Lock, FileCheck2][i]!;
+                  return (
+                    <span
+                      key={p}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold text-slate-400"
+                    >
+                      <PillIcon className="h-3.5 w-3.5 text-sky-400/80" />
+                      {p}
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* empty-state filler (T-16): fresh live grades from the same
+                  server-resolved chips source - clickable to re-scan */}
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">
+                  {t(lang, "recentLabel")}
                 </span>
-              </label>
+                {demoChips
+                  .filter((c) => c.target !== "demo://app")
+                  .map((c) => (
+                    <button
+                      key={c.target}
+                      type="button"
+                      onClick={() => {
+                        track("chip_scan", { target: c.target });
+                        ymGoal("chip_scan", { target: c.target });
+                        void startScan(c.target);
+                      }}
+                      className="appseal-chip inline-flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 font-mono text-[11px] text-slate-500 hover:text-slate-300"
+                      style={{ "--grade-color": GRADE_META[c.grade].color } as CSSProperties}
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: GRADE_META[c.grade].color }} />
+                      {c.target}
+                      <span className="font-bold" style={{ color: GRADE_META[c.grade].color }}>
+                        {c.grade}
+                      </span>
+                    </button>
+                  ))}
+              </div>
             </div>
           )}
 
@@ -924,10 +1042,14 @@ export function ScannerPage({
               >
                 {t(lang, "scanCancel")}
               </Button>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[rgba(9,13,22,0.8)] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                 <div
-                  className="h-full rounded-full bg-sky-400 transition-all duration-500"
-                  style={{ width: `${scan?.progress ?? 4}%` }}
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${scan?.progress ?? 4}%`,
+                    background: "linear-gradient(90deg, #0ea5e9 0%, #38bdf8 60%, #7dd3fc 100%)",
+                    boxShadow: "0 0 12px rgba(56, 189, 248, 0.4)",
+                  }}
                 />
               </div>
               <p className="mt-3 text-sm text-slate-400">
@@ -1043,18 +1165,20 @@ export function ScannerPage({
           </div>
         </section>
 
-        {/* ticker: real check names drifting by (decorative, duplicated for the loop) */}
-        <div className="appseal-fade-x border-y border-slate-800/60 py-3.5" aria-hidden>
+        {/* ticker: real check names drifting by (decorative, duplicated for the
+            loop); taller padding + glowing dots so it reads as an instrument
+            strip instead of a hairline */}
+        <div className="appseal-fade-x border-y border-slate-800/60 py-4 sm:py-5" aria-hidden>
           <div className="appseal-marquee">
             {[0, 1].map((copy) => (
               <ul
                 key={copy}
-                className="flex shrink-0 items-center gap-7 pr-7 font-mono text-[11px] text-slate-600"
+                className="flex shrink-0 items-center gap-7 pr-7 font-mono text-[11px] text-slate-500"
               >
                 {CHECK_TICKER.map((name) => (
                   <li key={name} className="flex items-center gap-7">
                     {name}
-                    <span className="h-1 w-1 rounded-full bg-sky-400/60" />
+                    <span className="h-[3px] w-[3px] rounded-full bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.55)]" />
                   </li>
                 ))}
               </ul>
@@ -1064,7 +1188,7 @@ export function ScannerPage({
 
         {/* stats */}
         <section className="appseal-sect relative py-14" aria-label={t(lang, "statsTitle")}>
-          <SectionHead eyebrow={EYEBROWS.stats[lang]} title={t(lang, "statsTitle")} />
+          <SectionHead eyebrow={EYEBROWS.stats[lang]} title={t(lang, "statsTitle")} count="01" />
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {STATS.map((s, i) => {
               // stat1 = live apps counter (same Redis source as /stats, never
@@ -1075,9 +1199,24 @@ export function ScannerPage({
                 <Reveal key={s.label} delay={i * 0.08} className="h-full">
                   <div className="appseal-card h-full rounded-2xl p-6 text-center">
                     <p className="font-display text-5xl font-extrabold">
-                      <Stat value={value} suffix={s.suffix} decimals={s.decimals} className="appseal-gradient-text" />
+                      <Stat
+                        value={value}
+                        suffix={s.suffix}
+                        decimals={s.decimals}
+                        delay={0.1 + i * 0.1}
+                        className="appseal-gradient-text"
+                      />
                     </p>
-                    <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{t(lang, s.label)}</p>
+                    {/* live dot by the caption: the numbers read as a live feed,
+                        not a static screenshot */}
+                    <p className="mt-2 flex items-center justify-center text-[13px] leading-relaxed text-slate-300">
+                      <span
+                        aria-hidden
+                        className="appseal-live mr-2"
+                        style={{ "--live-color": "#38bdf8", width: "6px", height: "6px" } as CSSProperties}
+                      />
+                      {t(lang, s.label)}
+                    </p>
                   </div>
                 </Reveal>
               );
@@ -1104,7 +1243,7 @@ export function ScannerPage({
 
         {/* how it works */}
         <section className="appseal-sect relative py-14" aria-label={t(lang, "howTitle")}>
-          <SectionHead eyebrow={EYEBROWS.how[lang]} title={t(lang, "howTitle")} />
+          <SectionHead eyebrow={EYEBROWS.how[lang]} title={t(lang, "howTitle")} count="02" />
           <div className="mt-8 grid gap-4 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:gap-3">
             {[
               { icon: <Globe className="h-5 w-5" />, n: "01", ti: t(lang, "how1Title"), tx: t(lang, "how1Text"), chips: [] as string[] },
@@ -1120,7 +1259,8 @@ export function ScannerPage({
                   </Reveal>
                 )}
                 <Reveal delay={i * 0.08} className="h-full">
-                  <div className="appseal-card relative flex h-full flex-col overflow-hidden rounded-2xl p-6">
+                  {/* appseal-corners: monoline HUD brackets in all four corners */}
+                  <div className="appseal-card appseal-corners relative flex h-full flex-col overflow-hidden rounded-2xl p-6">
                     <span
                       aria-hidden
                       className="appseal-step-num pointer-events-none absolute right-5 top-2 select-none font-mono text-5xl font-extrabold"
@@ -1131,7 +1271,7 @@ export function ScannerPage({
                       {x.icon}
                     </span>
                     <h3 className="font-display mt-4 text-base font-bold text-slate-100">{x.ti}</h3>
-                    <p className="mt-2 text-[13px] leading-relaxed text-slate-400">{x.tx}</p>
+                    <p className="mt-2 text-[13px] leading-relaxed text-slate-300">{x.tx}</p>
                     {/* compact translucent tags keep card 02 the same visual
                         weight as its shorter neighbours */}
                     {x.chips.length > 0 && (
@@ -1155,7 +1295,7 @@ export function ScannerPage({
 
         {/* grade showcase: what each rank means (out of the hero, its own beat) */}
         <section className="appseal-sect relative py-14" aria-label={t(lang, "showcaseHint")}>
-          <SectionHead eyebrow={EYEBROWS.grades[lang]} title={t(lang, "showcaseHint")} />
+          <SectionHead eyebrow={EYEBROWS.grades[lang]} title={t(lang, "showcaseHint")} count="03" />
           <Reveal className="mt-8">
             <div
               className="appseal-card mx-auto max-w-2xl overflow-hidden rounded-2xl p-5 sm:p-6"
@@ -1249,7 +1389,7 @@ export function ScannerPage({
 
         {/* first real case */}
         <section className="appseal-sect relative py-14" aria-label={t(lang, "caseTitle")}>
-          <SectionHead eyebrow={EYEBROWS.case[lang]} title={t(lang, "caseTitle")} sub={t(lang, "caseSub")} />
+          <SectionHead eyebrow={EYEBROWS.case[lang]} title={t(lang, "caseTitle")} sub={t(lang, "caseSub")} count="04" />
           <Reveal className="mt-8">
             <div className="appseal-ring mx-auto max-w-3xl">
               <div className="appseal-glass-outer rounded-[15px] p-6 sm:p-8">
@@ -1325,7 +1465,7 @@ export function ScannerPage({
               </pre>
             </div>
 
-            <p className="mt-6 text-[13px] leading-relaxed text-slate-400">{t(lang, "caseBody")}</p>
+            <p className="mt-6 text-[13px] leading-relaxed text-slate-300">{t(lang, "caseBody")}</p>
                 <p className="font-display mt-4 text-sm font-bold text-sky-300">{t(lang, "caseQuote")}</p>
                 <a
                   href={`/report/${CASE_REPORT_ID}`}
@@ -1350,7 +1490,7 @@ export function ScannerPage({
                     <h2 className="font-display text-2xl font-bold text-slate-100">
                       {t(lang, "issue2Title")}
                     </h2>
-                    <p className="mx-auto mt-3 max-w-xl text-[13px] leading-relaxed text-slate-400 sm:mx-0">
+                    <p className="mx-auto mt-3 max-w-xl text-[13px] leading-relaxed text-slate-300 sm:mx-0">
                       {t(lang, "issue2Sub")}
                     </p>
                     <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap sm:justify-start">
@@ -1416,7 +1556,7 @@ export function ScannerPage({
 
         {/* what we check */}
         <section className="appseal-sect relative py-14" aria-label={t(lang, "checksTitle")}>
-          <SectionHead eyebrow={EYEBROWS.engine[lang]} title={t(lang, "checksTitle")} sub={t(lang, "checksSub")} />
+          <SectionHead eyebrow={EYEBROWS.engine[lang]} title={t(lang, "checksTitle")} sub={t(lang, "checksSub")} count="05" />
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {CHECK_CATEGORIES.map((c, i) => (
               <Reveal
@@ -1438,7 +1578,7 @@ export function ScannerPage({
                   </div>
                   <ul className="mt-4 space-y-2">
                     {c.items[lang].split("|").map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-[13px] text-slate-400">
+                      <li key={item} className="flex items-start gap-2 text-[13px] text-slate-300">
                         <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400/70" />
                         {item}
                       </li>
@@ -1461,7 +1601,7 @@ export function ScannerPage({
             fix guides, weekly digest, CI gate, Telegram bot and the JSON API.
             Whole cards are links, one honest sentence per card */}
         <section className="appseal-sect relative py-14" aria-label={t(lang, "ecoTitle")}>
-          <SectionHead eyebrow={EYEBROWS.eco[lang]} title={t(lang, "ecoTitle")} sub={t(lang, "ecoSub")} />
+          <SectionHead eyebrow={EYEBROWS.eco[lang]} title={t(lang, "ecoTitle")} sub={t(lang, "ecoSub")} count="06" />
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(
               [
@@ -1485,7 +1625,7 @@ export function ScannerPage({
                     <c.icon className="h-5 w-5" />
                   </span>
                   <h3 className="mt-4 text-sm font-bold leading-snug text-slate-100">{t(lang, c.tKey)}</h3>
-                  <p className="mt-2 flex-1 text-[13px] leading-relaxed text-slate-400">{t(lang, c.dKey)}</p>
+                  <p className="mt-2 flex-1 text-[13px] leading-relaxed text-slate-300">{t(lang, c.dKey)}</p>
                   <span className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-semibold text-sky-400">
                     {t(lang, "ecoCardCta")}
                     <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -1508,7 +1648,7 @@ export function ScannerPage({
             src="/video/Light_refracting.mp4"
             className="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-40 [mask-image:linear-gradient(to_bottom,transparent,black_18%,black_82%,transparent)]"
           />
-          <SectionHead eyebrow={EYEBROWS.pricing[lang]} title={t(lang, "pricingTitle")} sub={t(lang, "pricingSub")} />
+          <SectionHead eyebrow={EYEBROWS.pricing[lang]} title={t(lang, "pricingTitle")} sub={t(lang, "pricingSub")} count="07" />
           <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-relaxed text-slate-300">
             {t(lang, "planHeroLine")}
           </p>
@@ -1521,7 +1661,14 @@ export function ScannerPage({
                 intensity={0.45}
                 spotlightSize={280}
               >
-                <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-400">{t(lang, "planFree")}</p>
+                {/* name + "free forever" tag: the plan needs its own anchor,
+                    otherwise the calm card reads as an empty stub */}
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-slate-400">{t(lang, "planFree")}</p>
+                  <span className="rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-2.5 py-0.5 text-[10px] font-bold text-sky-300">
+                    {t(lang, "planFreeTag")}
+                  </span>
+                </div>
                 <p className="font-display mt-4 text-4xl font-extrabold text-slate-100">{t(lang, "planFreePrice")}</p>
                 <div className="my-5 h-px bg-white/5" />
                 <ul className="space-y-2.5">
@@ -1603,6 +1750,11 @@ export function ScannerPage({
                   {t(lang, "planProPrice")}{" "}
                   <span className="whitespace-nowrap text-sm font-semibold text-slate-400">{t(lang, "planProPer")}</span>
                 </p>
+                {/* Pro and Agency share one price - the per-day math gives Pro
+                    its own value anchor instead of looking like a duplicate */}
+                <span className="mt-2.5 inline-flex w-fit items-center rounded-full border border-sky-400/25 bg-sky-400/[0.07] px-2.5 py-0.5 font-mono text-[11px] font-semibold text-sky-300">
+                  {t(lang, "planProDeal")}
+                </span>
                 <p className="mt-2 text-[11px] leading-snug text-slate-400">{t(lang, "planProSub")}</p>
                 <div className="my-5 h-px bg-white/5" />
                 <ul className="space-y-2.5">
@@ -1639,7 +1791,10 @@ export function ScannerPage({
                   {t(lang, "planAgencyPrice")}{" "}
                   <span className="whitespace-nowrap text-sm font-semibold text-slate-400">{t(lang, "planAgencyPer")}</span>
                 </p>
-                <span className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
+                {/* value badge with the per-project math - the deal is the
+                    reason this card exists, so it gets weight (T-09) */}
+                <span className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/[0.12] px-3 py-1 text-[11px] font-bold text-emerald-300 shadow-[0_0_14px_-4px_rgba(52,211,153,0.5)]">
+                  <span aria-hidden className="font-mono">↓</span>
                   {t(lang, "planAgencyDeal")}
                 </span>
                 <p className="mt-2 text-[11px] leading-snug text-slate-400">{t(lang, "planAgencySub")}</p>
@@ -1700,6 +1855,7 @@ export function ScannerPage({
             eyebrow={EYEBROWS.reviews[lang]}
             title={t(lang, "reviewsTitle")}
             sub={t(lang, "reviewsSubtitle")}
+            count="08"
           />
           <LandingReviews lang={lang} />
           <Reveal className="mt-8 text-center">
@@ -1715,7 +1871,7 @@ export function ScannerPage({
 
         {/* FAQ */}
         <section className="appseal-sect relative py-14" aria-label={t(lang, "faqTitle")}>
-          <SectionHead eyebrow={EYEBROWS.faq[lang]} title={t(lang, "faqTitle")} />
+          <SectionHead eyebrow={EYEBROWS.faq[lang]} title={t(lang, "faqTitle")} count="09" />
           <div className="mx-auto mt-8 max-w-3xl space-y-3">
             {(
               [
@@ -1754,7 +1910,7 @@ export function ScannerPage({
                         }`}
                       >
                         <div className="overflow-hidden">
-                          <p className="pl-7 pt-3 text-[13px] leading-relaxed text-slate-400">{t(lang, a)}</p>
+                          <p className="pl-7 pt-3 text-[13px] leading-relaxed text-slate-300">{t(lang, a)}</p>
                         </div>
                       </div>
                     </div>

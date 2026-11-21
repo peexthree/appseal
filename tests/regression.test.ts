@@ -29,3 +29,30 @@ describe("benchmark regression", () => {
     }
   });
 });
+
+/* ------------------- owner-alert privacy (152-FZ) --------------------- */
+
+/**
+ * 152-FZ compliance regression: IP = personal data, so the owner Telegram
+ * alerts (scan + purchase) must carry only the coarse edge-derived country
+ * line from regionLine() - never the raw client IP.
+ */
+describe("owner-alert privacy regression", () => {
+  it("the scan alert uses regionLine and never embeds the raw client IP", () => {
+    const source = readFileSync(
+      fileURLToPath(new URL("../src/app/api/scan/route.ts", import.meta.url)),
+      "utf-8",
+    );
+    assert.match(source, /regionLine\(req\.headers\)/);
+    assert.doesNotMatch(source, /📡 IP:/);
+  });
+
+  it("the purchase alert uses regionLine and never embeds the raw client IP", () => {
+    const source = readFileSync(
+      fileURLToPath(new URL("../src/app/api/purchase/route.ts", import.meta.url)),
+      "utf-8",
+    );
+    assert.match(source, /regionLine\(req\.headers\)/);
+    assert.doesNotMatch(source, /📡 IP:/);
+  });
+});

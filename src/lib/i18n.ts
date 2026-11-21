@@ -204,6 +204,8 @@ export const DICT = {
     en: "Instant delivery in Telegram • receipt by email",
   },
   planFreePrice: { ru: "0 ₽", en: "$0" },
+  // free tier needs an anchor of its own so the card does not read as a stub
+  planFreeTag: { ru: "Навсегда бесплатно", en: "Free forever" },
   planFreeFeats: {
     ru: "1 полный скан в день|Оценка A+-E и полный отчёт|Fix-prompt для ИИ-агента",
     en: "1 full scan per day|A+-E grade and full report|Fix prompt for your AI agent",
@@ -212,6 +214,9 @@ export const DICT = {
   planProPrice: { ru: "1 490 ₽", en: "$19" },
   // one-time purchase - a "/ mo" suffix would read as a subscription
   planProPer: { ru: "/ 30 дней", en: "/ 30 days" },
+  // value framing: Pro and Agency share the price, the per-day math
+  // (1490/30 ≈ 50, $19/30 ≈ 0.63) gives Pro its own honest anchor
+  planProDeal: { ru: "≈50 ₽ за день безлимита", en: "≈$0.63 per day of unlimited scans" },
   planProSub: {
     ru: "30 дней безлимита одного домена - разовая покупка, без автосписаний",
     en: "30 days of unlimited scans for one domain - one-time purchase, no auto-renewal",
@@ -441,6 +446,18 @@ export const DICT = {
   // private scan checkbox in the hero form (Pass-only feature)
   privateScanLabel: { ru: "Не публиковать в реестре", en: "Keep out of the public registry" },
   privateScanNote: { ru: "доступно с пассом", en: "for Pass holders" },
+  // collapsed consent row in the hero (full 152-FZ text unfolds on demand)
+  consentShort: {
+    ru: "Права на проверку · пассивный скан",
+    en: "Ownership & passive scan notice",
+  },
+  // trust strip pills under the hero form (icon list is page-local)
+  trustPills: {
+    ru: "Пассивный скан|125 проверок|Без установки кода|Отчёт в один клик",
+    en: "Passive scan|125 checks|No code to install|One-click report",
+  },
+  // "recently scanned" hint that fills the empty state under the hero form
+  recentLabel: { ru: "Свежие проверки из реестра", en: "Recent checks from the registry" },
   privateHitTitle: { ru: "Приватный скан доступен с пассом", en: "Private scans come with a Pass" },
   privateHitText: {
     ru: "Скан с опцией «Не публиковать в реестре» выполняется только с активным пассом на домен. Обычный публичный скан остаётся бесплатным.",

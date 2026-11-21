@@ -42,6 +42,30 @@ function StatusIcon({ s }: { s: CheckResult["status"] }) {
   return <MinusCircle className={`${cls} text-slate-600`} />;
 }
 
+// share icon: three nodes connected by lines (share-2 style), stroke matches
+// the appseal-icons look (viewBox 24, currentColor, strokeWidth 2)
+function ShareIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+    </svg>
+  );
+}
+
 function TrophyHero({ grade, score }: { grade: Grade; score: number }) {
   const meta = GRADE_META[grade] ?? GRADE_META["E"];
   const trophyPath = getTrophyPath(grade);
@@ -226,6 +250,7 @@ export function ReportView({
 
   // Share & Link state
   const [resultCopied, setResultCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [prevScan, setPrevScan] = useState<{ score: number; grade: Grade; id: string } | null>(null);
   const [passActive, setPassActive] = useState<boolean | null>(null);
 
@@ -367,6 +392,45 @@ export function ReportView({
     }
     setResultCopied(true);
     setTimeout(() => setResultCopied(false), 2000);
+  };
+
+  // native share sheet (mobile) with clipboard fallback; shares the report
+  // page URL - /report/[id] renders the public verification view for visitors
+  // and the rkey never appears in the URL, so location.href is safe to hand out
+  const shareResult = async () => {
+    const shareUrl = window.location.href;
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: `AppSeal: ${scan.host}`,
+          text: shareResultText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        // user dismissed the share sheet - no clipboard copy, no toast
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        // share failed (no targets / permission): fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      // clipboard API denied or missing (non-secure context): execCommand fallback
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = shareUrl;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {}
+    }
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const copyPrompt = async () => {
@@ -551,6 +615,17 @@ export function ReportView({
               <RotateCcw className="h-4 w-4 mr-1.5" />
               {t(lang, "rescan")}
             </Button>
+
+            {/* always available - sits outside the pass-gated PDF block above */}
+            <Button variant="outline" onClick={shareResult} className="border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white">
+              <ShareIcon className="h-4 w-4 mr-1.5" />
+              {lang === "ru" ? "Поделиться результатом" : "Share result"}
+            </Button>
+            {linkCopied && (
+              <span role="status" aria-live="polite" className="text-xs font-bold text-emerald-300">
+                {lang === "ru" ? "Ссылка скопирована" : "Link copied"}
+              </span>
+            )}
           </div>
         </div>
       </div>

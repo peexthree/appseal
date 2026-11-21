@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useLang } from "@/lib/use-lang";
 import type { Lang } from "@/lib/scanner/types";
 
@@ -41,16 +42,14 @@ export function useCookieConsent(): CookieConsentValue | null {
 
 const COPY = {
   title: { ru: "Cookie и аналитика", en: "Cookies & analytics" },
-  // banner copy stays one-to-two lines: the full 152-FZ text lives in /legal
-  // (the link below), the banner only names the counter, the data and the
-  // until-you-agree gate - repeating five lines here ate ~40% of a phone
-  // viewport on every first visit
+  // полоса - одна строка: только счётчик и гейт до согласия; полный текст
+  // 152-ФЗ живёт на /legal (ссылка в строке), повторять его тут нечего
   bodyA: {
-    ru: "Метрика (счётчик № 114397545) ставит cookie и обрабатывает обезличенные данные визита - IP, источник, поведение. Пока вы не согласитесь, счётчик не загружается. Подробности - в ",
-    en: "Yandex.Metrica (counter no. 114397545) sets cookies and processes de-identified visit data - IP, traffic source, on-page behaviour. Until you agree, the counter stays off. Details - in the ",
+    ru: "Метрика № 114397545 ставит cookie. Без согласия счётчик не загружается. Детали - в ",
+    en: "Metrica no. 114397545 sets cookies. Without consent the counter stays off. Details in the ",
   },
   bodyLink: { ru: "правилах сервиса", en: "service terms" },
-  accept: { ru: "Принять - включить Метрику", en: "Accept - enable Metrica" },
+  accept: { ru: "Принять", en: "Accept" },
   deny: { ru: "Отклонить", en: "Decline" },
   aria: { ru: "Согласие на cookie-файлы и аналитику", en: "Cookie and analytics consent" },
 } as const;
@@ -90,17 +89,23 @@ export function CookiePrefs() {
 export function CookieConsent() {
   const consent = useCookieConsent();
   const lang: Lang = useLang();
+  const reduceMotion = useReducedMotion();
   if (consent !== null) return null;
 
+  // компактная нижняя полоса вместо карточки: текст слева, кнопки справа,
+  // на мобайле - колонка (текст <= 2 строк, кнопки в ряд) + safe-area снизу
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[70] flex justify-center px-3 pb-3 sm:px-4 sm:pb-5">
-      <div
-        role="dialog"
-        aria-label={COPY.aria[lang]}
-        className="appseal-dropdown w-full max-w-2xl rounded-xl p-3.5 sm:p-4"
-      >
-        <p className="text-[13px] leading-relaxed text-slate-400">
-          <span className="font-semibold text-slate-100">{COPY.title[lang]}: </span>
+    <motion.div
+      role="dialog"
+      aria-label={COPY.aria[lang]}
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.3, ease: "easeOut" }}
+      className="fixed inset-x-0 bottom-0 z-[70] border-t border-white/[0.07] bg-[rgba(9,13,22,0.85)] backdrop-blur-xl"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-5 sm:py-3.5">
+        <p className="line-clamp-2 min-w-0 flex-1 text-xs leading-snug text-slate-400 sm:line-clamp-1">
           {COPY.bodyA[lang]}
           <Link
             href="/legal"
@@ -110,21 +115,21 @@ export function CookieConsent() {
           </Link>
           .
         </p>
-        <div className="mt-2.5 flex gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           <button
             onClick={() => setCookieConsent("granted")}
-            className="flex-1 rounded-md bg-sky-400 px-4 py-2 text-xs font-bold text-[#090d16] transition hover:bg-sky-300 sm:flex-none"
+            className="flex-1 rounded-full border border-sky-400/40 bg-sky-400/10 px-3.5 py-1.5 text-xs font-semibold text-sky-300 transition hover:bg-sky-400/20 sm:flex-none"
           >
             {COPY.accept[lang]}
           </button>
           <button
             onClick={() => setCookieConsent("denied")}
-            className="rounded-md border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-500 hover:text-slate-100"
+            className="flex-1 rounded-full px-3.5 py-1.5 text-xs font-medium text-slate-400 transition hover:text-slate-200 sm:flex-none"
           >
             {COPY.deny[lang]}
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -345,16 +345,38 @@ export async function redeemPackPass(paymentId: string, host: string): Promise<P
 
 /** Our own deployments (and the showcase case study) keep badge/PDF access
  *  without a paid pass: their badges stay lit and demo the trust seal. */
-const SELF_HOSTS = new Set([
+const SELF_HOSTS_BASE = new Set([
   "appseal.online",
   "appseal.vercel.app",
   "appseal.ru",
   "akulenok-tmz.ru",
 ]);
 
+/** A deployment can extend the base without a code change: SELF_HOSTS is a
+ *  comma-separated host list merged over the hardcoded set. The parse result
+ *  is cached in the module and re-computed only when the env value actually
+ *  changes (in production that is exactly once per process - the cheap cached
+ *  variant - while tests can flip the env deterministically). */
+let selfHostsEnvRaw: string | null = null;
+let selfHostsCache = new Set(SELF_HOSTS_BASE);
+
+export function getSelfHosts(): Set<string> {
+  const raw = process.env.SELF_HOSTS ?? "";
+  if (raw !== selfHostsEnvRaw) {
+    selfHostsEnvRaw = raw;
+    const merged = new Set(SELF_HOSTS_BASE);
+    for (const part of raw.split(",")) {
+      const host = part.trim().toLowerCase();
+      if (host) merged.add(host);
+    }
+    selfHostsCache = merged;
+  }
+  return selfHostsCache;
+}
+
 export function isSelfHost(host: string): boolean {
   const clean = host.replace(/^www\./i, "").toLowerCase();
-  return SELF_HOSTS.has(clean);
+  return getSelfHosts().has(clean);
 }
 
 /** PDF reports and the embeddable trust badge are Launch Pass benefits:

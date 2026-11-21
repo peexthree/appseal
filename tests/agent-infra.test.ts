@@ -1,8 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getClientIp, getConnIp, tickSecretOk } from "../src/lib/sec.ts";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { getClientIp, getConnIp, regionLine, tickSecretOk } from "../src/lib/sec.ts";
 import { buildHealthPayload, HEALTH_PING_KEY } from "../src/app/api/healthz/payload.ts";
 import { bumpDailyQuota } from "../src/lib/passes.ts";
+import { BADGE_CACHE_HEADERS } from "../src/app/api/badge/headers.ts";
 
 /**
  * Infra-hardening suite: tick-secret gate, connection-IP helper, healthz
@@ -199,4 +202,44 @@ test("bumpDailyQuota without Redis fails open with used=1", async () => {
   assert.deepEqual(a, { used: 1, allowed: true });
   const b = await bumpDailyQuota("no-redis-hash", 0);
   assert.deepEqual(b, { used: 1, allowed: false });
+});
+
+/* ------------------------- regionLine (152-FZ) ------------------------ */
+
+test("regionLine builds the owner-alert line from the Vercel edge country", () => {
+  assert.equal(regionLine(new Headers({ "x-vercel-ip-country": "RU" })), "📡 Регион: RU");
+  assert.equal(regionLine(new Headers({ "x-vercel-ip-country": "de" })), "📡 Регион: DE");
+});
+
+test("regionLine is empty without a usable country - no raw IP ever leaves the server", () => {
+  assert.equal(regionLine(new Headers()), "");
+  assert.equal(regionLine(new Headers({ "x-vercel-ip-country": "  " })), "");
+  // a malformed value must never reach the Telegram alert either
+  assert.equal(regionLine(new Headers({ "x-vercel-ip-country": "not-a-country" })), "");
+});
+
+/* ------------------------- badge cache headers ------------------------ */
+
+test("badge cache contract: CDN-tier caching with Vary: Accept", () => {
+  // 5 min at the CDN (s-maxage) + stale-while-revalidate shields the origin
+  // from viral traffic; the browser window matches the existing badge lag
+  assert.equal(
+    BADGE_CACHE_HEADERS["cache-control"],
+    "public, max-age=300, s-maxage=300, stale-while-revalidate=3600",
+  );
+  assert.equal(BADGE_CACHE_HEADERS["cdn-cache-control"], "public, max-age=300");
+  // SVG and PNG badge variants must be cached separately
+  assert.equal(BADGE_CACHE_HEADERS.vary, "Accept");
+});
+
+test("the badge route wires the shared cache headers into every response", () => {
+  const source = readFileSync(
+    fileURLToPath(new URL("../src/app/api/badge/route.ts", import.meta.url)),
+    "utf-8",
+  );
+  assert.match(source, /BADGE_CACHE_HEADERS/);
+  // the per-view Redis pass gate is no longer shielded by no-store
+  assert.doesNotMatch(source, /no-store/);
+  // edge runtime is intentionally NOT used (node:fs trophy reads + node:crypto pass gate)
+  assert.match(source, /runtime = "nodejs"/);
 });
