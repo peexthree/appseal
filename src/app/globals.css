@@ -981,6 +981,15 @@ html.appseal-idle .appseal-radar-sweep {
   transform: rotate(-0.35deg);
 }
 
+/* destruction sprites: crack + torn-out chunk revealed per eaten life */
+.nf-crack {
+  animation: nf-crack-in 0.35s cubic-bezier(0.2, 1.2, 0.4, 1) both;
+}
+@keyframes nf-crack-in {
+  from { opacity: 0; transform: scale(1.15); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 /* the bug chomps the page: lunge-squeeze on the shell at the bite moment */
 .nf-bite-chomp {
   animation: nf-bite-chomp 0.35s cubic-bezier(0.3, 1.4, 0.4, 1) both;
@@ -1179,6 +1188,7 @@ html.appseal-idle .appseal-radar-sweep {
   .nf-flatten,
   .nf-splitter,
   .nf-bite-chomp,
+  .nf-crack,
   .cb-pre-dash {
     animation: none;
   }

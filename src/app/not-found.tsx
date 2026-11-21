@@ -33,6 +33,56 @@ export default function NotFound() {
             {/* SFX toggle is injected here by the game engine */}
             <div data-nf-sfx-slot className="absolute right-4 top-4" />
 
+            {/* destruction sprites: one crack group per eaten life, revealed
+                by the engine (data-nf-crack) */}
+            <svg
+              className="nf-crack pointer-events-none absolute right-0 top-0 z-[5]"
+              width="240"
+              height="150"
+              viewBox="0 0 240 150"
+              fill="none"
+              data-nf-crack="1"
+              aria-hidden="true"
+              style={{ display: "none" }}
+            >
+              <path
+                d="M 240 0 L 196 8 L 208 26 L 186 34 L 200 52 L 240 48 Z"
+                fill="#0a0d16"
+                stroke="rgba(239,68,68,0.5)"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M 196 8 L 168 22 L 176 30 M 186 34 L 150 44 L 142 60 M 200 52 L 178 70 L 184 88"
+                stroke="rgba(153,27,27,0.75)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <path d="M 208 26 L 230 44" stroke="rgba(153,27,27,0.5)" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+            <svg
+              className="nf-crack pointer-events-none absolute left-0 bottom-0 z-[5]"
+              width="220"
+              height="140"
+              viewBox="0 0 220 140"
+              fill="none"
+              data-nf-crack="2"
+              aria-hidden="true"
+              style={{ display: "none" }}
+            >
+              <path
+                d="M 0 140 L 40 128 L 30 112 L 52 106 L 42 88 L 0 92 Z"
+                fill="#0a0d16"
+                stroke="rgba(239,68,68,0.5)"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M 40 128 L 70 116 L 62 106 M 52 106 L 86 96 L 94 80 M 42 88 L 66 72 L 60 56"
+                stroke="rgba(153,27,27,0.75)"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+
             {/* status badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 font-mono text-[11px] font-bold tracking-[0.18em] text-slate-300">
               <span className="appseal-pulse h-2 w-2 rounded-full bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.9)]" />

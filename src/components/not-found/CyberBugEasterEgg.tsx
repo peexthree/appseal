@@ -265,7 +265,6 @@ export function CyberBugEasterEgg() {
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
   const lastRandom = useRef(-1);
   const lastBossRandom = useRef(-1);
-  const toastCount = useRef(0);
   const codeFont = useRef("10px ui-monospace, monospace");
   const best = useRef(0);
   /** lifetime kills across visits (localStorage TOTAL_KEY) */
@@ -883,7 +882,8 @@ export function CyberBugEasterEgg() {
     addTimer(() => el.remove(), BALANCE.cloudLife * 1000);
   };
 
-  /** Announcements float at a fixed central spot (never at the kill point). */
+  /** Announcements float at a fixed central spot (never at the kill point)
+   * and stack on the actual bottom edge of the toast above - no overlaps. */
   const showToast = (text: string, tone: "info" | "boss" | "achievement") => {
     const layer = toastLayer.current;
     if (!layer) return;
@@ -897,18 +897,20 @@ export function CyberBugEasterEgg() {
     const w = el.offsetWidth;
     const h = el.offsetHeight;
     const v = vp.current;
-    // stack offset: a second toast while one is visible slides below it
-    const slot = toastCount.current;
-    toastCount.current += 1;
-    // the anchor is the screen center; the clamp slides it out of the card's
-    // text block so announcements never cover the page copy
-    const pos = clampToast(v.w / 2, v.h / 2 + slot * 52, w, h, v, cardRect.current);
+    // anchor is the screen center; live toasts push the anchor down so the
+    // stack never overlaps, whatever their real heights are
+    let anchorY = v.h / 2;
+    for (const t of Array.from(layer.querySelectorAll<HTMLElement>(".nf-toast:not(.nf-out)"))) {
+      if (t === el) continue;
+      anchorY = Math.max(anchorY, t.getBoundingClientRect().bottom + 10);
+    }
+    // the clamp slides the stack out of the card's text block
+    const pos = clampToast(v.w / 2, anchorY, w, h, v, cardRect.current);
     el.style.left = `${pos.x}px`;
     el.style.top = `${pos.y}px`;
     addTimer(() => el.classList.add("nf-out"), (BALANCE.toastLife - 0.5) * 1000);
     addTimer(() => {
       el.remove();
-      toastCount.current = Math.max(0, toastCount.current - 1);
     }, BALANCE.toastLife * 1000);
   };
 
@@ -1243,46 +1245,52 @@ export function CyberBugEasterEgg() {
       timers.current.delete(fadeId);
       timers.current.delete(killId);
     };
+    // drag state: listeners persist for the chip's whole life (once-listeners
+    // got consumed by stray pointer events and left chips unable to fire)
     let dragging = false;
-    el.addEventListener(
-      "pointerdown",
-      (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dragging = true;
-        pauseLifetime();
-        el.classList.add("nf-drop-drag");
-        try {
-          el.setPointerCapture(e.pointerId);
-        } catch {
-          /* capture unsupported - moves still land while pressed */
-        }
-      },
-      { once: true },
-    );
+    let done = false;
+    const finish = (x: number, y: number) => {
+      if (done) return;
+      done = true;
+      el.remove();
+      applyPowerup(kind, x, y);
+    };
+    el.addEventListener("pointerdown", (e) => {
+      if (done) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dragging = true;
+      pauseLifetime();
+      el.classList.add("nf-drop-drag");
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* capture unsupported - moves still land while pressed */
+      }
+    });
     el.addEventListener("pointermove", (e) => {
-      if (!dragging) return;
+      if (!dragging || done) return;
       el.style.left = `${e.clientX - 70}px`;
       el.style.top = `${e.clientY - 24}px`;
     });
-    el.addEventListener(
-      "pointerup",
-      (e) => {
-        if (!dragging) return;
-        dragging = false;
-        el.remove();
-        applyPowerup(kind, e.clientX, e.clientY);
-      },
-      { once: true },
-    );
+    el.addEventListener("pointerup", (e) => {
+      if (!dragging || done) return;
+      dragging = false;
+      finish(e.clientX, e.clientY);
+    });
+    // touch interrupted by the browser (scroll takeover, home gesture):
+    // detonate where the chip was left instead of leaving it stuck
+    el.addEventListener("pointercancel", (e) => {
+      if (!dragging || done) return;
+      dragging = false;
+      finish(e.clientX, e.clientY);
+    });
     // keyboard fallback: Enter/Space detonates at the chip's position
     el.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       e.preventDefault();
-      pauseLifetime();
       const r = el.getBoundingClientRect();
-      el.remove();
-      applyPowerup(kind, r.x + 70, r.y + 24);
+      finish(r.x + 70, r.y + 24);
     });
     layer.appendChild(el);
   };
@@ -1668,14 +1676,19 @@ export function CyberBugEasterEgg() {
     if (sh) sh.style.display = hud.shield ? "" : "none";
     const sfxBtn = document.querySelector<HTMLElement>("[data-nf-sfx-btn]");
     if (sfxBtn) sfxBtn.textContent = hud.sfxOn ? "SFX ON" : "SFX OFF";
-    // persistent card damage: every eaten life scuffs the frame further
+    // persistent card damage: every eaten life scuffs the frame further and
+    // reveals its destruction sprite (a crack with a torn-out chunk)
+    const dmg = 3 - hud.lives;
     const card = document.querySelector<HTMLElement>("[data-nf-damage]");
     if (card) {
       card.classList.remove("nf-dmg-1", "nf-dmg-2");
-      const dmg = 3 - hud.lives;
       if (dmg >= 1) card.classList.add("nf-dmg-1");
       if (dmg >= 2) card.classList.add("nf-dmg-2");
     }
+    const crack1 = document.querySelector<HTMLElement>('[data-nf-crack="1"]');
+    const crack2 = document.querySelector<HTMLElement>('[data-nf-crack="2"]');
+    if (crack1) crack1.style.display = dmg >= 1 ? "" : "none";
+    if (crack2) crack2.style.display = dmg >= 2 ? "" : "none";
   }, [hud]);
 
   useEffect(() => {
