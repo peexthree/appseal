@@ -30,8 +30,9 @@ export default function NotFound() {
             data-nf-damage
             className="appseal-glass-card pointer-events-auto relative w-full max-w-2xl rounded-3xl px-6 py-7 sm:px-10 sm:py-8"
           >
-            {/* SFX toggle is injected here by the game engine */}
-            <div data-nf-sfx-slot className="absolute right-4 top-4" />
+            {/* SFX toggle is injected here by the game engine; hidden until
+                the player wakes the game up with the first landed hit */}
+            <div data-nf-sfx-slot style={{ display: "none" }} className="absolute right-4 top-4" />
 
             {/* destruction sprites: one crack group per eaten life, revealed
                 by the engine (data-nf-crack) */}
@@ -105,8 +106,10 @@ export default function NotFound() {
             </h1>
             <p className="mt-0.5 text-xs text-white/45">Page not found</p>
 
-            {/* live game stats - the engine paints these through data slots */}
-            <div className="mx-auto mt-4 grid w-full max-w-md grid-cols-4 gap-2 font-mono">
+            {/* live game stats + world record - hidden until the first hit
+                wakes the game up (the easter egg stays undiscovered) */}
+            <div data-nf-game-ui style={{ display: "none" }} className="nf-game-ui mx-auto mt-4 w-full">
+              <div className="mx-auto grid w-full max-w-md grid-cols-4 gap-2 font-mono">
               <div className="rounded-xl border border-white/5 bg-white/[0.03] px-1 py-2">
                 <div className="text-[9px] tracking-widest text-slate-500">БАГОВ</div>
                 <div className="mt-0.5 text-[15px] font-bold text-emerald-400" data-nf-stat="kills">
@@ -151,14 +154,29 @@ export default function NotFound() {
                 —
               </span>
             </p>
+            </div>
 
-            <p className="mx-auto mt-3.5 max-w-md text-[13px] leading-relaxed text-white/55">
-              Такой страницы нет - но сканер работает в штатном режиме. Лови
-              багов, пока они не съели страницу.
+            <p data-nf-desc-neutral className="mx-auto mt-3.5 max-w-md text-[13px] leading-relaxed text-white/55">
+              Такой страницы нет - но сканер работает в штатном режиме.
             </p>
-            <p className="mx-auto mt-0.5 max-w-md text-[11px] leading-relaxed text-white/35">
+            <p data-nf-desc-neutral className="mx-auto mt-0.5 max-w-md text-[11px] leading-relaxed text-white/35">
               This page doesn&apos;t exist - but the scanner is up and running.
-              Squash the bugs before they eat the page.
+            </p>
+            <p
+              data-nf-desc-game
+              style={{ display: "none" }}
+              className="mx-auto mt-3.5 max-w-md text-[13px] leading-relaxed text-white/55"
+            >
+              Лови багов, пока они не съели страницу. Пауэр-апы можно тащить
+              курсором в нужную точку.
+            </p>
+            <p
+              data-nf-desc-game
+              style={{ display: "none" }}
+              className="mx-auto mt-0.5 max-w-md text-[11px] leading-relaxed text-white/35"
+            >
+              Squash the bugs before they eat the page. Drag the power-ups
+              wherever you need them.
             </p>
 
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">

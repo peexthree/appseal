@@ -990,6 +990,15 @@ html.appseal-idle .appseal-radar-sweep {
   to   { opacity: 1; transform: scale(1); }
 }
 
+/* the game HUD rises out of the card when the first hit wakes it up */
+.nf-game-ui {
+  animation: nf-game-in 0.45s ease-out both;
+}
+@keyframes nf-game-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* the bug chomps the page: lunge-squeeze on the shell at the bite moment */
 .nf-bite-chomp {
   animation: nf-bite-chomp 0.35s cubic-bezier(0.3, 1.4, 0.4, 1) both;

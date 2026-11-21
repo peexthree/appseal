@@ -210,9 +210,9 @@ export function CyberBugEasterEgg() {
   }, [lang]);
 
   const [view, setView] = useState<BugView>({ boss: false, type: "normal", hp: 3, maxHp: 3, legs: "idle" });
-  // HUD is visible from the first paint: the visitor sees the reward system
-  // before the first splat; total/best fill in from localStorage on mount
-  const [hud, setHud] = useState({ kills: 0, best: 0, total: 0, wave: 1, lives: 3, shield: false, sfxOn: true });
+  // the card HUD stays hidden until the player lands the first hit - it is
+  // an easter egg first, a game second; total/best fill in on mount
+  const [hud, setHud] = useState({ awake: false, kills: 0, best: 0, total: 0, wave: 1, lives: 3, shield: false, sfxOn: true });
   // game over: the bugs ate the page through all 404 lives
   const [gameOver, setGameOver] = useState(false);
   // touch device -> bigger hitbox + slower panic (set once on mount)
@@ -285,6 +285,8 @@ export function CyberBugEasterEgg() {
   const roaches = useRef<Roach[]>([]);
   /** the 50-kill swarm fires once per run */
   const swarmDone = useRef(false);
+  /** dormant easter egg: no HUD, no bites until the first landed hit */
+  const awake = useRef(false);
   /** de-personalized all-time record across every visitor (server-backed) */
   const worldRec = useRef(0);
   /** the world-record toast fires once per run */
@@ -1091,6 +1093,7 @@ export function CyberBugEasterEgg() {
       ymGoal("nf_wave_up");
     }
     setHud((h) => ({
+      awake: h.awake,
       kills: newKills,
       best: Math.max(h.best, newKills),
       total: total.current,
@@ -1464,6 +1467,7 @@ export function CyberBugEasterEgg() {
     }
 
     setHud((h) => ({
+      awake: h.awake,
       kills: newKills,
       best: Math.max(h.best, newKills),
       total: total.current,
@@ -1562,6 +1566,13 @@ export function CyberBugEasterEgg() {
   const applyHit = (cx: number, cy: number) => {
     const s = st.current;
     if (s.mode === "dying") return;
+
+    // the first landed hit wakes the game up: HUD reveals, bites get armed
+    if (!awake.current) {
+      awake.current = true;
+      s.biteAt = performance.now() + biteAfterFor(s.kills) * 1000;
+      setHud((h) => ({ ...h, awake: true }));
+    }
     buzz(12);
 
     // reduced motion: the bug stays put and pops on the first click
@@ -1676,6 +1687,17 @@ export function CyberBugEasterEgg() {
     if (sh) sh.style.display = hud.shield ? "" : "none";
     const sfxBtn = document.querySelector<HTMLElement>("[data-nf-sfx-btn]");
     if (sfxBtn) sfxBtn.textContent = hud.sfxOn ? "SFX ON" : "SFX OFF";
+    // dormant easter egg: HUD appears only after the first landed hit
+    const gameUi = document.querySelector<HTMLElement>("[data-nf-game-ui]");
+    if (gameUi) gameUi.style.display = hud.awake ? "block" : "none";
+    const sfxSlot = document.querySelector<HTMLElement>("[data-nf-sfx-slot]");
+    if (sfxSlot) sfxSlot.style.display = hud.awake ? "" : "none";
+    document.querySelectorAll<HTMLElement>("[data-nf-desc-neutral]").forEach((el) => {
+      el.style.display = hud.awake ? "none" : "";
+    });
+    document.querySelectorAll<HTMLElement>("[data-nf-desc-game]").forEach((el) => {
+      el.style.display = hud.awake ? "" : "none";
+    });
     // persistent card damage: every eaten life scuffs the frame further and
     // reveals its destruction sprite (a crack with a torn-out chunk)
     const dmg = 3 - hud.lives;
@@ -1782,8 +1804,13 @@ export function CyberBugEasterEgg() {
         const chilled = now < frozenUntil.current;
         if (!reduced.current && !frozen && !chilled) {
           const s = st.current;
-          // a bug past its patience loses it and hunts the 404 card for a bite
-          if ((s.mode === "idle" || s.mode === "panic" || s.mode === "peek") && now >= s.biteAt) {
+          // a bug past its patience loses it and hunts the 404 card for a
+          // bite; dormant players (never clicked) are never attacked
+          if (
+            awake.current &&
+            (s.mode === "idle" || s.mode === "panic" || s.mode === "peek") &&
+            now >= s.biteAt
+          ) {
             s.mode = "hunt";
             setView((v) => (v.legs === "step" ? v : { ...v, legs: "step" }));
             showPhrase(HUNT_CLOUD[langRef.current], s.x, s.y, "#FBBF24");
