@@ -68,10 +68,6 @@ export const BALANCE = {
   walkCycleBoss: 0.52,
   walkCycleMin: 0.28,
   walkCycleMax: 1.05,
-  // one-time catch hint for players who never clicked the bug
-  hintDelay: 2.0,
-  // onboarding tooltip fades on its own unless the visitor clicks first
-  onboardTipMs: 3000,
   // hitbox sizes (px): desktop / touch (fingers miss small squares), boss
   // covers the longer tail silhouette
   hitSize: 96,
@@ -345,12 +341,6 @@ export function rageCloud(lang: Lang, rand: () => number = Math.random): string 
   return pool[Math.floor(rand() * pool.length)];
 }
 
-/** One-time hint cloud for players who never clicked the bug. */
-export const HINT_CLOUD: Record<Lang, string> = {
-  ru: "Поймай жука - кликни по нему!",
-  en: "Catch the bug - click it!",
-};
-
 /** Accessible labels for the splattable bug button (keyboard a11y). */
 export const BUG_A11Y: Record<Lang, { bug: string; boss: string }> = {
   ru: {
@@ -399,12 +389,6 @@ export function skinFor(totalKills: number): SkinDef {
 export const SKIN_UNLOCK_LABEL: Record<Lang, string> = {
   ru: "НОВЫЙ СКИН ЖУКА:",
   en: "NEW BUG SKIN:",
-};
-
-/** Short onboarding tooltip pinned above the hitbox (first visit only). */
-export const ONBOARD_HINT: Record<Lang, string> = {
-  ru: "Кликни!",
-  en: "Click!",
 };
 
 /* ----------------------------- pure geometry ----------------------------- */

@@ -9,9 +9,7 @@ import {
   CODE_FRAGMENTS,
   FX_BOSS,
   FX_NORMAL,
-  HINT_CLOUD,
   HUD_LABELS,
-  ONBOARD_HINT,
   SKIN_UNLOCK_LABEL,
   TOTAL_KEY,
   UNLOCKS_KEY,
@@ -189,9 +187,6 @@ export function CyberBugEasterEgg() {
   const [live, setLive] = useState("");
   // unlocked carapace skin color; the boss always stays crimson
   const [skinColor, setSkinColor] = useState("");
-  // onboarding: pulsing ring + tooltip until the first landed click
-  const [onboard, setOnboard] = useState(true);
-  const [tip, setTip] = useState(true);
 
   const bugEl = useRef<HTMLDivElement>(null);
   const bugRot = useRef<HTMLDivElement>(null);
@@ -231,8 +226,6 @@ export function CyberBugEasterEgg() {
   const lastRandom = useRef(-1);
   const lastBossRandom = useRef(-1);
   const toastCount = useRef(0);
-  const hintShown = useRef(false);
-  const hintAt = useRef(0);
   const codeFont = useRef("10px ui-monospace, monospace");
   const best = useRef(0);
   /** lifetime kills across visits (localStorage TOTAL_KEY) */
@@ -243,6 +236,8 @@ export function CyberBugEasterEgg() {
   const hitStopUntil = useRef(0);
   /** last --cb-walk-speed written to the svg (quantized, avoids style churn) */
   const lastCycle = useRef(0);
+  /** first frame-error logged only once - a catch-per-frame must not spam */
+  const tickErrorLogged = useRef(false);
 
   const particles = useRef<Particle[]>([]);
   const splats = useRef<Splat[]>([]);
@@ -514,7 +509,12 @@ export function CyberBugEasterEgg() {
     // shockwaves
     const rKeep: Ripple[] = [];
     for (const r of ripples.current) {
-      const t = (now - r.born) / r.life;
+      // clamp t at 0: ripples are born with performance.now() mid-frame while
+      // the rAF timestamp is the frame's start - a heavy splat frame can push
+      // `born` a frame or two into the "future", and a negative t made the
+      // arc radius negative -> canvas threw -> the whole rAF loop died and
+      // every later bug stood frozen forever
+      const t = Math.max(0, (now - r.born) / r.life);
       if (t >= 1) continue;
       const rad = r.r0 + (r.r1 - r.r0) * (1 - Math.pow(1 - t, 2));
       ctx.globalAlpha = (1 - t) * 0.8;
@@ -892,10 +892,6 @@ export function CyberBugEasterEgg() {
   const applyHit = (cx: number, cy: number) => {
     const s = st.current;
     if (s.mode === "dying") return;
-
-    // onboarding visuals served their purpose on the first landed click
-    setOnboard(false);
-    setTip(false);
     buzz(12);
 
     // reduced motion: the bug stays put and pops on the first click
@@ -1034,35 +1030,32 @@ export function CyberBugEasterEgg() {
     }
     applySkin(skinFor(total.current).color);
 
-    // onboarding tooltip fades on its own if the visitor never clicks
-    addTimer(() => setTip(false), BALANCE.onboardTipMs);
-
-    // one-time catch hint: armed 5.5s after mount, fires in tick() while
-    // the visitor still has zero kills
-    hintAt.current = performance.now() + BALANCE.hintDelay * 1000;
-
     // bug #1 crawls out from under the 404 card right away
     spawnBug();
 
     const tick = (now: number) => {
       if (dead.current) return;
-      const dt = Math.min((now - last.current) / 1000, 0.05);
-      last.current = now;
-      // kill hit-stop: movement stops and particles hang (dt=0) while rings
-      // keep expanding on wall-clock time - reads as a heavy impact
-      const frozen = now < hitStopUntil.current;
-      if (!reduced.current && !frozen) {
-        if (st.current.mode === "panic") stepPanic(dt, now);
-        else if (st.current.mode === "peek") stepPeek(dt);
-        else if (st.current.mode === "idle" && now >= st.current.wanderAt) startWander();
+      try {
+        const dt = Math.min((now - last.current) / 1000, 0.05);
+        last.current = now;
+        // kill hit-stop: movement stops and particles hang (dt=0) while rings
+        // keep expanding on wall-clock time - reads as a heavy impact
+        const frozen = now < hitStopUntil.current;
+        if (!reduced.current && !frozen) {
+          if (st.current.mode === "panic") stepPanic(dt, now);
+          else if (st.current.mode === "peek") stepPeek(dt);
+          else if (st.current.mode === "idle" && now >= st.current.wanderAt) startWander();
+        }
+        positionBug();
+        renderFx(frozen ? 0 : dt, now);
+      } catch (e) {
+        // fail-soft: a render hiccup (canvas, DOM) skips the frame but the
+        // loop must never die - a dead loop is a frozen, unclickable bug
+        if (!tickErrorLogged.current) {
+          tickErrorLogged.current = true;
+          console.error("[bug] frame skipped:", e);
+        }
       }
-      // one-time catch hint for players who never clicked the bug
-      if (!hintShown.current && st.current.kills === 0 && hintAt.current > 0 && now >= hintAt.current) {
-        hintShown.current = true;
-        showPhrase(HINT_CLOUD[langRef.current], st.current.x, st.current.y);
-      }
-      positionBug();
-      renderFx(frozen ? 0 : dt, now);
       raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
@@ -1118,23 +1111,6 @@ export function CyberBugEasterEgg() {
           tabIndex={0}
           aria-label={`${view.boss ? BUG_A11Y[lang].boss : BUG_A11Y[lang].bug} - HP ${view.hp}/${view.maxHp}`}
         >
-          {/* onboarding: pulsing ring + tooltip until the first landed click */}
-          {onboard && (
-            <>
-              <div
-                className="nf-onboard-ring pointer-events-none absolute inset-0 rounded-full"
-                aria-hidden="true"
-              />
-              {tip && (
-                <div
-                  className="nf-onboard-tip appseal-glass-card pointer-events-none absolute whitespace-nowrap rounded-full px-3 py-1 font-mono text-[11px] font-bold text-slate-100"
-                  style={{ top: -(half + 34) }}
-                >
-                  {ONBOARD_HINT[lang]}
-                </div>
-              )}
-            </>
-          )}
           {/* boss HP readout stays OUTSIDE the rotator: level while the bug
               turns, and pointer-events-none so it never eats clicks */}
           {view.boss && (

@@ -823,27 +823,6 @@ html.appseal-idle .appseal-radar-sweep {
   100% { transform: scale(1, 1); }
 }
 
-/* onboarding: pulsing ring around the hitbox + short tooltip until the
-   visitor lands the first click */
-.nf-onboard-ring {
-  border: 2px solid rgba(57, 255, 20, 0.55);
-  animation: nf-onboard-ring 1.6s ease-out infinite;
-}
-@keyframes nf-onboard-ring {
-  0%   { transform: scale(0.92); opacity: 0.9; }
-  100% { transform: scale(1.18); opacity: 0; }
-}
-.nf-onboard-tip {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  animation: nf-onboard-tip-in 0.3s ease-out both;
-}
-@keyframes nf-onboard-tip-in {
-  from { opacity: 0; margin-top: 5px; }
-  to   { opacity: 1; margin-top: 0; }
-}
-
 /* death flatten: squash to the floor before the corpse fades (defined after
    nf-squash so it wins the cascade when both classes linger) */
 .nf-flatten {
@@ -1050,8 +1029,6 @@ html.appseal-idle .appseal-radar-sweep {
   .nf-radar-sweep,
   .nf-shake,
   .nf-squash,
-  .nf-onboard-ring,
-  .nf-onboard-tip,
   .nf-flatten,
   .cb-pre-dash {
     animation: none;

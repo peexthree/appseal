@@ -4,7 +4,6 @@ import {
   BALANCE,
   BOSS_RANDOM_KILLS,
   BUG_A11Y,
-  HINT_CLOUD,
   RANDOM_KILLS,
   SKINS,
   WEEKEND_KILLS,
@@ -228,11 +227,6 @@ test("rageCloud draws only from the rage pool", () => {
     assert.ok(["ЯРОСТЬ!", "РЕЖИМ ЯРОСТИ!"].includes(rageCloud("ru")));
     assert.ok(["ENRAGED!", "RAGE MODE!"].includes(rageCloud("en")));
   }
-});
-
-test("HINT_CLOUD exists for both languages", () => {
-  assert.ok(HINT_CLOUD.ru.length > 5);
-  assert.ok(HINT_CLOUD.en.length > 5);
 });
 
 test("BUG_A11Y labels cover normal and boss bugs", () => {
