@@ -145,6 +145,39 @@ export const GAMEOVER: Record<Lang, { title: string; sub: string; restart: strin
   en: { title: "GAME OVER", sub: "The bugs ate the page. It's still 404...", restart: "PLAY AGAIN", score: "SCORE", best: "BEST" },
 };
 
+/* --------------------------- boss swarm (wave 6) --------------------------- */
+
+/** Roaches in the 50-kill swarm event. */
+export const SWARM_SIZE = 24;
+/** The swarm runs charged while at least this many roaches are alive. */
+export const SWARM_CHARGED = 10;
+export const SWARM_ROACH_SPEED = 220;
+export const SWARM_ROACH_SPEED_CHARGED = 330;
+export const SWARM_ROACH_HIT_R = 30;
+/** A roach that reaches the card eats a life and vanishes under the glass. */
+export const SWARM_BITE_DIST = 10;
+
+export const SWARM_ANNOUNCE: Record<Lang, string> = {
+  ru: "О НЕТ. ОНИ ВЫЗВАЛИ ПОДКРЕПЛЕНИЕ.",
+  en: "OH NO. THEY CALLED REINFORCEMENTS.",
+};
+
+export const SWARM_VICTORY: Record<Lang, string> = {
+  ru: "ВЫ ПОБЕДИЛИ ХАОС. НО 404 ВСЁ ЕЩЁ СУЩЕСТВУЕТ...",
+  en: "YOU BEAT THE CHAOS. THE 404 REMAINS...",
+};
+
+/** A single swarm roach (pure state, drawn on the canvas). */
+export interface Roach {
+  x: number;
+  y: number;
+  heading: number;
+  /** leg-cycle phase */
+  phase: number;
+  /** flee direction once the swarm panics */
+  fleeAngle: number;
+}
+
 /* ------------------------------ enemy types ------------------------------ */
 
 export type BugType =

@@ -912,6 +912,17 @@ html.appseal-idle .appseal-radar-sweep {
   to   { transform: scale(1); opacity: 1; }
 }
 
+/* boss swarm: the card trembles while the roaches live */
+.nf-rumble {
+  animation: nf-rumble 0.35s linear infinite;
+}
+@keyframes nf-rumble {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  25%      { transform: translate3d(1px, -1px, 0); }
+  50%      { transform: translate3d(-1px, 1px, 0); }
+  75%      { transform: translate3d(1px, 1px, 0); }
+}
+
 /* ----------------------------------------------------------------- */
 /* cyber-bug rig (cb-* namespace, user-authored 21.11): tripod walk,  */
 /* elytra breathing revealing the energy core, running circuit traces, */

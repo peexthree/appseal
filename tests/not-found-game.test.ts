@@ -27,6 +27,12 @@ import {
   respawnGapFor,
   skinFor,
   splashCount,
+  SWARM_ANNOUNCE,
+  SWARM_CHARGED,
+  SWARM_ROACH_SPEED,
+  SWARM_ROACH_SPEED_CHARGED,
+  SWARM_SIZE,
+  SWARM_VICTORY,
   turnToward,
   typeSpeedFor,
   unlockedTypes,
@@ -340,6 +346,17 @@ test("POWERUPS table: icons, names and weights complete", () => {
     assert.ok(POWERUPS[k].name.ru.length >= 3 && POWERUPS[k].name.en.length >= 3, `${k} names missing`);
     assert.ok(POWERUPS[k].weight > 0, `${k} weight missing`);
   }
+});
+
+/* --------------------------- boss swarm (wave 6) --------------------------- */
+
+test("swarm constants: size, thresholds and announcements", () => {
+  assert.equal(SWARM_SIZE, 24);
+  assert.ok(SWARM_CHARGED >= 5 && SWARM_CHARGED < SWARM_SIZE, "charged threshold inside the swarm");
+  assert.ok(SWARM_ROACH_SPEED_CHARGED > SWARM_ROACH_SPEED, "charged roaches outrun normal ones");
+  assert.match(SWARM_ANNOUNCE.ru, /ПОДКРЕПЛЕНИЕ/);
+  assert.match(SWARM_VICTORY.ru, /404/);
+  assert.match(SWARM_ANNOUNCE.en, /REINFORCEMENTS/);
 });
 
 /* ------------------------------- geometry ------------------------------- */
