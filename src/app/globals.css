@@ -801,6 +801,164 @@
   to { opacity: 1; }
 }
 
+
+/* ----------------------------------------------------------------- */
+/* cyber-bug rig (cb-* namespace, user-authored 21.11): tripod walk,  */
+/* elytra breathing revealing the energy core, running circuit traces, */
+/* scanner antennae with radar ping, mandible twitch, diode pulse,    */
+/* critical glitch at 1 HP, hit recoil                               */
+/* ----------------------------------------------------------------- */
+@keyframes cb-leg-swing-a {
+  0%, 100% { transform: rotate(calc(var(--cb-leg-dir, 1) * -10deg)); }
+  50%      { transform: rotate(calc(var(--cb-leg-dir, 1) * 11deg)); }
+}
+@keyframes cb-leg-swing-b {
+  0%, 100% { transform: rotate(calc(var(--cb-leg-dir, 1) * 11deg)); }
+  50%      { transform: rotate(calc(var(--cb-leg-dir, 1) * -10deg)); }
+}
+@keyframes cb-leg-idle-a {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(calc(var(--cb-leg-dir, 1) * 2.4deg)); }
+}
+@keyframes cb-leg-idle-b {
+  0%, 100% { transform: rotate(calc(var(--cb-leg-dir, 1) * 2deg)); }
+  50%      { transform: rotate(0deg); }
+}
+/* breathing elytra part slightly, revealing the energy spine */
+@keyframes cb-elytron-breathe-l {
+  0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+  50%      { transform: translate(-1.35px, 0.4px) rotate(1.1deg); }
+}
+@keyframes cb-elytron-breathe-r {
+  0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+  50%      { transform: translate(1.35px, 0.4px) rotate(-1.1deg); }
+}
+@keyframes cb-pronotum-breathe {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%      { transform: translateY(-0.8px) scale(1.015); }
+}
+@keyframes cb-core-breathe {
+  0%, 100% { opacity: 0.42; }
+  50%      { opacity: 0.96; }
+}
+@keyframes cb-trace-flow {
+  0%   { stroke-dashoffset: 64; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes cb-antenna-sweep-l {
+  0%, 100% { transform: rotate(-6deg); }
+  35%      { transform: rotate(7deg); }
+  70%      { transform: rotate(-2deg); }
+}
+@keyframes cb-antenna-sweep-r {
+  0%, 100% { transform: rotate(6deg); }
+  40%      { transform: rotate(-8deg); }
+  75%      { transform: rotate(3deg); }
+}
+@keyframes cb-radar-ping {
+  0%   { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+@keyframes cb-mandible-l {
+  0%, 82%, 100% { transform: rotate(0deg); }
+  88%           { transform: rotate(9deg); }
+  94%           { transform: rotate(-3deg); }
+}
+@keyframes cb-mandible-r {
+  0%, 82%, 100% { transform: rotate(0deg); }
+  88%           { transform: rotate(-9deg); }
+  94%           { transform: rotate(3deg); }
+}
+@keyframes cb-diode-pulse {
+  0%, 100% { opacity: 0.78; }
+  50%      { opacity: 1; }
+}
+@keyframes cb-critical-glitch {
+  0%, 88%, 100% { opacity: 1; transform: translate(0, 0); }
+  90%           { opacity: 0.6; transform: translate(-1.2px, 0.4px); }
+  93%           { opacity: 1; transform: translate(1.2px, -0.4px); }
+  96%           { opacity: 0.75; transform: translate(-0.6px, 0); }
+}
+@keyframes cb-hit-recoil {
+  0%   { transform: translate(0, 0) scale(1); filter: brightness(1); }
+  20%  { transform: translate(-3px, 2px) scale(0.95); filter: brightness(2.2); }
+  45%  { transform: translate(3px, -1px) scale(1.03); filter: brightness(1.4); }
+  75%  { transform: translate(-1px, 1px) scale(0.99); filter: brightness(1.1); }
+  100% { transform: translate(0, 0) scale(1); filter: brightness(1); }
+}
+
+.cb-root {
+  --cb-walk-speed: 0.42s;
+  --cb-trace-speed: 1.9s;
+  --cb-breathe-speed: 2.8s;
+  transition: filter 0.25s ease, transform 0.2s ease;
+}
+.cb-state-walk .cb-leg-a {
+  animation: cb-leg-swing-a var(--cb-walk-speed) ease-in-out infinite;
+}
+.cb-state-walk .cb-leg-b {
+  animation: cb-leg-swing-b var(--cb-walk-speed) ease-in-out infinite;
+}
+.cb-state-idle .cb-leg-a {
+  animation: cb-leg-idle-a var(--cb-breathe-speed) ease-in-out infinite;
+}
+.cb-state-idle .cb-leg-b {
+  animation: cb-leg-idle-b var(--cb-breathe-speed) ease-in-out infinite;
+}
+.cb-elytron-l {
+  transform-origin: 58px 66px;
+  animation: cb-elytron-breathe-l var(--cb-breathe-speed) ease-in-out infinite;
+}
+.cb-elytron-r {
+  transform-origin: 62px 66px;
+  animation: cb-elytron-breathe-r var(--cb-breathe-speed) ease-in-out infinite;
+}
+.cb-pronotum {
+  transform-origin: 60px 52px;
+  animation: cb-pronotum-breathe var(--cb-breathe-speed) ease-in-out infinite;
+}
+.cb-core-glow {
+  animation: cb-core-breathe var(--cb-breathe-speed) ease-in-out infinite;
+}
+.cb-trace-pulse {
+  stroke-dasharray: 8 24;
+  animation: cb-trace-flow var(--cb-trace-speed) linear infinite;
+}
+.cb-trace-pulse-fast {
+  stroke-dasharray: 6 18;
+  animation: cb-trace-flow calc(var(--cb-trace-speed) * 0.72) linear infinite;
+}
+.cb-antenna-l {
+  transform-origin: 48px 23px;
+  animation: cb-antenna-sweep-l 3.4s ease-in-out infinite;
+}
+.cb-antenna-r {
+  transform-origin: 72px 23px;
+  animation: cb-antenna-sweep-r 3.1s ease-in-out infinite;
+}
+.cb-radar-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cb-radar-ping 2.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+.cb-mandible-l {
+  transform-origin: 50px 21px;
+  animation: cb-mandible-l 3.6s ease-in-out infinite;
+}
+.cb-mandible-r {
+  transform-origin: 70px 21px;
+  animation: cb-mandible-r 3.6s ease-in-out infinite;
+}
+.cb-diode {
+  animation: cb-diode-pulse 1.5s ease-in-out infinite;
+}
+.cb-critical-label {
+  animation: cb-critical-glitch 1.8s steps(1) infinite;
+}
+.cb-hit-flash {
+  animation: cb-hit-recoil 0.28s ease-out;
+}
+
 /* reduced motion: radar static, legs/antennae frozen, no shake - the bug
    still reacts to clicks, it just never runs or trembles */
 @media (prefers-reduced-motion: reduce) {
@@ -815,5 +973,9 @@
   .nf-toast {
     animation: none;
     transition: opacity 0.2s ease;
+  }
+  .cb-root,
+  .cb-root * {
+    animation: none !important;
   }
 }

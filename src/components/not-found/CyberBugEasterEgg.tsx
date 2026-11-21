@@ -109,6 +109,7 @@ export function CyberBugEasterEgg() {
   const canvasEl = useRef<HTMLCanvasElement>(null);
   const phraseLayer = useRef<HTMLDivElement>(null);
   const toastLayer = useRef<HTMLDivElement>(null);
+  const svgFlash = useRef<HTMLDivElement>(null);
 
   const st = useRef<BugState>({
     mode: "idle",
@@ -524,6 +525,15 @@ export function CyberBugEasterEgg() {
     el.classList.add("nf-shake");
   };
 
+  /** Hit recoil: restarts the cb-hit-flash animation on the bug's svg root. */
+  const flashBug = () => {
+    const svg = svgFlash.current?.querySelector("svg");
+    if (!svg) return;
+    svg.classList.remove("cb-hit-flash");
+    void svg.getBoundingClientRect(); // restart the animation
+    svg.classList.add("cb-hit-flash");
+  };
+
   const splatBug = (atX: number, atY: number) => {
     const s = st.current;
     s.kills += 1;
@@ -627,7 +637,8 @@ export function CyberBugEasterEgg() {
       engine.current?.play("hit");
     }
 
-    // every intermediate hit sprays sparks and slime
+    // every intermediate hit sprays sparks, slime and knocks the bug back
+    flashBug();
     spawnSplash(cx, cy, s.boss);
     canvasDirty.current = true;
     setView((v) => ({ ...v, hp: s.hp, legs: "panic" }));
@@ -731,12 +742,53 @@ export function CyberBugEasterEgg() {
           style={{ width: hitSize, height: hitSize, marginLeft: -half, marginTop: -half }}
           onPointerDown={onHit}
         >
+          {/* boss HP readout stays OUTSIDE the rotator: level while the bug
+              turns, and pointer-events-none so it never eats clicks */}
+          {view.boss && (
+            <div
+              className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2"
+              style={{ top: -(half + 26), width: 104 }}
+            >
+              <div className="flex w-full items-center justify-between px-0.5 font-mono text-[10px] font-bold uppercase tracking-widest">
+                <span className="text-[#FF2E5B]">BOSS // 500</span>
+                <span className="text-slate-300">
+                  {view.hp}/{view.maxHp}
+                </span>
+              </div>
+              <div
+                className="relative mt-1 h-2.5 w-full overflow-hidden rounded-sm border bg-slate-950/90 p-[2px]"
+                style={{ borderColor: "rgba(255,46,91,0.53)", boxShadow: "0 0 10px rgba(255,46,91,0.25)" }}
+              >
+                <div
+                  className="h-full rounded-[1px] transition-all duration-300 ease-out"
+                  style={{
+                    width: `${(view.hp / view.maxHp) * 100}%`,
+                    background: "linear-gradient(90deg, rgba(255,46,91,0.8), #FF2E5B)",
+                    boxShadow: "0 0 8px #FF2E5B",
+                  }}
+                />
+                <div className="pointer-events-none absolute inset-0 flex">
+                  {Array.from({ length: Math.min(12, view.maxHp) }).map((_, idx) => (
+                    <div key={idx} className="h-full flex-1 border-r border-slate-950/70 last:border-r-0" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={bugRot} className="grid h-full w-full place-items-center">
-            {/* the svg's visual body centre sits above the viewBox centre, so
-                nudging it down aligns the shell with the rotation pivot -
-                otherwise the bug wobbles around a point below its body */}
-            <div className={view.boss ? "mt-[17px] w-[118px]" : "mt-[12px] w-[86px]"}>
-              <CyberBugSvg boss={view.boss} hp={view.hp} maxHp={view.maxHp} legs={view.legs} />
+            {/* the authored bug's body centre sits ~7 units BELOW the viewBox
+                centre (tail segment), so the svg is nudged up to meet the
+                rotation pivot - otherwise the bug wobbles while turning */}
+            <div ref={svgFlash} className="mt-[-5px]">
+              <CyberBugSvg
+                hp={view.hp}
+                maxHp={view.maxHp}
+                isBoss={view.boss}
+                label={view.boss ? "500" : "404"}
+                mode={view.legs === "idle" ? "idle" : "walk"}
+                width={view.boss ? 84 : 86}
+                showHpBar={false}
+              />
             </div>
           </div>
         </div>
