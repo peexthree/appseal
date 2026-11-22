@@ -31,10 +31,10 @@ import {
   SWARM_ANNOUNCE,
   SWARM_BITE_COOLDOWN,
   SWARM_CHARGED,
-  SWARM_ROACH_HIT_R,
   SWARM_ROACH_SPEED,
   SWARM_ROACH_SPEED_CHARGED,
   SWARM_SIZE,
+  SWARM_TAP_SPLASH,
   SWARM_VICTORY,
   turnToward,
   typeSpeedFor,
@@ -363,20 +363,22 @@ test("swarm constants: size, thresholds and announcements", () => {
 });
 
 test("swarm bite tempo: one life per cooldown window, however big the pack", () => {
-  assert.ok(SWARM_BITE_COOLDOWN >= 1.2 && SWARM_BITE_COOLDOWN <= 3, "cooldown inside the fair-fight band");
+  assert.ok(SWARM_BITE_COOLDOWN >= 1.2 && SWARM_BITE_COOLDOWN <= 6, "cooldown inside sanity bounds");
 });
 
 test("swarm fair-fight band: the mini-boss must stay winnable", () => {
-  // 22.11 playtest: 330px/s charged rush at a 30px tap radius demanded
-  // ~2.5 sustained taps/s to outpace 4 bites x 1.6s - unwinnable. Lock the
-  // tuned bands so a future constant tweak cannot silently re-break it.
+  // 22.11 playtest x2: the first cut (330px/s, 30px tap, 1.6s bites) needed
+  // ~2.5 sustained taps/s; the second (2.5s bites) still felt instant with
+  // leaked lives. The user's verdict: "I must be able to click them all" -
+  // bites strictly sequential with a 4s gap. Lock the tuned bands so a
+  // future constant tweak cannot silently re-break it.
   assert.ok(SWARM_ROACH_SPEED_CHARGED <= 230, "charged rush must stay tap-able");
-  assert.ok(SWARM_ROACH_HIT_R >= 40, "tap target must forgive a thumb");
-  assert.ok(SWARM_BITE_COOLDOWN >= 2.0, "bite tempo must leave tapping room");
+  assert.ok(SWARM_TAP_SPLASH >= 80, "a tap must clear a whole cluster, not one roach");
+  assert.ok(SWARM_BITE_COOLDOWN >= 3.0, "bite gap must leave clicking room");
   // winnability arithmetic: the bite budget (3 lives + shield, one roach
   // per bite also removes itself) sets the taps/s the player must sustain
   const tapsPerSec = (SWARM_SIZE - 4) / (4 * SWARM_BITE_COOLDOWN);
-  assert.ok(tapsPerSec <= 2.0, `required ${tapsPerSec.toFixed(2)} taps/s must stay within human pace`);
+  assert.ok(tapsPerSec <= 1.5, `required ${tapsPerSec.toFixed(2)} taps/s must stay leisurely`);
 });
 
 test("swarmSpawnPoint: roaches never materialize on top of the glass", () => {

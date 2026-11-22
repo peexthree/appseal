@@ -152,25 +152,28 @@ export const SWARM_SIZE = 24;
 /** The swarm runs charged while at least this many roaches are alive. */
 export const SWARM_CHARGED = 10;
 /**
- * Playtest-tuned 22.11 (the first cut 330/220 at a 30px tap radius needed
- * ~2.5 sustained taps/s - unwinnable): charged rush at 210 px/s is readable
- * and tap-able, the panic tail slows to 170, and the fat 44px tap target
- * forgives a thumb.
+ * Playtest-tuned 22.11 (two rounds of "нереально отбиться"): the charged
+ * rush crawls at 170 px/s, the panic tail at 120 - and a tap SPLATS THE
+ * WHOLE CLUSTER: every roach within SWARM_TAP_SPLASH of the finger dies,
+ * so the pack at the glass goes down in 6-8 taps instead of one precise
+ * tap per roach.
  */
-export const SWARM_ROACH_SPEED = 170;
-export const SWARM_ROACH_SPEED_CHARGED = 210;
-export const SWARM_ROACH_HIT_R = 44;
+export const SWARM_ROACH_SPEED = 120;
+export const SWARM_ROACH_SPEED_CHARGED = 170;
+/** Tap splash radius: every roach inside dies to a single tap. */
+export const SWARM_TAP_SPLASH = 110;
 /** A roach that reaches the card eats a life and vanishes under the glass. */
 export const SWARM_BITE_DIST = 10;
 /**
  * Seconds between swarm bites - one life per window, however many roaches
  * are already clawing at the glass. Without it 24 charged roaches arrive
  * as one pack and eat all three lives in about a second: the mini-boss
- * ends before the player sees it. The window is the fight's tempo: with
- * the shield the bite budget is 4 x 2.5s = 10s plus the crawl-in - enough
- * to tap ~20 roaches at ~1.7 taps/s, a tense but winnable mini-boss.
+ * ends before the player sees it. The window is the fight's tempo and the
+ * bites are strictly sequential: with the shield the bite budget is
+ * 4 x 4s = 16s plus the crawl-in - room to tap ~20 roaches at a leisurely
+ * ~1.25 taps/s, the user's "I must be able to click them all" tuning.
  */
-export const SWARM_BITE_COOLDOWN = 2.5;
+export const SWARM_BITE_COOLDOWN = 4;
 
 export const SWARM_ANNOUNCE: Record<Lang, string> = {
   ru: "О НЕТ. ОНИ ВЫЗВАЛИ ПОДКРЕПЛЕНИЕ.",

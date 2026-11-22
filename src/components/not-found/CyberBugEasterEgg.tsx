@@ -21,10 +21,10 @@ import {
   SWARM_BITE_COOLDOWN,
   SWARM_BITE_DIST,
   SWARM_CHARGED,
-  SWARM_ROACH_HIT_R,
   SWARM_ROACH_SPEED,
   SWARM_ROACH_SPEED_CHARGED,
   SWARM_SIZE,
+  SWARM_TAP_SPLASH,
   SWARM_VICTORY,
   WORLD_RECORD_PHRASE,
   SKIN_UNLOCK_LABEL,
@@ -217,6 +217,10 @@ export function CyberBugEasterEgg() {
   const [hud, setHud] = useState({ awake: false, kills: 0, best: 0, total: 0, wave: 1, lives: 3, shield: false, sfxOn: true });
   // game over: the bugs ate the page through all 404 lives
   const [gameOver, setGameOver] = useState(false);
+  // while the swarm lives, a fullscreen combat layer takes every tap - the
+  // card glass and the page would otherwise swallow the pointer and roaches
+  // would feel unkillable (they cluster at the card)
+  const [swarmUp, setSwarmUp] = useState(false);
   // touch device -> bigger hitbox + slower panic (set once on mount)
   const [isTouch, setIsTouch] = useState(false);
   // aria-live mirror of the last kill toast (DOM toasts are silent to SRs)
@@ -1029,6 +1033,7 @@ export function CyberBugEasterEgg() {
     if (hitbox.current) hitbox.current.style.pointerEvents = "none";
     // the swarm goes home too: no more bites past the score screen
     roaches.current = [];
+    setSwarmUp(false);
     document.querySelector("[data-nf-card]")?.classList.remove("nf-rumble");
     setGameOver(true);
     ymGoal("nf_game_over");
@@ -1072,8 +1077,16 @@ export function CyberBugEasterEgg() {
 
   /* ------------------------------ boss swarm ------------------------------ */
 
-  /** Spawns the 50-kill roach swarm from every screen edge. */
+  /** Spawns the 50-kill roach swarm from every screen edge. The mini-boss
+   * starts fresh: the run's losses don't leak into the finale (arriving with
+   * 1 life turned the event into a scripted instant loss), and the first
+   * bite waits one full cooldown window - the player gets the whole
+   * crawl-in plus that window to react before anything eats a life. */
   const spawnSwarm = () => {
+    lives.current = 3;
+    swarmBiteReadyAt.current = performance.now() + SWARM_BITE_COOLDOWN * 1000;
+    setHud((h) => ({ ...h, lives: 3 }));
+    setSwarmUp(true);
     const v = vp.current;
     const c = cardRect.current;
     const cx = c ? c.left + c.width / 2 : v.w / 2;
@@ -1152,6 +1165,7 @@ export function CyberBugEasterEgg() {
    * swarm empties counts - the last roach may fall to a tap or to the glass. */
   const swarmVictory = () => {
     swarmDone.current = true;
+    setSwarmUp(false);
     document.querySelector("[data-nf-card]")?.classList.remove("nf-rumble");
     const bossFlash = bossFlashEl.current;
     if (bossFlash) {
@@ -1260,15 +1274,6 @@ export function CyberBugEasterEgg() {
     if (alive.length === 0) swarmVictory();
   };
 
-  /** Nearest roach under the tap, if any. */
-  const roachAt = (x: number, y: number): number => {
-    for (let i = 0; i < roaches.current.length; i++) {
-      const r = roaches.current[i];
-      if (Math.hypot(r.x - x, r.y - y) <= SWARM_ROACH_HIT_R) return i;
-    }
-    return -1;
-  };
-
   /** Fresh run: lives back, counters reset, total/skins persist. */
   const restartGame = () => {
     lives.current = 3;
@@ -1283,6 +1288,7 @@ export function CyberBugEasterEgg() {
     lastBossRandom.current = -1;
     frozenUntil.current = 0;
     roaches.current = [];
+    setSwarmUp(false);
     document.querySelector("[data-nf-card]")?.classList.remove("nf-rumble");
     setGameOver(false);
     setHud((h) => ({ ...h, kills: 0, wave: 1, lives: 3, shield: false }));
@@ -1713,15 +1719,10 @@ export function CyberBugEasterEgg() {
 
   const onHit = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
-    // the swarm takes taps first: roaches die by the same pointer
-    const rIdx = roachAt(e.clientX, e.clientY);
-    if (rIdx >= 0) {
-      engine.current?.unlock();
-      killRoach(rIdx, e.clientX, e.clientY);
-      return;
-    }
-    if (st.current.mode === "respawn") return;
     engine.current?.unlock();
+    // the swarm takes taps first: a cluster under the pointer splats whole
+    if (splashRoaches(e.clientX, e.clientY) > 0) return;
+    if (st.current.mode === "respawn") return;
     applyHit(e.clientX, e.clientY);
   };
 
@@ -1732,6 +1733,33 @@ export function CyberBugEasterEgg() {
     engine.current?.unlock();
     // strike where the bug actually is (no pointer coordinates exist)
     applyHit(st.current.x, st.current.y - 22);
+  };
+
+  /** Tap splash: every roach within SWARM_TAP_SPLASH of the point dies -
+   * one tap clears a whole cluster at the glass. */
+  const splashRoaches = (x: number, y: number): number => {
+    let killed = 0;
+    for (let i = roaches.current.length - 1; i >= 0; i--) {
+      const r = roaches.current[i];
+      if (Math.hypot(r.x - x, r.y - y) <= SWARM_TAP_SPLASH) {
+        killRoach(i, r.x, r.y);
+        killed += 1;
+      }
+    }
+    return killed;
+  };
+
+  /** While the swarm lives this takes every tap on the page: the card glass
+   * (pointer-events-auto) and the dead main column would otherwise swallow
+   * the pointer, and roaches - which cluster at the card - felt unkillable.
+   * The tap splats the whole cluster under the finger; without one the
+   * strike falls on the main bug exactly like a hitbox tap. */
+  const onSwarmTap = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    engine.current?.unlock();
+    if (splashRoaches(e.clientX, e.clientY) > 0) return;
+    if (st.current.mode === "respawn" || st.current.mode === "dying") return;
+    applyHit(e.clientX, e.clientY);
   };
 
   /* ------------------------------ lifecycle ------------------------------ */
@@ -2044,6 +2072,19 @@ export function CyberBugEasterEgg() {
           </div>
         </div>
       </div>
+
+      {/* z-35: the swarm's tap-anywhere combat layer (above the card glass
+          z-10 and the bug z-30, below the power-up chips z-40 - bombs stay
+          usable mid-fight); gone the moment the swarm is cleared or the run
+          ends */}
+      {swarmUp && (
+        <div
+          data-nf-swarm-tap
+          className="pointer-events-auto fixed inset-0 z-[35] cursor-crosshair touch-none select-none"
+          onPointerDown={onSwarmTap}
+          aria-hidden="true"
+        />
+      )}
 
       {/* z-40: phrase clouds + kill toasts, pointer-events none everywhere */}
       <div ref={phraseLayer} className="pointer-events-none fixed inset-0 z-40" aria-hidden="true" />

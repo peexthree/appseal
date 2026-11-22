@@ -105,3 +105,75 @@ it("keeps a lifetime skin across a fresh mount (accentOverride applied)", async 
   expect(svg?.getAttribute("style")).toContain("38BDF8");
   expect(stat("total")).toBe("12");
 });
+
+it("swarm mini-boss starts fresh: lives refill + first bite held a full cooldown", async () => {
+  // this test needs the real movement model (the setup shim forces reduced
+  // motion ON for deterministic splats) and a game clock that actually moves:
+  // vitest does not fake performance.now(), so spy it with a manual virtual
+  // clock and advance the rAF frames step by step (16ms each, like real
+  // frames) - every gate (biteAt, swarm grace, timers) shares one timeline
+  const realMatchMedia = window.matchMedia;
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+  let virtualNow = 0;
+  const perfSpy = vi.spyOn(performance, "now").mockImplementation(() => virtualNow);
+  const step = async (ms: number) => {
+    await act(async () => {
+      for (let t = 0; t < ms; t += 16) {
+        virtualNow += 16;
+        await vi.advanceTimersByTimeAsync(16);
+      }
+    });
+  };
+  // jsdom has no layout: the stub card reports 0x0 and the hunt bite ("fully
+  // under the glass") would be unreachable - give the card a real rect
+  const cardEl = document.querySelector("[data-nf-card]") as HTMLElement;
+  cardEl.getBoundingClientRect = () =>
+    ({ left: 300, top: 200, width: 400, height: 300, right: 700, bottom: 500, x: 300, y: 200, toJSON: () => ({}) }) as DOMRect;
+  window.history.replaceState(null, "", "/?nfk=49");
+  const livesLeft = () =>
+    [...document.querySelectorAll<HTMLElement>("[data-nf-life]")].filter((el) => el.dataset.dead !== "1").length;
+  try {
+    render(<CyberBugEasterEgg />);
+    await step(30); // the cheat puts the run at 49 kills - bug #50 is the boss
+
+    // wake the dormant game first: the easter egg never bites a player who
+    // has not landed a hit yet - one hit also costs the boss 1 hp
+    fireEvent.keyDown(hitbox(/Босс-жук 500/), { key: "Enter" });
+    await step(50);
+
+    // the run's losses leak into the finale in real play: let this boss lose
+    // patience (9.2s at wave 6, recharged by the wake-up hit), hunt the card
+    // and bite a life out
+    await step(13000);
+    expect(livesLeft()).toBe(2);
+
+    // splat it - kill #50 - and let the swarm event fire (600ms beat)
+    for (let i = 0; i < 5; i++) fireEvent.keyDown(hitbox(/Босс-жук 500/), { key: "Enter" });
+    await step(50);
+    expect(stat("kills")).toBe("50");
+    await step(700); // spawnSwarm: refill + bite grace
+    expect(livesLeft()).toBe(3); // the refill heals the run's losses
+    // the tap-anywhere combat layer is up for the whole fight (the card
+    // glass would otherwise swallow every tap aimed at a roach)
+    expect(document.querySelector("[data-nf-swarm-tap]")).toBeTruthy();
+
+    await step(1800); // roaches reach the glass (~1.7s) - no bite yet
+    expect(livesLeft()).toBe(3); // the grace holds through the whole crawl-in
+    await step(4200); // grace (one 4s window) expired - the first bite lands
+    expect(livesLeft()).toBe(2);
+  } finally {
+    perfSpy.mockRestore();
+    window.matchMedia = realMatchMedia;
+    window.history.replaceState(null, "", "/");
+    vi.useRealTimers();
+  }
+}, 30000);
