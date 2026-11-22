@@ -80,9 +80,11 @@ db/custom.db
 scripts/__pycache__/
 
 # raw per-scan results stay local only: 30k targets x ~40KB would bloat
-# the repo and the Vercel deploy; aggregates live in src/data/stats-harvest.json
+# the repo and the Vercel deploy; aggregates live in src/data/stats-harvest.json.
+# harvest_meta.json + targets_harvest.txt (8.7MB) stay on disk for the batch
+# cron scripts - in the index they are dead weight
 scripts/benchmark_data/*
-!scripts/benchmark_data/harvest_meta.json
+/scripts/targets_harvest.txt
 docs/
 TRANSFER.md
 

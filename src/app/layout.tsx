@@ -40,7 +40,9 @@ export const metadata: Metadata = {
     ],
     shortcut: "/ico.svg",
     apple: [
-      { url: "/apple.png", sizes: "180x180", type: "image/png" },
+      // same bytes as /apple-touch-icon.png - one file, two consumers
+      // (metadata link + the iOS auto-request path)
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
   manifest: "/site.webmanifest",
