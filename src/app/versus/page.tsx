@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { HtmlLangSync } from "@/components/html-lang-sync";
 import { getRegistryEntries } from "@/lib/scanner/store";
 import { canonicalHost, dedupeRegistry, isReferenceSite } from "@/lib/registry";
 import { getTrophyPath, GRADE_META } from "@/lib/scanner/grade";
@@ -148,6 +149,7 @@ export default async function VersusPage({
 
   return (
     <div className="flex min-h-screen flex-col text-slate-100">
+      <HtmlLangSync lang={lang} />
       <SiteHeader lang={lang} />
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6">

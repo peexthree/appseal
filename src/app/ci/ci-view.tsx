@@ -7,8 +7,8 @@ import { useLang } from "@/lib/use-lang";
 /**
  * CI workflow with the Pro API token: POST /api/scan under a Bearer token,
  * poll /api/scan/{id}, then the grade gate fails the build below class B.
- * Kept local to this page - /lib/ci-yaml.ts stays the legacy admin-key
- * variant shown in the report tab.
+ * Kept local to this page (the report tab renders /lib/ci-yaml.ts, same
+ * token + polling scheme, different gate step).
  */
 const CI_YAML = `name: AppSeal scan
 
@@ -27,9 +27,16 @@ jobs:
             -H 'content-type: application/json' \\
             -H "authorization: Bearer $APPSEAL_TOKEN" \\
             -d '{"url":"\${{ secrets.APPSEAL_TARGET_URL }}"}' | jq -r '.id')
-          sleep 45
-          R=$(curl -fsS https://appseal.online/api/scan/$ID)
-          STATUS=$(echo "$R" | jq -r '.status')
+          # poll for the finished scan instead of a blind sleep: a scan that
+          # takes 46s used to fail the build, a 5s scan used to wait 45s
+          STATUS="pending"
+          for i in $(seq 1 30); do
+            R=$(curl -fsS https://appseal.online/api/scan/$ID)
+            STATUS=$(echo "$R" | jq -r '.status')
+            [ "$STATUS" = "done" ] && break
+            [ "$STATUS" = "error" ] && break
+            sleep 5
+          done
           [ "$STATUS" = "done" ] || { echo "scan did not finish: $STATUS"; exit 1; }
           echo "grade=$(echo "$R" | jq -r '.grade')" >> "$GITHUB_OUTPUT"
           echo "score=$(echo "$R" | jq -r '.score')" >> "$GITHUB_OUTPUT"
@@ -61,10 +68,6 @@ const D = {
   s1b: {
     ru: "токен: команда /token в Telegram-боте (входит в Pro Pass) - снимает дневной лимит /api/scan",
     en: "token: the /token command in the Telegram bot (included in Pro Pass) - lifts the /api/scan daily limit",
-  },
-  s1c: {
-    ru: "опционально, вместо APPSEAL_TOKEN - администраторский ключ, снимает дневной лимит бесплатных сканов",
-    en: "optional, instead of APPSEAL_TOKEN - the admin key, lifts the daily free-scan limit",
   },
   step2: { ru: "Шаг 2. Workflow", en: "Step 2. Workflow" },
   s2a: {
@@ -113,10 +116,6 @@ export function CiView() {
           <div className="flex items-center gap-4 border-b border-slate-800/60 px-5 py-3 text-sm">
             <span className="w-56 shrink-0 font-mono text-xs font-bold text-sky-400">APPSEAL_TOKEN</span>
             <span className="flex-1 text-xs text-slate-400">{t("s1b")}</span>
-          </div>
-          <div className="flex items-center gap-4 px-5 py-3 text-sm">
-            <span className="w-56 shrink-0 font-mono text-xs font-bold text-sky-400">APPSEAL_ADMIN_KEY</span>
-            <span className="flex-1 text-xs text-slate-400">{t("s1c")}</span>
           </div>
         </div>
       </section>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
 import { Ambient } from "@/components/ambient";
+import { HtmlLangSync } from "@/components/html-lang-sync";
 import { FileCheck2, Lock, Globe, AlertTriangle } from "@/components/icons/appseal-icons";
 import { CookiePrefs } from "@/components/cookie-consent";
 import { pageLang } from "@/lib/lang-server";
@@ -179,13 +180,14 @@ const D = {
     en: " for 5 passes (each for a separate domain, 7 days from its activation). After payment the buyer activates the passes with the /redeem command in the Telegram bot; pack credits live 30 days from the moment of payment. No auto-renewal: the pack is not refilled automatically.",
   },
   s5pA: {
-    ru: "Pro Pass - тот же продукт на длинный срок: ",
-    en: "Pro Pass - the same product with a longer term: ",
+    ru: "Pro Pass - Launch Pass на длинный срок с расширенным составом: ",
+    en: "Pro Pass - Launch Pass on a longer term with an extended feature set: ",
   },
   s5pPrice: { ru: "1 490 ₽", en: "1,490 RUB ($19)" },
+  // feature list mirrors the Pro Pass card on the landing page (i18n planPro)
   s5pB: {
-    ru: " за 30 суток безлимита сканов одного домена (Launch Pass действует 7 суток). Состав функций тот же: неограниченные повторные сканы, фоновый перескан каждые 6 ч с алертом при падении класса, PDF-отчёт и встраиваемый бейдж доверия. Разовый платёж, автопродления нет.",
-    en: " for 30 days of unlimited scans of one domain (Launch Pass covers 7). The feature set is the same: unlimited rescans, a background re-check every 6 hours with a grade-drop alert, the PDF report and the embeddable trust badge. One-time payment, no auto-renewal.",
+    ru: " за 30 суток безлимита сканов одного домена (Launch Pass действует 7 суток). Состав: все функции Launch Pass - неограниченные повторные сканы, фоновый перескан каждые 6 ч с алертом при падении класса, PDF-отчёт и встраиваемый бейдж доверия - а также приватный скан (результат не публикуется в открытом реестре) и API-токен для /api/scan с CI-гейтом (команда /token в Telegram-боте). Разовый платёж, автопродления нет.",
+    en: " for 30 days of unlimited scans of one domain (Launch Pass covers 7). The feature set: everything in Launch Pass - unlimited rescans, a background re-check every 6 hours with a grade-drop alert, the PDF report and the embeddable trust badge - plus a private scan (the result stays out of the open registry) and an API token for /api/scan with a CI gate (the /token command in the Telegram bot). One-time payment, no auto-renewal.",
   },
   s5e: {
     ru: "Оплата проходит через платёжных провайдеров, подключённых в Telegram-боте (эквайринг ЮKassa; для иностранных карт - Lava.top). Чек самозанятого (НПД) направляется плательщику в Telegram. Оператор - самозанятый гражданин РФ; контакт для всех вопросов: ",
@@ -237,6 +239,7 @@ export default async function LegalPage() {
   return (
     <div className="relative flex min-h-screen flex-col text-slate-100">
       <Ambient />
+      <HtmlLangSync lang={lang} />
       <SiteHeader lang={lang} />
 
       <main className="relative z-10 mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
@@ -480,10 +483,11 @@ export default async function LegalPage() {
                     non-refundable.
                   </li>
                   <li>
-                    Pro Pass: 1,490 RUB ($19) one-time purchase, valid 30 days per domain - the same
-                    feature set as Launch Pass with a longer term. Agency Pack: 1,490 RUB ($19) for 5
-                    Launch Passes (activated one by one with /redeem, credits live 30 days). The
-                    refund rule above applies to every paid pass.
+                    Pro Pass: 1,490 RUB ($19) one-time purchase, valid 30 days per domain - the Launch
+                    Pass feature set with a longer term, plus a private scan (kept out of the open
+                    registry) and an API token for /api/scan with a CI gate. Agency Pack: 1,490 RUB
+                    ($19) for 5 Launch Passes (activated one by one with /redeem, credits live 30
+                    days). The refund rule above applies to every paid pass.
                   </li>
                   <li>
                     No accounts, no forms. Web analytics: the Yandex.Metrica counter #114397545

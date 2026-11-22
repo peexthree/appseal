@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import RegistryList from "./registry-list";
 import { SiteHeader } from "@/components/site-header";
+import { HtmlLangSync } from "@/components/html-lang-sync";
 import { getRegistryEntriesCached, readChecksLast24h } from "@/lib/scanner/store";
 import {
   dedupeRegistry,
@@ -88,6 +89,7 @@ export default async function RegistryPage({ searchParams }: { searchParams: Sea
 
   return (
     <div className="flex min-h-screen flex-col text-slate-100">
+      <HtmlLangSync lang={lang} />
       <SiteHeader lang={lang} />
       <RegistryList
         lang={lang}

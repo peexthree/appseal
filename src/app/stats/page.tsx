@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { HtmlLangSync } from "@/components/html-lang-sync";
 import { ShieldCheck } from "@/components/icons/appseal-icons";
 import statsData from "@/data/stats-harvest.json";
 import { getRegistryEntriesCached, redisConfig, redisPipeline, STATS_HOUR_PREFIX, STATS_DAY_PREFIX } from "@/lib/scanner/store";
@@ -123,9 +124,10 @@ const D = {
   fact3: { ru: "сайтов подняли класс между повторными проверками", en: "sites moved up a grade between rescans" },
   fact4: { ru: "имеют провал по секретам или служебным эндпоинтам", en: "have a failing secrets or exposed-endpoint check" },
   distTitle: { ru: "Распределение классов", en: "Grade distribution" },
+  // thresholds mirror grade.ts: A = score >= 85, A+ = >= 96 with a clean run
   scaleNote: {
-    ru: "Шкала A+-E: класс A требуют 90+ баллов из 100 по 125 проверкам.",
-    en: "The A+-E scale: grade A requires 90+ out of 100 across 125 checks.",
+    ru: "Шкала A+-E: класс A - 85+ баллов из 100 по 125 проверкам, A+ - 96+ без единого провала.",
+    en: "The A+-E scale: grade A needs 85+ out of 100 across 125 checks; A+ is 96+ with a fully clean run.",
   },
   histTitle: { ru: "Гистограмма баллов", en: "Score histogram" },
   histNote: {
@@ -492,6 +494,7 @@ export default async function StatsPage() {
 
   return (
     <div className="flex min-h-screen flex-col text-slate-100">
+      <HtmlLangSync lang={lang} />
       <SiteHeader lang={lang} />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6">

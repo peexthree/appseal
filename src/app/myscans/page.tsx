@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { HtmlLangSync } from "@/components/html-lang-sync";
 import { Send, ShieldAlert } from "@/components/icons/appseal-icons";
 import { pageLang } from "@/lib/lang-server";
 import { verifyChatToken } from "@/lib/myscans-token";
@@ -149,6 +150,7 @@ export default async function MyScansPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="flex min-h-screen flex-col text-slate-100">
+      <HtmlLangSync lang={lang} />
       <SiteHeader lang={lang} />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">

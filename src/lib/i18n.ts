@@ -117,8 +117,8 @@ export const DICT = {
   fixToastCta: { ru: "Перепроверить бесплатно", en: "Re-scan for free" },
   ciTitle: { ru: "CI/CD - гейт грейда в GitHub Actions", en: "CI/CD - grade gate in GitHub Actions" },
   ciCopy: {
-    ru: "Готовый workflow: скан после каждого пуша, сборка падает, если класс ниже B. Сохрани как .github/workflows/appseal.yml; в Secrets репозитория добавь APPSEAL_TARGET_URL (обязательно) и APPSEAL_ADMIN_KEY (опционально - снимает дневную квоту).",
-    en: "Ready-to-paste workflow: scans on every push and fails the build when the grade drops below B. Save as .github/workflows/appseal.yml; add APPSEAL_TARGET_URL (required) and APPSEAL_ADMIN_KEY (optional - lifts the daily quota) to the repo secrets.",
+    ru: "Готовый workflow: скан после каждого пуша, сборка падает, если класс ниже B. Сохрани как .github/workflows/appseal.yml; в Secrets репозитория добавь APPSEAL_TARGET_URL (обязательно) и APPSEAL_TOKEN (токен из команды /token в боте, входит в Pro Pass).",
+    en: "Ready-to-paste workflow: scans on every push and fails the build when the grade drops below B. Save as .github/workflows/appseal.yml; add APPSEAL_TARGET_URL (required) and APPSEAL_TOKEN (the token from the /token bot command, included in Pro Pass) to the repo secrets.",
   },
   ciBtn: { ru: "Скопировать workflow", en: "Copy workflow" },
   howTitle: { ru: "Как это работает", en: "How it works" },
@@ -263,9 +263,11 @@ export const DICT = {
     ru: "Бесплатно вы узнаёте оценку. Пасс следит, чтобы она не упала после релиза.",
     en: "The free scan tells you the score. A Pass keeps it from slipping after launch.",
   },
+  // wording mirrors the offer (/legal s5fB + s6): refund only when the pass
+  // failed to activate or stopped working - no "3 days no questions asked"
   planRefundNote: {
-    ru: "Не почувствовали пользу за 3 дня - вернём деньги: просто напишите в бот.",
-    en: "Not useful within 3 days? Message the bot - we refund.",
+    ru: "Пропуск не активировался или не работает? Напишите в бот - починим или вернём деньги.",
+    en: "Pass didn't activate or stopped working? Message the bot - we'll fix it or refund.",
   },
   planLPCta: { ru: "Купить в Telegram", en: "Buy in Telegram" },
   lpDomainPh: { ru: "ваш-домен.com", en: "your-app.com" },
@@ -394,9 +396,11 @@ export const DICT = {
     en: "We handle those too: the engine opens the page in a headless browser, waits for the render and scans the assembled markup. Anything untestable without sources gets an honest skip note in the report.",
   },
   faq7Q: { ru: "Как попасть в публичный реестр?", en: "How do I get into the public registry?" },
+  // wording mirrors the actual registry (/registry): grade+date are public for
+  // every live scan, the dofollow link and description open only at A/A+
   faq7A: {
-    ru: "Автоматически: любой скан с классом A или A+ попадает в открытый реестр с индексируемой (dofollow) ссылкой на ваш домен - бесплатный SEO-сигнал доверия. Результаты ниже A остаются приватными.",
-    en: "Automatically: any scan graded A or A+ lands in the open registry with an indexable (dofollow) link to your domain - a free SEO trust signal. Results below A stay private.",
+    ru: "Автоматически: каждый публичный скан попадает в открытый реестр - класс и дата видны всем. Индексируемая (dofollow) ссылка на ваш домен и описание открываются у классов A и A+ - бесплатный SEO-сигнал доверия. У классов ниже A ссылка и описание скрыты, а владелец сайта может попросить исключить домен из реестра.",
+    en: "Automatically: every public scan lands in the open registry - the grade and date are visible to everyone. An indexable (dofollow) link to your domain and the description open for grades A and A+ - a free SEO trust signal. Below A the link and description stay hidden, and a site owner can request exclusion from the registry.",
   },
   faq8Q: { ru: "Какие данные вы собираете?", en: "What data do you collect?" },
   faq8A: {

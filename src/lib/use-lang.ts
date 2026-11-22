@@ -24,7 +24,10 @@ function getLangSnapshot(): Lang {
   } catch {
     /* private mode */
   }
-  return "ru";
+  // no stored choice: follow the language the page was rendered in
+  // (the landing syncs <html lang> to the SSR-detected initialLang), so an
+  // EN visitor never gets a Russian cookie banner on an EN page
+  return document.documentElement.lang === "en" ? "en" : "ru";
 }
 
 function getLangServerSnapshot(): Lang {

@@ -407,6 +407,16 @@ export function ScannerPage({
       .catch(() => setSysOk(false));
     return () => ctrl.abort();
   }, []);
+  // keep <html lang> in sync with the rendered language: layout hardcodes
+  // lang="ru" while the landing SSR detects EN visitors - without this an EN
+  // visitor gets <html lang="ru"> and every useLang() consumer (cookie banner,
+  // navbar) stays Russian. The broadcast lets those consumers re-resolve.
+  useEffect(() => {
+    if (document.documentElement.lang !== lang) {
+      document.documentElement.lang = lang;
+      window.dispatchEvent(new CustomEvent("appseal-lang"));
+    }
+  }, [lang]);
   // smart suggestions inside the hero input: empty query shows all examples,
   // typing narrows them by substring ("akul" -> akulenok-tmz.ru)
   const [suggestOpen, setSuggestOpen] = useState(false);
@@ -1531,9 +1541,12 @@ export function ScannerPage({
                 </div>
 
                 {/* live registry hint: glass pills with real grades from the
-                    same server-resolved source as the hero chips */}
+                    same server-resolved source as the hero chips - the demo
+                    fixture is a suggestion chip, not a registry entry */}
                 <div className="mx-auto mt-8 flex max-w-md flex-wrap items-center justify-center gap-2 font-mono text-[11px]">
-                  {demoChips.map((c) => (
+                  {demoChips
+                    .filter((c) => c.target !== "demo://app")
+                    .map((c) => (
                     <span
                       key={c.target}
                       className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-slate-400"

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site-header";
+import { HtmlLangSync } from "@/components/html-lang-sync";
 import { ShieldCheck, Lock, Activity, KeyRound } from "@/components/icons/appseal-icons";
 import { pageLang } from "@/lib/lang-server";
 import type { Lang } from "@/lib/scanner/types";
@@ -98,6 +99,7 @@ export default async function BotPage() {
 
   return (
     <div className="flex min-h-screen flex-col text-slate-100">
+      <HtmlLangSync lang={lang} />
       <SiteHeader lang={lang} />
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
