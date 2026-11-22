@@ -1856,6 +1856,23 @@ export function CyberBugEasterEgg() {
         /* offline - the row stays at its placeholder */
       });
 
+    // dev cheat: ?nfk=N starts the run at N kills (?nfk=49 - one splat to
+    // the boss + the 50-kill swarm). NODE_ENV is inlined at build time, so
+    // this block is dead code in the production bundle.
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        const nfk = Math.floor(Number(new URLSearchParams(window.location.search).get("nfk")));
+        if (Number.isFinite(nfk) && nfk > 0) {
+          st.current.kills = nfk;
+          wave.current = waveFor(nfk);
+          if (nfk > best.current) best.current = nfk;
+          setHud((h) => ({ ...h, kills: nfk, wave: wave.current, best: Math.max(h.best, nfk) }));
+        }
+      } catch {
+        /* no window in a non-browser env */
+      }
+    }
+
     // bug #1 crawls out from under the 404 card right away
     spawnBug();
 

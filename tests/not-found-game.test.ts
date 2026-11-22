@@ -31,6 +31,7 @@ import {
   SWARM_ANNOUNCE,
   SWARM_BITE_COOLDOWN,
   SWARM_CHARGED,
+  SWARM_ROACH_HIT_R,
   SWARM_ROACH_SPEED,
   SWARM_ROACH_SPEED_CHARGED,
   SWARM_SIZE,
@@ -363,6 +364,19 @@ test("swarm constants: size, thresholds and announcements", () => {
 
 test("swarm bite tempo: one life per cooldown window, however big the pack", () => {
   assert.ok(SWARM_BITE_COOLDOWN >= 1.2 && SWARM_BITE_COOLDOWN <= 3, "cooldown inside the fair-fight band");
+});
+
+test("swarm fair-fight band: the mini-boss must stay winnable", () => {
+  // 22.11 playtest: 330px/s charged rush at a 30px tap radius demanded
+  // ~2.5 sustained taps/s to outpace 4 bites x 1.6s - unwinnable. Lock the
+  // tuned bands so a future constant tweak cannot silently re-break it.
+  assert.ok(SWARM_ROACH_SPEED_CHARGED <= 230, "charged rush must stay tap-able");
+  assert.ok(SWARM_ROACH_HIT_R >= 40, "tap target must forgive a thumb");
+  assert.ok(SWARM_BITE_COOLDOWN >= 2.0, "bite tempo must leave tapping room");
+  // winnability arithmetic: the bite budget (3 lives + shield, one roach
+  // per bite also removes itself) sets the taps/s the player must sustain
+  const tapsPerSec = (SWARM_SIZE - 4) / (4 * SWARM_BITE_COOLDOWN);
+  assert.ok(tapsPerSec <= 2.0, `required ${tapsPerSec.toFixed(2)} taps/s must stay within human pace`);
 });
 
 test("swarmSpawnPoint: roaches never materialize on top of the glass", () => {
