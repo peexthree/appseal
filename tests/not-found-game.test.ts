@@ -27,7 +27,9 @@ import {
   respawnGapFor,
   skinFor,
   splashCount,
+  swarmSpawnPoint,
   SWARM_ANNOUNCE,
+  SWARM_BITE_COOLDOWN,
   SWARM_CHARGED,
   SWARM_ROACH_SPEED,
   SWARM_ROACH_SPEED_CHARGED,
@@ -357,6 +359,47 @@ test("swarm constants: size, thresholds and announcements", () => {
   assert.match(SWARM_ANNOUNCE.ru, /ПОДКРЕПЛЕНИЕ/);
   assert.match(SWARM_VICTORY.ru, /404/);
   assert.match(SWARM_ANNOUNCE.en, /REINFORCEMENTS/);
+});
+
+test("swarm bite tempo: one life per cooldown window, however big the pack", () => {
+  assert.ok(SWARM_BITE_COOLDOWN >= 1.2 && SWARM_BITE_COOLDOWN <= 3, "cooldown inside the fair-fight band");
+});
+
+test("swarmSpawnPoint: roaches never materialize on top of the glass", () => {
+  const makeRand = (seed: number) => () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+  // desktop 1440x900: clear radius = max(300, min(vw, vh) * 0.45) = 405
+  const clearDesktop = Math.max(300, Math.min(1440, 900) * 0.45);
+  assert.equal(clearDesktop, 405);
+  for (let i = 0; i < 24; i++) {
+    const p = swarmSpawnPoint(1440, 900, 720, 450, i, makeRand(i + 1));
+    assert.ok(
+      Math.hypot(p.x - 720, p.y - 450) >= clearDesktop - 1e-9,
+      `desktop roach ${i} spawned inside the clear radius`,
+    );
+  }
+  // phone 390x844 with the card filling the screen: the 300px floor holds -
+  // edge spawns land on the glass otherwise (the instant-game-over bug)
+  const clearPhone = Math.max(300, Math.min(390, 844) * 0.45);
+  assert.equal(clearPhone, 300);
+  for (let i = 0; i < 24; i++) {
+    const p = swarmSpawnPoint(390, 844, 195, 420, i, makeRand(i + 31));
+    assert.ok(
+      Math.hypot(p.x - 195, p.y - 420) >= clearPhone - 1e-9,
+      `phone roach ${i} spawned inside the clear radius`,
+    );
+  }
+  // same seed - same board (the spawn helper must be deterministic)
+  const first = makeRand(7);
+  const second = makeRand(7);
+  for (let i = 0; i < SWARM_SIZE; i++) {
+    const a = swarmSpawnPoint(1440, 900, 720, 450, i, first);
+    const b = swarmSpawnPoint(1440, 900, 720, 450, i, second);
+    assert.equal(a.x, b.x, `roach ${i} x differs between equal seeds`);
+    assert.equal(a.y, b.y, `roach ${i} y differs between equal seeds`);
+  }
 });
 
 /* ------------------------------- geometry ------------------------------- */

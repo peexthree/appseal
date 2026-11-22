@@ -18,6 +18,7 @@ import {
   POWERUPS,
   SHIELD_BLOCK_PHRASE,
   SWARM_ANNOUNCE,
+  SWARM_BITE_COOLDOWN,
   SWARM_BITE_DIST,
   SWARM_CHARGED,
   SWARM_ROACH_HIT_R,
@@ -47,6 +48,7 @@ import {
   respawnGapFor,
   skinFor,
   splashCount,
+  swarmSpawnPoint,
   turnToward,
   typeSpeedFor,
   walkCycleFor,
@@ -285,6 +287,8 @@ export function CyberBugEasterEgg() {
   const roaches = useRef<Roach[]>([]);
   /** the 50-kill swarm fires once per run */
   const swarmDone = useRef(false);
+  /** next timestamp a roach may eat a life (the swarm's bite tempo) */
+  const swarmBiteReadyAt = useRef(0);
   /** dormant easter egg: no HUD, no bites until the first landed hit */
   const awake = useRef(false);
   /** de-personalized all-time record across every visitor (server-backed) */
@@ -1030,19 +1034,56 @@ export function CyberBugEasterEgg() {
     ymGoal("nf_game_over");
   };
 
+  /** A swarm roach chewing through the glass: one life per bite, on the
+   * swarm's own clock (the caller owns the SWARM_BITE_COOLDOWN gate). Unlike
+   * a regular bite this touches only the lives - the main bug keeps its own
+   * fight instead of being sent home by someone else's bite. */
+  const roachBite = (x: number, y: number, now: number) => {
+    swarmBiteReadyAt.current = now + SWARM_BITE_COOLDOWN * 1000;
+    if (shield.current) {
+      shield.current = false;
+      setHud((h) => ({ ...h, shield: false }));
+      showToast(SHIELD_BLOCK_PHRASE[langRef.current], "achievement");
+      ymGoal("nf_shield_block");
+      return;
+    }
+    lives.current -= 1;
+    setHud((h) => ({ ...h, lives: lives.current }));
+    shakeCard();
+    redFlash();
+    // the roach visibly chomps: the same lunge-squeeze + red page chunks
+    const chompEl = svgFlash.current;
+    if (chompEl && !reduced.current) {
+      chompEl.classList.remove("nf-bite-chomp");
+      void chompEl.getBoundingClientRect();
+      chompEl.classList.add("nf-bite-chomp");
+    }
+    spawnExplosion(
+      x,
+      y,
+      { ...FX_NORMAL, meat: "#ef4444", shardEdge: "#ef4444", ring: "#ef4444", spark: "#fca5a5" },
+      true,
+    );
+    const line = BITE_PHRASES[langRef.current][Math.floor(Math.random() * BITE_PHRASES[langRef.current].length)];
+    setLive(`${line} Жизни: ${lives.current}/3`);
+    ymGoal("nf_bite");
+    if (lives.current <= 0) endGame();
+  };
+
   /* ------------------------------ boss swarm ------------------------------ */
 
   /** Spawns the 50-kill roach swarm from every screen edge. */
   const spawnSwarm = () => {
     const v = vp.current;
+    const c = cardRect.current;
+    const cx = c ? c.left + c.width / 2 : v.w / 2;
+    const cy = c ? c.top + c.height / 2 : v.h / 2;
     for (let i = 0; i < SWARM_SIZE; i++) {
-      const edge = i % 4;
-      const x = edge === 0 ? -20 : edge === 1 ? v.w + 20 : rand(0, v.w);
-      const y = edge === 2 ? BALANCE.headerSafe + 10 : edge === 3 ? v.h + 20 : rand(BALANCE.headerSafe + 10, v.h);
+      const p = swarmSpawnPoint(v.w, v.h, cx, cy, i);
       roaches.current.push({
-        x,
-        y,
-        heading: Math.atan2(v.h / 2 - y, v.w / 2 - x),
+        x: p.x,
+        y: p.y,
+        heading: Math.atan2(cy - p.y, cx - p.x),
         phase: rand(0, Math.PI * 2),
         fleeAngle: rand(0, Math.PI * 2),
       });
@@ -1104,26 +1145,33 @@ export function CyberBugEasterEgg() {
     }));
     ymGoal("nf_roach_kill");
     bumpWorld(newKills);
-    if (roaches.current.length === 0) {
-      swarmDone.current = true;
-      document.querySelector("[data-nf-card]")?.classList.remove("nf-rumble");
-      const bossFlash = bossFlashEl.current;
-      if (bossFlash) {
-        bossFlash.classList.remove("nf-flash-on");
-        void bossFlash.getBoundingClientRect();
-        bossFlash.classList.add("nf-flash-on");
-      }
-      // confetti of code fragments across the board
-      for (let i = 0; i < 5; i++) {
-        addTimer(() => spawnExplosion(rand(80, vp.current.w - 80), rand(BALANCE.headerSafe + 60, vp.current.h - 120), FX_BY_TYPE.spawnling, false), i * 180);
-      }
-      showToast(SWARM_VICTORY[langRef.current], "achievement");
-      ymGoal("nf_swarm_victory");
-    }
+    if (roaches.current.length === 0) swarmVictory();
   };
 
-  /** Boids-lite: the swarm steers toward the card, holds together, bites. */
-  const stepSwarm = (dt: number) => {
+  /** The board is clear of roaches: victory beat, once per run. Any way the
+   * swarm empties counts - the last roach may fall to a tap or to the glass. */
+  const swarmVictory = () => {
+    swarmDone.current = true;
+    document.querySelector("[data-nf-card]")?.classList.remove("nf-rumble");
+    const bossFlash = bossFlashEl.current;
+    if (bossFlash) {
+      bossFlash.classList.remove("nf-flash-on");
+      void bossFlash.getBoundingClientRect();
+      bossFlash.classList.add("nf-flash-on");
+    }
+    // confetti of code fragments across the board
+    for (let i = 0; i < 5; i++) {
+      addTimer(() => spawnExplosion(rand(80, vp.current.w - 80), rand(BALANCE.headerSafe + 60, vp.current.h - 120), FX_BY_TYPE.spawnling, false), i * 180);
+    }
+    showToast(SWARM_VICTORY[langRef.current], "achievement");
+    ymGoal("nf_swarm_victory");
+  };
+
+  /** Boids-lite: the swarm steers toward the card, holds together, bites.
+   * Bites run on the swarm's own clock: one life per SWARM_BITE_COOLDOWN no
+   * matter how many roaches are queued - otherwise the charged pack eats all
+   * three lives in about a second and the mini-boss ends before it starts. */
+  const stepSwarm = (dt: number, now: number) => {
     const alive = roaches.current;
     if (!alive.length) return;
     const v = vp.current;
@@ -1176,22 +1224,40 @@ export function CyberBugEasterEgg() {
       r.y = Math.max(BALANCE.headerSafe - 10, Math.min(v.h + 30, r.y));
       r.heading = Math.atan2(vy, vx);
       r.phase += dt * 22;
-      // a roach reaching the card eats a life and disappears under the glass
+      // a roach reaching the glass: bite on the swarm's clock, otherwise it
+      // waits its turn on the rim (visible, tap-killable - the fight lives)
       if (c) {
         const insideX = r.x > c.left - SWARM_BITE_DIST && r.x < c.left + c.width + SWARM_BITE_DIST;
         const insideY = r.y > c.top - SWARM_BITE_DIST && r.y < c.top + c.height + SWARM_BITE_DIST;
         if (insideX && insideY) {
-          alive.splice(i, 1);
-          i -= 1;
-          bite();
-          canvasDirty.current = true;
+          if (now >= swarmBiteReadyAt.current) {
+            alive.splice(i, 1);
+            i -= 1;
+            roachBite(r.x, r.y, now);
+            canvasDirty.current = true;
+          } else {
+            // hold the line: project the waiting roach onto the rim of the
+            // card rect inflated by the bite band - scratching at the glass
+            const halfW = c.width / 2 + SWARM_BITE_DIST + 12;
+            const halfH = c.height / 2 + SWARM_BITE_DIST + 12;
+            const ex = r.x - cx;
+            const ey = r.y - cy;
+            const k = Math.max(
+              Math.abs(ex) > 0.01 ? halfW / Math.abs(ex) : Infinity,
+              Math.abs(ey) > 0.01 ? halfH / Math.abs(ey) : Infinity,
+              1,
+            );
+            if (Number.isFinite(k)) {
+              r.x = cx + ex * k;
+              r.y = cy + ey * k;
+            }
+            r.heading = Math.atan2(ey, ex);
+            r.phase += dt * 40;
+          }
         }
       }
     }
-    if (alive.length === 0) {
-      swarmDone.current = true;
-      document.querySelector("[data-nf-card]")?.classList.remove("nf-rumble");
-    }
+    if (alive.length === 0) swarmVictory();
   };
 
   /** Nearest roach under the tap, if any. */
@@ -1210,6 +1276,7 @@ export function CyberBugEasterEgg() {
     chain.current = 0;
     wave.current = 1;
     swarmDone.current = false;
+    swarmBiteReadyAt.current = 0;
     worldToasted.current = false;
     st.current.kills = 0;
     lastRandom.current = -1;
@@ -1835,7 +1902,7 @@ export function CyberBugEasterEgg() {
         // the boss swarm runs on its own clock: freeze stops it, reduced
         // motion keeps roaches static (they never bite there, just get tapped)
         if (!reduced.current && !chilled && roaches.current.length > 0) {
-          stepSwarm(dt);
+          stepSwarm(dt, now);
         }
         positionBug();
         renderFx(frozen ? 0 : dt, now);

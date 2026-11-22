@@ -156,6 +156,14 @@ export const SWARM_ROACH_SPEED_CHARGED = 330;
 export const SWARM_ROACH_HIT_R = 30;
 /** A roach that reaches the card eats a life and vanishes under the glass. */
 export const SWARM_BITE_DIST = 10;
+/**
+ * Seconds between swarm bites - one life per window, however many roaches
+ * are already clawing at the glass. Without it 24 charged roaches arrive
+ * as one pack and eat all three lives in about a second: the mini-boss
+ * ends before the player sees it. The window is the fight's tempo - tap
+ * roaches down between bites and the swarm is beatable with lives to spare.
+ */
+export const SWARM_BITE_COOLDOWN = 1.6;
 
 export const SWARM_ANNOUNCE: Record<Lang, string> = {
   ru: "О НЕТ. ОНИ ВЫЗВАЛИ ПОДКРЕПЛЕНИЕ.",
@@ -166,6 +174,42 @@ export const SWARM_VICTORY: Record<Lang, string> = {
   ru: "ВЫ ПОБЕДИЛИ ХАОС. НО 404 ВСЁ ЕЩЁ СУЩЕСТВУЕТ...",
   en: "YOU BEAT THE CHAOS. THE 404 REMAINS...",
 };
+
+/**
+ * Spawn point for roach `i` (screen-edge flavor kept) with one hard rule:
+ * a roach never materializes closer to the card center than the clear
+ * radius. On a phone the 404 card fills the viewport and raw edge spawns
+ * land right on the glass - the swarm bites before the player has seen
+ * it. Points inside the radius are pushed radially out to its rim (they
+ * may land off-screen and crawl in - that is the point).
+ */
+export function swarmSpawnPoint(
+  vw: number,
+  vh: number,
+  cx: number,
+  cy: number,
+  i: number,
+  rand: () => number = Math.random,
+): { x: number; y: number } {
+  const edge = i % 4;
+  let x = edge === 0 ? -20 : edge === 1 ? vw + 20 : rand() * vw;
+  let y =
+    edge === 2
+      ? BALANCE.headerSafe + 10
+      : edge === 3
+        ? vh + 20
+        : BALANCE.headerSafe + 10 + rand() * (vh - BALANCE.headerSafe - 10);
+  const clear = Math.max(300, Math.min(vw, vh) * 0.45);
+  const dx = x - cx;
+  const dy = y - cy;
+  const d = Math.hypot(dx, dy);
+  if (d < clear) {
+    const k = clear / (d || 1);
+    x = cx + dx * k;
+    y = cy + dy * k;
+  }
+  return { x, y };
+}
 
 /** Toasted once per run when the player passes the all-time world record. */
 export const WORLD_RECORD_PHRASE: Record<Lang, string> = {
