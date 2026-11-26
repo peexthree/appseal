@@ -115,38 +115,65 @@ function priceValue(v: string): string {
 
 function productLd(lang: Lang) {
   const currency = lang === "en" ? "USD" : "RUB";
+  const country = lang === "en" ? "US" : "RU";
+  const returnPolicy = {
+    "@type": "MerchantReturnPolicy",
+    applicableCountry: country,
+    returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+  };
+  const shippingDetails = {
+    "@type": "OfferShippingDetails",
+    shippingRate: {
+      "@type": "MonetaryAmount",
+      value: "0",
+      currency,
+    },
+    shippingDestination: {
+      "@type": "DefinedRegion",
+      addressCountry: country,
+    },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: {
+        "@type": "QuantitativeValue",
+        minValue: 0,
+        maxValue: 0,
+        unitCode: "DAY",
+      },
+      transitTime: {
+        "@type": "QuantitativeValue",
+        minValue: 0,
+        maxValue: 0,
+        unitCode: "DAY",
+      },
+    },
+  };
+  const plans = [
+    { name: DICT.planLP[lang], price: priceValue(DICT.planLPPrice[lang]) },
+    { name: DICT.planPro[lang], price: priceValue(DICT.planProPrice[lang]) },
+    { name: DICT.planAgencyTitle[lang], price: priceValue(DICT.planAgencyPrice[lang]) },
+  ];
+
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     name: "AppSeal Security Check",
+    brand: {
+      "@type": "Brand",
+      name: "AppSeal",
+    },
     url: BASE_URL,
     description: DICT.tagline[lang],
-    offers: [
-      {
-        "@type": "Offer",
-        name: DICT.planLP[lang],
-        price: priceValue(DICT.planLPPrice[lang]),
-        priceCurrency: currency,
-        availability: "https://schema.org/InStock",
-        url: `${BASE_URL}/#pricing`,
-      },
-      {
-        "@type": "Offer",
-        name: DICT.planPro[lang],
-        price: priceValue(DICT.planProPrice[lang]),
-        priceCurrency: currency,
-        availability: "https://schema.org/InStock",
-        url: `${BASE_URL}/#pricing`,
-      },
-      {
-        "@type": "Offer",
-        name: DICT.planAgencyTitle[lang],
-        price: priceValue(DICT.planAgencyPrice[lang]),
-        priceCurrency: currency,
-        availability: "https://schema.org/InStock",
-        url: `${BASE_URL}/#pricing`,
-      },
-    ],
+    offers: plans.map((plan) => ({
+      "@type": "Offer",
+      name: plan.name,
+      price: plan.price,
+      priceCurrency: currency,
+      availability: "https://schema.org/InStock",
+      url: `${BASE_URL}/#pricing`,
+      hasMerchantReturnPolicy: returnPolicy,
+      shippingDetails,
+    })),
   };
 }
 
