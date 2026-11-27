@@ -96,6 +96,13 @@ function passHostKey(host: string): string {
   return `lpass:host:${createHash("sha256").update(clean).digest("hex")}`;
 }
 
+/** Webhook providers retry payment notifications, and both the webhook and the
+ *  ?paid= return path call activatePass. A retry recomputes `until` from now -
+ *  after a renewal (extendHostPass) that would shorten the pass, after expiry
+ *  it would resurrect it. The first activation pins its record under an
+ *  idempotency marker for 30 days; replays serve the pinned record untouched. */
+const ACTIVATED_TTL_SECONDS = 30 * 24 * 3600;
+
 /** days defaults to the 7-day Launch Pass; the Pro Pass activates with 30 */
 export async function activatePass(paymentId: string, host: string, days: number = DEFAULT_PASS_DAYS): Promise<PassRecord> {
   const d = Number.isFinite(days) && days >= 1 && days <= 365 ? Math.floor(days) : DEFAULT_PASS_DAYS;
@@ -106,8 +113,27 @@ export async function activatePass(paymentId: string, host: string, days: number
     days: d,
   };
   const ttl = passTtlSeconds(d);
-  await redisCommand(["SET", `lpass:pay:${paymentId}`, JSON.stringify(record), "EX", String(ttl)]);
-  await redisCommand(["SET", passHostKey(record.host), JSON.stringify(record), "EX", String(ttl)]);
+  const claimKey = `lpass:activated:${paymentId}`;
+  const won = await redisCommand<string>(["SET", claimKey, JSON.stringify(record), "EX", String(ACTIVATED_TTL_SECONDS), "NX"]);
+  if (won !== "OK") {
+    // Lost the claim (or Redis unavailable): a readable marker means this
+    // payment was already activated - serve the pinned record and leave the
+    // live keys (possibly renewed or expired) alone.
+    const pinned = await redisCommand<string>(["GET", claimKey]);
+    if (pinned) {
+      try {
+        return JSON.parse(pinned) as PassRecord;
+      } catch {
+        /* corrupt marker: fall through to the legacy write */
+      }
+    }
+  }
+  const payOk = await redisCommand(["SET", `lpass:pay:${paymentId}`, JSON.stringify(record), "EX", String(ttl)]);
+  const hostOk = await redisCommand(["SET", passHostKey(record.host), JSON.stringify(record), "EX", String(ttl)]);
+  if (won === "OK" && payOk !== "OK" && hostOk !== "OK") {
+    // claimed but nothing landed: release the claim so a retry can activate
+    await redisCommand(["DEL", claimKey]);
+  }
   // paid hosts join the background watchlist; score 0 = rescan ASAP
   await redisCommand(["ZADD", WATCH_KEY, "0", record.host]);
   // durable mirror (no-op without DATABASE_URL); never blocks activation
