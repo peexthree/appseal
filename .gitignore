@@ -74,6 +74,7 @@ tool-results/
 db/custom.db
 .vercel
 .env*
+!.env.example
 
 # local file-backend store (scans carry rkeys)
 /db/

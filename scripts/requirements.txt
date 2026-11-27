@@ -1,0 +1,10 @@
+# Локальная обвязка scripts/ (не прод-код): генераторы PDF-отчётов,
+# harvest/benchmark-пайплайн. Установка: python -m pip install -r scripts/requirements.txt
+# Версии зафиксированы по окружению, где скрипты гонялись (Python 3.14).
+pillow==12.1.1
+matplotlib==3.10.8
+# Используются генераторами отчётов; на машине сборки не установлены -
+# ставятся свежие версии.
+reportlab
+pypdf
+playwright
